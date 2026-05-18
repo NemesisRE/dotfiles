@@ -150,12 +150,9 @@ function _nredf_sshpass_bitwarden_totp() {
   local itemid="$1"
   local totp
 
-  if ! command -v bw; then
-    echo "Bitwarden CLI (bw) is not installed, trying to install"
-    _nredf_tool_bw
-    if ! command -v bw; then
-      return 1
-    fi
+  if ! command -v bw &>/dev/null; then
+    echo "Bitwarden CLI (bw) is not installed. Run: aqua install" >&2
+    return 1
   fi
 
   if ! bw login --check &>/dev/null; then

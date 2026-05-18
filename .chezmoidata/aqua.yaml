@@ -32,6 +32,7 @@ packages:
   - name: harness/drone-cli
   - name: oras-project/oras
   - name: asdf-vm/asdf
+  - name: bitwarden/clients
   - name: devmatteini/dra
   - name: mr-karan/doggo
   - name: ouch-org/ouch
