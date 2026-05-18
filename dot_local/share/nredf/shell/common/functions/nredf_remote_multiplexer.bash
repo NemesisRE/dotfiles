@@ -10,7 +10,7 @@ function _nredf_remote_multiplexer() {
     HOSTNAME=$(hostnamectl hostname)
   fi
 
-  if [[ -z ${NREDF_CONFIGS["Multiplexer"]} || "${NREDF_CONFIGS["Multiplexer"]}" == "false" ]]; then
+  if [[ -z ${NREDF_MULTIPLEXER:-} || "${NREDF_MULTIPLEXER}" == "false" ]]; then
     return 0
   fi
 

@@ -7,13 +7,6 @@
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-${HOME}/.config}"
 export XDG_DATA_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}"
 
-# Ensure nredf config exists (chezmoi renders it); fallback to local generator if present
-if [[ ! -f "${XDG_CONFIG_HOME}/nredf/config.bash" ]]; then
-  if [[ -x "${HOME}/.local/bin/generate_nredf_config.sh" ]]; then
-    "${HOME}/.local/bin/generate_nredf_config.sh" || true
-  fi
-fi
-
 export NREDF_SHELL_NAME="zsh"
 export NREDF_DOT_PATH="${NREDF_DOT_PATH:-${XDG_DATA_HOME}/nredf}"
 export NREDF_COMMON_RC_PROFILE="${NREDF_COMMON_RC_PROFILE:-full}"

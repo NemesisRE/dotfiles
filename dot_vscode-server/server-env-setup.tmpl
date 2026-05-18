@@ -5,14 +5,8 @@ if [[ -z "${WSL_DISTRO_NAME:-}" ]] && ! grep -qiE "(microsoft|wsl)" /proc/sys/ke
   local NREDF_DATA="${XDG_DATA_HOME:-${HOME}/.local/share}/nredf"
   NREDF_CONFIG="${HOME}/.config/nredf"
   if [[ -e "${NREDF_DATA}/shell/common/functions/nredf_set_ssh_agent.bash" ]]; then
-    if [[ -x "${HOME}/.local/bin/generate_nredf_config.sh" ]]; then
-      "${HOME}/.local/bin/generate_nredf_config.sh" 2>/dev/null || true
-    elif [[ -f "${NREDF_DATA}/shell/common/scripts/nredf_config.bash" ]]; then
-      (bash "${NREDF_DATA}/shell/common/scripts/nredf_config.bash")
-    fi
     if [[ -e "${NREDF_CONFIG}/config.bash" ]]; then
-      unset NREDF_CONFIGS
-      declare -A NREDF_CONFIGS
+      # shellcheck disable=SC1090
       source "${NREDF_CONFIG}/config.bash"
     fi
     source "${NREDF_DATA}/shell/common/functions/nredf_set_ssh_agent.bash"
