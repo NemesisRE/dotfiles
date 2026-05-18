@@ -6,6 +6,9 @@
 registries:
   - type: standard
     ref: v4.155.1 # renovate: depName=aquaproj/aqua-registry
+  - name: local
+    type: local
+    path: registry.yaml
 
 packages:
   # ── Shell / Terminal ────────────────────────────────────────────────────────
@@ -23,7 +26,8 @@ packages:
   - name: muesli/duf          # df replacement
   - name: bootandy/dust       # du replacement
   - name: ouch-org/ouch       # archive tool
-  # - name: natesales/q       # DNS client — not in aqua registry, install manually
+  - name: natesales/q         # DNS client
+    registry: local
 
   # ── Dev Tools ───────────────────────────────────────────────────────────────
   - name: cli/cli             # GitHub CLI (gh)
@@ -35,7 +39,6 @@ packages:
   - name: bcicen/ctop         # container monitor
   - name: starship/starship   # shell prompt
   - name: smallstep/cli       # step CA / cert tool
-  # - name: asdf-vm/asdf       # not in aqua standard registry
   # - name: devmatteini/dra   # not in aqua standard registry
   - name: mr-karan/doggo      # DNS lookup tool
 

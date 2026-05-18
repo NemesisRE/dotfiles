@@ -1,0 +1,12 @@
+# Local aqua registry — packages not available in the standard registry
+# https://aquaproj.github.io/docs/reference/registry-config/
+packages:
+  - type: github_release
+    repo_owner: natesales
+    repo_name: q
+    description: DNS client supporting HTTPS, QUIC, DoT and DoH
+    asset: 'q_{{trimV .Version}}_{{.OS}}_{{.Arch}}.{{.Format}}'
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
