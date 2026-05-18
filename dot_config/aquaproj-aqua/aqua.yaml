@@ -23,7 +23,7 @@ packages:
   - name: muesli/duf          # df replacement
   - name: bootandy/dust       # du replacement
   - name: ouch-org/ouch       # archive tool
-  - name: natesales/q         # DNS client
+  # - name: natesales/q       # DNS client — not in aqua registry, install manually
 
   # ── Dev Tools ───────────────────────────────────────────────────────────────
   - name: cli/cli             # GitHub CLI (gh)
@@ -35,8 +35,8 @@ packages:
   - name: bcicen/ctop         # container monitor
   - name: starship/starship   # shell prompt
   - name: smallstep/cli       # step CA / cert tool
-  - name: asdf-vm/asdf
-  - name: devmatteini/dra     # GitHub release downloader
+  # - name: asdf-vm/asdf       # not in aqua standard registry
+  # - name: devmatteini/dra   # not in aqua standard registry
   - name: mr-karan/doggo      # DNS lookup tool
 
   # ── Kubernetes (uncomment to install) ───────────────────────────────────────
@@ -45,20 +45,18 @@ packages:
   # - name: derailed/k9s
   # - name: kubernetes-sigs/kustomize
   # - name: kubernetes-sigs/krew
-  # - name: vmware-tanzu/velero
-  # - name: projectcalico/calico
+  # - name: velero-io/velero
+  # - name: projectcalico/calico/calicoctl
   # - name: bitnami-labs/sealed-secrets   # kubeseal
   # - name: doitintl/kube-no-trouble      # kubent
   # - name: stern/stern
   # - name: oras-project/oras
   # - name: fluxcd/flux2                  # flux CLI
-
-  # ── Optional ────────────────────────────────────────────────────────────────
-  # - name: bitwarden/clients             # bw CLI (needed for SSH TOTP)
   # - name: helmfile/helmfile
   # - name: helm/helm
 
-  # Notes:
-  # - kubectl / kubeadm: managed via direct dl.k8s.io installer (not in aqua
-  #   standard registry with reliable cross-platform support)
-  # - Pin versions: append @vX.Y.Z to `name` for reproducible installs
+  # ── Optional ────────────────────────────────────────────────────────────────
+  # - name: bitwarden/clients             # bw CLI (needed for SSH TOTP)
+  # - name: hashicorp/terraform
+  # - name: hashicorp/packer
+  # - name: hashicorp/vault
