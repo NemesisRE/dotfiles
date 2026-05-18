@@ -10,10 +10,19 @@ function _nredf_set_defaults() {
   export NREDF_RC_PATH="${NREDF_DOT_PATH}/shell/${NREDF_SHELL_NAME}"
   export NREDF_RC_LOCAL="${HOME}/.config/${NREDF_SHELL_NAME}"
 
-  # You may need to manually set your language environment
-  export LANG=en_US.UTF-8
-  export LANGUAGE=en_US.UTF-8
-  export LC_ALL=en_US.UTF-8
+  # Set language environment to en_US.UTF-8 if available, else fall back to C.UTF-8 or C
+  local _nredf_locale
+  if locale -a 2>/dev/null | grep -qiE '^en_US\.UTF-?8$'; then
+    _nredf_locale="en_US.UTF-8"
+  elif locale -a 2>/dev/null | grep -qiE '^C\.UTF-?8$'; then
+    _nredf_locale="C.UTF-8"
+  else
+    _nredf_locale="C"
+  fi
+  export LANG="${_nredf_locale}"
+  export LANGUAGE="${_nredf_locale}"
+  export LC_ALL="${_nredf_locale}"
+  unset _nredf_locale
 
   _nredf_init_paths
 
