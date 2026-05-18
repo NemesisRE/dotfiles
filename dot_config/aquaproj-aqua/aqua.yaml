@@ -39,7 +39,6 @@ packages:
   - name: bcicen/ctop         # container monitor
   - name: starship/starship   # shell prompt
   - name: smallstep/cli       # step CA / cert tool
-  # - name: devmatteini/dra   # not in aqua standard registry
   - name: mr-karan/doggo      # DNS lookup tool
 
   # ── Kubernetes (uncomment to install) ───────────────────────────────────────

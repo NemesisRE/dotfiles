@@ -5,7 +5,5 @@ generell:
   multiplexer: true
   ssh-agent: default # options: default, pipe, gpg, bitwarden
 
-# tools: managed by aqua — edit dot_config/aquaproj-aqua/aqua.yaml instead
-
 other:
   ssh_totp_provider: "#bitwarden"
