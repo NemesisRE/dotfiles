@@ -5,10 +5,6 @@ NREDF_MULTIPLEXER="{{ if index $g "multiplexer" }}true{{ else }}false{{ end }}"
 NREDF_AGENT_PIPE="{{ if eq $ssh "pipe" }}true{{ else }}false{{ end }}"
 NREDF_AGENT_GPG="{{ if eq $ssh "gpg" }}true{{ else }}false{{ end }}"
 NREDF_AGENT_BITWARDEN="{{ if eq $ssh "bitwarden" }}true{{ else }}false{{ end }}"
-{{- range $k, $v := .tools }}
-{{- $safe := $k | upper | replace "-" "_" }}
-NREDF_TOOL_{{ $safe }}="{{ if $v }}true{{ else }}false{{ end }}"
-{{- end }}
 {{- range $k, $v := .other }}
 {{- $outkey := $k | upper | replace "-" "_" | replace "." "_" }}
 NREDF_{{ $outkey }}="{{ $v }}"

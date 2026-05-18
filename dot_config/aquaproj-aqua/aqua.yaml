@@ -1,0 +1,62 @@
+# aqua global config — managed by chezmoi
+# Add or comment-out packages to control what gets installed.
+# Run `aqua install` (or `chezmoi apply`) to apply changes.
+# https://aquaproj.github.io/docs/reference/config/
+
+registries:
+  - type: standard
+    ref: v4.155.1 # renovate: depName=aquaproj/aqua-registry
+
+packages:
+  # ── Shell / Terminal ────────────────────────────────────────────────────────
+  - name: atuinsh/atuin       # shell history
+  - name: junegunn/fzf        # fuzzy finder
+  - name: zellij-org/zellij   # terminal multiplexer
+  - name: sxyazi/yazi         # terminal file manager
+
+  # ── File / Text Utils ───────────────────────────────────────────────────────
+  - name: lsd-rs/lsd          # ls replacement
+  - name: sharkdp/bat         # cat replacement
+  - name: sharkdp/fd          # find replacement
+  - name: sharkdp/diskus      # disk usage
+  - name: BurntSushi/ripgrep  # grep replacement
+  - name: muesli/duf          # df replacement
+  - name: bootandy/dust       # du replacement
+  - name: ouch-org/ouch       # archive tool
+  - name: natesales/q         # DNS client
+
+  # ── Dev Tools ───────────────────────────────────────────────────────────────
+  - name: cli/cli             # GitHub CLI (gh)
+  - name: jqlang/jq           # JSON processor
+  - name: mikefarah/yq        # YAML processor
+  - name: jesseduffield/lazygit
+  - name: helix-editor/helix
+  - name: aristocratos/btop   # system monitor
+  - name: bcicen/ctop         # container monitor
+  - name: starship/starship   # shell prompt
+  - name: smallstep/cli       # step CA / cert tool
+  - name: asdf-vm/asdf
+  - name: devmatteini/dra     # GitHub release downloader
+  - name: mr-karan/doggo      # DNS lookup tool
+
+  # ── Kubernetes (uncomment to install) ───────────────────────────────────────
+  # - name: derailed/k9s
+  # - name: kubernetes-sigs/kustomize
+  # - name: kubernetes-sigs/krew
+  # - name: vmware-tanzu/velero
+  # - name: projectcalico/calico
+  # - name: bitnami-labs/sealed-secrets   # kubeseal
+  # - name: doitintl/kube-no-trouble      # kubent
+  # - name: stern/stern
+  # - name: oras-project/oras
+  # - name: fluxcd/flux2                  # flux CLI
+
+  # ── Optional ────────────────────────────────────────────────────────────────
+  # - name: bitwarden/clients             # bw CLI (needed for SSH TOTP)
+  # - name: helmfile/helmfile
+  # - name: helm/helm
+
+  # Notes:
+  # - kubectl / kubeadm: managed via direct dl.k8s.io installer (not in aqua
+  #   standard registry with reliable cross-platform support)
+  # - Pin versions: append @vX.Y.Z to `name` for reproducible installs

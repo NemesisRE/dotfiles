@@ -5,42 +5,7 @@ generell:
   multiplexer: true
   ssh-agent: default # options: default, pipe, gpg, bitwarden
 
-tools:
-  btop: true
-  atuin: true
-  ctop: true
-  diskus: true
-  duf: true
-  dust: true
-  fd: true
-  fzf: true
-  githubcli: true
-  helix: true
-  jq: true
-  lazygit: true
-  lsd: true
-  ouch: true
-  q: true
-  ripgrep: true
-  yazi: true
-  yq: true
-  zellij: true
-  kubectl: false
-  krew: false
-  kubeadm: false
-  kubeseal: false
-  fluxctl: false
-  flux: false
-  helm: false
-  oras: false
-  k9s: false
-  velero: false
-  kustomize: false
-  stern: false
-  step: true
-  calico: false
-  kubent: false
-  bw: false
+# tools: managed by aqua — edit dot_config/aquaproj-aqua/aqua.yaml instead
 
 other:
   ssh_totp_provider: "#bitwarden"
