@@ -11,7 +11,9 @@ function _nredf_tool_fzf_source() {
       if fzf --version 2>/dev/null | awk '{split($1,v,"."); exit !(v[1]>0 || v[2]>=48)}'; then
         eval "$(fzf "--${NREDF_SHELL_NAME}")"
       else
+        # shellcheck disable=SC1090
         [[ -f "${HOME}/.config/fzf/completion.${NREDF_SHELL_NAME}" ]] && source "${HOME}/.config/fzf/completion.${NREDF_SHELL_NAME}"
+        # shellcheck disable=SC1090
         [[ -f "${HOME}/.config/fzf/key-bindings.${NREDF_SHELL_NAME}" ]] && source "${HOME}/.config/fzf/key-bindings.${NREDF_SHELL_NAME}"
       fi
     fi
