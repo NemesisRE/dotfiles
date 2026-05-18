@@ -1,0 +1,13 @@
+# Normalize line endings — LF everywhere (unix dotfiles repo)
+*             text=auto eol=lf
+
+# Diff drivers for richer `git diff` output
+*.bash        diff=bash
+*.sh          diff=bash
+*.md          diff=markdown
+
+# Exclude dev/CI tooling from `git archive` tarballs
+.editorconfig export-ignore
+.shellcheckrc export-ignore
+.yamllint.yml export-ignore
+.github/      export-ignore
