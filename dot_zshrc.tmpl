@@ -10,11 +10,33 @@ export XDG_DATA_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}"
 export NREDF_SHELL_NAME="zsh"
 export NREDF_DOT_PATH="${NREDF_DOT_PATH:-${XDG_DATA_HOME}/nredf}"
 export NREDF_COMMON_RC_PROFILE="${NREDF_COMMON_RC_PROFILE:-full}"
+export NREDF_SHELDON_LAZY_LOAD="${NREDF_SHELDON_LAZY_LOAD:-1}"
+
+# Some plugins still invoke `python`; prefer python3 when only python3 exists.
+if ! command -v python >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
+  python() { command python3 "$@"; }
+fi
+export GENCOMPL_PY="${GENCOMPL_PY:-python3}"
 
 # Prefer Sheldon-managed plugins if available, otherwise fall back to chezmoi-managed rc
 if command -v sheldon >/dev/null 2>&1 && [[ -f "${XDG_CONFIG_HOME}/sheldon/plugins.toml" ]]; then
-  # `sheldon source` generates eval-able shell code that sources all managed plugins.
-  eval "$(sheldon source)"
+  _nredf_load_sheldon_plugins() {
+    # Initialize completion before plugin load so compdef is available.
+    autoload -Uz compinit
+    compinit -i
+    eval "$(sheldon source)"
+  }
+
+  if [[ "${NREDF_SHELDON_LAZY_LOAD}" == "1" ]]; then
+    autoload -Uz add-zsh-hook
+    _nredf_sheldon_lazy_once() {
+      add-zsh-hook -d precmd _nredf_sheldon_lazy_once
+      _nredf_load_sheldon_plugins
+    }
+    add-zsh-hook precmd _nredf_sheldon_lazy_once
+  else
+    _nredf_load_sheldon_plugins
+  fi
 else
   # Prefer a chezmoi-managed zsh rc (rendered to ~/shell/zsh/rc), then fall back
   # to the legacy dotfiles path if the chezmoi files are not present.
@@ -34,5 +56,3 @@ fi
 if command -v atuin-search &>/dev/null; then
   bindkey '^r' atuin-search
 fi
-
-# Tool installation is handled by chezmoi's run_once_before_install-tools.sh script.

@@ -4,35 +4,33 @@
 shell = "zsh"
 
 # ── oh-my-zsh ─────────────────────────────────────────────────────────────────
-# Single clone; all needed lib/ and plugin/ files listed in `use`.
+# Load completion.zsh first, then other lib files, then plugins.
+# This ensures compdef is available before plugins try to use it.
 [plugins.ohmyzsh]
 github = "ohmyzsh/ohmyzsh"
 use = [
-  "lib/*.zsh",
-  "plugins/git-extras/git-extras.plugin.zsh",
-  "plugins/svn/svn.plugin.zsh",
+  "lib/completion.zsh",
+  "lib/functions.zsh",
+  "lib/history.zsh",
+  "lib/key-bindings.zsh",
+  "lib/misc.zsh",
+  "lib/spectrum.zsh",
+  "lib/termsupport.zsh",
+  "lib/theme-and-appearance.zsh",
+  "plugins/npm/npm.plugin.zsh",
+  "plugins/rvm/rvm.plugin.zsh",
   "plugins/extract/extract.plugin.zsh",
   "plugins/colored-man-pages/colored-man-pages.plugin.zsh",
   "plugins/colorize/colorize.plugin.zsh",
   "plugins/cp/cp.plugin.zsh",
-  "plugins/npm/npm.plugin.zsh",
-  "plugins/rvm/rvm.plugin.zsh",
-  "plugins/pyenv/pyenv.plugin.zsh",
-  "plugins/virtualenv/virtualenv.plugin.zsh",
-  "plugins/systemadmin/systemadmin.plugin.zsh",
+  "plugins/git-extras/git-extras.plugin.zsh",
   "plugins/z/z.plugin.zsh",
-  "plugins/asdf/asdf.plugin.zsh",
-  "plugins/timewarrior/timewarrior.plugin.zsh",
+  "plugins/systemadmin/systemadmin.plugin.zsh",
 ]
 
 [plugins.ohmyzsh.hooks]
 pre  = 'DISABLE_AUTO_TITLE=true; HYPHEN_INSENSITIVE=true; DISABLE_AUTO_UPDATE=true; ENABLE_CORRECTION=false; HIST_STAMPS="dd.mm.yyyy"; ZSH_CUSTOM="${NREDF_RC_PATH:-${HOME}/.config/zsh}"'
 post = '[[ -f "${HOME}/.config/fzf/key-bindings.zsh" ]] && source "${HOME}/.config/fzf/key-bindings.zsh"'
-
-# ── prezto utility module ─────────────────────────────────────────────────────
-[plugins.prezto-utility]
-github = "sorin-ionescu/prezto"
-use = ["modules/utility/init.zsh"]
 
 # ── enhancd (enhanced cd) ─────────────────────────────────────────────────────
 [plugins.enhancd]
@@ -49,6 +47,9 @@ github = "chitoku-k/fzf-zsh-completions"
 # ── completion generators / helpers ──────────────────────────────────────────
 [plugins.zsh-completion-generator]
 github = "RobSis/zsh-completion-generator"
+
+[plugins.zsh-completion-generator.hooks]
+pre = "GENCOMPL_PY=${GENCOMPL_PY:-python3}"
 
 [plugins.zsh-completions]
 github = "zsh-users/zsh-completions"

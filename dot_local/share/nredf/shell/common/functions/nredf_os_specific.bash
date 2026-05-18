@@ -9,7 +9,7 @@ function _nredf_os_specific() {
         export BROWSER="cmd.exe /c start"
       fi
       ;;
-    darwin)
+    darwin|macos)
       if [[ -d "${HOME}/.local/share/NerdFonts" && -d "${HOME}/Library/Fonts" ]]; then
         command cp -r "${HOME}/.local/share/NerdFonts" "${HOME}/Library/Fonts/"
       fi
