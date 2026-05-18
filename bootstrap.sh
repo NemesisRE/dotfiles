@@ -2,16 +2,16 @@
 # Bootstrap nredf dotfiles on a fresh machine (macOS, Ubuntu, Debian, …).
 #
 # Usage (after pushing to GitHub):
-#   bash <(curl -fsSL https://raw.githubusercontent.com/USER/REPO/main/bootstrap.sh)
+#   bash <(curl -fsSL https://raw.githubusercontent.com/NemesisRE/chezmoi/main/bootstrap.sh)
 #
 # Or using chezmoi's own one-liner (no need to clone first):
-#   sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply USER/REPO
+#   sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin init --apply NemesisRE/chezmoi
 #
 # The DOTFILES_REPO env var can override the GitHub user/repo slug.
 
 set -euo pipefail
 
-DOTFILES_REPO="${DOTFILES_REPO:-USER/REPO}"  # TODO: set your GitHub user/repo
+DOTFILES_REPO="${DOTFILES_REPO:-NemesisRE/chezmoi}"
 
 step()  { printf '\033[1m==> %s\033[0m\n' "$*"; }
 info()  { printf '    %s\n' "$*"; }

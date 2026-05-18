@@ -20,7 +20,6 @@ if [[ -z "${NREDF_COMMON_DEFAULTS_DONE}" ]]; then
   if [[ "${NREDF_OS}" == "macos" ]]; then
     _nredf_macos_prerquisites
   fi
-  _nredf_backup_rc
 
   # Update dotfiles from remote (throttled to once per 24h, no-op if chezmoi not found)
   [[ -z ${SUDO_COMMAND} && "${NREDF_COMMON_RC_PROFILE}" == "full" ]] && _nredf_chezmoi_update

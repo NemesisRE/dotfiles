@@ -6,16 +6,14 @@ On a fresh machine: installs **aqua** (CLI tool manager) and **sheldon** (zsh pl
 
 ## Fresh install (one-liner)
 
-Replace `USER/REPO` with your GitHub username and repository name:
-
 ```bash
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply USER/REPO
+sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin init --apply NemesisRE/chezmoi
 ```
 
 Or download and run the bootstrap script:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/USER/REPO/main/bootstrap.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/NemesisRE/chezmoi/main/bootstrap.sh)
 ```
 
 > **Prerequisites (auto-installed on Debian/Ubuntu):** `curl`, `git`  
