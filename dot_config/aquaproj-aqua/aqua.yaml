@@ -40,6 +40,8 @@ packages:
   - name: mr-karan/doggo      # DNS lookup tool
 
   # ── Kubernetes (uncomment to install) ───────────────────────────────────────
+  # - name: kubernetes/kubernetes/kubectl
+  # - name: kubernetes/kubernetes/kubeadm
   # - name: derailed/k9s
   # - name: kubernetes-sigs/kustomize
   # - name: kubernetes-sigs/krew
