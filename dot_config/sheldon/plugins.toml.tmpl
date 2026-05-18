@@ -1,0 +1,81 @@
+# Managed by chezmoi — do not edit by hand
+# https://sheldon.cli.rs/Configuration.html
+
+shell = "zsh"
+
+# ── oh-my-zsh ─────────────────────────────────────────────────────────────────
+# Single clone; all needed lib/ and plugin/ files listed in `use`.
+[plugins.ohmyzsh]
+github = "ohmyzsh/ohmyzsh"
+use = [
+  "lib/*.zsh",
+  "plugins/git-extras/git-extras.plugin.zsh",
+  "plugins/svn/svn.plugin.zsh",
+  "plugins/extract/extract.plugin.zsh",
+  "plugins/colored-man-pages/colored-man-pages.plugin.zsh",
+  "plugins/colorize/colorize.plugin.zsh",
+  "plugins/cp/cp.plugin.zsh",
+  "plugins/npm/npm.plugin.zsh",
+  "plugins/rvm/rvm.plugin.zsh",
+  "plugins/pyenv/pyenv.plugin.zsh",
+  "plugins/virtualenv/virtualenv.plugin.zsh",
+  "plugins/systemadmin/systemadmin.plugin.zsh",
+  "plugins/z/z.plugin.zsh",
+  "plugins/asdf/asdf.plugin.zsh",
+  "plugins/timewarrior/timewarrior.plugin.zsh",
+]
+
+[plugins.ohmyzsh.hooks]
+pre  = 'DISABLE_AUTO_TITLE=true; HYPHEN_INSENSITIVE=true; DISABLE_AUTO_UPDATE=true; ENABLE_CORRECTION=false; HIST_STAMPS="dd.mm.yyyy"; ZSH_CUSTOM="${NREDF_RC_PATH:-${HOME}/.config/zsh}"'
+post = '[[ -f "${HOME}/.config/fzf/key-bindings.zsh" ]] && source "${HOME}/.config/fzf/key-bindings.zsh"'
+
+# ── prezto utility module ─────────────────────────────────────────────────────
+[plugins.prezto-utility]
+github = "sorin-ionescu/prezto"
+use = ["modules/utility/init.zsh"]
+
+# ── enhancd (enhanced cd) ─────────────────────────────────────────────────────
+[plugins.enhancd]
+github = "babarot/enhancd"
+use = ["init.sh"]
+
+[plugins.enhancd.hooks]
+pre = "ENHANCD_DISABLE_HOME=1; ENHANCD_DISABLE_DOT=1"
+
+# ── fzf completions ───────────────────────────────────────────────────────────
+[plugins.fzf-zsh-completions]
+github = "chitoku-k/fzf-zsh-completions"
+
+# ── completion generators / helpers ──────────────────────────────────────────
+[plugins.zsh-completion-generator]
+github = "RobSis/zsh-completion-generator"
+
+[plugins.zsh-completions]
+github = "zsh-users/zsh-completions"
+apply = ["fpath"]
+
+# ── utility plugins ───────────────────────────────────────────────────────────
+[plugins.zsh-256color]
+github = "chrissicool/zsh-256color"
+
+[plugins.zsh-autopair]
+github = "hlissner/zsh-autopair"
+
+[plugins.calc]
+github = "arzzen/calc.plugin.zsh"
+
+# ── theme ─────────────────────────────────────────────────────────────────────
+[plugins.powerlevel10k]
+github = "romkatv/powerlevel10k"
+
+# ── atuin (shell history) ─────────────────────────────────────────────────────
+[plugins.atuin]
+github = "atuinsh/atuin"
+branch = "main"
+
+# ── load last: these hook into ZLE and must come after other plugins ──────────
+[plugins.zsh-autosuggestions]
+github = "zsh-users/zsh-autosuggestions"
+
+[plugins.fast-syntax-highlighting]
+github = "zdharma-continuum/fast-syntax-highlighting"

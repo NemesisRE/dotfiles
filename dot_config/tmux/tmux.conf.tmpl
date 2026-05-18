@@ -1,0 +1,25 @@
+#### PLUGINS (starting with v1.9)
+source-file $HOME/.local/share/nredf/shell/common/tmux/plugins.conf
+
+set -g default-terminal "tmux-256color"
+# bind-key -n Home send Escape "OH"
+# bind-key -n End send Escape "OF"
+
+# Make mouse useful in copy mode
+set -g mouse on
+bind -n WheelUpPane if-shell -F -t = "#{mouse_any_flag}" "send-keys -M" "if -Ft= '#{pane_in_mode}' 'send-keys -M' 'select-pane -t=; copy-mode -e; send-keys -M'"
+bind -n WheelDownPane select-pane -t= \; send-keys -M
+
+# Start windows and panes at 1, not 0
+set -g base-index 1
+set -g pane-base-index 1
+
+set -g xterm-keys on
+
+# Key bindings
+bind m source-file $HOME/.local/share/nredf/shell/common/tmux/layout_monitor
+bind-key < set-window-option synchronize-panes
+
+set-option -g default-shell ${SHELL}
+set-option -sa terminal-overrides ',xterm-256color:RGB'
+set -ga update-environment 'DISPLAY SSH_ASKPASS SSH_AUTH_SOCK SSH_AGENT_PID SSH_CONNECTION WINDOWID XAUTHORITY'

@@ -1,0 +1,30 @@
+################################################
+#
+#  Login shell setup:
+#  - interactive: defer to bashrc
+#  - non-interactive: use minimal profile
+#
+################################################
+
+if [[ $- == *i* ]]; then
+	if [[ -z "${NREDF_BREW_BASH_EXECUTED:-}" ]]; then
+		for NREDF_BREW_BASH in /opt/homebrew/bin/bash /usr/local/bin/bash; do
+			if [[ -x "${NREDF_BREW_BASH}" && "${BASH:-}" != "${NREDF_BREW_BASH}" ]]; then
+				NREDF_BREW_BASH_DIR="${NREDF_BREW_BASH%/bash}"
+				if [[ ":${PATH}:" != *":${NREDF_BREW_BASH_DIR}:"* ]]; then
+					export PATH="${NREDF_BREW_BASH_DIR}:${PATH}"
+				fi
+				export NREDF_BREW_BASH_EXECUTED=1
+				exec "${NREDF_BREW_BASH}" -l
+			fi
+		done
+	fi
+	source "${HOME}/.bashrc"
+	return
+fi
+
+export XDG_DATA_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}"
+export NREDF_SHELL_NAME="bash"
+export NREDF_DOT_PATH="${XDG_DATA_HOME}/nredf"
+export NREDF_COMMON_RC_PROFILE="login-minimal"
+source "${NREDF_DOT_PATH}/shell/common/rc"

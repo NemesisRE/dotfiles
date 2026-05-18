@@ -1,0 +1,4 @@
+# Default shell when no shebang present
+shell=bash
+# SC2148: don't require shebang in every file (we have it where needed)
+disable=SC2148

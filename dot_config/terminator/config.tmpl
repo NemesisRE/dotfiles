@@ -1,0 +1,66 @@
+[global_config]
+  window_state = maximise
+  borderless = True
+  tab_position = bottom
+  scroll_tabbar = True
+  always_on_top = True
+  sticky = True
+  inactive_color_offset = 1.0
+  enabled_plugins = InactivityWatch, CustomCommandsMenu, TerminalShot, APTURLHandler
+[keybindings]
+  zoom_in = None
+  zoom_out = None
+  zoom_normal = <Primary>KP_0
+  go_next = <Primary><Super>Page_Down
+  go_prev = <Primary><Super>Page_Up
+  go_up = <Primary><Super>Up
+  go_down = <Primary><Super>Down
+  go_left = <Primary><Super>Left
+  go_right = <Primary><Super>Right
+  resize_up = <Shift><Alt>Up
+  resize_down = <Shift><Alt>Down
+  resize_left = <Shift><Alt>Left
+  resize_right = <Shift><Alt>Right
+  move_tab_right = <Primary><Shift>Right
+  move_tab_left = <Primary><Shift>Left
+  next_tab = <Shift>Right
+  prev_tab = <Shift>Left
+  full_screen = <Shift>F11
+  hide_window = Pause
+  group_all = None
+  group_all_toggle = <Super>a
+  group_tab = None
+  group_tab_toggle = <Super>g
+  broadcast_off = <Alt><Super>o
+  broadcast_group = <Alt><Super>g
+  broadcast_all = <Alt><Super>a
+  help = <Primary>F1
+[profiles]
+  [[default]]
+    background_color = "#282C34"
+    background_darkness = 0.95
+    background_type = transparent
+    cursor_blink = False
+    cursor_fg_color = "#282c34"
+    cursor_bg_color = "#abb2bf"
+    font = FiraCode Nerd Font Mono 11
+    foreground_color = "#abb2bf"
+    scrollback_lines = 5000
+    scrollback_infinite = True
+    palette = "#3f4451:#e05561:#8cc265:#d18f52:#4aa5f0:#c162de:#42b3c2:#e6e6e6:#4f5666:#ff616e:#a5e075:#f0a45d:#4dc4ff:#de73ff:#4cd1e0:#d7dae0"
+    use_system_font = False
+    copy_on_selection = True
+    title_receive_bg_color = "#4aa5f0"
+    title_use_system_font = False
+    title_font = Fira Code 12
+[layouts]
+  [[default]]
+    [[[child1]]]
+      parent = window0
+      profile = default
+      size = 100%, 90%
+      type = Terminal
+    [[[window0]]]
+      parent = ""
+      type = Window
+[plugins]

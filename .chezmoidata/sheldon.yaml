@@ -1,0 +1,70 @@
+# Generated from existing zplug definitions. Review before applying.
+plugins:
+  - repo: "ohmyzsh/ohmyzsh"
+    use: "lib/*.zsh"
+    hook_load: |
+      FZF_KEYS="${HOME}/.config/fzf/key-bindings.${NREDF_SHELL_NAME}"
+      [[ -f "${FZF_KEYS}" ]] && source "${FZF_KEYS}"
+    env:
+      ZSH_CUSTOM: "${NREDF_RC_PATH}"
+      DISABLE_AUTO_TITLE: "true"
+      HYPHEN_INSENSITIVE: "true"
+      DISABLE_AUTO_UPDATE: "true"
+      ENABLE_CORRECTION: "false"
+      HIST_STAMPS: "dd.mm.yyyy"
+
+  # oh-my-zsh bundled plugin shims (sourced from ohmyzsh/ohmyzsh)
+  - repo: "ohmyzsh/ohmyzsh"
+    path: "plugins/git-extras"
+  - repo: "ohmyzsh/ohmyzsh"
+    path: "plugins/svn"
+  - repo: "ohmyzsh/ohmyzsh"
+    path: "plugins/extract"
+  - repo: "ohmyzsh/ohmyzsh"
+    path: "plugins/colored-man-pages"
+  - repo: "ohmyzsh/ohmyzsh"
+    path: "plugins/colorize"
+  - repo: "ohmyzsh/ohmyzsh"
+    path: "plugins/cp"
+  - repo: "ohmyzsh/ohmyzsh"
+    path: "plugins/npm"
+  - repo: "ohmyzsh/ohmyzsh"
+    path: "plugins/rvm"
+  - repo: "ohmyzsh/ohmyzsh"
+    path: "plugins/pyenv"
+  - repo: "ohmyzsh/ohmyzsh"
+    path: "plugins/virtualenv"
+  - repo: "ohmyzsh/ohmyzsh"
+    path: "plugins/systemadmin"
+  - repo: "ohmyzsh/ohmyzsh"
+    path: "plugins/z"
+  - repo: "ohmyzsh/ohmyzsh"
+    path: "plugins/asdf"
+  - repo: "ohmyzsh/ohmyzsh"
+    path: "plugins/timewarrior"
+
+  # prezto module
+  - repo: "sorin-io/prezto"
+    path: "modules/utility"
+
+  - repo: "babarot/enhancd"
+    use: "init.sh"
+    defer: 1
+    hook_load: |
+      ENHANCD_DISABLE_HOME=1
+      ENHANCD_DISABLE_DOT=1
+
+  - repo: "RobSis/zsh-completion-generator"
+  - repo: "zdharma-continuum/fast-syntax-highlighting"
+    defer: 2
+  - repo: "chrissicool/zsh-256color"
+  - repo: "zsh-users/zsh-completions"
+  - repo: "zsh-users/zsh-autosuggestions"
+  - repo: "hlissner/zsh-autopair"
+  - repo: "arzzen/calc.plugin.zsh"
+  - repo: "chitoku-k/fzf-zsh-completions"
+  - repo: "romkatv/powerlevel10k"
+    as: "theme"
+    depth: 1
+  - repo: "atuinsh/atuin"
+    at: "main"

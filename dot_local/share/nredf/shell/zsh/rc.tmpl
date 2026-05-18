@@ -1,0 +1,27 @@
+#!/usr/bin/env zsh
+# chezmoi-managed zsh/rc
+
+[[ ! -d "${XDG_STATE_HOME}/zsh" ]] && mkdir -p "${XDG_STATE_HOME}/zsh"
+[[ ! -d "${XDG_CACHE_HOME}/zsh" ]] && mkdir -p "${XDG_CACHE_HOME}/zsh"
+fpath=("${HOME}/.config/completion/zsh" "${fpath[@]}")
+
+if (( ! ${+functions[_nredf_zplug]} )); then
+  export NREDF_RC_PATH="${NREDF_RC_PATH:-${NREDF_DOT_PATH}/shell/${NREDF_SHELL_NAME}}"
+
+  if (( ! ${+functions[_nredf_init_paths]} )); then
+    source "${NREDF_DOT_PATH}/shell/common/functions/nredf_init_paths.bash"
+  fi
+  _nredf_init_paths
+
+  [[ -f "${NREDF_RC_PATH}/functions" ]] && source "${NREDF_RC_PATH}/functions"
+fi
+
+_nredf_zplug
+
+export HISTFILE="${XDG_STATE_HOME}"/zsh/history
+rm -f "${HOME}/.zcompdump"
+autoload -Uz compinit
+compinit -u -d "${HOME}/.zcompdump"
+zstyle ':completion:*' cache-path "${XDG_CACHE_HOME}/zsh/zcompcache"
+zstyle -e ':completion:*' special-dirs '[[ $PREFIX = (../)#(|.|..) ]] && reply=(..)' 
+zmodload zsh/mathfunc

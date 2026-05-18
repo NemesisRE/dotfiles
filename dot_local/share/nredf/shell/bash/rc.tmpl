@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+#
+# vim: ts=2 sw=2 et ff=unix ft=bash syntax=sh
+# chezmoi-managed bash-specific rc — sourced by shell/common/rc via NREDF_RC_PATH
+
+if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
+  source /etc/bash_completion
+fi
+
+if [ -f /etc/profile.d/bash_completion.sh ]; then
+  source /etc/profile.d/bash_completion.sh
+fi
+
+if [ -f /usr/lib/node_modules/npm/lib/utils/completion.sh ]; then
+  source /usr/lib/node_modules/npm/lib/utils/completion.sh
+fi
+
+# Disable CTRL-S & CTRL-Q
+stty stop ''
+stty start ''
+stty -ixon
+stty -ixoff
+
+###################################################################################################
+# History Settings
+###################################################################################################
+# bash_history: Ignore dups and add timestamp
+HISTCONTROL=ignoreboth
+HISTTIMEFORMAT="%d/%m/%y %T "
+# append to the history file, don't overwrite it
+shopt -s histappend
+HISTSIZE=1000
+HISTFILESIZE=2000
+
+# check the window size after each command and, if necessary,
+# update the values of LINES and COLUMNS.
+shopt -s checkwinsize
+
+# Load custom prompt
+[[ ${TERM} != "linux" ]] && source "${NREDF_RC_PATH}/ps1/shell_prompt.sh"
+
+# Write history after every command
+PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND$'\n'}history -a; history -c; history -r"
+
+[[ -f "${NREDF_RC_PATH}/bash-preexec.sh" ]] && source "${NREDF_RC_PATH}/bash-preexec.sh"
+
+# Dynamic completions
+if [[ -d "${XDG_CONFIG_HOME}/completion/bash" ]]; then
+  source <(cat "${XDG_CONFIG_HOME}/completion/bash/"*)
+fi
+
+trap _unsudo exit

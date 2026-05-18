@@ -1,0 +1,27 @@
+[mgr]
+show_hidden = true
+show_symlink = true
+
+[opener]
+edit = [
+	{ run = 'hx "$@"', block = true },
+]
+
+[preview]
+tab_size = 2
+
+[plugin]
+prepend_fetchers = [
+	{ url = "*", run = "git", group = "git" },
+	{ url = "*/", run = "git", group = "git" },
+]
+prepend_previewers = [
+	# Archive previewer
+	{ mime = "application/*zip",           run = "ouch" },
+	{ mime = "application/tar",            run = "ouch" },
+	{ mime = "application/bzip2",          run = "ouch" },
+	{ mime = "application/7z-compressed",  run = "ouch" },
+	{ mime = "application/rar",            run = "ouch" },
+	{ mime = "application/xz",             run = "ouch" },
+  { mime = "text/markdown", run  = 'piper -- CLICOLOR_FORCE=1 glow -w=$w -s=dark "$1"' },
+]

@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# chezmoi-managed: sheldon plugin loader for zsh
+# This replaces the legacy `_nredf_zplug` with a sheldon-aware implementation.
+
+function _nredf_zplug() {
+  local sheldon_conf="${XDG_CONFIG_HOME:-${HOME}/.config}/sheldon/plugins.toml"
+
+  # If no sheldon config present, nothing to do here.
+  if [[ ! -f "${sheldon_conf}" ]]; then
+    return 0
+  fi
+
+  if command -v sheldon >/dev/null 2>&1; then
+    # Load plugins: sheldon source outputs eval-able shell code.
+    eval "$(sheldon source)"
+
+    # Install/verify plugins in the background when the lock file is stale.
+    # `sheldon lock` is idempotent and non-interactive.
+    if [[ -z "${SUDO_COMMAND}" ]]; then
+      sheldon lock >/dev/null 2>&1 || true
+    fi
+  else
+    # sheldon not installed — do not error the shell. User should install sheldon.
+    :
+  fi
+}

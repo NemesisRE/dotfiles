@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  # ── ShellCheck ───────────────────────────────────────────────────────────────
+  shellcheck:
+    name: ShellCheck
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ShellCheck — shell function library
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: dot_local/share/nredf/shell
+          severity: warning
+
+      - name: ShellCheck — bootstrap & run-once scripts
+        uses: ludeeus/action-shellcheck@master
+        with:
+          additional_files: >-
+            bootstrap.sh
+            .chezmoiscripts/run_once_before_install-tools.sh.tmpl
+          severity: warning
+
+  # ── YAML lint ────────────────────────────────────────────────────────────────
+  yamllint:
+    name: YAML lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ibiqlik/action-yamllint@v3
+        with:
+          file_or_dir: .chezmoidata/
+          config_file: .yamllint.yml
+
+  # ── chezmoi template dry-run ─────────────────────────────────────────────────
+  chezmoi-dry-run:
+    name: chezmoi apply --dry-run
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install chezmoi
+        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "${HOME}/.local/bin"
+
+      - name: Dry-run — verify all templates render without errors
+        env:
+          NREDF_NO_BOOTSTRAP: "1"
+        run: |
+          export PATH="${HOME}/.local/bin:${PATH}"
+          chezmoi init --source="${GITHUB_WORKSPACE}"
+          chezmoi apply --dry-run --force 2>&1

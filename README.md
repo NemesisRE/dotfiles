@@ -1,0 +1,69 @@
+# nredf dotfiles
+
+Personal dotfiles managed with [chezmoi](https://chezmoi.io).
+
+On a fresh machine: installs **aqua** (CLI tool manager) and **sheldon** (zsh plugin manager) automatically before applying dotfiles.
+
+## Fresh install (one-liner)
+
+Replace `USER/REPO` with your GitHub username and repository name:
+
+```bash
+sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply USER/REPO
+```
+
+Or download and run the bootstrap script:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/USER/REPO/main/bootstrap.sh)
+```
+
+> **Prerequisites (auto-installed on Debian/Ubuntu):** `curl`, `git`  
+> On macOS, Homebrew is used when available; otherwise upstream installers are used.
+
+## What happens
+
+1. **chezmoi** is installed to `~/.local/bin/chezmoi`
+2. The repo is cloned to `~/.local/share/chezmoi`
+3. **aqua** (tool manager) and **sheldon** (zsh plugin manager) are installed
+4. All dotfiles are applied to `~/`
+5. Shell data is deployed to `~/.local/share/nredf/`
+
+## After install
+
+```bash
+# Configure git identity (name, email, signing key)
+~/.local/bin/setup_git_identity.sh
+
+# Restart your shell
+exec $SHELL
+```
+
+## Directory structure
+
+| Path | Purpose |
+|------|---------|
+| `.chezmoidata/aqua.yaml` | CLI tools managed by aqua |
+| `.chezmoidata/git.yaml` | Git identity (name, email, signing key) |
+| `.chezmoidata/nredf.yaml` | nredf shell config |
+| `.chezmoidata/sheldon.yaml` | Sheldon plugin config overrides |
+| `.chezmoiscripts/` | Bootstrap scripts (run once on `chezmoi apply`) |
+| `.config/sheldon/plugins.toml.tmpl` | Zsh plugin list |
+| `.local/share/nredf/shell/` | Shell function library |
+
+## Daily use
+
+```bash
+chezmoi update          # pull latest dotfiles and re-apply
+chezmoi edit ~/.zshrc   # edit a managed file
+aqua install            # install/update all managed CLI tools
+sheldon lock            # refresh zsh plugin lockfile
+```
+
+## Environment variables
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `NREDF_DOT_PATH` | `~/.local/share/nredf` | Shell library root |
+| `NREDF_COMMON_RC_PROFILE` | `full` | RC profile level (`full` / `login-minimal` / `interactive-minimal`) |
+| `NREDF_NO_BOOTSTRAP` | unset | Set to skip aqua/sheldon install on `chezmoi apply` |

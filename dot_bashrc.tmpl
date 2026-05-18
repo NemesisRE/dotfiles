@@ -1,0 +1,35 @@
+# chezmoi-managed .bashrc
+# Sets required env and sources common rc (if present)
+
+# If not running interactively, don't do anything
+[ -z "${PS1}" ] && return
+
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-${HOME}/.config}"
+export XDG_DATA_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}"
+
+# Ensure nredf config exists (chezmoi renders it); fallback to local generator if present
+if [[ ! -f "${XDG_CONFIG_HOME}/nredf/config.bash" ]]; then
+  if [[ -x "${HOME}/.local/bin/generate_nredf_config.sh" ]]; then
+    "${HOME}/.local/bin/generate_nredf_config.sh" || true
+  fi
+fi
+
+export NREDF_SHELL_NAME="bash"
+export NREDF_DOT_PATH="${NREDF_DOT_PATH:-${XDG_DATA_HOME}/nredf}"
+export NREDF_COMMON_RC_PROFILE="${NREDF_COMMON_RC_PROFILE:-full}"
+
+# Source common rc if present
+if [[ -f "${NREDF_DOT_PATH}/shell/common/rc" ]]; then
+  source "${NREDF_DOT_PATH}/shell/common/rc"
+fi
+
+# Optional post-common bits (safe-guarded)
+if command -v _nredf_tool_fzf_source &>/dev/null; then
+  _nredf_tool_fzf_source
+fi
+
+if command -v __atuin_history &>/dev/null; then
+  bind -x '"\C-r": __atuin_history'
+fi
+
+# Tool installation is handled by chezmoi's run_once_before_install-tools.sh script.

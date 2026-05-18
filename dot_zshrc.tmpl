@@ -1,0 +1,45 @@
+# chezmoi-managed .zshrc
+# Sets required env and sources common rc (if present)
+
+# If not running interactively, don't do anything
+[ -z "${PS1}" ] && return
+
+export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-${HOME}/.config}"
+export XDG_DATA_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}"
+
+# Ensure nredf config exists (chezmoi renders it); fallback to local generator if present
+if [[ ! -f "${XDG_CONFIG_HOME}/nredf/config.bash" ]]; then
+  if [[ -x "${HOME}/.local/bin/generate_nredf_config.sh" ]]; then
+    "${HOME}/.local/bin/generate_nredf_config.sh" || true
+  fi
+fi
+
+export NREDF_SHELL_NAME="zsh"
+export NREDF_DOT_PATH="${NREDF_DOT_PATH:-${XDG_DATA_HOME}/nredf}"
+export NREDF_COMMON_RC_PROFILE="${NREDF_COMMON_RC_PROFILE:-full}"
+
+# Prefer Sheldon-managed plugins if available, otherwise fall back to chezmoi-managed rc
+if command -v sheldon >/dev/null 2>&1 && [[ -f "${XDG_CONFIG_HOME}/sheldon/plugins.toml" ]]; then
+  # `sheldon source` generates eval-able shell code that sources all managed plugins.
+  eval "$(sheldon source)"
+else
+  # Prefer a chezmoi-managed zsh rc (rendered to ~/shell/zsh/rc), then fall back
+  # to the legacy dotfiles path if the chezmoi files are not present.
+  if [[ -f "${NREDF_DOT_PATH}/shell/zsh/rc" ]]; then
+    source "${NREDF_DOT_PATH}/shell/zsh/rc"
+  elif [[ -f "${NREDF_DOT_PATH}/shell/common/rc" ]]; then
+    source "${NREDF_DOT_PATH}/shell/common/rc"
+  fi
+fi
+
+# zsh-specific extras
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+#eval "$(starship init zsh)"
+if command -v _nredf_tool_fzf_source &>/dev/null; then
+  _nredf_tool_fzf_source
+fi
+if command -v atuin-search &>/dev/null; then
+  bindkey '^r' atuin-search
+fi
+
+# Tool installation is handled by chezmoi's run_once_before_install-tools.sh script.

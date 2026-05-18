@@ -1,0 +1,10 @@
+neww -n 'Monitor' -a 'btop -p 1'
+selectp -t 1
+splitw -v
+resizep -t 1 -y 25
+selectp -t 2
+splitw -h 'btop -p 2'
+resizep -t 3 -x 90
+selectp -t 2
+kill-window -t 0
+move-window -t 0

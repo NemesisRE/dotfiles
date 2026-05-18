@@ -1,0 +1,8 @@
+# Files in this repo that are NOT deployed to ~/
+README.md
+bootstrap.sh
+.gitignore
+.editorconfig
+.shellcheckrc
+.yamllint.yml
+.github

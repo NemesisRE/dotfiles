@@ -1,0 +1,70 @@
+#!/usr/bin/env bash
+# chezmoi run_once_before — installs Aqua and Sheldon once per content change.
+# Runs before managed files are applied so that the tools are available
+# when the rest of the dotfiles are activated.
+# https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/
+#
+# To force a re-run: chezmoi state delete-bucket --bucket=scriptState
+# and then chezmoi apply.
+
+set -euo pipefail
+
+# Skip in CI or when the user explicitly opts out.
+[[ -n "${CI:-}" ]] && exit 0
+[[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
+
+LOCAL_BIN="${HOME}/.local/bin"
+mkdir -p "${LOCAL_BIN}"
+export PATH="${LOCAL_BIN}:${PATH}"
+
+# ── Aqua ─────────────────────────────────────────────────────────────────────
+if ! command -v aqua >/dev/null 2>&1; then
+  if command -v brew >/dev/null 2>&1; then
+    echo "==> Installing aqua via Homebrew"
+    brew tap aquaproj/tap 2>/dev/null || true
+    brew install aquaproj/tap/aqua
+  else
+    echo "==> Installing aqua via upstream installer"
+    # Official installer: https://github.com/aquaproj/aqua-installer
+    AQUA_INSTALLER_VERSION="v4.0.2"
+    AQUA_INSTALLER_SHA256="98b883756cdd0a6807a8c7623404bfc3bc169275ad9064dc23a6e24ad398f43d"
+    TMPDIR_AQUA="$(mktemp -d)"
+    curl -sSfL \
+      "https://raw.githubusercontent.com/aquaproj/aqua-installer/${AQUA_INSTALLER_VERSION}/aqua-installer" \
+      -o "${TMPDIR_AQUA}/aqua-installer"
+    echo "${AQUA_INSTALLER_SHA256}  ${TMPDIR_AQUA}/aqua-installer" | sha256sum -c -
+    chmod +x "${TMPDIR_AQUA}/aqua-installer"
+    "${TMPDIR_AQUA}/aqua-installer"
+    rm -rf "${TMPDIR_AQUA}"
+  fi
+else
+  echo "==> aqua already installed ($(aqua --version 2>/dev/null || true))"
+fi
+
+# Ensure aqua bin dir is in PATH for the rest of this script.
+AQUA_BIN="${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-${HOME}/.local/share}/aquaproj-aqua}/bin"
+export PATH="${AQUA_BIN}:${PATH}"
+
+# ── Sheldon ───────────────────────────────────────────────────────────────────
+if ! command -v sheldon >/dev/null 2>&1; then
+  if command -v brew >/dev/null 2>&1; then
+    echo "==> Installing sheldon via Homebrew"
+    brew install sheldon
+  else
+    echo "==> Installing sheldon via upstream installer"
+    # https://sheldon.cli.rs/Installation.html
+    curl --proto '=https' -fLsS https://rossmacarthur.github.io/install/crate.sh \
+      | bash -s -- --repo rossmacarthur/sheldon --to "${LOCAL_BIN}"
+  fi
+else
+  echo "==> sheldon already installed ($(sheldon --version 2>/dev/null || true))"
+fi
+
+# ── Sheldon plugins ───────────────────────────────────────────────────────────
+SHELDON_PLUGINS_TOML="${XDG_CONFIG_HOME:-${HOME}/.config}/sheldon/plugins.toml"
+if command -v sheldon >/dev/null 2>&1 && [[ -f "${SHELDON_PLUGINS_TOML}" ]]; then
+  echo "==> sheldon lock (install/verify plugins)"
+  sheldon lock || echo "Warning: sheldon lock exited non-zero"
+fi
+
+echo "==> Bootstrap done."

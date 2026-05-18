@@ -1,0 +1,14 @@
+################################################
+#
+#  Login shell setup (minimal):
+#  - initializes paths and environment defaults
+#  - includes PATH tools like fnm
+#  - skips tool installation and multiplexer startup
+#
+################################################
+
+export XDG_DATA_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}"
+export NREDF_SHELL_NAME="zsh"
+export NREDF_DOT_PATH="${XDG_DATA_HOME}/nredf"
+export NREDF_COMMON_RC_PROFILE="login-minimal"
+source "${NREDF_DOT_PATH}/shell/common/rc"

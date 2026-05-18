@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+#
+# vim: ts=2 sw=2 et ff=unix ft=bash syntax=sh
+#
+# chezmoi-managed common shell rc — sourced by .bashrc / .zshrc / .zprofile / .bash_profile
+# No homesick/homeshick references. All paths are relative to ${HOME}.
+
+declare -a NREDF_DEFAULT_TOOLS
+
+NREDF_COMMON_RC_PROFILE="${NREDF_COMMON_RC_PROFILE:-full}"
+
+# Load all common function files
+for NREDF_FUNCTIONS in "${NREDF_DOT_PATH}/shell/common/functions/"*; do
+  # shellcheck disable=SC1090
+  source "${NREDF_FUNCTIONS}"
+done
+
+_nredf_get_sys_info
+
+if [[ -z "${NREDF_COMMON_DEFAULTS_DONE}" ]]; then
+  _nredf_set_defaults
+  if [[ "${NREDF_OS}" == "macos" ]]; then
+    _nredf_macos_prerquisites
+  fi
+  _nredf_backup_rc
+
+  # Update dotfiles from remote (throttled to once per 24h, no-op if chezmoi not found)
+  [[ -z ${SUDO_COMMAND} && "${NREDF_COMMON_RC_PROFILE}" == "full" ]] && _nredf_chezmoi_update
+
+  # Regenerate config.bash from config.yaml if generator is available; fall back to legacy script
+  if [[ -x "${HOME}/.local/bin/generate_nredf_config.sh" ]]; then
+    "${HOME}/.local/bin/generate_nredf_config.sh" 2>/dev/null || true
+  elif [[ -f "${NREDF_DOT_PATH}/shell/common/scripts/nredf_config.bash" ]]; then
+    (bash "${NREDF_DOT_PATH}/shell/common/scripts/nredf_config.bash")
+  fi
+
+  if [[ -e "${NREDF_CONFIG}/config.bash" ]]; then
+    unset NREDF_CONFIGS
+    declare -A NREDF_CONFIGS
+    # shellcheck disable=SC1090
+    source "${NREDF_CONFIG}/config.bash"
+    if declare -F _nredf_normalize_configs &>/dev/null; then
+      _nredf_normalize_configs
+    fi
+  fi
+  _nredf_set_local
+  NREDF_COMMON_DEFAULTS_DONE="true"
+fi
+
+# Run on each shell init so child/login shells always inherit a valid SSH_AUTH_SOCK.
+_nredf_set_ssh_agent
+
+if [[ "${NREDF_COMMON_RC_PROFILE}" == "login-minimal" ]]; then
+  if command -v fnm &>/dev/null; then
+    eval "$(fnm env --use-on-cd)"
+  fi
+  return
+fi
+
+if [[ "${NREDF_COMMON_RC_PROFILE}" == "interactive-minimal" ]]; then
+  echo -e "\033[1mCustomizing Shell\033[0m"
+  # shellcheck disable=SC1090
+  source "${NREDF_RC_PATH}/rc"
+  _nredf_os_specific
+  _nredf_set_local true
+  if command -v atuin &>/dev/null; then
+    eval "$(atuin init "${NREDF_SHELL_NAME}")"
+  fi
+  # shellcheck disable=SC1090
+  source "${NREDF_RC_PATH}/bindings"
+  return
+fi
+
+if [[ -z ${SUDO_COMMAND} ]]; then
+  _nredf_cleanup_dotfiles
+  if command -v gh &>/dev/null && ! gh auth status &>/dev/null; then
+    echo -e "\033[1;33mTo get started with GitHub CLI, please run:\033[0m\033[1m gh auth login\033[0m"
+    echo -e "\033[1;33mthis will simplify the tool downloads too\033[0m"
+  fi
+  # Install any missing aqua-managed tools (throttled to once per 12h)
+  _nredf_aqua_update
+fi
+
+# Shell-specific customization
+echo -e "\033[1mCustomizing Shell\033[0m"
+# shellcheck disable=SC1090
+source "${NREDF_RC_PATH}/rc"
+
+_nredf_os_specific
+_nredf_set_local true
+if command -v atuin &>/dev/null; then
+  eval "$(atuin init "${NREDF_SHELL_NAME}")"
+fi
+if command -v fnm &>/dev/null; then
+  eval "$(fnm env --use-on-cd)"
+fi
+# shellcheck disable=SC1090
+source "${NREDF_RC_PATH}/bindings"
+_nredf_remote_multiplexer

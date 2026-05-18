@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# installed by chezmoi to ~/.local/bin/generate_nredf_config.sh
+# wrapper that invokes the repo script (if present) or runs the local generator
+
+# Prefer the chezmoi-managed script if present
+if [[ -x "${HOME}/.local/bin/generate_nredf_config.sh" && "${HOME}/.local/bin/generate_nredf_config.sh" -ef "${HOME}/.local/bin/generate_nredf_config.sh" ]]; then
+  exec "${HOME}/.local/bin/generate_nredf_config.sh" "$@"
+fi
+
+# fallback to embedded generator (template will render the content)
+# For now, exec the chezmoi-provided script in the repo install location
+if [[ -x "${HOME}/.local/bin/generate_nredf_config.sh" ]]; then
+  exec "${HOME}/.local/bin/generate_nredf_config.sh" "$@"
+fi
+
+# If nothing found, try to run the generator in ~/.config/nredf (rare)
+if [[ -x "${HOME}/.config/nredf/generate_config_bash.sh" ]]; then
+  exec "${HOME}/.config/nredf/generate_config_bash.sh" "$@"
+fi
+
+echo "generate_nredf_config: no generator found. Please run chezmoi apply to install the generator." >&2
+exit 1

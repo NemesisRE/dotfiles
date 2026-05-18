@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+#
+# vim: ts=2 sw=2 et ff=unix ft=bash syntax=sh
+
+alias ls="lsd"
+alias ll="lsd -lFh"
+alias la="lsd -lAFh"
+alias root="sudo -E \"HOME=\${HOME}\" su -m"
+alias aptall="sudo apt update && sudo apt full-upgrade -y; sudo apt autoremove --purge -y; sudo apt autoclean"
+alias k="kubectl"
+alias kctx="kubectl ctx"
+alias kns="kubectl ns"
+alias dipls="docker ps -q | xargs -n 1 docker inspect --format '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}{{.Name}}' | sed 's/^\//HOST\t\//' | sed 's/\//\t/g' | sort -n -t . -k 1,1 -k 2,2 -k 3,3 -k 4,4"
+alias lg="lazygit"
+alias ctop='TERM="${TERM/#tmux/screen}" ctop'
+alias grep='grep --color'
+alias reload="_nredf_reload_shell"
