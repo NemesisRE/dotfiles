@@ -52,8 +52,6 @@ if [[ "${NREDF_COMMON_RC_PROFILE}" == "interactive-minimal" ]]; then
   if command -v atuin &>/dev/null; then
     eval "$(atuin init "${NREDF_SHELL_NAME}")"
   fi
-  # shellcheck disable=SC1090
-  source "${NREDF_RC_PATH}/bindings"
   return
 fi
 
@@ -80,6 +78,4 @@ fi
 if command -v fnm &>/dev/null; then
   eval "$(fnm env --use-on-cd)"
 fi
-# shellcheck disable=SC1090
-source "${NREDF_RC_PATH}/bindings"
 _nredf_remote_multiplexer
