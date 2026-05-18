@@ -46,6 +46,7 @@ PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND$'\n'}history -a; history -c; h
 
 # Dynamic completions
 if [[ -d "${XDG_CONFIG_HOME}/completion/bash" ]]; then
+  # shellcheck disable=SC1090
   source <(cat "${XDG_CONFIG_HOME}/completion/bash/"*)
 fi
 

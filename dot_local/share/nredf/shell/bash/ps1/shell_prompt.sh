@@ -74,6 +74,7 @@ function __promptline_vcs {
 		if branch=$( { git symbolic-ref --quiet HEAD || git rev-parse --short HEAD; } 2>/dev/null ); then
 			branch=${branch##*/}
 			if [[ $(git rev-parse --is-inside-work-tree 2>/dev/null) == true ]]; then
+				# shellcheck disable=SC2046,SC1083
 				set -- $(git rev-list --left-right --count @{upstream}...HEAD 2>/dev/null)
 				local behind_count=$1
 				local ahead_count=$2
@@ -124,6 +125,7 @@ function __promptline_vcs {
 }
 function __promptline_cwd {
 	# get first char of the path, i.e. tilde or slash
+	# shellcheck disable=SC2155
 	local cwd="$(dirs)"
 
 	printf "%s" "$cwd"
@@ -144,8 +146,10 @@ function __promptline {
 	local wrap="$noprint$esc" end_wrap="$end_esc$end_noprint"
 	local space=" "
 	local sep=""
+	# shellcheck disable=SC2034
 	local rsep=""
 	local alt_sep=""
+	# shellcheck disable=SC2034
 	local alt_rsep=""
 	local reset="${wrap}0${end_wrap}"
 	local reset_bg="${wrap}49${end_wrap}"
@@ -174,6 +178,7 @@ function __promptline {
 	local green_fg="${wrap}0;38;5;10${end_wrap}"
 	local bold_green_fg="${wrap}1;38;5;10${end_wrap}"
 	local blue_fg="${wrap}0;38;5;4${end_wrap}"
+	# shellcheck disable=SC2034
 	local bold_blue_fg="${wrap}1;38;5;4${end_wrap}"
 
 	if [[ $EUID -eq 0 ]]; then

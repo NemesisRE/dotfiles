@@ -54,5 +54,4 @@ jobs:
           NREDF_NO_BOOTSTRAP: "1"
         run: |
           export PATH="${HOME}/.local/bin:${PATH}"
-          chezmoi init --source="${GITHUB_WORKSPACE}"
-          chezmoi apply --dry-run --force 2>&1
+          chezmoi apply --dry-run --force --source="${GITHUB_WORKSPACE}" 2>&1
