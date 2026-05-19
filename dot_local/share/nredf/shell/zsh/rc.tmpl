@@ -4,6 +4,7 @@
 [[ ! -d "${XDG_STATE_HOME}/zsh" ]] && mkdir -p "${XDG_STATE_HOME}/zsh"
 [[ ! -d "${XDG_CACHE_HOME}/zsh" ]] && mkdir -p "${XDG_CACHE_HOME}/zsh"
 fpath=("${HOME}/.config/completion/zsh" "${fpath[@]}")
+_nredf_step "zsh rc: dirs + fpath"
 
 if (( ! ${+functions[_nredf_load_sheldon_plugins]} )); then
   export NREDF_RC_PATH="${NREDF_RC_PATH:-${NREDF_DOT_PATH}/shell/${NREDF_SHELL_NAME}}"
@@ -15,11 +16,24 @@ if (( ! ${+functions[_nredf_load_sheldon_plugins]} )); then
 
   [[ -f "${NREDF_RC_PATH}/functions" ]] && source "${NREDF_RC_PATH}/functions"
 fi
+_nredf_step "zsh rc: source functions"
 
 export HISTFILE="${XDG_STATE_HOME}"/zsh/history
-rm -f "${HOME}/.zcompdump"
 autoload -Uz compinit
-compinit -u -d "${HOME}/.zcompdump"
+NREDF_ZCOMPDUMP="${XDG_CACHE_HOME}/zsh/.zcompdump"
+
+# Fast path: use cached completion dump; refresh only every 24h.
+if [[ -f "${NREDF_ZCOMPDUMP}" ]] && declare -f _nredf_last_run >/dev/null 2>&1 && _nredf_last_run "_nredf_zsh_compinit_refresh"; then
+  compinit -C -d "${NREDF_ZCOMPDUMP}"
+else
+  compinit -u -d "${NREDF_ZCOMPDUMP}"
+  if declare -f _nredf_last_run >/dev/null 2>&1; then
+    _nredf_last_run "_nredf_zsh_compinit_refresh" "true" "$(($(date +%s) + 86400))"
+  fi
+  zcompile "${NREDF_ZCOMPDUMP}" >/dev/null 2>&1 || true
+fi
+
 zstyle ':completion:*' cache-path "${XDG_CACHE_HOME}/zsh/zcompcache"
 zstyle -e ':completion:*' special-dirs '[[ $PREFIX = (../)#(|.|..) ]] && reply=(..)'
 zmodload zsh/mathfunc
+_nredf_step "zsh rc: compinit"

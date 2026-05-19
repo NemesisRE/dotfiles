@@ -6,14 +6,13 @@ _nredf_reload_shell () {
   _nredf_init_paths
 
   local LRCACHE=false
-  local GHCACHE=false
   local DOWNLOADS=false
   local FULL_RELOAD=false
+  local PROFILE=false
   while [[ "$#" -gt 0 ]]; do
     case "$1" in
       -c | --cache)
         LRCACHE=true
-        GHCACHE=true
         shift 1
       ;;
       -d | --downloads)
@@ -22,9 +21,11 @@ _nredf_reload_shell () {
       ;;
       -f | --full)
         LRCACHE=true
-        GHCACHE=true
-        DOWNLOADS=true
         FULL_RELOAD=true
+        shift 1
+      ;;
+      -p | --profile)
+        PROFILE=true
         shift 1
       ;;
       -l | --last-run)
@@ -37,13 +38,13 @@ _nredf_reload_shell () {
 Usage: reload [options]
 
 Options:
--c, [--cache]               # Delete 'Last Run Cache' and 'Version Cache'
--d, [--downloads]           # Delete only 'Download Cache'
+-c, [--cache]               # Delete 'Last Run Cache'
+-d, [--downloads]           # Delete aqua pkgs (archives + binaries, keeps bin/ symlinks)
 -f, [--full]                # Full refresh: clear caches + chezmoi/aqua/(zsh:sheldon)
 -l, [--last-run]            # Delete only 'Last Run Cache'
+-p, [--profile]             # Enable startup profiling (with timestamps for each step)
 -h, [--help]                # Show this help
 -s SHELL, [--shell SHELL]   # Reload with a different shell
--v, [--version]             # Delete only 'Version Cache'
 
 "
         return 0
@@ -57,10 +58,6 @@ Options:
         fi;
         shift 2
       ;;
-      -v | --version)
-        GHCACHE=true
-        shift 1
-      ;;
       *)
         echo -e "\033[1;31m\U274C Unknown option: ${1} \033[0m"
         return 1
@@ -70,29 +67,22 @@ Options:
   if ${LRCACHE}; then
     rm -rf "${NREDF_LRCACHE:?}"
   fi
-  if ${GHCACHE}; then
-    rm -rf "${NREDF_GHCACHE:?}"
-  fi
   if ${DOWNLOADS}; then
-    rm -rf "${NREDF_DOWNLOADS:?}"
+    local _aqua_pkgs="${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-${HOME}/.local/share}/aquaproj-aqua}/pkgs"
+    if [[ -d "${_aqua_pkgs}" ]]; then
+      echo -e "\033[1mRemoving aqua packages\033[0m"
+      rm -rf "${_aqua_pkgs:?}"
+    fi
+    unset _aqua_pkgs
   fi
 
   if ${FULL_RELOAD}; then
-    # Force a full refresh path before replacing the current shell process.
-    if command -v chezmoi &>/dev/null; then
-      chezmoi update --apply --force >/dev/null 2>&1 || true
-    fi
+    echo -e '\033[1mStarting full reload\033[0m'
+    # LRCACHE is cleared above — chezmoi/aqua/sheldon run automatically via normal shell init
+  fi
 
-    if command -v aqua &>/dev/null; then
-      aqua install -a -l >/dev/null 2>&1 || true
-    fi
-
-    if [[ "${NREDF_SHELL_NAME}" == "zsh" ]] && command -v sheldon &>/dev/null; then
-      local SHELDON_PLUGINS_TOML="${XDG_CONFIG_HOME:-${HOME}/.config}/sheldon/plugins.toml"
-      if [[ -f "${SHELDON_PLUGINS_TOML}" ]]; then
-        sheldon --color never lock --update >/dev/null 2>&1 || true
-      fi
-    fi
+  if ${PROFILE}; then
+    export NREDF_PROFILE_STARTUP=1
   fi
 
   exec "${NREDF_SHELL_NAME}"

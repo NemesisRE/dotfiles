@@ -24,18 +24,23 @@ function _nredf_update_sheldon_plugins() {
 }
 
 function _nredf_load_p10k_early() {
+  if [[ "${NREDF_P10K_EARLY_DONE:-0}" == "1" ]]; then
+    return 0
+  fi
+
   local p10k_theme="${XDG_DATA_HOME:-${HOME}/.local/share}/sheldon/repos/github.com/romkatv/powerlevel10k/powerlevel10k.zsh-theme"
 
   # Hybrid mode: load prompt theme now, keep the rest of plugins lazy.
   if [[ -f "${p10k_theme}" ]]; then
     source "${p10k_theme}"
+    _nredf_step "p10k early: source theme"
   fi
   if [[ -f ~/.p10k.zsh ]]; then
     source ~/.p10k.zsh
-    if (( ${+functions[p10k]} )); then
-      p10k reload >/dev/null 2>&1 || true
-    fi
+    _nredf_step "p10k early: source ~/.p10k.zsh"
   fi
+
+  NREDF_P10K_EARLY_DONE=1
 }
 
 function _nredf_load_sheldon_plugins() {

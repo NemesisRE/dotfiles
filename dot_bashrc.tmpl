@@ -15,11 +15,13 @@ export NREDF_COMMON_RC_PROFILE="${NREDF_COMMON_RC_PROFILE:-full}"
 if [[ -f "${NREDF_DOT_PATH}/shell/common/rc" ]]; then
   source "${NREDF_DOT_PATH}/shell/common/rc"
 fi
+_nredf_step "source common/rc"
 
 # Optional post-common bits (safe-guarded)
 if command -v _nredf_tool_fzf_source &>/dev/null; then
   _nredf_tool_fzf_source
 fi
+_nredf_step "fzf source"
 
 if command -v __atuin_history &>/dev/null; then
   bind -x '"\C-r": __atuin_history'

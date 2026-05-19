@@ -6,3 +6,4 @@ bootstrap.sh
 .shellcheckrc
 .yamllint.yml
 .github
+renovate.json

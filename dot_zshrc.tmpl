@@ -30,11 +30,7 @@ if [[ -f "${NREDF_DOT_PATH}/shell/common/rc" ]]; then
 elif [[ -f "${NREDF_DOT_PATH}/shell/zsh/rc" ]]; then
   source "${NREDF_DOT_PATH}/shell/zsh/rc"
 fi
-
-# Ensure aqua links are present before trying to load sheldon-managed plugins.
-if command -v aqua >/dev/null 2>&1; then
-  aqua install -a -l >/dev/null 2>&1 || true
-fi
+_nredf_step "source common/rc"
 
 # Load Sheldon-managed plugins in addition to nredf rc.
 if command -v sheldon >/dev/null 2>&1 && [[ -f "${XDG_CONFIG_HOME}/sheldon/plugins.toml" ]]; then
@@ -50,12 +46,14 @@ if command -v sheldon >/dev/null 2>&1 && [[ -f "${XDG_CONFIG_HOME}/sheldon/plugi
   else
     _nredf_load_sheldon_plugins
   fi
+  _nredf_step "sheldon plugins"
 fi
 
 # zsh-specific extras
 #eval "$(starship init zsh)"
 if command -v _nredf_tool_fzf_source &>/dev/null; then
   _nredf_tool_fzf_source
+  _nredf_step "fzf source"
 fi
 if command -v atuin-search &>/dev/null; then
   bindkey '^r' atuin-search

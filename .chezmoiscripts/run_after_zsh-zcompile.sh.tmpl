@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# chezmoi run_after — zcompile zsh files only when needed.
+# Runs after managed files are applied.
+
+set -euo pipefail
+
+[[ -n "${CI:-}" ]] && exit 0
+
+ZSH_BIN="${ZSH_BIN:-$(command -v zsh || true)}"
+[[ -z "${ZSH_BIN}" ]] && exit 0
+
+zcompile_if_stale() {
+  local src="$1"
+  local zwc="${src}.zwc"
+
+  [[ -f "${src}" ]] || return 0
+
+  # Compile only when never compiled or source is newer than .zwc.
+  if [[ ! -f "${zwc}" || "${src}" -nt "${zwc}" ]]; then
+    "${ZSH_BIN}" -fc "zcompile -- \"${src}\"" >/dev/null 2>&1 || true
+  fi
+}
+
+# User prompt config managed by chezmoi.
+zcompile_if_stale "${HOME}/.p10k.zsh"
+
+# Sheldon-installed Powerlevel10k theme.
+zcompile_if_stale "${XDG_DATA_HOME:-${HOME}/.local/share}/sheldon/repos/github.com/romkatv/powerlevel10k/powerlevel10k.zsh-theme"
