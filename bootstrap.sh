@@ -42,10 +42,15 @@ fi
 # ── Apply dotfiles ─────────────────────────────────────────────────────────────
 # chezmoi init --apply will:
 #   1. Clone this repo to ~/.local/share/chezmoi
-#   2. Run .chezmoiscripts/run_once_before_install-tools.sh  (installs aqua + sheldon)
+#   2. Run .chezmoiscripts/run_once_before_install-tools.sh  (installs aqua, links sheldon via aqua)
 #   3. Apply all managed dotfiles to ~/
 step "Applying dotfiles (${DOTFILES_REPO})"
 chezmoi init --apply "${DOTFILES_REPO}"
+
+if command -v aqua &>/dev/null; then
+  step "Linking aqua-managed tools"
+  aqua install -a -l >/dev/null 2>&1 || true
+fi
 
 # ── Git identity ───────────────────────────────────────────────────────────────
 if [[ -z "$(git config --global user.email 2>/dev/null)" ]]; then

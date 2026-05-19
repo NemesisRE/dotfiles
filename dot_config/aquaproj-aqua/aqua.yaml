@@ -12,6 +12,7 @@ registries:
 
 packages:
   # ── Shell / Terminal ────────────────────────────────────────────────────────
+  - name: rossmacarthur/sheldon@0.8.5 # zsh plugin manager
   - name: atuinsh/atuin@v18.16.1 # shell history
   - name: junegunn/fzf@v0.72.0 # fuzzy finder
   - name: zellij-org/zellij@v0.44.3 # terminal multiplexer

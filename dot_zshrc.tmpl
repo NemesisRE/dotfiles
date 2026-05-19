@@ -31,6 +31,11 @@ elif [[ -f "${NREDF_DOT_PATH}/shell/zsh/rc" ]]; then
   source "${NREDF_DOT_PATH}/shell/zsh/rc"
 fi
 
+# Ensure aqua links are present before trying to load sheldon-managed plugins.
+if command -v aqua >/dev/null 2>&1; then
+  aqua install -a -l >/dev/null 2>&1 || true
+fi
+
 # Load Sheldon-managed plugins in addition to nredf rc.
 if command -v sheldon >/dev/null 2>&1 && [[ -f "${XDG_CONFIG_HOME}/sheldon/plugins.toml" ]]; then
   _nredf_load_p10k_early

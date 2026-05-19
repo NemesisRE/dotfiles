@@ -2,7 +2,7 @@
 
 Personal dotfiles managed with [chezmoi](https://chezmoi.io).
 
-On a fresh machine: installs **aqua** (CLI tool manager) and **sheldon** (zsh plugin manager) automatically before applying dotfiles.
+On a fresh machine: installs **aqua** (CLI tool manager), then links managed tools (including **sheldon**) before applying dotfiles.
 
 ## Fresh install (one-liner)
 
@@ -23,7 +23,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/NemesisRE/chezmoi/main/boots
 
 1. **chezmoi** is installed to `~/.local/bin/chezmoi`
 2. The repo is cloned to `~/.local/share/chezmoi`
-3. **aqua** (tool manager) and **sheldon** (zsh plugin manager) are installed
+3. **aqua** is installed and managed tools (including **sheldon**) are linked
 4. All dotfiles are applied to `~/`
 5. Shell data is deployed to `~/.local/share/nredf/`
 
@@ -78,4 +78,4 @@ Recommended workflow:
 |----------|---------|---------|
 | `NREDF_DOT_PATH` | `~/.local/share/nredf` | Shell library root |
 | `NREDF_COMMON_RC_PROFILE` | `full` | RC profile level (`full` / `login-minimal` / `interactive-minimal`) |
-| `NREDF_NO_BOOTSTRAP` | unset | Set to skip aqua/sheldon install on `chezmoi apply` |
+| `NREDF_NO_BOOTSTRAP` | unset | Set to skip aqua install + aqua tool linking on `chezmoi apply` |

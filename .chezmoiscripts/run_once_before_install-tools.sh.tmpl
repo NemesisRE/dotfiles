@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# chezmoi run_once_before — installs Aqua and Sheldon once per content change.
+# chezmoi run_once_before — installs Aqua once and links managed tools (incl. Sheldon).
 # Runs before managed files are applied so that the tools are available
 # when the rest of the dotfiles are activated.
 # https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/
@@ -43,14 +43,16 @@ fi
 AQUA_BIN="${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-${HOME}/.local/share}/aquaproj-aqua}/bin"
 export PATH="${AQUA_BIN}:${PATH}"
 
-# ── Sheldon ───────────────────────────────────────────────────────────────────
-if ! command -v sheldon >/dev/null 2>&1; then
-  echo "==> Installing sheldon via upstream installer"
-  # https://sheldon.cli.rs/Installation.html
-  curl --proto '=https' -fLsS https://rossmacarthur.github.io/install/crate.sh \
-    | bash -s -- --repo rossmacarthur/sheldon --to "${LOCAL_BIN}"
+# Link tools configured in aqua (including sheldon) without forcing downloads.
+if command -v aqua >/dev/null 2>&1; then
+  echo "==> aqua install -a -l (link managed tools)"
+  aqua install -a -l >/dev/null 2>&1 || true
+fi
+
+if command -v sheldon >/dev/null 2>&1; then
+  echo "==> sheldon available ($(sheldon --version 2>/dev/null || true))"
 else
-  echo "==> sheldon already installed ($(sheldon --version 2>/dev/null || true))"
+  echo "Warning: sheldon not found after aqua link step"
 fi
 
 # ── Sheldon plugins ───────────────────────────────────────────────────────────
