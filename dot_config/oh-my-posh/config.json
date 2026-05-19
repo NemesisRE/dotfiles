@@ -1,0 +1,286 @@
+{
+  "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
+  "version": 4,
+  "final_space": true,
+  "console_title_template": "{{ .Shell }} in {{ .Folder }}",
+  "terminal_background": "#1e1e1e",
+  "blocks": [
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "segments": [
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "8",
+          "template": "╭─"
+        },
+        {
+          "type": "os",
+          "style": "powerline",
+          "foreground": "0",
+          "background": "7",
+          "template": " {{ .Icon }} "
+        },
+        {
+          "type": "path",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "foreground": "254",
+          "background": "4",
+          "template": "  {{ .Path }} ",
+          "options": {
+            "style": "full",
+            "max_depth": 10
+          }
+        },
+        {
+          "type": "git",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "foreground": "0",
+          "background": "2",
+          "background_templates": [
+            "{{ if or .Working.Changed .Staging.Changed }}3{{ end }}"
+          ],
+          "template": " {{ .UpstreamIcon }}{{ .HEAD }}{{ if .BranchStatus }} {{ .BranchStatus }}{{ end }}{{ if gt .StashCount 0 }} *{{ .StashCount }}{{ end }}{{ if gt .Working.Unmerged 0 }} ~{{ .Working.Unmerged }}{{ end }}{{ if gt .Staging.Added 0 }} +{{ .Staging.Added }}{{ end }}{{ if gt .Working.Modified 0 }} !{{ .Working.Modified }}{{ end }}{{ if gt .Working.Untracked 0 }} ?{{ .Working.Untracked }}{{ end }}{{ if gt .Working.Deleted 0 }} ✘{{ .Working.Deleted }}{{ end }} ",
+          "options": {
+            "fetch_status": true,
+            "fetch_upstream_icon": true,
+            "fetch_push_status": true,
+            "branch_icon": "  "
+          }
+        }
+      ]
+    },
+    {
+      "type": "prompt",
+      "alignment": "right",
+      "filler": "─",
+      "segments": [
+        {
+          "type": "status",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "leading_powerline_symbol": "",
+          "foreground": "2",
+          "foreground_templates": [
+            "{{ if .Error }}3{{ end }}"
+          ],
+          "background": "0",
+          "background_templates": [
+            "{{ if .Error }}1{{ end }}"
+          ],
+          "template": " {{ if eq .Code 0 }}✔{{ else }}{{ .Code }} ✘{{ end }} ",
+          "options": {
+            "always_enabled": true
+          }
+        },
+        {
+          "type": "executiontime",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "leading_powerline_symbol": "",
+          "foreground": "0",
+          "background": "3",
+          "template": " 󱎫 {{ .FormattedMs }} ",
+          "options": {
+            "threshold": 3000,
+            "style": "austin"
+          }
+        },
+        {
+          "type": "node",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "leading_powerline_symbol": "",
+          "foreground": "0",
+          "background": "2",
+          "template": "  {{ .Full }} ",
+          "options": {
+            "display_mode": "context",
+            "home_enabled": false
+          }
+        },
+        {
+          "type": "go",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "leading_powerline_symbol": "",
+          "foreground": "0",
+          "background": "4",
+          "template": "  {{ .Full }} ",
+          "options": {
+            "display_mode": "context",
+            "home_enabled": false
+          }
+        },
+        {
+          "type": "python",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "leading_powerline_symbol": "",
+          "foreground": "0",
+          "background": "4",
+          "template": "  {{ if .Venv }}{{ .Venv }} {{ end }}{{ .Full }} ",
+          "options": {
+            "display_mode": "context",
+            "home_enabled": false,
+            "fetch_virtual_env": true,
+            "display_default": true
+          }
+        },
+        {
+          "type": "rust",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "leading_powerline_symbol": "",
+          "foreground": "0",
+          "background": "208",
+          "template": "  {{ .Full }} ",
+          "options": {
+            "display_mode": "context",
+            "home_enabled": false
+          }
+        },
+        {
+          "type": "java",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "leading_powerline_symbol": "",
+          "foreground": "1",
+          "background": "7",
+          "options": {
+            "display_mode": "context",
+            "home_enabled": false
+          }
+        },
+        {
+          "type": "ruby",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "leading_powerline_symbol": "",
+          "foreground": "0",
+          "background": "1",
+          "options": {
+            "display_mode": "context",
+            "home_enabled": false
+          }
+        },
+        {
+          "type": "terraform",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "leading_powerline_symbol": "",
+          "foreground": "4",
+          "background": "0"
+        },
+        {
+          "type": "aws",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "leading_powerline_symbol": "",
+          "foreground": "7",
+          "background": "1"
+        },
+        {
+          "type": "az",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "leading_powerline_symbol": "",
+          "foreground": "7",
+          "background": "4"
+        },
+        {
+          "type": "gcp",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "leading_powerline_symbol": "",
+          "foreground": "7",
+          "background": "4"
+        },
+        {
+          "type": "time",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "foreground": "0",
+          "background": "7",
+          "template": "<background,parentBackground></> {{ .CurrentDate | date .Format }} ",
+          "options": {
+            "time_format": "15:04:05"
+          }
+        },
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "8",
+          "template": "─╮"
+        }
+      ]
+    },
+    {
+      "type": "prompt",
+      "alignment": "left",
+      "newline": true,
+      "segments": [
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "8",
+          "template": "╰─"
+        },
+        {
+          "type": "kubectl",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "foreground": "7",
+          "background": "5",
+          "template": " 󱃾 {{ .Context }}{{ if .Namespace }} :: {{ .Namespace }}{{ end }} ",
+          "options": {
+            "parse_kubeconfig": true
+          }
+        },
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "2",
+          "foreground_templates": [
+            "{{ if gt .Code 0 }}1{{ end }}"
+          ],
+          "template": "❯"
+        }
+      ]
+    },
+    {
+      "type": "prompt",
+      "alignment": "right",
+      "segments": [
+        {
+          "type": "battery",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "leading_powerline_symbol": "",
+          "foreground": "0",
+          "background": "2",
+          "background_templates": [
+            "{{ if lt .Percentage 20 }}1{{ end }}",
+            "{{ if and (ge .Percentage 20) (lt .Percentage 50) }}3{{ end }}"
+          ],
+          "template": " {{ if not .Error }}{{ .Percentage }}% {{ .Icon }}{{ end }} ",
+          "options": {
+            "charging_icon": "󰂄",
+            "discharging_icon": "󰂃",
+            "charged_icon": "󰁹",
+            "not_charging_icon": "󰁹"
+          }
+        },
+        {
+          "type": "text",
+          "style": "plain",
+          "foreground": "8",
+          "template": "─╯"
+        }
+      ]
+    }
+  ]
+}

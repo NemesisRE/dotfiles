@@ -5,7 +5,7 @@
 
 registries:
   - type: standard
-    ref: v4.513.0 # renovate: depName=aquaproj/aqua-registry
+    ref: v4.513.1 # renovate: depName=aquaproj/aqua-registry
   - name: local
     type: local
     path: registry.yaml
@@ -38,7 +38,7 @@ packages:
   - name: helix-editor/helix@25.07.1
   - name: aristocratos/btop@latest # system monitor
   - name: bcicen/ctop@v0.7.7 # container monitor
-  - name: starship/starship@v1.25.1 # shell prompt
+  - name: JanDeDobbeleer/oh-my-posh@v29.14.0 # prompt theming engine
   - name: smallstep/cli@v0.30.2 # step CA / cert tool
   - name: mr-karan/doggo@v1.1.5 # DNS lookup tool
 
@@ -46,9 +46,9 @@ packages:
   - name: kubernetes/kubernetes/kubectl@v1.36.1
   - name: kubernetes/kubernetes/kubeadm@v1.30.3
   - name: derailed/k9s@v0.50.18
-  - name: kubernetes-sigs/kustomize@v3.3.1
+  - name: kubernetes-sigs/kustomize@kustomize/v5.8.1
   - name: kubernetes-sigs/krew@v0.5.0
-  - name: velero-io/velero@v1.18.0
+  - name: velero-io/velero@v1.18.1
   - name: projectcalico/calico/calicoctl@v3.32.0
   - name: bitnami-labs/sealed-secrets@v0.36.6 # kubeseal
   - name: doitintl/kube-no-trouble@0.7.3 # kubent
@@ -62,4 +62,4 @@ packages:
   - name: bitwarden/clients@cli-v2026.4.1 # bw CLI (needed for SSH TOTP)
   - name: hashicorp/terraform@v1.15.3
   - name: hashicorp/packer@v1.15.3
-  - name: hashicorp/vault@v2.0.0
+  - name: hashicorp/vault@v2.0.1
