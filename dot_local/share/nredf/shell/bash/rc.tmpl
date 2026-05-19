@@ -42,8 +42,6 @@ shopt -s checkwinsize
 # Write history after every command
 PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND$'\n'}history -a; history -c; history -r"
 
-[[ -f "${NREDF_RC_PATH}/bash-preexec.sh" ]] && source "${NREDF_RC_PATH}/bash-preexec.sh"
-
 # Dynamic completions
 if [[ -d "${XDG_CONFIG_HOME}/completion/bash" ]]; then
   # shellcheck disable=SC1090

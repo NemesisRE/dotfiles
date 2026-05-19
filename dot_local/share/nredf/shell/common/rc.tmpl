@@ -10,6 +10,23 @@ NREDF_COMMON_RC_PROFILE="${NREDF_COMMON_RC_PROFILE:-full}"
 # Standard 24h throttle interval for all daily operations
 NREDF_24H_INTERVAL=86400
 
+_nredf_refresh_cached_shell_snippet() {
+  local cache_key="$1"
+  local cache_file="$2"
+  shift 2
+
+  if ! _nredf_last_run "${cache_key}" || [[ ! -s "${cache_file}" ]]; then
+    mkdir -p "${cache_file%/*}"
+    if "$@" >| "${cache_file}" 2>/dev/null; then
+      _nredf_last_run "${cache_key}" "true" "$(($(date +%s) + NREDF_24H_INTERVAL))"
+    else
+      rm -f "${cache_file}"
+    fi
+  fi
+
+  [[ -s "${cache_file}" ]] && source "${cache_file}"
+}
+
 # Load all common function files
 for NREDF_FUNCTIONS in "${NREDF_DOT_PATH}/shell/common/functions/"*; do
   # shellcheck disable=SC1090
@@ -71,7 +88,10 @@ if [[ "${NREDF_COMMON_RC_PROFILE}" == "interactive-minimal" ]]; then
   _nredf_set_local true
   _nredf_step "_nredf_set_local aliases (interactive-minimal)"
   if command -v atuin &>/dev/null; then
-    eval "$(atuin init "${NREDF_SHELL_NAME}")"
+    _nredf_refresh_cached_shell_snippet \
+      "_nredf_atuin_init_${NREDF_SHELL_NAME}" \
+      "${XDG_CACHE_HOME}/nredf/init/atuin.${NREDF_SHELL_NAME}.sh" \
+      atuin init "${NREDF_SHELL_NAME}"
   fi
   _nredf_step "atuin init (interactive-minimal)"
   return
@@ -100,16 +120,20 @@ _nredf_set_local true
 _nredf_step "_nredf_set_local aliases"
 
 # Atuin init — cache shell completion evaluation for 24h
-if command -v atuin &>/dev/null && ! _nredf_last_run "_nredf_atuin_init"; then
-  eval "$(atuin init "${NREDF_SHELL_NAME}")"
-  _nredf_last_run "_nredf_atuin_init" "true" "$(($(date +%s) + NREDF_24H_INTERVAL))"
+if command -v atuin &>/dev/null; then
+  _nredf_refresh_cached_shell_snippet \
+    "_nredf_atuin_init_${NREDF_SHELL_NAME}" \
+    "${XDG_CACHE_HOME}/nredf/init/atuin.${NREDF_SHELL_NAME}.sh" \
+    atuin init "${NREDF_SHELL_NAME}"
 fi
 _nredf_step "atuin init"
 
 # FNM env — cache env evaluation for 24h
-if command -v fnm &>/dev/null && ! _nredf_last_run "_nredf_fnm_env"; then
-  eval "$(fnm env --use-on-cd)"
-  _nredf_last_run "_nredf_fnm_env" "true" "$(($(date +%s) + NREDF_24H_INTERVAL))"
+if command -v fnm &>/dev/null; then
+  _nredf_refresh_cached_shell_snippet \
+    "_nredf_fnm_env_${NREDF_SHELL_NAME}" \
+    "${XDG_CACHE_HOME}/nredf/init/fnm.${NREDF_SHELL_NAME}.sh" \
+    fnm env --use-on-cd
 fi
 _nredf_step "fnm env"
 

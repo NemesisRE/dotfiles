@@ -1,0 +1,5 @@
+[".local/share/blesh"]
+type = "archive"
+url = "{{ printf "https://github.com/akinomyoga/ble.sh/releases/download/%s/ble-%s.tar.xz" .ble.tag (trimPrefix "v" .ble.tag) }}"
+exact = true
+stripComponents = 1

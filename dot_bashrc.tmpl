@@ -11,6 +11,11 @@ export NREDF_SHELL_NAME="bash"
 export NREDF_DOT_PATH="${NREDF_DOT_PATH:-${XDG_DATA_HOME}/nredf}"
 export NREDF_COMMON_RC_PROFILE="${NREDF_COMMON_RC_PROFILE:-full}"
 
+if [[ -f "${XDG_DATA_HOME}/blesh/ble.sh" ]]; then
+  # ble.sh should be sourced near the top of .bashrc and attached at the end.
+  source -- "${XDG_DATA_HOME}/blesh/ble.sh" --attach=none
+fi
+
 # Source common rc if present
 if [[ -f "${NREDF_DOT_PATH}/shell/common/rc" ]]; then
   source "${NREDF_DOT_PATH}/shell/common/rc"
@@ -24,5 +29,14 @@ fi
 _nredf_step "fzf source"
 
 if command -v __atuin_history &>/dev/null; then
-  bind -x '"\C-r": __atuin_history'
+  if [[ -n "${BLE_VERSION-}" ]] && command -v ble-bind &>/dev/null; then
+    ble-bind -x 'C-r' __atuin_history
+  else
+    bind -x '"\C-r": __atuin_history'
+  fi
+fi
+
+if [[ -n "${BLE_VERSION-}" ]]; then
+  ble-attach
+  _nredf_step "ble attach"
 fi
