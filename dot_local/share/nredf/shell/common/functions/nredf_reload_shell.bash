@@ -8,6 +8,7 @@ _nredf_reload_shell () {
   local LRCACHE=false
   local GHCACHE=false
   local DOWNLOADS=false
+  local FULL_RELOAD=false
   while [[ "$#" -gt 0 ]]; do
     case "$1" in
       -c | --cache)
@@ -23,6 +24,7 @@ _nredf_reload_shell () {
         LRCACHE=true
         GHCACHE=true
         DOWNLOADS=true
+        FULL_RELOAD=true
         shift 1
       ;;
       -l | --last-run)
@@ -37,7 +39,7 @@ Usage: reload [options]
 Options:
 -c, [--cache]               # Delete 'Last Run Cache' and 'Version Cache'
 -d, [--downloads]           # Delete only 'Download Cache'
--f, [--full]                # Delete all caches
+-f, [--full]                # Full refresh: clear caches + chezmoi/aqua/(zsh:sheldon)
 -l, [--last-run]            # Delete only 'Last Run Cache'
 -h, [--help]                # Show this help
 -s SHELL, [--shell SHELL]   # Reload with a different shell
@@ -74,5 +76,24 @@ Options:
   if ${DOWNLOADS}; then
     rm -rf "${NREDF_DOWNLOADS:?}"
   fi
+
+  if ${FULL_RELOAD}; then
+    # Force a full refresh path before replacing the current shell process.
+    if command -v chezmoi &>/dev/null; then
+      chezmoi update --apply --force >/dev/null 2>&1 || true
+    fi
+
+    if command -v aqua &>/dev/null; then
+      aqua install -a -l >/dev/null 2>&1 || true
+    fi
+
+    if [[ "${NREDF_SHELL_NAME}" == "zsh" ]] && command -v sheldon &>/dev/null; then
+      local SHELDON_PLUGINS_TOML="${XDG_CONFIG_HOME:-${HOME}/.config}/sheldon/plugins.toml"
+      if [[ -f "${SHELDON_PLUGINS_TOML}" ]]; then
+        sheldon --color never lock --update >/dev/null 2>&1 || true
+      fi
+    fi
+  fi
+
   exec "${NREDF_SHELL_NAME}"
 }
