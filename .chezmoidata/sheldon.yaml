@@ -1,4 +1,4 @@
-# Generated from existing zplug definitions. Review before applying.
+# Managed by chezmoi — Sheldon plugin inventory overrides.
 plugins:
   - repo: "ohmyzsh/ohmyzsh"
     use: "lib/*.zsh"

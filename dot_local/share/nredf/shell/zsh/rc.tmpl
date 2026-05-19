@@ -5,7 +5,7 @@
 [[ ! -d "${XDG_CACHE_HOME}/zsh" ]] && mkdir -p "${XDG_CACHE_HOME}/zsh"
 fpath=("${HOME}/.config/completion/zsh" "${fpath[@]}")
 
-if (( ! ${+functions[_nredf_zplug]} )); then
+if (( ! ${+functions[_nredf_load_sheldon_plugins]} )); then
   export NREDF_RC_PATH="${NREDF_RC_PATH:-${NREDF_DOT_PATH}/shell/${NREDF_SHELL_NAME}}"
 
   if (( ! ${+functions[_nredf_init_paths]} )); then

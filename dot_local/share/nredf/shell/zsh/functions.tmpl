@@ -1,6 +1,27 @@
 #!/usr/bin/env bash
 # chezmoi-managed: sheldon plugin loader for zsh
-# This replaces the legacy `_nredf_zplug` with a sheldon-aware implementation.
+
+function _nredf_update_sheldon_plugins() {
+  local sheldon_conf="${XDG_CONFIG_HOME:-${HOME}/.config}/sheldon/plugins.toml"
+
+  if [[ ! -f "${sheldon_conf}" ]]; then
+    return 0
+  fi
+
+  if ! command -v sheldon >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if ! _nredf_last_run "_nredf_update_sheldon_plugins"; then
+    if ! _nredf_create_lock; then
+      return 0
+    fi
+
+    _nredf_last_run "_nredf_update_sheldon_plugins" "true" "$(($(date +%s) + 86400))"
+    sheldon --color never lock --update >/dev/null 2>&1 || true
+    _nredf_remove_lock
+  fi
+}
 
 function _nredf_load_p10k_early() {
   local p10k_theme="${XDG_DATA_HOME:-${HOME}/.local/share}/sheldon/repos/github.com/romkatv/powerlevel10k/powerlevel10k.zsh-theme"
@@ -18,6 +39,8 @@ function _nredf_load_p10k_early() {
 }
 
 function _nredf_load_sheldon_plugins() {
+  _nredf_update_sheldon_plugins
+
   # Initialize completion before plugin load if compdef is still unavailable.
   if (( ! ${+functions[compdef]} )); then
     autoload -Uz compinit
@@ -28,34 +51,5 @@ function _nredf_load_sheldon_plugins() {
   # Re-apply prompt config after full plugin load to keep p10k in sync.
   if (( ${+functions[_nredf_load_p10k_early]} )); then
     _nredf_load_p10k_early
-  fi
-}
-
-function _nredf_zplug() {
-  local sheldon_conf="${XDG_CONFIG_HOME:-${HOME}/.config}/sheldon/plugins.toml"
-
-  # If no sheldon config present, nothing to do here.
-  if [[ ! -f "${sheldon_conf}" ]]; then
-    return 0
-  fi
-
-  if command -v sheldon >/dev/null 2>&1; then
-    # Some plugins register completions at load time via compdef.
-    if (( ! ${+functions[compdef]} )); then
-      autoload -Uz compinit
-      compinit -i
-    fi
-
-    # Load plugins: sheldon source outputs eval-able shell code.
-    eval "$(sheldon source)"
-
-    # Install/verify plugins in the background when the lock file is stale.
-    # `sheldon lock` is idempotent and non-interactive.
-    if [[ -z "${SUDO_COMMAND}" ]]; then
-      sheldon lock >/dev/null 2>&1 || true
-    fi
-  else
-    # sheldon not installed — do not error the shell. User should install sheldon.
-    :
   fi
 }

@@ -49,17 +49,9 @@ if command -v aqua >/dev/null 2>&1; then
   aqua install -a -l >/dev/null 2>&1 || true
 fi
 
-if command -v sheldon >/dev/null 2>&1; then
-  echo "==> sheldon available ($(sheldon --version 2>/dev/null || true))"
-else
-  echo "Warning: sheldon not found after aqua link step"
-fi
-
-# ── Sheldon plugins ───────────────────────────────────────────────────────────
-SHELDON_PLUGINS_TOML="${XDG_CONFIG_HOME:-${HOME}/.config}/sheldon/plugins.toml"
-if command -v sheldon >/dev/null 2>&1 && [[ -f "${SHELDON_PLUGINS_TOML}" ]]; then
-  echo "==> sheldon lock (install/verify plugins)"
-  sheldon lock || echo "Warning: sheldon lock exited non-zero"
+if command -v sheldon >/dev/null 2>&1 && [[ -f "${XDG_CONFIG_HOME:-${HOME}/.config}/sheldon/plugins.toml" ]]; then
+  echo "==> updating shell plugins"
+  sheldon --color never lock --update >/dev/null 2>&1 || true
 fi
 
 echo "==> Bootstrap done."
