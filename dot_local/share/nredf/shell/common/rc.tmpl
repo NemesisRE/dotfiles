@@ -60,10 +60,6 @@ if [[ "${NREDF_COMMON_RC_PROFILE}" == "interactive-minimal" ]]; then
 fi
 
 if [[ -z ${SUDO_COMMAND} ]]; then
-  if command -v gh &>/dev/null && ! gh auth status &>/dev/null; then
-    echo -e "\033[1;33mTo get started with GitHub CLI, please run:\033[0m\033[1m gh auth login\033[0m"
-    echo -e "\033[1;33mthis will simplify the tool downloads too\033[0m"
-  fi
   # Ensure aqua-managed command links exist (link-only, no eager downloads)
   if command -v aqua &>/dev/null; then
     aqua install -a -l >/dev/null 2>&1 || true

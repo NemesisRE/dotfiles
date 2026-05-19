@@ -18,7 +18,7 @@ function _nredf_macos_prerquisites() {
   local BREW_UPGRADE_KEY="_nredf_macos_prerquisites_brew_upgrade"
   local BREW_CLEANUP_INTERVAL=86400
   local BREW_CLEANUP_KEY="_nredf_macos_prerquisites_brew_cleanup"
-  local FORMULAE=(bash git diffutils util-linux gh fnm)
+  local FORMULAE=(bash git diffutils util-linux fnm)
   local FORMULA=""
   local MISSING_FORMULAE_INSTALLED=false
   local NEXT_BREW_UPGRADE="$(($(date +%s) + BREW_UPGRADE_INTERVAL))"
