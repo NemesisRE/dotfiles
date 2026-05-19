@@ -9,7 +9,13 @@ export XDG_DATA_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}"
 
 export NREDF_SHELL_NAME="zsh"
 export NREDF_DOT_PATH="${NREDF_DOT_PATH:-${XDG_DATA_HOME}/nredf}"
-export NREDF_COMMON_RC_PROFILE="${NREDF_COMMON_RC_PROFILE:-full}"
+export NREDF_RC_PATH="${NREDF_DOT_PATH}/shell/${NREDF_SHELL_NAME}"
+# In interactive zsh, ensure full profile so aliases/functions are loaded.
+if [[ "${NREDF_COMMON_RC_PROFILE:-}" == "login-minimal" ]]; then
+  export NREDF_COMMON_RC_PROFILE="full"
+else
+  export NREDF_COMMON_RC_PROFILE="${NREDF_COMMON_RC_PROFILE:-full}"
+fi
 export NREDF_SHELDON_LAZY_LOAD="${NREDF_SHELDON_LAZY_LOAD:-1}"
 
 # Some plugins still invoke `python`; prefer python3 when only python3 exists.
@@ -18,14 +24,16 @@ if ! command -v python >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; th
 fi
 export GENCOMPL_PY="${GENCOMPL_PY:-python3}"
 
-# Prefer Sheldon-managed plugins if available, otherwise fall back to chezmoi-managed rc
+# Always source common rc first (it chains into shell-specific rc).
+if [[ -f "${NREDF_DOT_PATH}/shell/common/rc" ]]; then
+  source "${NREDF_DOT_PATH}/shell/common/rc"
+elif [[ -f "${NREDF_DOT_PATH}/shell/zsh/rc" ]]; then
+  source "${NREDF_DOT_PATH}/shell/zsh/rc"
+fi
+
+# Load Sheldon-managed plugins in addition to nredf rc.
 if command -v sheldon >/dev/null 2>&1 && [[ -f "${XDG_CONFIG_HOME}/sheldon/plugins.toml" ]]; then
-  _nredf_load_sheldon_plugins() {
-    # Initialize completion before plugin load so compdef is available.
-    autoload -Uz compinit
-    compinit -i
-    eval "$(sheldon source)"
-  }
+  _nredf_load_p10k_early
 
   if [[ "${NREDF_SHELDON_LAZY_LOAD}" == "1" ]]; then
     autoload -Uz add-zsh-hook
@@ -37,18 +45,9 @@ if command -v sheldon >/dev/null 2>&1 && [[ -f "${XDG_CONFIG_HOME}/sheldon/plugi
   else
     _nredf_load_sheldon_plugins
   fi
-else
-  # Prefer a chezmoi-managed zsh rc (rendered to ~/shell/zsh/rc), then fall back
-  # to the legacy dotfiles path if the chezmoi files are not present.
-  if [[ -f "${NREDF_DOT_PATH}/shell/zsh/rc" ]]; then
-    source "${NREDF_DOT_PATH}/shell/zsh/rc"
-  elif [[ -f "${NREDF_DOT_PATH}/shell/common/rc" ]]; then
-    source "${NREDF_DOT_PATH}/shell/common/rc"
-  fi
 fi
 
 # zsh-specific extras
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 #eval "$(starship init zsh)"
 if command -v _nredf_tool_fzf_source &>/dev/null; then
   _nredf_tool_fzf_source

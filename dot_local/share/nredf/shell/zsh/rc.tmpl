@@ -16,12 +16,10 @@ if (( ! ${+functions[_nredf_zplug]} )); then
   [[ -f "${NREDF_RC_PATH}/functions" ]] && source "${NREDF_RC_PATH}/functions"
 fi
 
-_nredf_zplug
-
 export HISTFILE="${XDG_STATE_HOME}"/zsh/history
 rm -f "${HOME}/.zcompdump"
 autoload -Uz compinit
 compinit -u -d "${HOME}/.zcompdump"
 zstyle ':completion:*' cache-path "${XDG_CACHE_HOME}/zsh/zcompcache"
-zstyle -e ':completion:*' special-dirs '[[ $PREFIX = (../)#(|.|..) ]] && reply=(..)' 
+zstyle -e ':completion:*' special-dirs '[[ $PREFIX = (../)#(|.|..) ]] && reply=(..)'
 zmodload zsh/mathfunc

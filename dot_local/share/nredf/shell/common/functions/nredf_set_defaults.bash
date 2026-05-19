@@ -2,6 +2,35 @@
 #
 # vim: ts=2 sw=2 et ff=unix ft=bash syntax=sh
 
+function _nredf_set_aqua_env() {
+  local _nredf_aqua_base_config="${XDG_CONFIG_HOME}/aquaproj-aqua/aqua.yaml"
+  local _nredf_aqua_machine_config="${XDG_CONFIG_HOME}/aquaproj-aqua/machine.yaml"
+  local _nredf_aqua_policy_config="${XDG_CONFIG_HOME}/aquaproj-aqua/aqua-policy.yaml"
+
+  if [[ -f "${_nredf_aqua_base_config}" ]]; then
+    export AQUA_CONFIG="${_nredf_aqua_base_config}"
+    export AQUA_GLOBAL_CONFIG="${_nredf_aqua_base_config}"
+    if [[ -f "${_nredf_aqua_machine_config}" ]]; then
+      export AQUA_GLOBAL_CONFIG="${AQUA_GLOBAL_CONFIG}:${_nredf_aqua_machine_config}"
+    fi
+  fi
+
+  if [[ -f "${_nredf_aqua_policy_config}" ]]; then
+    export AQUA_POLICY_CONFIG="${_nredf_aqua_policy_config}"
+  fi
+
+  unset _nredf_aqua_base_config _nredf_aqua_machine_config _nredf_aqua_policy_config
+}
+
+function _nredf_set_aqua_path() {
+  local _nredf_aqua_bin="${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-${HOME}/.local/share}/aquaproj-aqua}/bin"
+  case ":${PATH}:" in
+  *":${_nredf_aqua_bin}:"*) ;;
+  *) export PATH="${_nredf_aqua_bin}:${PATH}" ;;
+  esac
+  unset _nredf_aqua_bin
+}
+
 function _nredf_set_defaults() {
   echo -e '\033[1mSetting defaults\033[0m'
   [[ -f "${HOME}/.proxy.local" ]] && source "${HOME}/.proxy.local"
@@ -27,6 +56,7 @@ function _nredf_set_defaults() {
   _nredf_init_paths
 
   export PATH="${HOME}/bin:${XDG_BIN_HOME}:/usr/local/bin:${PATH}"
+  _nredf_set_aqua_path
   [[ -d /snap/bin ]] && export PATH="${PATH}:/snap/bin"
   export GOPATH="${HOME}/.local"
   export RLWRAP_HOME="${XDG_CACHE_HOME}/RLWRAP"
@@ -96,6 +126,9 @@ function _nredf_set_defaults() {
   export XAUTHORITY="${XDG_RUNTIME_DIR}/Xauthority"
 
   export _Z_DATA="${XDG_DATA_HOME}/z"
+
+  # aqua configuration via environment (base + optional machine override)
+  _nredf_set_aqua_env
 
   # asdf config
   export ASDF_DATA_DIR="${XDG_DATA_HOME}/asdf"

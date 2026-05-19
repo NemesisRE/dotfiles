@@ -58,6 +58,20 @@ aqua install            # install/update all managed CLI tools
 sheldon lock            # refresh zsh plugin lockfile
 ```
 
+## Central dependency updates
+
+Use centralized update PRs instead of local ad-hoc updates to avoid drift from chezmoi-managed files.
+
+- Renovate config is in [renovate.json](renovate.json)
+- GitHub Actions dependency updates are grouped automatically
+- aqua registry ref in [dot_config/aquaproj-aqua/aqua.yaml](dot_config/aquaproj-aqua/aqua.yaml) is updated via Renovate regex manager
+
+Recommended workflow:
+
+1. Let Renovate open PRs
+2. Merge PRs in this repo
+3. Apply everywhere via chezmoi update
+
 ## Environment variables
 
 | Variable | Default | Purpose |

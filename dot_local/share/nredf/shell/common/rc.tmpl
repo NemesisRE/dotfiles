@@ -33,6 +33,10 @@ if [[ -z "${NREDF_COMMON_DEFAULTS_DONE}" ]]; then
   NREDF_COMMON_DEFAULTS_DONE="true"
 fi
 
+# Ensure aqua config env is always present, even if defaults were already marked done.
+_nredf_set_aqua_env
+_nredf_set_aqua_path
+
 # Run on each shell init so child/login shells always inherit a valid SSH_AUTH_SOCK.
 _nredf_set_ssh_agent
 
@@ -60,8 +64,10 @@ if [[ -z ${SUDO_COMMAND} ]]; then
     echo -e "\033[1;33mTo get started with GitHub CLI, please run:\033[0m\033[1m gh auth login\033[0m"
     echo -e "\033[1;33mthis will simplify the tool downloads too\033[0m"
   fi
-  # Install any missing aqua-managed tools (throttled to once per 12h)
-  _nredf_aqua_update
+  # Ensure aqua-managed command links exist (link-only, no eager downloads)
+  if command -v aqua &>/dev/null; then
+    aqua install -a -l >/dev/null 2>&1 || true
+  fi
 fi
 
 # Shell-specific customization

@@ -1,0 +1,11 @@
+# aqua policy configuration
+# Allow standard registry plus our local registry for custom packages (e.g. natesales/q).
+registries:
+  - type: standard
+  - name: local
+    type: local
+    path: registry.yaml
+
+packages:
+  - registry: standard
+  - registry: local
