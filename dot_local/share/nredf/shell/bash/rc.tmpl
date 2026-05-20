@@ -36,11 +36,12 @@ HISTFILESIZE=2000
 # update the values of LINES and COLUMNS.
 shopt -s checkwinsize
 
-# Load custom prompt
-#[[ ${TERM} != "linux" ]] && source "${NREDF_RC_PATH}/ps1/shell_prompt.sh"
-
 # Write history after every command
 PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND$'\n'}history -a; history -c; history -r"
+
+if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 4) )) && command -v oh-my-posh &>/dev/null && [[ -f "${XDG_CONFIG_HOME}/oh-my-posh/config.json" ]]; then
+  eval "$(oh-my-posh init bash --config "${XDG_CONFIG_HOME}/oh-my-posh/config.json")"
+fi
 
 # Dynamic completions
 if [[ -d "${XDG_CONFIG_HOME}/completion/bash" ]]; then

@@ -33,6 +33,10 @@ for NREDF_FUNCTIONS in "${NREDF_DOT_PATH}/shell/common/functions/"*; do
   source "${NREDF_FUNCTIONS}"
 done
 
+# Rebuild shell-specific paths on every init so child shells do not inherit
+# stale values such as zsh-specific rc paths from the parent environment.
+_nredf_init_paths
+
 # Initialize startup profiling (no-op unless NREDF_PROFILE_STARTUP=1 via `reload -p`)
 _nredf_profile_init
 _nredf_step "source common functions"

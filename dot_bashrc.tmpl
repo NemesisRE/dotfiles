@@ -4,11 +4,32 @@
 # If not running interactively, don't do anything
 [ -z "${PS1}" ] && return
 
+if [[ -z "${NREDF_BREW_BASH_EXECUTED:-}" ]] && (( BASH_VERSINFO[0] < 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] < 4) )); then
+  for NREDF_BREW_BASH in /opt/homebrew/bin/bash /usr/local/bin/bash; do
+    if [[ -x "${NREDF_BREW_BASH}" && "${BASH:-}" != "${NREDF_BREW_BASH}" ]]; then
+      NREDF_BREW_BASH_DIR="${NREDF_BREW_BASH%/bash}"
+      if [[ ":${PATH}:" != *":${NREDF_BREW_BASH_DIR}:"* ]]; then
+        export PATH="${NREDF_BREW_BASH_DIR}:${PATH}"
+      fi
+      export NREDF_BREW_BASH_EXECUTED=1
+      exec "${NREDF_BREW_BASH}" -i
+    fi
+  done
+fi
+
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-${HOME}/.config}"
 export XDG_DATA_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}"
 
+if ! command -v _nredf_step >/dev/null 2>&1; then
+  _nredf_step() { :; }
+fi
+
 export NREDF_SHELL_NAME="bash"
 export NREDF_DOT_PATH="${NREDF_DOT_PATH:-${XDG_DATA_HOME}/nredf}"
+if [[ ! -f "${NREDF_DOT_PATH}/shell/common/rc" && -f "${XDG_DATA_HOME}/nredf/shell/common/rc" ]]; then
+  export NREDF_DOT_PATH="${XDG_DATA_HOME}/nredf"
+fi
+export NREDF_RC_PATH="${NREDF_DOT_PATH}/shell/${NREDF_SHELL_NAME}"
 export NREDF_COMMON_RC_PROFILE="${NREDF_COMMON_RC_PROFILE:-full}"
 
 if [[ -f "${XDG_DATA_HOME}/blesh/ble.sh" ]]; then

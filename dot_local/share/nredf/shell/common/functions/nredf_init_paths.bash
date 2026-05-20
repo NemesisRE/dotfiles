@@ -14,11 +14,11 @@ function _nredf_init_paths() {
   export NREDF_COMMON_RC_LOCAL="${NREDF_COMMON_RC_LOCAL:-${HOME}/.config/shell}"
 
   if [[ -n "${NREDF_SHELL_NAME}" ]]; then
-    export NREDF_RC_LOCAL="${NREDF_RC_LOCAL:-${HOME}/.config/${NREDF_SHELL_NAME}}"
+    export NREDF_RC_LOCAL="${HOME}/.config/${NREDF_SHELL_NAME}"
   fi
 
   if [[ -n "${NREDF_DOT_PATH}" && -n "${NREDF_SHELL_NAME}" ]]; then
-    export NREDF_RC_PATH="${NREDF_RC_PATH:-${NREDF_DOT_PATH}/shell/${NREDF_SHELL_NAME}}"
+    export NREDF_RC_PATH="${NREDF_DOT_PATH}/shell/${NREDF_SHELL_NAME}"
   fi
 
   local NREDF_PATH=""

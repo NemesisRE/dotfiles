@@ -1,6 +1,10 @@
 #!/usr/bin/env zsh
 # chezmoi-managed zsh/rc
 
+if (( ! ${+functions[_nredf_step]} )); then
+  _nredf_step() { :; }
+fi
+
 [[ ! -d "${XDG_STATE_HOME}/zsh" ]] && mkdir -p "${XDG_STATE_HOME}/zsh"
 [[ ! -d "${XDG_CACHE_HOME}/zsh" ]] && mkdir -p "${XDG_CACHE_HOME}/zsh"
 fpath=("${HOME}/.config/completion/zsh" "${fpath[@]}")
