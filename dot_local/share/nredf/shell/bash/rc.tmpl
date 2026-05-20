@@ -45,8 +45,11 @@ fi
 
 # Dynamic completions
 if [[ -d "${XDG_CONFIG_HOME}/completion/bash" ]]; then
-  # shellcheck disable=SC1090
-  source <(cat "${XDG_CONFIG_HOME}/completion/bash/"*)
+  for NREDF_BASH_COMPLETION in "${XDG_CONFIG_HOME}/completion/bash/"*; do
+    [[ -f "${NREDF_BASH_COMPLETION}" ]] || continue
+    # shellcheck disable=SC1090
+    source "${NREDF_BASH_COMPLETION}"
+  done
 fi
 
 trap _unsudo exit

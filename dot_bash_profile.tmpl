@@ -7,23 +7,26 @@
 ################################################
 
 if [[ $- == *i* ]]; then
-	if [[ -z "${NREDF_BREW_BASH_EXECUTED:-}" ]]; then
-		for NREDF_BREW_BASH in /opt/homebrew/bin/bash /usr/local/bin/bash; do
-			if [[ -x "${NREDF_BREW_BASH}" && "${BASH:-}" != "${NREDF_BREW_BASH}" ]]; then
-				NREDF_BREW_BASH_DIR="${NREDF_BREW_BASH%/bash}"
-				if [[ ":${PATH}:" != *":${NREDF_BREW_BASH_DIR}:"* ]]; then
-					export PATH="${NREDF_BREW_BASH_DIR}:${PATH}"
-				fi
-				export NREDF_BREW_BASH_EXECUTED=1
+	for NREDF_BREW_BASH in /opt/homebrew/bin/bash /usr/local/bin/bash; do
+		if [[ -x "${NREDF_BREW_BASH}" ]]; then
+			NREDF_BREW_BASH_DIR="${NREDF_BREW_BASH%/bash}"
+			if [[ "${PATH%%:*}" != "${NREDF_BREW_BASH_DIR}" ]]; then
+				export PATH="${NREDF_BREW_BASH_DIR}:${PATH}"
+				hash -r 2>/dev/null || true
+			fi
+			if [[ "${BASH:-}" != "${NREDF_BREW_BASH}" ]]; then
 				exec "${NREDF_BREW_BASH}" -l
 			fi
-		done
-	fi
+			break
+		fi
+	done
+	export SHELL="${BASH:-${SHELL:-/bin/bash}}"
 	source "${HOME}/.bashrc"
 	return
 fi
 
 export XDG_DATA_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}"
+export SHELL="${BASH:-${SHELL:-/bin/bash}}"
 export NREDF_SHELL_NAME="bash"
 export NREDF_DOT_PATH="${XDG_DATA_HOME}/nredf"
 export NREDF_RC_PATH="${NREDF_DOT_PATH}/shell/${NREDF_SHELL_NAME}"

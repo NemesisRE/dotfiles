@@ -85,5 +85,10 @@ Options:
     export NREDF_PROFILE_STARTUP=1
   fi
 
-  exec "${NREDF_SHELL_NAME}"
+  local NREDF_EXEC_SHELL="${NREDF_SHELL_NAME}"
+  if [[ "${NREDF_SHELL_NAME}" == "bash" && -n "${BASH:-}" ]]; then
+    NREDF_EXEC_SHELL="${BASH}"
+  fi
+
+  exec "${NREDF_EXEC_SHELL}"
 }
