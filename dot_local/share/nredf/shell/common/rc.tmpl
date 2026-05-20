@@ -69,7 +69,8 @@ fi
 # Ensure aqua config env is always present, even if defaults were already marked done.
 _nredf_set_aqua_env
 _nredf_set_aqua_path
-_nredf_step "_nredf_set_aqua_env/path"
+_nredf_set_krew_path
+_nredf_step "_nredf_set_aqua_env/path + _nredf_set_krew_path"
 
 # Run on each shell init so child/login shells always inherit a valid SSH_AUTH_SOCK.
 _nredf_set_ssh_agent

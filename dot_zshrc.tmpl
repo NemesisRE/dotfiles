@@ -39,10 +39,12 @@ elif [[ -f "${NREDF_DOT_PATH}/shell/zsh/rc" ]]; then
 fi
 _nredf_step "source common/rc"
 
+if (( ${+functions[_nredf_init_oh_my_posh]} )); then
+  _nredf_init_oh_my_posh
+fi
+
 # Load Sheldon-managed plugins in addition to nredf rc.
 if command -v sheldon >/dev/null 2>&1 && [[ -f "${XDG_CONFIG_HOME}/sheldon/plugins.toml" ]]; then
-  _nredf_load_p10k_early
-
   if [[ "${NREDF_SHELDON_LAZY_LOAD}" == "1" ]]; then
     autoload -Uz add-zsh-hook
     _nredf_sheldon_lazy_once() {

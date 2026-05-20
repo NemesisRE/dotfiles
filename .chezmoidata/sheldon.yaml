@@ -63,8 +63,5 @@ plugins:
   - repo: "hlissner/zsh-autopair"
   - repo: "arzzen/calc.plugin.zsh"
   - repo: "chitoku-k/fzf-zsh-completions"
-  - repo: "romkatv/powerlevel10k"
-    as: "theme"
-    depth: 1
   - repo: "atuinsh/atuin"
     at: "main"

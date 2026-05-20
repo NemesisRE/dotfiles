@@ -31,8 +31,27 @@ function _nredf_set_aqua_path() {
   unset _nredf_aqua_bin
 }
 
+function _nredf_set_krew_path() {
+  local _nredf_krew_root="${KREW_ROOT:-${HOME}/.krew}"
+  local _nredf_krew_bin="${_nredf_krew_root}/bin"
+
+  if [[ -d "${_nredf_krew_bin}" ]]; then
+    export KREW_ROOT="${_nredf_krew_root}"
+    case ":${PATH}:" in
+    *":${_nredf_krew_bin}:"*) ;;
+    *) export PATH="${_nredf_krew_bin}:${PATH}" ;;
+    esac
+  fi
+
+  unset _nredf_krew_root _nredf_krew_bin
+}
+
 function _nredf_set_defaults() {
   echo -e '\033[1mSetting defaults\033[0m'
+  _nredf_set_aqua_path
+  _nredf_set_aqua_env
+  _nredf_set_krew_path
+
   [[ -f "${HOME}/.proxy.local" ]] && source "${HOME}/.proxy.local"
 
   export NREDF_COMMON_RC_LOCAL="${HOME}/.config/shell"
@@ -56,7 +75,6 @@ function _nredf_set_defaults() {
   _nredf_init_paths
 
   export PATH="${HOME}/bin:${XDG_BIN_HOME}:/usr/local/bin:${PATH}"
-  _nredf_set_aqua_path
   [[ -d /snap/bin ]] && export PATH="${PATH}:/snap/bin"
   export GOPATH="${HOME}/.local"
   export RLWRAP_HOME="${XDG_CACHE_HOME}/RLWRAP"
@@ -79,11 +97,6 @@ function _nredf_set_defaults() {
     export PYENV_ROOT="${HOME}/.pyenv"
     export PATH="${PYENV_ROOT}/bin:${PATH}"
     eval "$(pyenv init -)"
-  fi
-
-  # Load krew if you are using it
-  if [[ -f "${XDG_BIN_HOME}/krew" ]]; then
-    export PATH="${KREW_ROOT:-${HOME}/.krew}/bin:${PATH}"
   fi
 
   # FZF Defaults
@@ -126,9 +139,6 @@ function _nredf_set_defaults() {
   export XAUTHORITY="${XDG_RUNTIME_DIR}/Xauthority"
 
   export _Z_DATA="${XDG_DATA_HOME}/z"
-
-  # aqua configuration via environment (base + optional machine override)
-  _nredf_set_aqua_env
 
   # asdf config
   export ASDF_DATA_DIR="${XDG_DATA_HOME}/asdf"
