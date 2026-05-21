@@ -2,35 +2,6 @@
 #
 # vim: ts=2 sw=2 et ff=unix ft=bash syntax=sh
 
-function _nredf_set_aqua_env() {
-  local _nredf_aqua_base_config="${XDG_CONFIG_HOME}/aquaproj-aqua/aqua.yaml"
-  local _nredf_aqua_machine_config="${XDG_CONFIG_HOME}/aquaproj-aqua/machine.yaml"
-  local _nredf_aqua_policy_config="${XDG_CONFIG_HOME}/aquaproj-aqua/aqua-policy.yaml"
-
-  if [[ -f "${_nredf_aqua_base_config}" ]]; then
-    export AQUA_CONFIG="${_nredf_aqua_base_config}"
-    export AQUA_GLOBAL_CONFIG="${_nredf_aqua_base_config}"
-    if [[ -f "${_nredf_aqua_machine_config}" ]]; then
-      export AQUA_GLOBAL_CONFIG="${AQUA_GLOBAL_CONFIG}:${_nredf_aqua_machine_config}"
-    fi
-  fi
-
-  if [[ -f "${_nredf_aqua_policy_config}" ]]; then
-    export AQUA_POLICY_CONFIG="${_nredf_aqua_policy_config}"
-  fi
-
-  unset _nredf_aqua_base_config _nredf_aqua_machine_config _nredf_aqua_policy_config
-}
-
-function _nredf_set_aqua_path() {
-  local _nredf_aqua_bin="${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-${HOME}/.local/share}/aquaproj-aqua}/bin"
-  case ":${PATH}:" in
-  *":${_nredf_aqua_bin}:"*) ;;
-  *) export PATH="${_nredf_aqua_bin}:${PATH}" ;;
-  esac
-  unset _nredf_aqua_bin
-}
-
 function _nredf_set_krew_path() {
   local _nredf_krew_root="${KREW_ROOT:-${HOME}/.krew}"
   local _nredf_krew_bin="${_nredf_krew_root}/bin"

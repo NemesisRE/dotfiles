@@ -35,9 +35,17 @@ and the preferred SSH agent mode. Answers are cached in
 `~/.config/chezmoi/nredf-local.env` and override the repo defaults without
 modifying tracked files.
 
+If neither `GITHUB_TOKEN` nor `AQUA_GITHUB_TOKEN` is set, the first full
+interactive shell also offers to run `aqua token set` and store a GitHub token
+in the system keyring. The local preference is tracked in
+`~/.config/nredf/aqua.env`, but the token itself stays in the keyring.
+
 ```bash
 # Configure git identity (name, email, signing key)
 ~/.local/bin/setup_git_identity.sh
+
+# Configure aqua's GitHub token manually later
+nredf_aqua_token_setup
 
 # Restart your shell
 exec $SHELL

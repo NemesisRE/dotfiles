@@ -103,6 +103,9 @@ if [[ "${NREDF_COMMON_RC_PROFILE}" == "interactive-minimal" ]]; then
 fi
 
 if [[ -z ${SUDO_COMMAND} ]]; then
+  _nredf_ensure_aqua_github_token
+  _nredf_step "_nredf_ensure_aqua_github_token"
+
   # Ensure aqua-managed command links exist (link-only, no eager downloads) — throttled 24h
   if command -v aqua &>/dev/null && ! _nredf_last_run "_nredf_aqua_ensure"; then
     aqua install -a -l >/dev/null 2>&1 || true
