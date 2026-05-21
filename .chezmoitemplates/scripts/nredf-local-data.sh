@@ -16,7 +16,7 @@ record_count=0
 allow_setup="false"
 changed=0
 RESOLVE_RESULT=""
-tty_fd=""
+tty_fd="9"
 tty_state="unknown"
 
 trim_spaces() {
@@ -36,12 +36,12 @@ has_tty() {
     return 1
   fi
 
-  if exec {tty_fd}<>/dev/tty 2>/dev/null; then
+  if exec 9<>/dev/tty 2>/dev/null; then
+    tty_fd="9"
     tty_state="available"
     return 0
   fi
 
-  tty_fd=""
   tty_state="unavailable"
   return 1
 }
@@ -414,6 +414,8 @@ cleanup_legacy_state_vars() {
 }
 
 load_state() {
+  local vacuum_days_state_var=""
+
   if [[ -f "${state_file}" ]]; then
     # shellcheck disable=SC1090
     source "${state_file}"
@@ -456,6 +458,12 @@ load_state() {
     else
       set_state_value "gitConfig.gpg.format" "openpgp"
     fi
+    changed=1
+  fi
+
+  vacuum_days_state_var="$(state_var_name "shell.aqua.vacuum_days")"
+  if eval '[[ ${'"${vacuum_days_state_var}"'+x} == x ]]'; then
+    unset -v "${vacuum_days_state_var}"
     changed=1
   fi
 
@@ -632,6 +640,13 @@ resolve_value_for_path() {
   local git_format=""
 
   RESOLVE_RESULT=""
+
+  case "${path}" in
+    shell.aqua.vacuum_days)
+      RESOLVE_RESULT="${default_value:-30}"
+      return 0
+      ;;
+  esac
 
   if state_value_is_set "${path}"; then
     RESOLVE_RESULT="$(state_value "${path}")"
