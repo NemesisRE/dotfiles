@@ -16,6 +16,12 @@
     },
     {
       "matchDepTypes": [
+        "aqua-package"
+      ],
+      "groupName": "aqua packages"
+    },
+    {
+      "matchDepTypes": [
         "yazi-package"
       ],
       "groupName": "yazi packages"
@@ -26,7 +32,7 @@
       "customType": "regex",
       "description": "Update aqua standard registry ref in aqua.yaml",
       "managerFilePatterns": [
-        "^dot_config/aquaproj-aqua/aqua\\.yaml$"
+        "/^dot_config\\/aquaproj-aqua\\/aqua\\.yaml$/"
       ],
       "matchStrings": [
         "ref:\\s*(?<currentValue>v[0-9][^\\s#]*)\\s*#\\s*renovate:\\s*depName=(?<depName>[^\\s]+)"
@@ -35,9 +41,23 @@
     },
     {
       "customType": "regex",
+      "description": "Update aqua package versions in aqua.yaml",
+      "managerFilePatterns": [
+        "/^dot_config\\/aquaproj-aqua\\/aqua\\.yaml$/"
+      ],
+      "matchStrings": [
+        "-\\s+name:\\s*(?<fullName>(?<packageName>[^/\\s@#]+/[^/\\s@#]+)(?:/[^@\\s#]+)?)@(?<currentValue>(?:v|[0-9]|jq-|kustomize/)[^\\s#]*)"
+      ],
+      "depNameTemplate": "{{{fullName}}}",
+      "depTypeTemplate": "aqua-package",
+      "datasourceTemplate": "github-tags",
+      "versioningTemplate": "loose"
+    },
+    {
+      "customType": "regex",
       "description": "Update ble.sh release tag in ble.yaml",
       "managerFilePatterns": [
-        "^\\.chezmoidata/ble\\.yaml$"
+        "/^\\.chezmoidata\\/ble\\.yaml$/"
       ],
       "matchStrings": [
         "tag:\\s*(?<currentValue>v[0-9][^\\s#]*)\\s*#\\s*renovate:\\s*depName=(?<depName>[^\\s]+)"
@@ -48,7 +68,7 @@
       "customType": "regex",
       "description": "Update Yazi package revisions in package.toml",
       "managerFilePatterns": [
-        "^dot_config/yazi/package\\.toml\\.tmpl$"
+        "/^dot_config\\/yazi\\/package\\.toml\\.tmpl$/"
       ],
       "matchStrings": [
         "\\[\\[(?:plugin|flavor)\\.deps\\]\\]\\s+use\\s*=\\s*\"(?<depName>[^\"/:]+/[^\"/:]+)(?::[^\"]+)?\"\\s+rev\\s*=\\s*\"(?<currentDigest>[0-9a-f]{7,40})\""
