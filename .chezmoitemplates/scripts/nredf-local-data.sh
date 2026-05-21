@@ -16,6 +16,8 @@ record_count=0
 allow_setup="false"
 changed=0
 RESOLVE_RESULT=""
+tty_fd=""
+tty_state="unknown"
 
 trim_spaces() {
   local value="$1"
@@ -26,13 +28,37 @@ trim_spaces() {
 }
 
 has_tty() {
-  [[ -r /dev/tty && -w /dev/tty ]]
+  if [[ "${tty_state}" == "available" ]]; then
+    return 0
+  fi
+
+  if [[ "${tty_state}" == "unavailable" ]]; then
+    return 1
+  fi
+
+  if exec {tty_fd}<>/dev/tty 2>/dev/null; then
+    tty_state="available"
+    return 0
+  fi
+
+  tty_fd=""
+  tty_state="unavailable"
+  return 1
 }
 
 tty_print() {
   if has_tty; then
-    printf "%b" "$1" > /dev/tty
+    printf "%b" "$1" >&${tty_fd}
   fi
+}
+
+tty_read_line() {
+  local __var_name="$1"
+  local __value=""
+
+  has_tty || return 1
+  IFS= read -r -u "${tty_fd}" __value || return 1
+  printf -v "${__var_name}" '%s' "${__value}"
 }
 
 prompt_nonempty() {
@@ -47,7 +73,7 @@ prompt_nonempty() {
       tty_print "${prompt}: "
     fi
 
-    IFS= read -r value < /dev/tty || return 1
+    tty_read_line value || return 1
     if [[ -z "${value}" && -n "${default_value}" ]]; then
       value="${default_value}"
     fi
@@ -74,7 +100,7 @@ prompt_optional() {
       tty_print "${prompt}: "
     fi
 
-    IFS= read -r value < /dev/tty || return 1
+    tty_read_line value || return 1
     if [[ -n "${empty_token}" && "${value}" == "${empty_token}" ]]; then
       printf ""
       return 0
@@ -102,7 +128,7 @@ prompt_choice() {
 
   while true; do
     tty_print "${prompt} [${default_value}] (${choice_list}): "
-    IFS= read -r value < /dev/tty || return 1
+    tty_read_line value || return 1
     value="${value:-${default_value}}"
 
     for choice in "${choices[@]}"; do
@@ -130,7 +156,7 @@ prompt_bool() {
       tty_print "${prompt} [y/N]: "
     fi
 
-    IFS= read -r value < /dev/tty || return 1
+    tty_read_line value || return 1
     value="$(trim_spaces "${value}")"
     if [[ -z "${value}" ]]; then
       printf "%s" "${default_value}"
@@ -159,7 +185,7 @@ prompt_int() {
 
   while true; do
     tty_print "${prompt} [${default_value}]: "
-    IFS= read -r value < /dev/tty || return 1
+    tty_read_line value || return 1
     value="$(trim_spaces "${value}")"
     if [[ -z "${value}" ]]; then
       printf "%s" "${default_value}"
@@ -759,8 +785,10 @@ main() {
   parse_schema
   resolve_records
 
-  if [[ "${allow_setup}" == "true" && ( ! -f "${state_file}" || ${changed} -eq 1 ) ]]; then
-    write_state
+  if [[ "${allow_setup}" == "true" ]]; then
+    if [[ ${changed} -eq 1 ]] || ( [[ ! -f "${state_file}" ]] && has_tty ); then
+      write_state
+    fi
   fi
 
   render_yaml
