@@ -80,7 +80,7 @@
       "matchStrings": [
         "\\[\\[(?:plugin|flavor)\\.deps\\]\\]\\s+use\\s*=\\s*\"(?<depName>[^\"/:]+/[^\"/:]+)(?::[^\"]+)?\"\\s+rev\\s*=\\s*\"(?<currentDigest>[0-9a-f]{7,40})\""
       ],
-      "currentValueTemplate": "HEAD",
+      "currentValueTemplate": "main",
       "depTypeTemplate": "yazi-package",
       "packageNameTemplate": "https://github.com/{{{depName}}}",
       "datasourceTemplate": "git-refs"
