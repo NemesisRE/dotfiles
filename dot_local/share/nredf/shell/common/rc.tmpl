@@ -112,7 +112,7 @@ if [[ -z ${SUDO_COMMAND} ]]; then
 
   # Install Yazi plugins/packages from package.toml — throttled to once per 24h
   _nredf_ya_pkg_install
-  _nredf_step "ya pkg install"
+  _nredf_step "ya pkg install --discard"
 fi
 
 # Shell-specific customization

@@ -15,7 +15,7 @@ function _nredf_ya_pkg_install() {
   fi
 
   echo -e '\033[1mInstalling yazi plugins\033[0m'
-  ya pkg install >/dev/null 2>&1 || true
+  ya pkg install --discard >/dev/null 2>&1 || true
   _nredf_last_run "" "true" "$(($(date +%s) + NREDF_24H_INTERVAL))"
   _nredf_remove_lock
 }

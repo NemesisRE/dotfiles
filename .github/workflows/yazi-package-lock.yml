@@ -1,0 +1,63 @@
+name: Refresh Yazi Package Lock
+
+on:
+  pull_request:
+    paths:
+      - dot_config/yazi/package.toml.tmpl
+      - .github/scripts/refresh-yazi-package-lock.sh
+      - .github/workflows/yazi-package-lock.yml
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-lock:
+    name: Refresh Yazi plugin hashes
+    if: github.actor == 'renovate[bot]' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Install Yazi CLI
+        run: |
+          set -euo pipefail
+          version="$(sed -nE 's/^  - name: sxyazi\/yazi@(v[^[:space:]#]+).*$/\1/p' dot_config/aquaproj-aqua/aqua.yaml | head -n1)"
+          if [[ -z "${version}" ]]; then
+            echo "Failed to determine Yazi version from aqua.yaml" >&2
+            exit 1
+          fi
+
+          asset="yazi-x86_64-unknown-linux-musl.zip"
+          curl -fsSL "https://github.com/sxyazi/yazi/releases/download/${version}/${asset}" -o /tmp/yazi.zip
+          unzip -q /tmp/yazi.zip -d /tmp/yazi
+
+          mkdir -p "${HOME}/.local/bin"
+          ya_bin="$(find /tmp/yazi -type f -name ya | head -n1)"
+          yazi_bin="$(find /tmp/yazi -type f -name yazi | head -n1)"
+          if [[ -z "${ya_bin}" || -z "${yazi_bin}" ]]; then
+            echo "Failed to locate Yazi binaries in release asset" >&2
+            exit 1
+          fi
+
+          install -m 0755 "${ya_bin}" "${HOME}/.local/bin/ya"
+          install -m 0755 "${yazi_bin}" "${HOME}/.local/bin/yazi"
+          echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+
+      - name: Refresh Yazi package lock
+        run: bash .github/scripts/refresh-yazi-package-lock.sh
+
+      - name: Commit refreshed Yazi package lock
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- dot_config/yazi/package.toml.tmpl; then
+            echo "No Yazi package lock changes detected"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dot_config/yazi/package.toml.tmpl
+          git commit -m "chore(yazi): refresh plugin hashes"
+          git push
