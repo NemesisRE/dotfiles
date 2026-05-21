@@ -22,6 +22,13 @@
     },
     {
       "matchDepTypes": [
+        "aqua-package"
+      ],
+      "ignoreUnstable": true,
+      "allowedVersions": "!/[-.](?:alpha|beta|dev|rc)[0-9A-Za-z.-]*/i"
+    },
+    {
+      "matchDepTypes": [
         "yazi-package"
       ],
       "groupName": "yazi packages"
