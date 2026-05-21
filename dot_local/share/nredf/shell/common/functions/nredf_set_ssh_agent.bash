@@ -115,12 +115,17 @@ function _nredf_ssh_agent_socket_works() {
   return 0
 }
 
+function _nredf_configured_ssh_agent_mode() {
+  printf "%s" "${NREDF_SHELL_SSH_AGENT:-default}"
+}
+
 function _nredf_set_ssh_agent() {
-  local prefer_external_provider
+  local agent_mode prefer_external_provider
 
   prefer_external_provider="false"
+  agent_mode="$(_nredf_configured_ssh_agent_mode)"
 
-  if [[ "${NREDF_AGENT_PIPE:-}" == "true" || "${NREDF_AGENT_GPG:-}" == "true" || "${NREDF_AGENT_BITWARDEN:-}" == "true" ]]; then
+  if [[ "${agent_mode}" != "default" ]]; then
     prefer_external_provider="true"
   fi
 
@@ -132,18 +137,18 @@ function _nredf_set_ssh_agent() {
   # With explicit external provider preference, try configured providers first
   # and fallback to the current agent only if all preferred providers fail.
   if [[ "${prefer_external_provider}" == "true" ]]; then
-    if [[ "${NREDF_AGENT_PIPE:-}" == "true" ]] && [[ -n "${WSL_DISTRO_NAME}" || -n "${WSL_INTEROP}" ]]; then
+    if [[ "${agent_mode}" == "pipe" ]] && [[ -n "${WSL_DISTRO_NAME}" || -n "${WSL_INTEROP}" ]]; then
       export SSH_AUTH_SOCK="${HOME}/.ssh/auth_sock"
       _nredf_set_ssh_agent_wsl
       _nredf_ssh_agent_socket_works "${SSH_AUTH_SOCK}" && return 0
     fi
 
-    if [[ "${NREDF_AGENT_GPG:-}" == "true" ]]; then
+    if [[ "${agent_mode}" == "gpg" ]]; then
       _nredf_set_ssh_agent_gpg
       _nredf_ssh_agent_socket_works "${SSH_AUTH_SOCK}" && return 0
     fi
 
-    if [[ "${NREDF_AGENT_BITWARDEN:-}" == "true" ]]; then
+    if [[ "${agent_mode}" == "bitwarden" ]]; then
       _nredf_set_ssh_agent_bitwarden
       _nredf_ssh_agent_socket_works "${SSH_AUTH_SOCK}" && return 0
     fi
@@ -174,15 +179,15 @@ function _nredf_set_ssh_agent() {
   # Remove stale socket before starting new agent
   rm -f "${auth_sock}"
 
-  if [[ "${NREDF_AGENT_PIPE:-}" == "true" ]] && [[ -n "${WSL_DISTRO_NAME}" || -n "${WSL_INTEROP}" ]]; then
+  if [[ "${agent_mode}" == "pipe" ]] && [[ -n "${WSL_DISTRO_NAME}" || -n "${WSL_INTEROP}" ]]; then
     export SSH_AUTH_SOCK="${auth_sock}"
     if ! _nredf_set_ssh_agent_wsl; then
       printf "Error: Failed to set up WSL SSH agent bridge\n" >&2
       return 1
     fi
-  elif [[ "${NREDF_AGENT_GPG:-}" == "true" ]]; then
+  elif [[ "${agent_mode}" == "gpg" ]]; then
     _nredf_set_ssh_agent_gpg
-  elif [[ "${NREDF_AGENT_BITWARDEN:-}" == "true" ]]; then
+  elif [[ "${agent_mode}" == "bitwarden" ]]; then
     _nredf_set_ssh_agent_bitwarden
   else
     export SSH_AUTH_SOCK="${auth_sock}"

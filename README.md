@@ -29,6 +29,12 @@ bash <(curl -fsSL https://raw.githubusercontent.com/NemesisRE/chezmoi/main/boots
 
 ## After install
 
+The first interactive `chezmoi apply` or `chezmoi update` will ask for missing
+machine-local values from `.chezmoidata/nredf.yaml`, including Git name/email
+and the preferred SSH agent mode. Answers are cached in
+`~/.config/chezmoi/nredf-local.env` and override the repo defaults without
+modifying tracked files.
+
 ```bash
 # Configure git identity (name, email, signing key)
 ~/.local/bin/setup_git_identity.sh
@@ -40,10 +46,9 @@ exec $SHELL
 ## Directory structure
 
 | Path | Purpose |
-|------|---------|
+| ---- | ------- |
 | `.chezmoidata/aqua.yaml` | CLI tools managed by aqua |
-| `.chezmoidata/git.yaml` | Git identity (name, email, signing key) |
-| `.chezmoidata/nredf.yaml` | nredf shell config |
+| `.chezmoidata/nredf.yaml` | shell defaults, git config defaults, and prompt schema |
 | `.chezmoidata/sheldon.yaml` | Sheldon plugin config overrides |
 | `.chezmoiscripts/` | Bootstrap scripts (run once on `chezmoi apply`) |
 | `.config/sheldon/plugins.toml.tmpl` | Zsh plugin list |
@@ -75,7 +80,7 @@ Recommended workflow:
 ## Environment variables
 
 | Variable | Default | Purpose |
-|----------|---------|---------|
+| -------- | ------- | ------- |
 | `NREDF_DOT_PATH` | `~/.local/share/nredf` | Shell library root |
 | `NREDF_COMMON_RC_PROFILE` | `full` | RC profile level (`full` / `login-minimal` / `interactive-minimal`) |
 | `NREDF_NO_BOOTSTRAP` | unset | Set to skip aqua install + aqua tool linking on `chezmoi apply` |

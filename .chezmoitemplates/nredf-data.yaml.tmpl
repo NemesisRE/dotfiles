@@ -1,0 +1,5 @@
+{{- $subcommand := "" }}
+{{- if ge (len .chezmoi.args) 2 }}
+{{-   $subcommand = index .chezmoi.args 1 }}
+{{- end }}
+{{- output (lookPath "bash") (joinPath .chezmoi.sourceDir ".chezmoitemplates" "scripts" "nredf-local-data.sh") .chezmoi.sourceDir $subcommand -}}

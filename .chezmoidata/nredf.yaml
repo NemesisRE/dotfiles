@@ -1,9 +1,24 @@
-# nredf data for chezmoi (source of truth)
-# Edit and run `chezmoi apply` to render the generated files.
+# nredf config defaults for chezmoi (source of truth)
+# Missing machine-local scalar values are prompted once on interactive
+# init/apply/update and then cached locally in ~/.config/chezmoi/nredf-local.env.
 
-generell:
-  multiplexer: true
-  ssh-agent: default # options: default, pipe, gpg, bitwarden
+nredfDefaults:
+  shell:
+    generell:
+      multiplexer: true
 
-other:
-  ssh_totp_provider: "#bitwarden"
+    ssh:
+      agent: default # options: default, pipe, gpg, bitwarden
+      totp_provider: "bitwarden"
+
+    other:
+      test_var: "example"
+
+  gitConfig:
+    user:
+      name: ""
+      email: ""
+      signingkey: ""
+
+    gpg:
+      format: ssh # options: openpgp, ssh

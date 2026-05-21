@@ -1,7 +1,0 @@
-# User git identity data for chezmoi rendering
-# Leave empty to be prompted by the setup script.
-git:
-  name: ""
-  email: ""
-  signingkey: ""
-  signingkey_ssh: false

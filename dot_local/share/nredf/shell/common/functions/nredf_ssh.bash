@@ -133,7 +133,10 @@ function _nredf_sshpass_totp() {
     '
   )
 
-  if [[ "${NREDF_CONFIGS["SSH_TOTP_PROVIDER"]}" == "bitwarden" ]]; then
+  local totp_provider="${NREDF_SHELL_SSH_TOTP_PROVIDER:-}"
+  totp_provider="${totp_provider#\#}"
+
+  if [[ "${totp_provider}" == "bitwarden" ]]; then
     item_totp=$(_nredf_sshpass_bitwarden_totp "$totp_itemid")
   fi
 

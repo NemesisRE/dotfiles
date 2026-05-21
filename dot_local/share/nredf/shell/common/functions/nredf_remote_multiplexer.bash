@@ -4,13 +4,15 @@
 
 function _nredf_remote_multiplexer() {
   local HOSTNAME
+  local multiplexer_enabled="${NREDF_SHELL_GENERELL_MULTIPLEXER:-}"
+
   if command -pv hostname &>/dev/null; then
     HOSTNAME=$(hostname -s)
   elif command -pv hostnamectl &>/dev/null; then
     HOSTNAME=$(hostnamectl hostname)
   fi
 
-  if [[ -z ${NREDF_MULTIPLEXER:-} || "${NREDF_MULTIPLEXER}" == "false" ]]; then
+  if [[ -z ${multiplexer_enabled:-} || "${multiplexer_enabled}" == "false" ]]; then
     return 0
   fi
 
