@@ -20,7 +20,7 @@ function _nredf_macos_prerquisites() {
   local BREW_CLEANUP_KEY="_nredf_macos_prerquisites_brew_cleanup"
   local BREW_ENSURE_INTERVAL=21600
   local BREW_ENSURE_KEY="_nredf_macos_prerquisites_brew_ensure"
-  local FORMULAE=(bash git diffutils util-linux fnm)
+  local FORMULAE=(bash bash-completion git diffutils util-linux fnm)
   local INSTALLED_FORMULAE=""
   local MISSING_FORMULAE=()
   local FORMULA=""

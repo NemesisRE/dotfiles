@@ -25,9 +25,22 @@ _nredf_step "zsh rc: source functions"
 export HISTFILE="${XDG_STATE_HOME}"/zsh/history
 autoload -Uz compinit
 NREDF_ZCOMPDUMP="${XDG_CACHE_HOME}/zsh/.zcompdump"
+NREDF_COMPLETION_REFRESH_REQUIRED=0
+
+if [[ -f "${NREDF_ZCOMPDUMP}" && -d "${HOME}/.config/completion/zsh" ]]; then
+  NREDF_ZCOMPDUMP_MTIME="$(stat -f '%m' "${NREDF_ZCOMPDUMP}" 2>/dev/null || echo 0)"
+  for NREDF_COMPLETION_FILE in "${HOME}/.config/completion/zsh"/*; do
+    [[ -f "${NREDF_COMPLETION_FILE}" ]] || continue
+    NREDF_COMPLETION_MTIME="$(stat -f '%m' "${NREDF_COMPLETION_FILE}" 2>/dev/null || echo 0)"
+    if [[ "${NREDF_COMPLETION_MTIME}" -gt "${NREDF_ZCOMPDUMP_MTIME}" ]]; then
+      NREDF_COMPLETION_REFRESH_REQUIRED=1
+      break
+    fi
+  done
+fi
 
 # Fast path: use cached completion dump; refresh only every 24h.
-if [[ -f "${NREDF_ZCOMPDUMP}" ]] && declare -f _nredf_last_run >/dev/null 2>&1 && _nredf_last_run "_nredf_zsh_compinit_refresh"; then
+if [[ -f "${NREDF_ZCOMPDUMP}" && "${NREDF_COMPLETION_REFRESH_REQUIRED}" -eq 0 ]] && declare -f _nredf_last_run >/dev/null 2>&1 && _nredf_last_run "_nredf_zsh_compinit_refresh"; then
   compinit -C -d "${NREDF_ZCOMPDUMP}"
 else
   compinit -u -d "${NREDF_ZCOMPDUMP}"

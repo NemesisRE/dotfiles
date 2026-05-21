@@ -11,6 +11,29 @@ if [ -f /etc/profile.d/bash_completion.sh ]; then
   source /etc/profile.d/bash_completion.sh
 fi
 
+if [ -f /opt/homebrew/etc/profile.d/bash_completion.sh ]; then
+  source /opt/homebrew/etc/profile.d/bash_completion.sh
+fi
+
+if [ -f /usr/local/etc/profile.d/bash_completion.sh ]; then
+  source /usr/local/etc/profile.d/bash_completion.sh
+fi
+
+if [ -f /opt/homebrew/share/bash-completion/bash_completion ]; then
+  source /opt/homebrew/share/bash-completion/bash_completion
+fi
+
+if [ -f /usr/local/share/bash-completion/bash_completion ]; then
+  source /usr/local/share/bash-completion/bash_completion
+fi
+
+# Homebrew completions: load from share directory if available
+if [ -d /opt/homebrew/share/bash-completion/completions ]; then
+  for NREDF_BREW_COMPLETION in /opt/homebrew/share/bash-completion/completions/*; do
+    [[ -f "${NREDF_BREW_COMPLETION}" ]] && source "${NREDF_BREW_COMPLETION}"
+  done
+fi
+
 if [ -f /usr/lib/node_modules/npm/lib/utils/completion.sh ]; then
   source /usr/lib/node_modules/npm/lib/utils/completion.sh
 fi
