@@ -59,7 +59,7 @@ packages:
   - name: bootandy/dust@v1.2.4 # du replacement
     tags:
       - default
-  - name: ouch-org/ouch@0.7.1 # archive tool
+  - name: ouch-org/ouch@1.0.0-rc2 # archive tool
     tags:
       - default
   - name: natesales/q@v0.19.12 # DNS client
