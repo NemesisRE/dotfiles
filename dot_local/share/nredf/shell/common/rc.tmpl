@@ -113,6 +113,9 @@ if [[ -z ${SUDO_COMMAND} ]]; then
   fi
   _nredf_step "aqua install -a -l"
 
+  _nredf_aqua_vacuum
+  _nredf_step "aqua vacuum -d ${NREDF_SHELL_AQUA_VACUUM_DAYS:-30}"
+
   # Install Yazi plugins/packages from package.toml — throttled to once per 24h
   _nredf_ya_pkg_install
   _nredf_step "ya pkg install --discard"

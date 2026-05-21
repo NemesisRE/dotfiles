@@ -7,6 +7,9 @@ nredfDefaults:
     generell:
       multiplexer: true
 
+    aqua:
+      vacuum_days: 30
+
     ssh:
       agent: default # options: default, pipe, gpg, bitwarden
       totp_provider: "bitwarden"

@@ -191,3 +191,27 @@ function _nredf_ensure_aqua_github_token() {
 
   return 0
 }
+
+function _nredf_aqua_vacuum() {
+  local _nredf_vacuum_days="${NREDF_SHELL_AQUA_VACUUM_DAYS:-30}"
+
+  if _nredf_last_run; then
+    return 0
+  elif ! _nredf_create_lock; then
+    return 0
+  fi
+
+  if [[ ! "${_nredf_vacuum_days}" =~ ^[0-9]+$ ]]; then
+    _nredf_vacuum_days="30"
+  fi
+
+  if ! command -v aqua &>/dev/null; then
+    _nredf_remove_lock
+    return 0
+  fi
+
+  echo -e '\033[1mVacuuming aqua packages\033[0m'
+  aqua vacuum -d "${_nredf_vacuum_days}" >/dev/null 2>&1 || true
+  _nredf_last_run "" "true" "$(($(date +%s) + NREDF_24H_INTERVAL))"
+  _nredf_remove_lock
+}
