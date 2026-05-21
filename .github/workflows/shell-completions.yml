@@ -1,0 +1,59 @@
+name: Refresh Shell Completions
+
+on:
+  pull_request:
+    paths:
+      - dot_config/aquaproj-aqua/aqua.yaml
+      - dot_config/aquaproj-aqua/registry.yaml
+      - .github/scripts/refresh-shell-completions.sh
+      - .github/workflows/shell-completions.yml
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-completions:
+    name: Refresh generated shell completions
+    if: github.actor == 'renovate[bot]' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Install chezmoi
+        run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "${HOME}/.local/bin"
+
+      - name: Install aqua
+        run: |
+          set -euo pipefail
+          installer_url="https://raw.githubusercontent.com/aquaproj/aqua-installer/v4.0.2/aqua-installer"
+          curl -fsSL "${installer_url}" -o /tmp/aqua-installer
+          chmod +x /tmp/aqua-installer
+          /tmp/aqua-installer
+          echo "${HOME}/.local/share/aquaproj-aqua/bin" >> "${GITHUB_PATH}"
+
+      - name: Install aqua-managed tools
+        env:
+          AQUA_GLOBAL_CONFIG: ${{ github.workspace }}/dot_config/aquaproj-aqua/aqua.yaml
+        run: |
+          set -euo pipefail
+          aqua install -a -l
+
+      - name: Refresh shell completions
+        run: bash .github/scripts/refresh-shell-completions.sh
+
+      - name: Commit refreshed shell completions
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet -- dot_config/completion/bash dot_config/completion/zsh; then
+            echo "No shell completion changes detected"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A dot_config/completion/bash dot_config/completion/zsh
+          git commit -m "chore(completion): refresh generated shell completions"
+          git push
