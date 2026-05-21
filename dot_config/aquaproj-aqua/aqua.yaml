@@ -83,7 +83,7 @@ packages:
   - name: helix-editor/helix@25.07.1
     tags:
       - default
-  - name: aristocratos/btop@latest # system monitor
+  - name: aristocratos/btop@1.4.7 # system monitor
     tags:
       - default
   - name: bcicen/ctop@v0.7.7 # container monitor
