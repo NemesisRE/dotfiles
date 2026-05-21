@@ -13,6 +13,12 @@
         "github-actions"
       ],
       "groupName": "github-actions"
+    },
+    {
+      "matchDepTypes": [
+        "yazi-package"
+      ],
+      "groupName": "yazi packages"
     }
   ],
   "customManagers": [
@@ -37,6 +43,20 @@
         "tag:\\s*(?<currentValue>v[0-9][^\\s#]*)\\s*#\\s*renovate:\\s*depName=(?<depName>[^\\s]+)"
       ],
       "datasourceTemplate": "github-tags"
+    },
+    {
+      "customType": "regex",
+      "description": "Update Yazi package revisions in package.toml",
+      "managerFilePatterns": [
+        "^dot_config/yazi/package\\.toml\\.tmpl$"
+      ],
+      "matchStrings": [
+        "\\[\\[(?:plugin|flavor)\\.deps\\]\\]\\s+use\\s*=\\s*\"(?<depName>[^\"/:]+/[^\"/:]+)(?::[^\"]+)?\"\\s+rev\\s*=\\s*\"(?<currentDigest>[0-9a-f]{7,40})\""
+      ],
+      "currentValueTemplate": "HEAD",
+      "depTypeTemplate": "yazi-package",
+      "packageNameTemplate": "https://github.com/{{{depName}}}",
+      "datasourceTemplate": "git-refs"
     }
   ]
 }

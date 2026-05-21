@@ -109,6 +109,10 @@ if [[ -z ${SUDO_COMMAND} ]]; then
     _nredf_last_run "_nredf_aqua_ensure" "true" "$(($(date +%s) + NREDF_24H_INTERVAL))"
   fi
   _nredf_step "aqua install -a -l"
+
+  # Install Yazi plugins/packages from package.toml — throttled to once per 24h
+  _nredf_ya_pkg_install
+  _nredf_step "ya pkg install"
 fi
 
 # Shell-specific customization
