@@ -59,6 +59,10 @@ if command -v __atuin_history &>/dev/null; then
   fi
 fi
 
+if declare -F _nredf_init_kitty_shell_integration >/dev/null 2>&1; then
+  _nredf_init_kitty_shell_integration
+fi
+
 if [[ -n "${BLE_VERSION-}" ]]; then
   ble-attach
   _nredf_step "ble attach"

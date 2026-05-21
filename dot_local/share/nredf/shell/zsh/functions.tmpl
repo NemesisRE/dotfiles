@@ -49,4 +49,7 @@ function _nredf_load_sheldon_plugins() {
   fi
   eval "$(sheldon source)"
   _nredf_init_oh_my_posh --force
+  if (( ${+functions[_nredf_init_kitty_shell_integration]} )); then
+    _nredf_init_kitty_shell_integration --force
+  fi
 }

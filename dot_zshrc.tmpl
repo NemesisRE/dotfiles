@@ -43,6 +43,10 @@ if (( ${+functions[_nredf_init_oh_my_posh]} )); then
   _nredf_init_oh_my_posh
 fi
 
+if (( ${+functions[_nredf_init_kitty_shell_integration]} )); then
+  _nredf_init_kitty_shell_integration
+fi
+
 # Load Sheldon-managed plugins in addition to nredf rc.
 if command -v sheldon >/dev/null 2>&1 && [[ -f "${XDG_CONFIG_HOME}/sheldon/plugins.toml" ]]; then
   if [[ "${NREDF_SHELDON_LAZY_LOAD}" == "1" ]]; then
