@@ -51,6 +51,12 @@ if [[ -z "${NREDF_COMMON_DEFAULTS_DONE}" ]]; then
     _nredf_macos_prerquisites
   fi
 
+  _nredf_chezmoi_upgrade
+  _nredf_step "_nredf_chezmoi_upgrade"
+
+  _nredf_aqua_update
+  _nredf_step "_nredf_aqua_update"
+
   # Update dotfiles from remote (throttled to once per 24h, no-op if chezmoi not found)
   [[ -z ${SUDO_COMMAND} && "${NREDF_COMMON_RC_PROFILE}" == "full" ]] && _nredf_chezmoi_update
   _nredf_step "_nredf_chezmoi_update"
@@ -106,11 +112,9 @@ if [[ -z ${SUDO_COMMAND} ]]; then
   _nredf_ensure_aqua_github_token
   _nredf_step "_nredf_ensure_aqua_github_token"
 
-  # Ensure aqua-managed command links exist (link-only, no eager downloads) — throttled 24h
-  if command -v aqua &>/dev/null && ! _nredf_last_run "_nredf_aqua_ensure"; then
-    aqua install -a -l >/dev/null 2>&1 || true
-    _nredf_last_run "_nredf_aqua_ensure" "true" "$(($(date +%s) + NREDF_24H_INTERVAL))"
-  fi
+  # Ensure aqua-managed command links exist (link-only, no eager downloads)
+  echo -e "\033[1mEnsuring aqua-managed command links\033[0m"
+  aqua install -a -l >/dev/null 2>&1 || true
   _nredf_step "aqua install -a -l"
 
   _nredf_aqua_vacuum

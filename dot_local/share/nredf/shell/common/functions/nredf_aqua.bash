@@ -215,3 +215,21 @@ function _nredf_aqua_vacuum() {
   _nredf_last_run "" "true" "$(($(date +%s) + NREDF_24H_INTERVAL))"
   _nredf_remove_lock
 }
+
+function _nredf_aqua_update() {
+  if _nredf_last_run; then
+    return 0
+  elif ! _nredf_create_lock; then
+    return 0
+  fi
+
+  if ! command -v aqua &>/dev/null; then
+    _nredf_remove_lock
+    return 0
+  fi
+
+  echo -e '\033[1mUpdating aqua\033[0m'
+  aqua update-aqua >/dev/null 2>&1 || true
+  _nredf_last_run "" "true" "$(($(date +%s) + NREDF_24H_INTERVAL))"
+  _nredf_remove_lock
+}
