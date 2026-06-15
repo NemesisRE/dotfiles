@@ -68,16 +68,16 @@ packages:
       - default
 
   # ── Dev Tools ───────────────────────────────────────────────────────────────
-  - name: cli/cli@v2.93.0 # GitHub CLI (gh)
+  - name: cli/cli@v2.94.0 # GitHub CLI (gh)
     tags:
       - default
   - name: jqlang/jq@jq-1.8.1 # JSON processor
     tags:
       - default
-  - name: mikefarah/yq@v4.53.2 # YAML processor
+  - name: mikefarah/yq@v4.53.3 # YAML processor
     tags:
       - default
-  - name: jesseduffield/lazygit@v0.62.1
+  - name: jesseduffield/lazygit@v0.62.2
     tags:
       - default
   - name: helix-editor/helix@25.07.1
@@ -89,22 +89,22 @@ packages:
   - name: bcicen/ctop@v0.7.7 # container monitor
     tags:
       - default
-  - name: JanDeDobbeleer/oh-my-posh@v29.14.0 # prompt theming engine
+  - name: JanDeDobbeleer/oh-my-posh@v29.15.1 # prompt theming engine
     tags:
       - default
       - required
-  - name: smallstep/cli@v0.30.2 # step CA / cert tool
+  - name: smallstep/cli@v0.30.6 # step CA / cert tool
     tags:
       - default
 
   # ── Kubernetes (uncomment to install) ───────────────────────────────────────
-  - name: kubernetes/kubernetes/kubectl@v1.36.1
+  - name: kubernetes/kubernetes/kubectl@v1.36.2
     tags:
       - k8s
-  - name: kubernetes/kubernetes/kubeadm@v1.36.1
+  - name: kubernetes/kubernetes/kubeadm@v1.36.2
     tags:
       - k8s
-  - name: derailed/k9s@v0.50.18
+  - name: derailed/k9s@v0.51.0
     tags:
       - k8s
   - name: kubernetes-sigs/kustomize@kustomize/v5.8.1
@@ -134,10 +134,10 @@ packages:
   - name: fluxcd/flux2@v2.8.8 # flux CLI
     tags:
       - k8s
-  - name: helmfile/helmfile@v1.5.2
+  - name: helmfile/helmfile@v1.5.3
     tags:
       - k8s
-  - name: helm/helm@v4.2.0
+  - name: helm/helm@v4.2.1
     tags:
       - k8s
 
@@ -145,18 +145,18 @@ packages:
   - name: bitwarden/clients@cli-v2026.4.1 # bw CLI (needed for SSH TOTP)
     tags:
       - optional
-  - name: hashicorp/terraform@v1.15.5
+  - name: hashicorp/terraform@v1.15.6
     tags:
       - optional
-  - name: hashicorp/packer@v1.15.3
+  - name: hashicorp/packer@v1.15.4
     tags:
       - optional
-  - name: hashicorp/vault@v2.0.1
+  - name: hashicorp/vault@v2.0.2
     tags:
       - optional
-  - name: astral-sh/uv@0.11.17 # universal version manager
+  - name: astral-sh/uv@0.11.21 # universal version manager
     tags:
       - optional
-  - name: astral-sh/ruff@0.15.15 # Python linter/formatter
+  - name: astral-sh/ruff@0.15.17 # Python linter/formatter
     tags:
       - optional
