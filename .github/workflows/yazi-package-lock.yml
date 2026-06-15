@@ -30,7 +30,9 @@ jobs:
           fi
 
           asset="yazi-x86_64-unknown-linux-musl.zip"
-          curl -fsSL "https://github.com/sxyazi/yazi/releases/download/${version}/${asset}" -o /tmp/yazi.zip
+          curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 \
+            "https://github.com/sxyazi/yazi/releases/download/${version}/${asset}" \
+            -o /tmp/yazi.zip
           unzip -q /tmp/yazi.zip -d /tmp/yazi
 
           mkdir -p "${HOME}/.local/bin"
