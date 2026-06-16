@@ -24,31 +24,31 @@ cp "${package_file}" "${tmp_dir}/config/yazi/package.toml"
 
 rev_fix_file="${tmp_dir}/rev-fixes.tsv"
 touch "${rev_fix_file}"
+skip_file="${tmp_dir}/skip-deps.txt"
+touch "${skip_file}"
 
-# Validate a revision by replicating exactly what ya pkg install does:
-#   git clone --depth 1 <remote>  →  git checkout <rev>
-# Using "git init + fetch" is NOT equivalent: the tree for the rev may be
-# served by the fetch but silently absent when yazi clones and then tries
-# to checkout a historical commit.  Only a real clone+checkout reveals the
-# "unable to read tree" failure seen in CI.
+# Validate a revision by replicating EXACTLY what ya pkg install does.
+# Yazi's Git::clone issues: git clone <url> <path>  (NO --depth flag)
+# Yazi's Git::checkout issues: git checkout <rev> --force
+#
+# Using a shallow clone is NOT equivalent: GitHub's shallow-pack service
+# reconstructs packs on demand and can serve tree objects that are missing
+# from a full clone (e.g. when a fork's object store is incomplete/GC'd).
+# Only a full clone + checkout catches the "unable to read tree" failure.
 validate_clone() {
   local remote="$1" candidate="$2" clone_dir="$3"
   chmod -R +w "${clone_dir}" 2>/dev/null || true
   rm -rf "${clone_dir}" 2>/dev/null || true
 
-  # Step 1 – clone shallowly (mirrors yazi's Git::clone)
-  git clone -q --depth 1 "${remote}" "${clone_dir}" 2>/dev/null || return 1
+  # Full clone – matches yazi's Git::clone (no --depth)
+  git clone -q "${remote}" "${clone_dir}" 2>/dev/null || return 1
 
-  # Step 2 – checkout the specific rev (mirrors yazi's Git::checkout)
-  # If the rev is not in the shallow history, fetch it first.
-  if ! git -C "${clone_dir}" checkout -q --detach "${candidate}" 2>/dev/null; then
-    git -C "${clone_dir}" fetch -q --depth 1 origin "${candidate}" 2>/dev/null || return 1
-    git -C "${clone_dir}" checkout -q --detach FETCH_HEAD 2>/dev/null || return 1
-  fi
+  # Checkout the specific rev – matches yazi's Git::checkout <rev> --force
+  git -C "${clone_dir}" checkout -q --detach "${candidate}" 2>/dev/null || return 1
 }
 
-# Collect unique dep+rev pairs to avoid redundant network round-trips
-# (yazi-rs/plugins appears once per plugin, all with the same rev).
+# Collect unique dep+rev pairs to avoid redundant network round-trips.
+# (yazi-rs/plugins appears once per plugin, all with the same rev)
 declare -A _seen_pairs
 
 while IFS=$'\t' read -r dep rev; do
@@ -73,7 +73,10 @@ while IFS=$'\t' read -r dep rev; do
 
   head_clone_dir="${tmp_dir}/validate-${dep//\//-}-HEAD"
   if ! validate_clone "${remote}" "${head_rev}" "${head_clone_dir}"; then
-    echo "Failed to validate HEAD for ${dep} — skipping" >&2
+    # Both the pinned rev and HEAD are broken (e.g. corrupt fork object store).
+    # Skip this dep during the install run and restore its original entry.
+    echo "Repository ${dep} is broken even at HEAD; will skip during hash refresh" >&2
+    printf '%s\n' "${dep}" >> "${skip_file}"
     continue
   fi
 
@@ -81,11 +84,7 @@ while IFS=$'\t' read -r dep rev; do
   printf '%s\t%s\t%s\n' "${dep}" "${rev}" "${head_rev}" >> "${rev_fix_file}"
 done < <(
   awk '
-    /^\[\[(plugin|flavor)\.deps\]\]/ {
-      dep = ""
-      rev = ""
-      next
-    }
+    /^\[\[(plugin|flavor)\.deps\]\]/ { dep = ""; rev = ""; next }
     /^use[[:space:]]*=/ {
       if (match($0, /"[^"]+"/)) {
         val = substr($0, RSTART + 1, RLENGTH - 2)
@@ -104,65 +103,115 @@ done < <(
   ' "${tmp_dir}/config/yazi/package.toml"
 )
 
-if [[ -s "${rev_fix_file}" ]]; then
-  awk -F '\t' '
-    FNR == NR {
-      key = $1 SUBSEP $2
-      fix[key] = $3
-      next
+# Apply rev fixes to the temp package.toml, and strip entries for broken deps.
+if [[ -s "${rev_fix_file}" || -s "${skip_file}" ]]; then
+  awk '
+    function load_fixes(file,    line, parts) {
+      while ((getline line < file) > 0) {
+        n = split(line, parts, "\t")
+        if (n == 3) fix[parts[1] SUBSEP parts[2]] = parts[3]
+      }
+      close(file)
+    }
+    function load_skip(file,    line) {
+      while ((getline line < file) > 0) {
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+        if (line != "") skip[line] = 1
+      }
+      close(file)
+    }
+    BEGIN {
+      load_fixes(fixes_file)
+      load_skip(skip_file)
+      buf = ""; dep = ""
     }
     /^\[\[(plugin|flavor)\.deps\]\]/ {
-      dep = ""
-      print
-      next
+      if (buf != "") { if (!(dep in skip)) printf "%s\n", buf; buf = "" }
+      buf = $0; dep = ""; next
+    }
+    /^\[flavor\]/ {
+      if (buf != "") { if (!(dep in skip)) printf "%s\n", buf; buf = "" }
+      print; dep = ""; next
     }
     /^use[[:space:]]*=/ {
       if (match($0, /"[^"]+"/)) {
         val = substr($0, RSTART + 1, RLENGTH - 2)
-        split(val, parts, ":")
-        dep = parts[1]
+        n = split(val, parts, ":"); dep = parts[1]
       }
-      print
-      next
+      buf = buf "\n" $0; next
     }
     /^rev[[:space:]]*=/ {
       if (dep != "" && match($0, /"[0-9a-fA-F]+"/)) {
         old = substr($0, RSTART + 1, RLENGTH - 2)
         key = dep SUBSEP old
-        if (key in fix) {
-          sub(/"[0-9a-fA-F]+"/, "\"" fix[key] "\"")
-        }
+        if (key in fix) sub(/"[0-9a-fA-F]+"/, "\"" fix[key] "\"")
       }
-      print
-      next
+      buf = buf "\n" $0; next
     }
-    {
-      print
-    }
-  ' "${rev_fix_file}" "${tmp_dir}/config/yazi/package.toml" > "${tmp_dir}/config/yazi/package.toml.new"
+    { buf = buf "\n" $0; next }
+    END { if (buf != "" && !(dep in skip)) printf "%s\n", buf }
+  ' fixes_file="${rev_fix_file}" skip_file="${skip_file}" \
+    "${tmp_dir}/config/yazi/package.toml" \
+    > "${tmp_dir}/config/yazi/package.toml.new"
   mv "${tmp_dir}/config/yazi/package.toml.new" "${tmp_dir}/config/yazi/package.toml"
 fi
 
-attempt=1
-max_attempts=3
-while true; do
-  if env \
-    HOME="${tmp_dir}/home" \
-    XDG_CACHE_HOME="${tmp_dir}/cache" \
-    XDG_CONFIG_HOME="${tmp_dir}/config" \
-    XDG_DATA_HOME="${tmp_dir}/data" \
-    ya pkg install --discard >/dev/null; then
-    break
-  fi
+env \
+  HOME="${tmp_dir}/home" \
+  XDG_CACHE_HOME="${tmp_dir}/cache" \
+  XDG_CONFIG_HOME="${tmp_dir}/config" \
+  XDG_DATA_HOME="${tmp_dir}/data" \
+  ya pkg install --discard >/dev/null
 
-  if (( attempt >= max_attempts )); then
-    echo "Failed to refresh Yazi package hashes after ${attempt} attempts" >&2
-    exit 1
-  fi
+# Write the refreshed package.toml back.
+# For any dep whose repo was entirely broken, restore its original entry unchanged.
+if [[ -s "${skip_file}" ]]; then
+  python3 - "${tmp_dir}/config/yazi/package.toml" "${package_file}" "${skip_file}" <<'PYEOF'
+import sys, re
 
-  echo "Retrying Yazi package refresh (attempt $((attempt + 1))/${max_attempts})" >&2
-  rm -rf "${tmp_dir}/cache/yazi"
-  attempt=$((attempt + 1))
-done
+refreshed_path, original_path, skip_path = sys.argv[1], sys.argv[2], sys.argv[3]
 
-cp "${tmp_dir}/config/yazi/package.toml" "${package_file}"
+with open(skip_path) as f:
+    skip_deps = {l.strip() for l in f if l.strip()}
+
+def parse_blocks(text):
+    blocks, current, current_dep = [], [], None
+    for line in text.splitlines(keepends=True):
+        if re.match(r'^\[\[(plugin|flavor)\.deps\]\]', line):
+            if current:
+                blocks.append((current_dep, ''.join(current)))
+            current = [line]; current_dep = None
+        elif re.match(r'^\[flavor\]', line):
+            if current:
+                blocks.append((current_dep, ''.join(current)))
+            current = [line]; current_dep = None
+        else:
+            m = re.match(r'^use\s*=\s*"([^":]+)', line)
+            if m:
+                current_dep = m.group(1)
+            current.append(line)
+    if current:
+        blocks.append((current_dep, ''.join(current)))
+    return blocks
+
+with open(refreshed_path) as f:
+    refreshed = f.read()
+with open(original_path) as f:
+    original = f.read()
+
+original_by_dep = {dep: text for dep, text in parse_blocks(original) if dep}
+refreshed_blocks = parse_blocks(refreshed)
+
+result = [text for _, text in refreshed_blocks]
+
+seen_in_refreshed = {dep for dep, _ in refreshed_blocks if dep}
+for dep in skip_deps:
+    if dep not in seen_in_refreshed and dep in original_by_dep:
+        result.append(original_by_dep[dep])
+
+with open(original_path, 'w') as f:
+    f.write(''.join(result))
+PYEOF
+else
+  cp "${tmp_dir}/config/yazi/package.toml" "${package_file}"
+fi
