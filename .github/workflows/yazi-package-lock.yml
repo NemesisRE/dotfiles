@@ -6,12 +6,6 @@ on:
       - dot_config/yazi/package.toml.tmpl
       - .github/scripts/refresh-yazi-package-lock.sh
       - .github/workflows/yazi-package-lock.yml
-  workflow_dispatch:
-    inputs:
-      branch:
-        description: Branch to run on
-        required: true
-        default: main
 
 permissions:
   contents: write
@@ -19,14 +13,12 @@ permissions:
 jobs:
   refresh-lock:
     name: Refresh Yazi plugin hashes
-    if: |
-      (github.event_name == 'workflow_dispatch') ||
-      (github.actor == 'renovate[bot]' && github.event.pull_request.head.repo.full_name == github.repository)
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.branch || github.event.pull_request.head.ref }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Install Yazi CLI
         run: |
