@@ -9,6 +9,14 @@
   "timezone": "Europe/Berlin",
   "packageRules": [
     {
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "automerge": true,
+      "platformAutomerge": true
+    },
+    {
       "matchManagers": [
         "github-actions"
       ],
