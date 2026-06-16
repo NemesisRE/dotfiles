@@ -24,24 +24,51 @@ cp "${package_file}" "${tmp_dir}/config/yazi/package.toml"
 rev_fix_file="${tmp_dir}/rev-fixes.tsv"
 touch "${rev_fix_file}"
 
-# Ensure each configured revision still exists upstream. If a commit was
-# force-pushed away, pin to current HEAD so hash refresh can continue.
+# Ensure each configured revision can actually be fetched and checked out.
+# If a commit or tree is no longer usable upstream, pin to current HEAD so
+# hash refresh can continue.
 while IFS=$'\t' read -r dep rev; do
   [[ -n "${dep}" && -n "${rev}" ]] || continue
 
   remote="https://github.com/${dep}.git"
-  if git ls-remote "${remote}" | awk '{print $1}' | grep -qi "^${rev}"; then
-    continue
-  fi
-
-  new_rev="$(git ls-remote "${remote}" HEAD | awk 'NR == 1 { print $1 }')"
-  if [[ -z "${new_rev}" ]]; then
-    echo "Failed to resolve fallback revision for ${dep}" >&2
+  head_rev="$(git ls-remote "${remote}" HEAD | awk 'NR == 1 { print $1 }')"
+  if [[ -z "${head_rev}" ]]; then
+    echo "Failed to resolve HEAD revision for ${dep}" >&2
     exit 1
   fi
 
-  echo "Revision ${rev} for ${dep} is unreachable; falling back to ${new_rev}" >&2
-  printf '%s\t%s\t%s\n' "${dep}" "${rev}" "${new_rev}" >> "${rev_fix_file}"
+  validate_revision() {
+    local candidate="$1"
+    local repo_dir checkout_output
+
+    repo_dir="${tmp_dir}/validate-${dep//\//-}-${candidate:0:12}"
+    rm -rf "${repo_dir}"
+    mkdir -p "${repo_dir}"
+
+    if ! checkout_output="$({
+      git -C "${repo_dir}" init -q
+      git -C "${repo_dir}" remote add origin "${remote}"
+      git -C "${repo_dir}" fetch -q --depth 1 origin "${candidate}"
+      git -C "${repo_dir}" checkout -q --detach FETCH_HEAD
+    } 2>&1)"; then
+      printf '%s\n' "${checkout_output}" >&2
+      return 1
+    fi
+
+    return 0
+  }
+
+  if validate_revision "${rev}"; then
+    continue
+  fi
+
+  if ! validate_revision "${head_rev}"; then
+    echo "Failed to validate either ${rev} or HEAD for ${dep}" >&2
+    exit 1
+  fi
+
+  echo "Revision ${rev} for ${dep} cannot be checked out; falling back to ${head_rev}" >&2
+  printf '%s\t%s\t%s\n' "${dep}" "${rev}" "${head_rev}" >> "${rev_fix_file}"
 done < <(
   awk '
     /^\[\[(plugin|flavor)\.deps\]\]/ {
