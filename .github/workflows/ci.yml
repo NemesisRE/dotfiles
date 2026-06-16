@@ -7,6 +7,8 @@ on:
   push:
     branches: [main, master]
   pull_request:
+    paths-ignore:
+      - dot_config/yazi/package.toml.tmpl
 
 jobs:
   # ── ShellCheck ───────────────────────────────────────────────────────────────
