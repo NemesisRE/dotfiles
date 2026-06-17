@@ -84,16 +84,30 @@
     },
     {
       "customType": "regex",
-      "description": "Update Yazi package revisions in package.toml",
+      "description": "Update Yazi multi-plugin repo revisions in package.toml",
       "managerFilePatterns": [
         "/^dot_config\\/yazi\\/package\\.toml\\.tmpl$/"
       ],
       "matchStrings": [
-        "\\[\\[(?:plugin|flavor)\\.deps\\]\\]\\s+use\\s*=\\s*\"(?<depName>[^\"/:]+/[^\"/:]+)(?::[^\"]+)?\"\\s+rev\\s*=\\s*\"(?<currentDigest>[0-9a-f]{7,40})\""
+        "\\[\\[(?:plugin|flavor)\\.deps\\]\\]\\s+use\\s*=\\s*\"(?<depName>[^\"/:]+/[^\"/:]+):[^\"]+\"\\s+rev\\s*=\\s*\"(?<currentDigest>[0-9a-f]{7,40})\""
       ],
       "currentValueTemplate": "main",
       "depTypeTemplate": "yazi-package",
       "packageNameTemplate": "https://github.com/{{{depName}}}",
+      "datasourceTemplate": "git-refs"
+    },
+    {
+      "customType": "regex",
+      "description": "Update Yazi single-plugin repo revisions in package.toml",
+      "managerFilePatterns": [
+        "/^dot_config\\/yazi\\/package\\.toml\\.tmpl$/"
+      ],
+      "matchStrings": [
+        "\\[\\[(?:plugin|flavor)\\.deps\\]\\]\\s+use\\s*=\\s*\"(?<depName>[^\"/:]+/[^\"/:]+)\"\\s+rev\\s*=\\s*\"(?<currentDigest>[0-9a-f]{7,40})\""
+      ],
+      "currentValueTemplate": "main",
+      "depTypeTemplate": "yazi-package",
+      "packageNameTemplate": "https://github.com/{{{depName}}}.yazi",
       "datasourceTemplate": "git-refs"
     }
   ]
