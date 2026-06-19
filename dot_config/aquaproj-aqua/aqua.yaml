@@ -154,7 +154,7 @@ packages:
   - name: hashicorp/vault@v2.0.3
     tags:
       - optional
-  - name: astral-sh/uv@0.11.22 # universal version manager
+  - name: astral-sh/uv@0.11.23 # universal version manager
     tags:
       - optional
   - name: astral-sh/ruff@0.15.18 # Python linter/formatter
