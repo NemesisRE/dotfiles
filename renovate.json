@@ -43,6 +43,13 @@
         "yazi-package"
       ],
       "groupName": "yazi packages"
+    },
+    {
+      "matchDepTypes": [
+        "yazi-package"
+      ],
+      "automerge": true,
+      "platformAutomerge": true
     }
   ],
   "customManagers": [
