@@ -89,7 +89,7 @@ packages:
   - name: bcicen/ctop@v0.7.7 # container monitor
     tags:
       - default
-  - name: JanDeDobbeleer/oh-my-posh@v29.17.0 # prompt theming engine
+  - name: JanDeDobbeleer/oh-my-posh@v29.18.0 # prompt theming engine
     tags:
       - default
       - required
