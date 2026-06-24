@@ -145,7 +145,7 @@ packages:
   - name: bitwarden/clients@cli-v2026.4.1 # bw CLI (needed for SSH TOTP)
     tags:
       - optional
-  - name: hashicorp/terraform@v1.15.6
+  - name: hashicorp/terraform@v1.15.7
     tags:
       - optional
   - name: hashicorp/packer@v1.15.4
