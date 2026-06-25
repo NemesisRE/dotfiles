@@ -116,7 +116,7 @@ packages:
   - name: velero-io/velero@v1.18.1
     tags:
       - k8s
-  - name: projectcalico/calico/calicoctl@v3.32.0
+  - name: projectcalico/calico/calicoctl@v3.32.1
     tags:
       - k8s
   - name: bitnami-labs/sealed-secrets@v0.38.1 # kubeseal
