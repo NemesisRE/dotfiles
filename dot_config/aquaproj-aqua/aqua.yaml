@@ -89,7 +89,7 @@ packages:
   - name: bcicen/ctop@v0.7.7 # container monitor
     tags:
       - default
-  - name: JanDeDobbeleer/oh-my-posh@v29.18.0 # prompt theming engine
+  - name: JanDeDobbeleer/oh-my-posh@v29.19.0 # prompt theming engine
     tags:
       - default
       - required
@@ -113,7 +113,7 @@ packages:
   - name: kubernetes-sigs/krew@v0.5.0
     tags:
       - k8s
-  - name: velero-io/velero@v1.18.1
+  - name: velero-io/velero@v1.18.2
     tags:
       - k8s
   - name: projectcalico/calico/calicoctl@v3.32.1
