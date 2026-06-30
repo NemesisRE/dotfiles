@@ -131,7 +131,7 @@ packages:
   - name: oras-project/oras@v1.3.2
     tags:
       - k8s
-  - name: fluxcd/flux2@v2.8.8 # flux CLI
+  - name: fluxcd/flux2@v2.9.0 # flux CLI
     tags:
       - k8s
   - name: helmfile/helmfile@v1.6.0
@@ -154,7 +154,7 @@ packages:
   - name: hashicorp/vault@v2.0.3
     tags:
       - optional
-  - name: astral-sh/uv@0.11.25 # universal version manager
+  - name: astral-sh/uv@0.11.26 # universal version manager
     tags:
       - optional
   - name: astral-sh/ruff@0.15.20 # Python linter/formatter
