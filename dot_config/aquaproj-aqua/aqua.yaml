@@ -68,7 +68,7 @@ packages:
       - default
 
   # ── Dev Tools ───────────────────────────────────────────────────────────────
-  - name: cli/cli@v2.95.0 # GitHub CLI (gh)
+  - name: cli/cli@v2.96.0 # GitHub CLI (gh)
     tags:
       - default
   - name: jqlang/jq@jq-1.8.1 # JSON processor
@@ -119,7 +119,7 @@ packages:
   - name: projectcalico/calico/calicoctl@v3.32.1
     tags:
       - k8s
-  - name: bitnami-labs/sealed-secrets@v0.38.1 # kubeseal
+  - name: bitnami-labs/sealed-secrets@v0.38.4 # kubeseal
     tags:
       - k8s
   - name: doitintl/kube-no-trouble@0.7.3 # kubent
