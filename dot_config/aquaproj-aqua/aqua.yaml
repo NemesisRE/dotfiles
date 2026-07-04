@@ -77,7 +77,7 @@ packages:
   - name: mikefarah/yq@v4.53.3 # YAML processor
     tags:
       - default
-  - name: jesseduffield/lazygit@v0.62.2
+  - name: jesseduffield/lazygit@v0.63.0
     tags:
       - default
   - name: helix-editor/helix@25.07.1
@@ -134,7 +134,7 @@ packages:
   - name: fluxcd/flux2@v2.9.0 # flux CLI
     tags:
       - k8s
-  - name: helmfile/helmfile@v1.6.0
+  - name: helmfile/helmfile@v1.7.0
     tags:
       - k8s
   - name: helm/helm@v4.2.2
