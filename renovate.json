@@ -42,7 +42,10 @@
       "matchDepTypes": [
         "yazi-package"
       ],
-      "groupName": "yazi packages"
+      "groupName": "yazi packages",
+      "schedule": [
+        "every day"
+      ]
     },
     {
       "matchDepTypes": [
