@@ -44,7 +44,7 @@
       ],
       "groupName": "yazi packages",
       "schedule": [
-        "every day"
+        "* 2 * * *"
       ]
     },
     {
