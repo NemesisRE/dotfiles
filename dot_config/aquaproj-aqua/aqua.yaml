@@ -89,7 +89,7 @@ packages:
   - name: bcicen/ctop@v0.7.7 # container monitor
     tags:
       - default
-  - name: JanDeDobbeleer/oh-my-posh@v29.22.0 # prompt theming engine
+  - name: JanDeDobbeleer/oh-my-posh@v29.22.1 # prompt theming engine
     tags:
       - default
       - required
@@ -145,7 +145,7 @@ packages:
   - name: bitwarden/clients@cli-v2026.4.1 # bw CLI (needed for SSH TOTP)
     tags:
       - optional
-  - name: hashicorp/terraform@v1.15.7
+  - name: hashicorp/terraform@v1.15.8
     tags:
       - optional
   - name: hashicorp/packer@v1.15.4
