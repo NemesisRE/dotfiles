@@ -16,7 +16,7 @@ packages:
     tags:
       - default
       - required
-  - name: atuinsh/atuin@v18.16.1 # shell history
+  - name: atuinsh/atuin@v18.17.0 # shell history
     tags:
       - default
       - required
