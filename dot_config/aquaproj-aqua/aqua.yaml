@@ -89,7 +89,7 @@ packages:
   - name: bcicen/ctop@v0.7.7 # container monitor
     tags:
       - default
-  - name: JanDeDobbeleer/oh-my-posh@v29.26.1 # prompt theming engine
+  - name: JanDeDobbeleer/oh-my-posh@v29.27.0 # prompt theming engine
     tags:
       - default
       - required
@@ -131,7 +131,7 @@ packages:
   - name: oras-project/oras@v1.3.3
     tags:
       - k8s
-  - name: fluxcd/flux2@v2.9.1 # flux CLI
+  - name: fluxcd/flux2@v2.9.2 # flux CLI
     tags:
       - k8s
   - name: helmfile/helmfile@v1.7.0
