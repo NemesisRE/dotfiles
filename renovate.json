@@ -37,22 +37,6 @@
       ],
       "ignoreUnstable": true,
       "allowedVersions": "!/[-.](?:alpha|beta|dev|rc)[0-9A-Za-z.-]*/i"
-    },
-    {
-      "matchDepTypes": [
-        "yazi-package"
-      ],
-      "groupName": "yazi packages",
-      "schedule": [
-        "* 2 * * *"
-      ]
-    },
-    {
-      "matchDepTypes": [
-        "yazi-package"
-      ],
-      "automerge": true,
-      "platformAutomerge": true
     }
   ],
   "customManagers": [
@@ -91,34 +75,6 @@
         "tag:\\s*(?<currentValue>v[0-9][^\\s#]*)\\s*#\\s*renovate:\\s*depName=(?<depName>[^\\s]+)"
       ],
       "datasourceTemplate": "github-tags"
-    },
-    {
-      "customType": "regex",
-      "description": "Update Yazi multi-plugin repo revisions in package.toml",
-      "managerFilePatterns": [
-        "/^dot_config\\/yazi\\/package\\.toml\\.tmpl$/"
-      ],
-      "matchStrings": [
-        "\\[\\[(?:plugin|flavor)\\.deps\\]\\]\\s+use\\s*=\\s*\"(?<depName>[^\"/:]+/[^\"/:]+):[^\"]+\"\\s+rev\\s*=\\s*\"(?<currentDigest>[0-9a-f]{7,40})\""
-      ],
-      "currentValueTemplate": "main",
-      "depTypeTemplate": "yazi-package",
-      "packageNameTemplate": "https://github.com/{{{depName}}}",
-      "datasourceTemplate": "git-refs"
-    },
-    {
-      "customType": "regex",
-      "description": "Update Yazi single-plugin repo revisions in package.toml",
-      "managerFilePatterns": [
-        "/^dot_config\\/yazi\\/package\\.toml\\.tmpl$/"
-      ],
-      "matchStrings": [
-        "\\[\\[(?:plugin|flavor)\\.deps\\]\\]\\s+use\\s*=\\s*\"(?<depName>[^\"/:]+/[^\"/:]+)\"\\s+rev\\s*=\\s*\"(?<currentDigest>[0-9a-f]{7,40})\""
-      ],
-      "currentValueTemplate": "main",
-      "depTypeTemplate": "yazi-package",
-      "packageNameTemplate": "https://github.com/{{{depName}}}.yazi",
-      "datasourceTemplate": "git-refs"
     }
   ]
 }

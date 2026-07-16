@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Refreshes Yazi package rev+hash entries after Renovate bumps revisions.
+# Refreshes Yazi package rev+hash entries for scheduled lock refreshes.
 # Uses `ya pkg upgrade --discard` which clones each repo to HEAD, deploys
 # from the extracted working tree, and writes back both rev and hash — the
 # same flow used when updating packages locally.
