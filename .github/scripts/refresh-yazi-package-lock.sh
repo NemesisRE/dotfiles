@@ -18,6 +18,8 @@ tmp_dir="$(mktemp -d)"
 trap 'chmod -R +w "${tmp_dir}" 2>/dev/null || true; rm -rf "${tmp_dir}"' EXIT
 
 mkdir -p "${tmp_dir}/config/yazi" "${tmp_dir}/home" "${tmp_dir}/cache" "${tmp_dir}/data"
+before_file="${tmp_dir}/before-package.toml"
+cp "${package_file}" "${before_file}"
 cp "${package_file}" "${tmp_dir}/config/yazi/package.toml"
 
 env \
@@ -28,3 +30,10 @@ env \
   ya pkg upgrade --discard
 
 cp "${tmp_dir}/config/yazi/package.toml" "${package_file}"
+
+if cmp -s "${before_file}" "${package_file}"; then
+  echo "Yazi package lock unchanged: all pinned revisions/hashes are already up-to-date."
+else
+  echo "Yazi package lock updated (rev/hash changes):"
+  diff -u "${before_file}" "${package_file}" || true
+fi
