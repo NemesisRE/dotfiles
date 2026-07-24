@@ -89,7 +89,7 @@ packages:
   - name: bcicen/ctop@v0.7.7 # container monitor
     tags:
       - default
-  - name: JanDeDobbeleer/oh-my-posh@v29.35.2 # prompt theming engine
+  - name: JanDeDobbeleer/oh-my-posh@v29.35.3 # prompt theming engine
     tags:
       - default
       - required
@@ -148,7 +148,7 @@ packages:
   - name: hashicorp/terraform@v1.15.8
     tags:
       - optional
-  - name: hashicorp/packer@v1.15.4
+  - name: hashicorp/packer@v1.16.0
     tags:
       - optional
   - name: hashicorp/vault@v2.0.3
