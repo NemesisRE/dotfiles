@@ -80,7 +80,7 @@ packages:
   - name: mikefarah/yq@v4.53.6 # YAML processor
     tags:
       - default
-  - name: jesseduffield/lazygit@v0.64.1
+  - name: jesseduffield/lazygit@v0.65.0
     tags:
       - default
   - name: helix-editor/helix@25.07.1
