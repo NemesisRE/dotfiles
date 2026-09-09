@@ -10,3 +10,13 @@ packages:
     format_overrides:
       - goos: windows
         format: zip
+
+  - type: github_release
+    repo_owner: yetidevworks
+    repo_name: drydock
+    description: What's uncommitted, unpushed, and unreleased across every repo you own. A live TUI dashboard for a fleet of git repos.
+    asset: 'drydock-{{.OS}}-{{.Arch}}.{{.Format}}'
+    replacements:
+      amd64: x86_64
+      arm64: aarch64
+    format: tar.gz

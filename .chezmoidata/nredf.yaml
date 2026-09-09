@@ -17,6 +17,9 @@ nredfDefaults:
     other:
       test_var: "example"
 
+  dev:
+    projects: "~/Repos"
+
   gitConfig:
     user:
       name: ""

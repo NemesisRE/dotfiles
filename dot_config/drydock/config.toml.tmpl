@@ -1,0 +1,71 @@
+{{- $nredfData := includeTemplate "nredf-data.yaml.tmpl" . | fromYaml -}}
+{{- $nredf := index $nredfData "nredf" | default dict -}}
+{{- $dev := index $nredf "dev" | default dict -}}
+{{- $projects := index $dev "projects" | default "" -}}
+roots = ["{{ $projects }}"]
+max_depth = 4
+follow_nested_repos = false
+follow_symlinks = false
+exclude = [
+    "riffle-testbed/**",
+    "riffle-pr-testbed/**",
+    "riffle-merge-test/**",
+]
+prune = []
+
+[refresh]
+interval = "5m"
+watch = true
+debounce = "1s"
+
+[status]
+untracked = "normal"
+max_files = 200
+max_age = "1h"
+
+[remote]
+fetch = false
+interval = "1h"
+concurrency = 4
+timeout = "20s"
+
+[visibility]
+enabled = false
+interval = "24h"
+concurrency = 4
+timeout = "10s"
+
+[release]
+tag_pattern = "*[0-9]*"
+max_subjects = 30
+read_changelog = true
+changelog_files = [
+    "CHANGELOG.md",
+    "CHANGELOG",
+    "changelog.md",
+]
+
+[ui]
+default_filters = []
+default_sort = "activity"
+default_since = ""
+editor_command = [
+    "zed",
+    "{path}",
+]
+git_client_command = [
+    "open",
+    "-a",
+    "Tower",
+    "{path}",
+]
+terminal_command = [
+    "open",
+    "-a",
+    "Terminal",
+    "{path}",
+]
+file_manager_command = [
+    "open",
+    "{path}",
+]
