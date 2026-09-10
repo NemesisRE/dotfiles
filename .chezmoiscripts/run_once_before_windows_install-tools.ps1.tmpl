@@ -1,0 +1,47 @@
+{{- if eq .chezmoi.os "windows" -}}
+# chezmoi run_once_before Windows hook — installs aqua and links managed tools.
+# https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/
+
+$ErrorActionPreference = 'SilentlyContinue'
+
+if ($env:CI -or $env:NREDF_NO_BOOTSTRAP) {
+    exit 0
+}
+
+$localBin = Join-Path $HOME ".local\bin"
+if (-not (Test-Path $localBin)) {
+    New-Item -ItemType Directory -Path $localBin -Force | Out-Null
+}
+if ($env:PATH -notlike "*$localBin*") {
+    $env:PATH = "$localBin;$env:PATH"
+}
+
+# Install aqua if missing
+if (-not (Get-Command aqua -ErrorAction SilentlyContinue)) {
+    Write-Host "==> Installing aqua for Windows"
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        winget install --id aquaproj.aqua --silent --accept-source-agreements --accept-package-agreements
+    } else {
+        $aquaReleaseUrl = "https://github.com/aquaproj/aqua/releases/latest/download/aqua_windows_amd64.zip"
+        $tmpZip = Join-Path ([System.IO.Path]::GetTempPath()) "aqua_bootstrap.zip"
+        $tmpExtract = Join-Path ([System.IO.Path]::GetTempPath()) "aqua_extract"
+        Invoke-WebRequest -Uri $aquaReleaseUrl -OutFile $tmpZip
+        Expand-Archive -Path $tmpZip -DestinationPath $tmpExtract -Force
+        Copy-Item -Path (Join-Path $tmpExtract "aqua.exe") -Destination (Join-Path $localBin "aqua.exe") -Force
+        Remove-Item -Path $tmpZip, $tmpExtract -Recurse -Force
+    }
+}
+
+$aquaBin = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA "aquaproj-aqua\bin" } else { Join-Path $HOME ".local\share\aquaproj-aqua\bin" }
+if ($env:PATH -notlike "*$aquaBin*") {
+    $env:PATH = "$aquaBin;$env:PATH"
+}
+
+if (Get-Command aqua -ErrorAction SilentlyContinue) {
+    Write-Host "==> aqua install -a -l (link managed tools)"
+    & aqua install -a -l
+}
+
+Write-Host "==> Windows bootstrap hook done."
+{{- end }}
+

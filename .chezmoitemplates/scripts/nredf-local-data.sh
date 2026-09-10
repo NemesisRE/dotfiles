@@ -553,22 +553,20 @@ yaml_format_value() {
   esac
 }
 
-parse_schema() {
+parse_schema_file() {
+  local current_file="$1"
   local line=""
   local trimmed_line=""
-  local rest=""
-  local key=""
-  local level=0
   local leading_spaces=0
+  local level=0
+  local key=""
+  local rest=""
   local in_root="false"
   local path=""
   local index=0
   local path_parts=()
 
-  if [[ -z "${source_dir}" || ! -f "${schema_file}" ]]; then
-    printf "Unable to read nredf schema at %s\n" "${schema_file}" >&2
-    exit 1
-  fi
+  [[ -f "${current_file}" ]] || return 0
 
   while IFS= read -r line || [[ -n "${line}" ]]; do
     line="${line%$'\r'}"
@@ -628,7 +626,30 @@ parse_schema() {
     fi
 
     record_count=$(( record_count + 1 ))
-  done < "${schema_file}"
+  done < "${current_file}"
+}
+
+parse_schema() {
+  local modular_dir="${source_dir}/.chezmoidata/config"
+  local files=()
+
+  if [[ -d "${modular_dir}" ]]; then
+    while IFS= read -r f; do
+      [[ -n "${f}" ]] && files+=("${f}")
+    done < <(find "${modular_dir}" -maxdepth 1 \( -name "*.yaml" -o -name "*.yml" \) | sort)
+  elif [[ -f "${schema_file}" ]]; then
+    files+=("${schema_file}")
+  fi
+
+  if [[ ${#files[@]} -eq 0 ]]; then
+    printf "Unable to read nredf schema at %s or %s\n" "${modular_dir}" "${schema_file}" >&2
+    exit 1
+  fi
+
+  local f=""
+  for f in "${files[@]}"; do
+    parse_schema_file "${f}"
+  done
 }
 
 resolve_value_for_path() {

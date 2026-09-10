@@ -1,0 +1,27 @@
+# Files in this repo that are NOT deployed to ~/
+README.md
+docs
+bootstrap.sh
+bootstrap.ps1
+.gitignore
+.gitattributes
+.editorconfig
+.shellcheckrc
+.yamllint.yml
+.github
+renovate.json
+
+{{- if ne .chezmoi.os "windows" }}
+Documents
+.chezmoiscripts/*.ps1
+{{- end }}
+
+{{- if eq .chezmoi.os "windows" }}
+.chezmoiscripts/*.sh
+.Xresources
+.minttyrc
+.config/terminator
+.config/tilda
+.config/screen
+{{- end }}
+

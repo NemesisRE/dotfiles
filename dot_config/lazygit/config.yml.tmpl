@@ -1,0 +1,38 @@
+# OneDark-Pro theme for lazygit matching terminal theme
+gui:
+  nerdFontsVersion: "3"
+  showFileTree: true
+  theme:
+    activeBorderColor:
+      - "#61afef"
+      - bold
+    inactiveBorderColor:
+      - "#4f5666"
+    searchingActiveBorderColor:
+      - "#56b6c2"
+      - bold
+    optionsTextColor:
+      - "#61afef"
+    selectedLineBgColor:
+      - "#3e4452"
+    selectedRangeBgColor:
+      - "#3e4452"
+    cherryPickedCommitBgColor:
+      - "#3e4452"
+    cherryPickedCommitFgColor:
+      - "#c678dd"
+    unstagedChangesColor:
+      - "#e06c75"
+    defaultFgColor:
+      - "#abb2bf"
+
+git:
+  autoFetch: true
+  autoRefresh: true
+  allBranchesLogCmd: "git log --graph --all --color=always --abbrev-commit --date=relative --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(cyan)<%an>%Creset'"
+{{- if lookPath "delta" }}
+  paging:
+    colorArg: always
+    pager: delta --dark --paging=never
+{{- end }}
+

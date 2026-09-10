@@ -2,4 +2,28 @@
 {{- if ge (len .chezmoi.args) 2 }}
 {{-   $subcommand = index .chezmoi.args 1 }}
 {{- end }}
-{{- output (lookPath "bash") (joinPath .chezmoi.sourceDir ".chezmoitemplates" "scripts" "nredf-local-data.sh") .chezmoi.sourceDir $subcommand -}}
+{{- $bash := lookPath "bash" }}
+{{- if $bash }}
+{{-   output $bash (joinPath .chezmoi.sourceDir ".chezmoitemplates" "scripts" "nredf-local-data.sh") .chezmoi.sourceDir $subcommand -}}
+{{- else }}
+nredf:
+  dev:
+    projects: {{ .nredfDefaults.dev.projects | quote }}
+  gitConfig:
+    user:
+      name: {{ .nredfDefaults.gitConfig.user.name | quote }}
+      email: {{ .nredfDefaults.gitConfig.user.email | quote }}
+      signingkey: {{ .nredfDefaults.gitConfig.user.signingkey | quote }}
+    gpg:
+      format: {{ .nredfDefaults.gitConfig.gpg.format | quote }}
+  shell:
+    generell:
+      multiplexer: {{ .nredfDefaults.shell.generell.multiplexer }}
+    aqua:
+      vacuum_days: {{ .nredfDefaults.shell.aqua.vacuum_days }}
+    ssh:
+      agent: {{ .nredfDefaults.shell.ssh.agent | quote }}
+      totp_provider: {{ .nredfDefaults.shell.ssh.totp_provider | quote }}
+    other:
+      test_var: {{ .nredfDefaults.shell.other.test_var | quote }}
+{{- end }}

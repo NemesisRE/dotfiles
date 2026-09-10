@@ -1,0 +1,8 @@
+# Development defaults for nredf (source of truth)
+# Missing machine-local scalar values are prompted once on interactive
+# init/apply/update and then cached locally in ~/.config/chezmoi/nredf-local.env.
+
+nredfDefaults:
+  dev:
+    projects: "~/Repos"
+

@@ -1,4 +1,4 @@
-# nredf config defaults for chezmoi (source of truth)
+# Shell defaults for nredf (source of truth)
 # Missing machine-local scalar values are prompted once on interactive
 # init/apply/update and then cached locally in ~/.config/chezmoi/nredf-local.env.
 
@@ -17,14 +17,3 @@ nredfDefaults:
     other:
       test_var: "example"
 
-  dev:
-    projects: "~/Repos"
-
-  gitConfig:
-    user:
-      name: ""
-      email: ""
-      signingkey: ""
-
-    gpg:
-      format: ssh # options: openpgp, ssh

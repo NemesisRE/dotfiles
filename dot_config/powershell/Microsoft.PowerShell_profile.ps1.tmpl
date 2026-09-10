@@ -1,6 +1,10 @@
-Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted
+Set-PSRepository -Name 'PSGallery' -InstallationPolicy Trusted -ErrorAction SilentlyContinue
 
 ${SCRIPT_PATH} = Split-Path -Parent $MyInvocation.MyCommand.Definition
+if (-not (Test-Path (Join-Path ${SCRIPT_PATH} "Defaults.ps1"))) {
+  ${SCRIPT_PATH} = Join-Path $HOME ".config\powershell"
+}
+
 . "${SCRIPT_PATH}\Defaults.ps1"
 . "${SCRIPT_PATH}\Aliases.ps1"
 . "${SCRIPT_PATH}\Profile_Functions.ps1"
@@ -15,18 +19,24 @@ if (Test-Path "${SCRIPT_PATH}\Local_Modules.ps1") {
 LoadModules ${MODULES}
 
 # Set Powershell Theme
-if (Get-Command oh-my-posh -errorAction SilentlyContinue) {
-  oh-my-posh init pwsh --config "${ENV:POSH_THEMES_PATH}\powerlevel10k_rainbow.omp.json" | Invoke-Expression
+if (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {
+  $ompConfig = if ($env:XDG_CONFIG_HOME) { Join-Path $env:XDG_CONFIG_HOME "oh-my-posh\config.json" } else { Join-Path $HOME ".config\oh-my-posh\config.json" }
+  if (Test-Path $ompConfig) {
+    oh-my-posh init pwsh --config $ompConfig | Invoke-Expression
+  } elseif ($env:POSH_THEMES_PATH -and (Test-Path (Join-Path $env:POSH_THEMES_PATH "powerlevel10k_rainbow.omp.json"))) {
+    oh-my-posh init pwsh --config (Join-Path $env:POSH_THEMES_PATH "powerlevel10k_rainbow.omp.json") | Invoke-Expression
+  } else {
+    oh-my-posh init pwsh | Invoke-Expression
+  }
 }
 
 # Set PSReadLine options
 Set-PSReadLineOption -PredictionSource History
 
 # Set Keyhandlers
-#Set-PSReadlineKeyHandler -Key Tab -Function MenuComplete
-if ( ${isWindows} ) {
+if ( $isWin ) {
   Set-PSReadLineKeyHandler -Key Tab -ScriptBlock { Invoke-GuiCompletion }
-} elseif ( ${isLinux} ) {
+} else {
   Set-PSReadLineKeyHandler -Key Tab -ScriptBlock { Invoke-FzfTabCompletion -CaseInsensitive }
 }
 Set-PSReadLineKeyHandler -Key Ctrl+d -Function ViExit
@@ -45,6 +55,19 @@ $MaximumHistoryCount = 10000;
 
 # PSFzf settings
 Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t' -PSReadlineChordReverseHistory 'Ctrl+r'
+
+# Atuin shell history
+if (Get-Command atuin -ErrorAction SilentlyContinue) {
+  Invoke-Expression (& atuin init pwsh)
+}
+
+# Bitwarden SSH Agent on Windows
+if ($isWin) {
+  $bwPipe = "\\.\pipe\openssh-ssh-agent"
+  if (-not $env:SSH_AUTH_SOCK -and (Test-Path $bwPipe)) {
+    $env:SSH_AUTH_SOCK = $bwPipe
+  }
+}
 
 # Register Completions
 Register-PSKubeContextComplete

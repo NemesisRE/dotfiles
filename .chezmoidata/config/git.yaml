@@ -1,0 +1,14 @@
+# Git configuration defaults for nredf (source of truth)
+# Missing machine-local scalar values are prompted once on interactive
+# init/apply/update and then cached locally in ~/.config/chezmoi/nredf-local.env.
+
+nredfDefaults:
+  gitConfig:
+    user:
+      name: ""
+      email: ""
+      signingkey: ""
+
+    gpg:
+      format: ssh # options: openpgp, ssh
+
