@@ -11,4 +11,3 @@ nredfDefaults:
 
     gpg:
       format: ssh # options: openpgp, ssh
-
