@@ -75,7 +75,7 @@ packages:
   - name: cli/cli@v2.100.0 # GitHub CLI (gh)
     tags:
       - default
-  - name: github/copilot-cli@1.0.83 # GitHub Copilot CLI
+  - name: github/copilot-cli@v1.0.83 # GitHub Copilot CLI
     tags:
       - default
   - name: jqlang/jq@jq-1.8.1 # JSON processor
