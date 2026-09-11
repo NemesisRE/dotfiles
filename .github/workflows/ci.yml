@@ -76,7 +76,6 @@ jobs:
         uses: aquaproj/aqua-installer@v4.0.5
         with:
           aqua_version: v2.62.3
-          policy_file: dot_config/aquaproj-aqua/aqua-policy.yaml
 
       - name: Install every pinned package (all tags) — fails if a version/asset doesn't exist
         working-directory: dot_config/aquaproj-aqua
