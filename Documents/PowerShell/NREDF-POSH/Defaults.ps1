@@ -11,8 +11,30 @@ if ($isWindows) {
   $ENV:NREDF_LRCACHE = "$ENV:NREDF_CACHE\LRCache"
   $YAZI_FILE_ONE = "C:\Program Files\Git\usr\bin\file.exe"
 
+  if (-not $ENV:XDG_CONFIG_HOME) { $ENV:XDG_CONFIG_HOME = "$HOME\.config" }
+  if (-not $ENV:XDG_DATA_HOME) { $ENV:XDG_DATA_HOME = "$HOME\.local\share" }
+
+  # Aqua environment configuration
+  $aquaConfigDir = Join-Path $HOME '.config\aquaproj-aqua'
+  $aquaBaseConfig = Join-Path $aquaConfigDir 'aqua.yaml'
+  $aquaPolicyConfig = Join-Path $aquaConfigDir 'aqua-policy.yaml'
+  $aquaMachineConfig = Join-Path $aquaConfigDir 'machine.yaml'
+
+  if (Test-Path $aquaBaseConfig) {
+    $ENV:AQUA_CONFIG = $aquaBaseConfig
+    $ENV:AQUA_GLOBAL_CONFIG = $aquaBaseConfig
+    if (Test-Path $aquaMachineConfig) {
+      $ENV:AQUA_GLOBAL_CONFIG = "$aquaBaseConfig$pathSep$aquaMachineConfig"
+    }
+  }
+  if (Test-Path $aquaPolicyConfig) {
+    $ENV:AQUA_POLICY_CONFIG = $aquaPolicyConfig
+  }
+
+  $aquaLocalBin = Join-Path $ENV:LOCALAPPDATA "aquaproj-aqua\bin"
   $extraPaths = @(
     "$HOME\.local\bin",
+    $aquaLocalBin,
     "$HOME\.local\share\aquaproj-aqua\bin"
   )
   foreach ($p in $extraPaths) {

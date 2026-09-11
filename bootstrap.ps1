@@ -48,6 +48,11 @@ if ($env:PATH -notlike "*$localBin*") {
     $env:PATH = "$localBin;$env:PATH"
 }
 
+$homeDocs = Join-Path $HOME "Documents"
+if (-not (Test-Path $homeDocs)) {
+    New-Item -ItemType Directory -Path $homeDocs -Force | Out-Null
+}
+
 # ── Install / Verify chezmoi ─────────────────────────────────────────────────
 if (-not (Get-Command chezmoi -ErrorAction SilentlyContinue)) {
     Write-Step "Installing chezmoi"
@@ -76,6 +81,9 @@ if (-not (Get-Command chezmoi -ErrorAction SilentlyContinue)) {
 
 # ── Install / Verify aqua ────────────────────────────────────────────────────
 $aquaBin = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA "aquaproj-aqua\bin" } else { Join-Path $HOME ".local\share\aquaproj-aqua\bin" }
+if ($env:PATH -notlike "*$aquaBin*") {
+    $env:PATH = "$aquaBin;$env:PATH"
+}
 if (-not (Get-Command aqua -ErrorAction SilentlyContinue)) {
     Write-Step "Installing aqua CLI tool manager"
     if (Get-Command winget -ErrorAction SilentlyContinue) {
@@ -99,9 +107,69 @@ if (-not (Get-Command aqua -ErrorAction SilentlyContinue)) {
 Write-Step "Applying dotfiles ($DotfilesRepo)"
 & $chezmoiCmd init --apply $DotfilesRepo
 
+# ── Link PowerShell Profiles for OneDrive / Redirected Documents ─────────────
+$myDocs = [System.Environment]::GetFolderPath('MyDocuments')
+if ($myDocs -and ($myDocs.TrimEnd('\/') -ne $homeDocs.TrimEnd('\/'))) {
+    Write-Step "Configuring OneDrive / Redirected Documents ($myDocs)"
+    $foldersToLink = @('PowerShell', 'WindowsPowerShell')
+    foreach ($folder in $foldersToLink) {
+        $src = Join-Path $homeDocs $folder
+        $dst = Join-Path $myDocs $folder
+        if (-not (Test-Path $src)) { continue }
+
+        $isLinked = $false
+        if (Test-Path $dst) {
+            $item = Get-Item -LiteralPath $dst -Force
+            if ($item.LinkType -and (@($item.Target) -contains $src)) {
+                $isLinked = $true
+            }
+        }
+
+        if (-not $isLinked) {
+            if (Test-Path $dst) {
+                $backup = "${dst}.backup_$(Get-Date -Format 'yyyyMMddHHmmss')"
+                Write-Info "Backing up existing $folder in OneDrive to $backup..."
+                # Preserve any custom Modules not present in source
+                $targetMods = Join-Path $dst "Modules"
+                $srcMods = Join-Path $src "Modules"
+                if ((Test-Path $targetMods) -and (-not (Test-Path $srcMods))) {
+                    Copy-Item -Path $targetMods -Destination $srcMods -Recurse -Force -ErrorAction SilentlyContinue
+                }
+                Move-Item -Path $dst -Destination $backup -Force
+            }
+            Write-Info "Linking $dst -> $src..."
+            New-Item -ItemType Junction -Path $dst -Target $src -Force | Out-Null
+        } else {
+            Write-Info "$folder is already linked to chezmoi."
+        }
+    }
+}
+
 # ── Link Aqua Managed Tools ──────────────────────────────────────────────────
 if (Get-Command aqua -ErrorAction SilentlyContinue) {
     Write-Step "Linking aqua-managed tools"
+    $aquaConfig = Join-Path $HOME ".config\aquaproj-aqua\aqua.yaml"
+    $aquaPolicy = Join-Path $HOME ".config\aquaproj-aqua\aqua-policy.yaml"
+    if (Test-Path $aquaConfig) {
+        $env:AQUA_GLOBAL_CONFIG = $aquaConfig
+        $env:AQUA_CONFIG = $aquaConfig
+        [System.Environment]::SetEnvironmentVariable("AQUA_GLOBAL_CONFIG", $aquaConfig, [System.EnvironmentVariableTarget]::User)
+    }
+    if (Test-Path $aquaPolicy) {
+        $env:AQUA_POLICY_CONFIG = $aquaPolicy
+        [System.Environment]::SetEnvironmentVariable("AQUA_POLICY_CONFIG", $aquaPolicy, [System.EnvironmentVariableTarget]::User)
+    }
+    if ($env:PATH -notlike "*$aquaBin*") {
+        $env:PATH = "$aquaBin;$env:PATH"
+    }
+
+    # Ensure aqua bin is in User PATH
+    $userPath = [System.Environment]::GetEnvironmentVariable("PATH", [System.EnvironmentVariableTarget]::User)
+    if ($userPath -notlike "*$aquaBin*") {
+        $newUserPath = if ($userPath) { "$aquaBin;$userPath" } else { $aquaBin }
+        [System.Environment]::SetEnvironmentVariable("PATH", $newUserPath, [System.EnvironmentVariableTarget]::User)
+    }
+
     & aqua install -a -l
 }
 

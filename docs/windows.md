@@ -104,6 +104,7 @@ Aqua automatically manages cross-platform developer tools on Windows without nee
 
 | Tool | Purpose | Command |
 | :--- | :--- | :--- |
+| **atuin** | Shell history sync & fuzzy search | `atuin` |
 | **fzf** | Interactive fuzzy finder | `fzf` |
 | **ripgrep** | Fast recursive regex search | `rg` |
 | **bat** | Syntax-highlighting cat | `bat` |
@@ -112,6 +113,14 @@ Aqua automatically manages cross-platform developer tools on Windows without nee
 | **helix** | Modern modal editor | `hx` |
 | **yazi** | Blazing fast terminal file manager | `yazi` |
 | **btop** | System resource monitor | `btop` |
+
+Aqua tools are linked to `%LOCALAPPDATA%\aquaproj-aqua\bin` which is automatically added to `PATH`. The global config `~/.config/aquaproj-aqua/aqua.yaml` is discovered via `AQUA_GLOBAL_CONFIG`.
+
+### Atuin Shell History Integration
+Atuin is managed by Aqua and automatically initialized in PowerShell (`Profile.ps1`):
+- **Search History**: Press <kbd>Ctrl</kbd> + <kbd>r</kbd> or <kbd>UpArrow</kbd> to open interactive fuzzy search.
+- **Sync History**: Run `atuin register` / `atuin login` to sync shell history across Windows, Linux, and macOS.
+- **Diagnostics**: Run `atuin doctor` to verify setup.
 
 ### Setting Aqua GitHub Token (Avoid Rate Limits)
 
@@ -160,15 +169,17 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
 ### OneDrive Documents Redirection
-If OneDrive redirects your `Documents` folder to `C:\Users\<user>\OneDrive\Documents`, PowerShell 7 reads its profile from the redirected path. You can verify your active profile location with:
+If OneDrive Known Folder Move redirects your `Documents` folder (e.g. `C:\Users\<user>\OneDrive\Documents` or localized `C:\Users\<user>\OneDrive\Dokumente`), PowerShell resolves `$PROFILE` to the redirected path.
 
-```powershell
-$PROFILE
-```
+**This is handled automatically.**
+- `bootstrap.ps1` and chezmoi's post-apply hook (`.chezmoiscripts/run_after_windows_sync-profiles.ps1.tmpl`) detect when `[System.Environment]::GetFolderPath('MyDocuments')` differs from `$HOME\Documents`.
+- They automatically create NTFS directory junctions (`PowerShell` and `WindowsPowerShell`) pointing from OneDrive's Documents folder to `$HOME\Documents\PowerShell`.
+- Directory junctions do **not** require Developer Mode or Administrator privileges.
+- Any preexisting unlinked profile directory is safely backed up with a timestamp before creating the junction.
 
-If needed, create a symbolic link or copy the profile:
+You can verify your active profile junction anytime:
 ```powershell
-New-Item -ItemType SymbolicLink -Path $PROFILE -Target "$HOME\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
+Get-Item (Split-Path $PROFILE) | Select-Object FullName, LinkType, Target
 ```
 
 ---

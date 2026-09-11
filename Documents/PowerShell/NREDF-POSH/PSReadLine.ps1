@@ -22,7 +22,9 @@ if ($Env:TERM_PROGRAM -ne 'vscode') {
   Set-PSReadLineKeyHandler -Key Alt+q -ScriptBlock { NREDF_SaveInHistory }
 
   # Set PSReadLine options
-  Set-PSReadLineOption -PredictionSource HistoryAndPlugin
+  try {
+    Set-PSReadLineOption -PredictionSource HistoryAndPlugin -ErrorAction SilentlyContinue
+  } catch {}
 
   Set-PSReadLineKeyHandler -Chord '"', "'" `
     -BriefDescription SmartInsertQuote `

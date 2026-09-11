@@ -1,0 +1,71 @@
+{{- if eq .chezmoi.os "windows" -}}
+# chezmoi run_after Windows hook — ensures PowerShell profiles in redirected Documents (e.g. OneDrive) are linked.
+# Runs automatically after `chezmoi apply` or `chezmoi update`.
+
+$ErrorActionPreference = 'Continue'
+
+$myDocs = [System.Environment]::GetFolderPath('MyDocuments')
+$homeDocs = Join-Path $HOME 'Documents'
+
+if ($myDocs -and ($myDocs.TrimEnd('\/') -ne $homeDocs.TrimEnd('\/'))) {
+    Write-Host "==> Detected redirected Documents folder: $myDocs"
+
+    if (-not (Test-Path $myDocs)) {
+        New-Item -ItemType Directory -Path $myDocs -Force | Out-Null
+    }
+
+    $foldersToLink = @('PowerShell', 'WindowsPowerShell')
+    foreach ($folder in $foldersToLink) {
+        $sourcePath = Join-Path $homeDocs $folder
+        $targetPath = Join-Path $myDocs $folder
+
+        if (-not (Test-Path $sourcePath)) {
+            continue
+        }
+
+        # Check if targetPath is already a junction or symlink pointing to sourcePath
+        $isLinked = $false
+        if (Test-Path $targetPath) {
+            $item = Get-Item -LiteralPath $targetPath -Force
+            if ($item.LinkType -and $item.Target) {
+                $targets = @($item.Target)
+                if ($targets -contains $sourcePath) {
+                    $isLinked = $true
+                }
+            }
+        }
+
+        if (-not $isLinked) {
+            if (Test-Path $targetPath) {
+                $timestamp = (Get-Date -Format 'yyyyMMddHHmmss')
+                $backupPath = "${targetPath}.backup_${timestamp}"
+                Write-Host "==> Backing up existing $folder in $myDocs to $backupPath"
+
+                # If target has custom Modules not present in source, preserve them by copying over
+                $targetModules = Join-Path $targetPath "Modules"
+                $sourceModules = Join-Path $sourcePath "Modules"
+                if ((Test-Path $targetModules) -and (-not (Test-Path $sourceModules))) {
+                    Copy-Item -Path $targetModules -Destination $sourceModules -Recurse -Force -ErrorAction SilentlyContinue
+                }
+
+                Move-Item -Path $targetPath -Destination $backupPath -Force
+            }
+
+            Write-Host "==> Linking $targetPath -> $sourcePath"
+            try {
+                New-Item -ItemType Junction -Path $targetPath -Target $sourcePath -Force | Out-Null
+                Write-Host "    Junction successfully created."
+            } catch {
+                Write-Warning "Could not create junction: $_. Attempting symbolic link..."
+                try {
+                    New-Item -ItemType SymbolicLink -Path $targetPath -Target $sourcePath -Force | Out-Null
+                    Write-Host "    Symbolic link successfully created."
+                } catch {
+                    Write-Warning "Could not create symbolic link: $_"
+                }
+            }
+        }
+    }
+}
+{{- end }}
+

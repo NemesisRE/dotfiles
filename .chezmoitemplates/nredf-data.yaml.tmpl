@@ -3,7 +3,7 @@
 {{-   $subcommand = index .chezmoi.args 1 }}
 {{- end }}
 {{- $bash := lookPath "bash" }}
-{{- if $bash }}
+{{- if and (ne .chezmoi.os "windows") $bash }}
 {{-   output $bash (joinPath .chezmoi.sourceDir ".chezmoitemplates" "scripts" "nredf-local-data.sh") .chezmoi.sourceDir $subcommand -}}
 {{- else }}
 nredf:
