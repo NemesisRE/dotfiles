@@ -27,11 +27,28 @@ autoload -Uz compinit
 NREDF_ZCOMPDUMP="${XDG_CACHE_HOME}/zsh/.zcompdump"
 NREDF_COMPLETION_REFRESH_REQUIRED=0
 
+NREDF_DOCKER_COMPLETION="/usr/share/zsh/vendor-completions/_docker"
+_nredf_compinit() {
+  if [[ -L "${NREDF_DOCKER_COMPLETION}" && ! -e "${NREDF_DOCKER_COMPLETION}" ]]; then
+    compinit "$@" 2> >(grep -v -F -- "${NREDF_DOCKER_COMPLETION}" >&2)
+  else
+    compinit "$@"
+  fi
+}
+
+_nredf_mtime() {
+  if [[ "${OSTYPE}" == darwin* ]]; then
+    stat -f '%m' "$1"
+  else
+    stat -c '%Y' "$1"
+  fi
+}
+
 if [[ -f "${NREDF_ZCOMPDUMP}" && -d "${HOME}/.config/completion/zsh" ]]; then
-  NREDF_ZCOMPDUMP_MTIME="$(stat -f '%m' "${NREDF_ZCOMPDUMP}" 2>/dev/null || echo 0)"
+  NREDF_ZCOMPDUMP_MTIME="$(_nredf_mtime "${NREDF_ZCOMPDUMP}" 2>/dev/null || echo 0)"
   for NREDF_COMPLETION_FILE in "${HOME}/.config/completion/zsh"/*; do
     [[ -f "${NREDF_COMPLETION_FILE}" ]] || continue
-    NREDF_COMPLETION_MTIME="$(stat -f '%m' "${NREDF_COMPLETION_FILE}" 2>/dev/null || echo 0)"
+    NREDF_COMPLETION_MTIME="$(_nredf_mtime "${NREDF_COMPLETION_FILE}" 2>/dev/null || echo 0)"
     if [[ "${NREDF_COMPLETION_MTIME}" -gt "${NREDF_ZCOMPDUMP_MTIME}" ]]; then
       NREDF_COMPLETION_REFRESH_REQUIRED=1
       break
@@ -41,9 +58,9 @@ fi
 
 # Fast path: use cached completion dump; refresh only every 24h.
 if [[ -f "${NREDF_ZCOMPDUMP}" && "${NREDF_COMPLETION_REFRESH_REQUIRED}" -eq 0 ]] && declare -f _nredf_last_run >/dev/null 2>&1 && _nredf_last_run "_nredf_zsh_compinit_refresh"; then
-  compinit -C -d "${NREDF_ZCOMPDUMP}"
+  _nredf_compinit -C -d "${NREDF_ZCOMPDUMP}"
 else
-  compinit -u -d "${NREDF_ZCOMPDUMP}"
+  _nredf_compinit -u -d "${NREDF_ZCOMPDUMP}"
   if declare -f _nredf_last_run >/dev/null 2>&1; then
     _nredf_last_run "_nredf_zsh_compinit_refresh" "true" "$(($(date +%s) + 86400))"
   fi

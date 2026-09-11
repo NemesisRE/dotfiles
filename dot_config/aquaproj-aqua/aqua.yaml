@@ -2,6 +2,10 @@
 # Add or comment-out packages to control what gets installed.
 # Run `aqua install` (or `chezmoi apply`) to apply changes.
 # https://aquaproj.github.io/docs/reference/config/
+#
+# CI validates this file on every push/PR (job "aqua-validate" in
+# .github/workflows/ci.yml) by running `aqua install -a`, which fails fast if
+# a pinned version/asset doesn't actually exist (e.g. a bad version tag).
 
 registries:
   - type: standard
@@ -86,7 +90,7 @@ packages:
   - name: helix-editor/helix@25.07.1
     tags:
       - default
-  - name: aristocratos/btop@1.4.7 # system monitor
+  - name: aristocratos/btop@v1.4.7 # system monitor
     tags:
       - default
   - name: bcicen/ctop@v0.7.7 # container monitor
@@ -112,6 +116,10 @@ packages:
     tags:
       - k8s
   - name: derailed/k9s@v0.51.0
+    tags:
+      - k8s
+  - name: nklmilojevic/sofka@v0.25.5
+    registry: local
     tags:
       - k8s
   - name: kubernetes-sigs/kustomize@kustomize/v5.8.1
@@ -147,7 +155,16 @@ packages:
   - name: helm/helm@v4.3.0
     tags:
       - k8s
+  - name: ahmetb/kubectx@v0.11.0
+    command_aliases:
+      - command: kubectx
+        alias: ctx
+    tags:
+      - k8s
   - name: ahmetb/kubectx/kubens@v0.11.0
+    command_aliases:
+      - command: kubens
+        alias: ns
     tags:
       - k8s
 

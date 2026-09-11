@@ -45,7 +45,11 @@ function _nredf_load_sheldon_plugins() {
   # Initialize completion before plugin load if compdef is still unavailable.
   if (( ! ${+functions[compdef]} )); then
     autoload -Uz compinit
-    compinit -i
+    if (( ${+functions[_nredf_compinit]} )); then
+      _nredf_compinit -i
+    else
+      compinit -i
+    fi
   fi
   eval "$(sheldon source)"
   _nredf_init_oh_my_posh --force

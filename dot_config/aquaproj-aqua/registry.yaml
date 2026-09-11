@@ -20,3 +20,47 @@ packages:
       amd64: x86_64
       arm64: aarch64
     format: tar.gz
+
+  - type: github_release
+    repo_owner: nklmilojevic
+    repo_name: sofka
+    description: "A Kubernetes TUI, reimagined in Rust - built on kube-rs and ratatui, async-first from the ground up"
+    version_constraint: "false"
+    version_overrides:
+      - version_constraint: Version == "v0.13.4"
+        asset: sofka-{{.Version}}-{{.Arch}}-{{.OS}}.{{.Format}}
+        format: tar.gz
+        replacements:
+          amd64: x86_64
+          arm64: aarch64
+          darwin: apple-darwin
+          linux: unknown-linux-musl
+        supported_envs:
+          - linux
+          - darwin
+      - version_constraint: semver("<= 0.23.0")
+        asset: sofka-{{.Version}}-{{.Arch}}-{{.OS}}.{{.Format}}
+        format: tar.gz
+        replacements:
+          amd64: x86_64
+          arm64: aarch64
+          darwin: apple-darwin
+          linux: unknown-linux-gnu
+        supported_envs:
+          - linux
+          - darwin
+      - version_constraint: "true"
+        asset: sofka-{{.Version}}-{{.Arch}}-{{.OS}}.{{.Format}}
+        format: tar.gz
+        replacements:
+          amd64: x86_64
+          arm64: aarch64
+          darwin: apple-darwin
+          linux: unknown-linux-gnu
+        checksum:
+          type: github_release
+          asset: SHA256SUMS
+          algorithm: sha256
+        supported_envs:
+          - linux
+          - darwin

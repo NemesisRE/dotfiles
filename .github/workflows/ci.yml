@@ -63,3 +63,22 @@ jobs:
         run: |
           export PATH="${HOME}/.local/bin:${PATH}"
           chezmoi apply --dry-run --force --source="${GITHUB_WORKSPACE}" 2>&1
+
+  # ── aqua config validation ───────────────────────────────────────────────────
+  aqua-validate:
+    name: aqua install (validate pinned versions)
+    if: github.event_name != 'pull_request' || github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install aqua
+        uses: aquaproj/aqua-installer@v4.0.5
+        with:
+          aqua_version: v2.62.3
+
+      - name: Install every pinned package (all tags) — fails if a version/asset doesn't exist
+        working-directory: dot_config/aquaproj-aqua
+        env:
+          AQUA_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: aqua install -a

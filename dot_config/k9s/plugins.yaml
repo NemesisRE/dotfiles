@@ -1,0 +1,12 @@
+plugins:
+  approve-csr:
+    shortCut: a
+    confirm: true
+    description: Approve a csr
+    scopes:
+      - csr
+    command: sh
+    background: false
+    args:
+      - -c
+      - "kubectl certificate approve --context $CONTEXT $NAME"

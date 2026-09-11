@@ -4,4 +4,12 @@ type = "archive"
 url = "{{ printf "https://github.com/akinomyoga/ble.sh/releases/download/%s/ble-%s.tar.xz" .ble.tag (trimPrefix "v" .ble.tag) }}"
 exact = true
 stripComponents = 1
+
+[".local/share/k9s/plugins"]
+type = "archive"
+url = "https://github.com/derailed/k9s/archive/refs/heads/master.tar.gz"
+exact = false
+stripComponents = 2
+include = ["k9s-master/plugins/**"]
+refreshPeriod = "168h"
 {{- end }}

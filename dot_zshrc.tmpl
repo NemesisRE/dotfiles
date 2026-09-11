@@ -6,6 +6,15 @@
 
 export XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-${HOME}/.config}"
 export XDG_DATA_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-${HOME}/.cache}"
+
+NREDF_DOCKER_COMPLETION="/usr/share/zsh/vendor-completions/_docker"
+if [[ -L "${NREDF_DOCKER_COMPLETION}" && ! -e "${NREDF_DOCKER_COMPLETION}" ]]; then
+  NREDF_FALLBACK_COMPLETIONS="${XDG_CACHE_HOME}/zsh/fallback-completions"
+  mkdir -p "${NREDF_FALLBACK_COMPLETIONS}"
+  [[ -f "${NREDF_FALLBACK_COMPLETIONS}/_docker" ]] || print '#compdef docker' > "${NREDF_FALLBACK_COMPLETIONS}/_docker"
+  fpath=("${NREDF_FALLBACK_COMPLETIONS}" "${fpath[@]}")
+fi
 
 if ! command -v _nredf_step >/dev/null 2>&1; then
   _nredf_step() { :; }
