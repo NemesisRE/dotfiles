@@ -80,11 +80,11 @@ Windows OpenSSH client and Git will automatically query Bitwarden for signing au
 
 ### Profile Structure
 
-On Windows, chezmoi deploys your profile to:
-- **PowerShell 7+**: `Documents\PowerShell\Microsoft.PowerShell_profile.ps1`
+On Windows, chezmoi deploys your profile and dotfiles directly to:
+- **PowerShell 7+**: `Documents\PowerShell\Microsoft.PowerShell_profile.ps1` (along with `Aliases.ps1`, `Defaults.ps1`, `Modules.ps1`, etc.)
 - **Windows PowerShell 5.1**: `Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1`
 
-Both profiles automatically dot-source the unified, cross-platform configuration in `~/.config/powershell/Microsoft.PowerShell_profile.ps1`.
+Windows PowerShell 5.1 automatically dot-sources the configuration from `Documents\PowerShell\Microsoft.PowerShell_profile.ps1`. On Linux and macOS, `~/.config/powershell` is symlinked to `~/Documents/PowerShell`.
 
 ### Key Features Included
 - **Atuin**: End-to-end encrypted, searchable shell history (`Ctrl+r`) synchronized across your machines.
@@ -168,7 +168,7 @@ $PROFILE
 
 If needed, create a symbolic link or copy the profile:
 ```powershell
-New-Item -ItemType SymbolicLink -Path $PROFILE -Target "$HOME\.config\powershell\Microsoft.PowerShell_profile.ps1"
+New-Item -ItemType SymbolicLink -Path $PROFILE -Target "$HOME\Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
 ```
 
 ---
@@ -176,9 +176,9 @@ New-Item -ItemType SymbolicLink -Path $PROFILE -Target "$HOME\.config\powershell
 ## 🔄 Daily Commands
 
 ```powershell
-chezmoi update                                                    # Pull latest dotfiles and apply
-chezmoi edit ~/.config/powershell/Microsoft.PowerShell_profile.ps1 # Edit profile
-aqua install                                                      # Update/install managed CLI tools
+chezmoi update                                                         # Pull latest dotfiles and apply
+chezmoi edit Documents/PowerShell/Microsoft.PowerShell_profile.ps1      # Edit profile
+aqua install                                                           # Update/install managed CLI tools
 reload                                                            # Reload current PowerShell session
 ```
 

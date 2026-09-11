@@ -12,7 +12,7 @@ bootstrap.ps1
 renovate.json
 
 {{- if ne .chezmoi.os "windows" }}
-Documents
+Documents/WindowsPowerShell
 .chezmoiscripts/*.ps1
 {{- end }}
 
@@ -23,5 +23,5 @@ Documents
 .config/terminator
 .config/tilda
 .config/screen
+.config/powershell
 {{- end }}
-

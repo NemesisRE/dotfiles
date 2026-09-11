@@ -95,7 +95,7 @@ aqua install -a -l
 2. The dotfiles repository is cloned to `~/.local/share/chezmoi`
 3. **aqua** is installed and declarative CLI tools are linked
 4. All dotfiles and profiles are applied to `~/`
-5. On Unix, shell libraries are deployed to `~/.local/share/nredf/`; on Windows, PowerShell profiles in `Documents\PowerShell` are linked to `~/.config/powershell`
+5. On Unix, shell libraries are deployed to `~/.local/share/nredf/`; PowerShell dotfiles are maintained in `Documents/PowerShell` (with `~/.config/powershell` symlinked on Linux/macOS)
 
 ---
 
@@ -138,7 +138,7 @@ reload
 | [`.chezmoidata/ble.yaml`](.chezmoidata/ble.yaml) | Ble.sh version tag |
 | [`.chezmoiscripts/`](.chezmoiscripts/) | Platform lifecycle hooks (run on `chezmoi apply`) |
 | [`dot_config/aquaproj-aqua/aqua.yaml`](dot_config/aquaproj-aqua/aqua.yaml) | Declarative CLI tools list managed by aqua |
-| [`dot_config/powershell/`](dot_config/powershell/) | Unified PowerShell profile, functions, aliases, and completions |
+| [`Documents/PowerShell/`](Documents/PowerShell/) | Unified PowerShell profile, functions, aliases, and completions |
 | [`dot_config/oh-my-posh/config.json`](dot_config/oh-my-posh/config.json) | Shared Oh-My-Posh prompt theme |
 | [`dot_local/share/nredf/shell/`](dot_local/share/nredf/shell/) | Bash/Zsh shell function library |
 | [`docs/windows.md`](docs/windows.md) | In-depth Windows setup, tweaks, and troubleshooting guide |

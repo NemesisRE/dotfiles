@@ -143,6 +143,6 @@ Write-Info "Open a new PowerShell terminal to activate your new shell environmen
 Write-Info ""
 Write-Info "Useful commands:"
 Write-Info "  chezmoi update                       - pull latest dotfiles and re-apply"
-Write-Info "  chezmoi edit ~/.config/powershell/Microsoft.PowerShell_profile.ps1"
+Write-Info "  chezmoi edit Documents/PowerShell/Microsoft.PowerShell_profile.ps1"
 Write-Info "  aqua install                         - install/update all managed CLI tools"
 
