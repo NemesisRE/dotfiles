@@ -11,5 +11,27 @@ url = "https://github.com/derailed/k9s/archive/refs/heads/master.tar.gz"
 exact = false
 stripComponents = 2
 include = ["k9s-master/plugins/**"]
+filter.command = "sh"
+filter.args = [
+	"-c",
+	'''
+set -eu
+tmp="${TMPDIR:-/tmp}/chezmoi-k9s-plugins.$$"
+mkdir -p "$tmp"
+trap 'rm -rf "$tmp"' EXIT HUP INT TERM
+
+tar xzf - -C "$tmp"
+for file in "$tmp"/k9s-master/plugins/*.yaml; do
+	[ -e "$file" ] || continue
+	awk '
+		/^plugins:[[:space:]]*$/ { in_plugins = 1; next }
+		in_plugins && /^  / { print substr($0, 3); next }
+		{ print }
+	' "$file" > "$file.tmp"
+	mv "$file.tmp" "$file"
+done
+tar czf - -C "$tmp" k9s-master/plugins
+'''
+]
 refreshPeriod = "168h"
 {{- end }}
