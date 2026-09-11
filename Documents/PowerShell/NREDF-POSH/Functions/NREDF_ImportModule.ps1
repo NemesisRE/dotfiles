@@ -13,10 +13,12 @@ function NREDF_ImportModules {
   )
 
   foreach (${MODULE} in ${MODULES}) {
-    if (-not ( [string]::IsNullOrEmpty($MODULE))) {
-      ${installedModule} = Get-Module -ListAvailable -Name ${MODULE} -ErrorAction SilentlyContinue
-      if ($null -ne ${installedModule}) {
-        Import-Module -Name ${MODULE} -Force -ErrorAction Stop
+    if (-not [string]::IsNullOrEmpty($MODULE)) {
+      if (-not (Get-Module -Name ${MODULE})) {
+        ${installedModule} = Get-Module -ListAvailable -Name ${MODULE} -ErrorAction SilentlyContinue
+        if ($null -ne ${installedModule}) {
+          Import-Module -Name ${MODULE} -ErrorAction Stop
+        }
       }
     }
   }

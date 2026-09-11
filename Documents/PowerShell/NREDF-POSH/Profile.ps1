@@ -35,6 +35,11 @@ if (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {
   }
 }
 
+# Daily automated sync for dotfiles and aqua tools (throttled to once per 24h)
+if (-not $ENV:CHEZMOI -and (Get-Command NREDF_DailySync -ErrorAction SilentlyContinue)) {
+  NREDF_DailySync
+}
+
 if ($Env:TERM_PROGRAM -ne 'vscode') {
   NREDF_InstallModules ${MODULES}
   NREDF_UpdateModule
@@ -52,8 +57,10 @@ if ($Env:TERM_PROGRAM -ne 'vscode') {
 
 # Atuin shell history integration (matches bash & zsh, bound to both Ctrl+r and UpArrow)
 if (Get-Command atuin -ErrorAction SilentlyContinue) {
-  (& atuin init powershell | Out-String) | Invoke-Expression
-  if (Get-Command Enable-AtuinSearchKeys -ErrorAction SilentlyContinue) {
-    Enable-AtuinSearchKeys -CtrlR $true -UpArrow $true
+  if (-not (Get-Module -Name Atuin -ErrorAction SilentlyContinue)) {
+    (& atuin init powershell | Out-String) | Invoke-Expression
+    if (Get-Command Enable-AtuinSearchKeys -ErrorAction SilentlyContinue) {
+      Enable-AtuinSearchKeys -CtrlR $true -UpArrow $true
+    }
   }
 }
