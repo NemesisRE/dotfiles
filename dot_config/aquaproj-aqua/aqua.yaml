@@ -24,7 +24,7 @@ packages:
     tags:
       - default
       - required
-  - name: junegunn/fzf@v0.74.3 # fuzzy finder
+  - name: junegunn/fzf@v0.74.4 # fuzzy finder
     tags:
       - default
       - required
