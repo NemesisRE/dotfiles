@@ -97,5 +97,10 @@ Options:
   }
 
   Write-Host "==> Reloading PowerShell profile..." -ForegroundColor Green
-  & ${PROFILE}
+  if ((Get-Command Switch-Process -ErrorAction SilentlyContinue) -and -not [Console]::IsInputRedirected) {
+    $pwsh = if ([System.Environment]::ProcessPath) { [System.Environment]::ProcessPath } else { (Get-Process -Id $PID).Path }
+    Switch-Process -WithCommand $pwsh, '-NoLogo'
+  } else {
+    . ${PROFILE}
+  }
 }
