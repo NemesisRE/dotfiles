@@ -12,9 +12,11 @@ url = "{{ printf "https://github.com/derailed/k9s/archive/refs/tags/%s.tar.gz" $
 exact = false
 stripComponents = 2
 include = [
+  "*/plugins/blame.yaml",
   "*/plugins/cert-manager.yaml",
   "*/plugins/crd-wizard.yaml",
   "*/plugins/debug-container.yaml",
+  "*/plugins/external-secrets.yaml",
   "*/plugins/flux.yaml",
   "*/plugins/get-all-namespace-resources.yaml",
   "*/plugins/get-all.yaml",
@@ -25,8 +27,14 @@ include = [
   "*/plugins/job-suspend.yaml",
   "*/plugins/log-jq.yaml",
   "*/plugins/log-loki.yaml",
+  "*/plugins/log-stern.yaml",
+  "*/plugins/node-root-shell.yaml",
+  "*/plugins/openssl.yaml",
+  "*/plugins/pvc-debug-container.yaml",
   "*/plugins/pvc-resize.yaml",
   "*/plugins/remove-finalizers.yaml",
+  "*/plugins/resource-recommendations.yaml",
+  "*/plugins/trace-dns.yaml",
   "*/plugins/watch-events.yaml"
 ]
 refreshPeriod = "168h"
@@ -37,7 +45,17 @@ url = "{{ printf "https://github.com/derailed/k9s/archive/refs/tags/%s.tar.gz" $
 exact = false
 stripComponents = 2
 include = [
-  "*/skins/one-dark.yaml"
+  "*/skins/*.yaml"
+]
+refreshPeriod = "168h"
+
+[".config/k9s/jumps"]
+type = "archive"
+url = "{{ printf "https://github.com/derailed/k9s/archive/refs/tags/%s.tar.gz" $k9sVersion }}"
+exact = false
+stripComponents = 2
+include = [
+  "*/jumps/*.yaml"
 ]
 refreshPeriod = "168h"
 {{- end }}

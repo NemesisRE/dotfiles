@@ -1,0 +1,12 @@
+# k9s custom jumps configuration
+# See: https://github.com/derailed/k9s#custom-jumps
+
+jumps:
+  "cert-manager.io/v1/certificates":
+    targetGVR: "v1/secrets"
+    fieldSelector: "metadata.name={{.metadata.name}}"
+    targetNamespace: "{{.metadata.namespace}}"
+  "karpenter.sh/v1/nodepools":
+    targetGVR: "v1/nodes"
+    labelSelector: "karpenter.sh/nodepool={{.metadata.name}}"
+
