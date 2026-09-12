@@ -32,6 +32,26 @@
           "template": " {{ .Icon }} "
         },
         {
+          "type": "shell",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "foreground": "15",
+          "background": "8",
+          "template": " {{ .Name }} ",
+          "options": {
+            "mapped_shell_names": {
+              "bash": "",
+              "cmd": "",
+              "fish": "󰈺",
+              "nu": "󰑣",
+              "pwsh": "󰨊",
+              "sh": "",
+              "shell": "",
+              "zsh": "󰞷"
+            }
+          }
+        },
+        {
           "type": "path",
           "style": "powerline",
           "powerline_symbol": "",
