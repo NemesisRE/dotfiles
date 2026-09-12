@@ -16,6 +16,11 @@ function _nredf_tool_fzf_source() {
         # shellcheck disable=SC1090
         [[ -f "${HOME}/.config/fzf/key-bindings.${NREDF_SHELL_NAME}" ]] && source "${HOME}/.config/fzf/key-bindings.${NREDF_SHELL_NAME}"
       fi
+
+      if [[ "${NREDF_SHELL_NAME}" == "bash" ]]; then
+        # Prevent fzf's complete -D fallback from intercepting command-name completion
+        complete -F _comp_complete_load -D 2>/dev/null || complete -r -D 2>/dev/null
+      fi
     fi
 
     # nredf fzf customizations (ssh completions, etc.)

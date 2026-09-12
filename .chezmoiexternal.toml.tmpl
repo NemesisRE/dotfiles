@@ -34,4 +34,21 @@ tar czf - -C "$tmp" k9s-master/plugins
 '''
 ]
 refreshPeriod = "168h"
+
+{{- $fzfVersion := "" }}
+{{- $aqua := include "dot_config/aquaproj-aqua/aqua.yaml" | fromYaml }}
+{{- range $aqua.packages }}
+{{-   if hasPrefix "junegunn/fzf@" .name }}
+{{-     $fzfVersion = trimPrefix "junegunn/fzf@" .name }}
+{{-   end }}
+{{- end }}
+{{- if $fzfVersion }}
+[".config/fzf"]
+type = "archive"
+url = "{{ printf "https://github.com/junegunn/fzf/archive/refs/tags/%s.tar.gz" $fzfVersion }}"
+exact = false
+stripComponents = 2
+include = ["*/shell/**"]
+refreshPeriod = "168h"
+{{- end }}
 {{- end }}
