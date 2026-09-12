@@ -1,7 +1,7 @@
 # Load NRE Dotfiles
 $ENV:PROFILE_PATH = (Get-Item $PROFILE).Directory
 if (-not (Test-Path (Join-Path $ENV:PROFILE_PATH 'NREDF-POSH'))) {
-  $altProfilePath = Join-Path $HOME 'Documents\PowerShell'
+  $altProfilePath = Join-Path (Join-Path $HOME 'Documents') 'PowerShell'
   if (Test-Path (Join-Path $altProfilePath 'NREDF-POSH')) {
     $ENV:PROFILE_PATH = $altProfilePath
   }

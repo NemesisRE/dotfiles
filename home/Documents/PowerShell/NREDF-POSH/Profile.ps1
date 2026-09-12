@@ -59,8 +59,8 @@ if ($Env:TERM_PROGRAM -ne 'vscode') {
 if (Get-Command atuin -ErrorAction SilentlyContinue) {
   if (-not (Get-Module -Name Atuin -ErrorAction SilentlyContinue)) {
     (& atuin init powershell | Out-String) | Invoke-Expression
-    if (Get-Command Enable-AtuinSearchKeys -ErrorAction SilentlyContinue) {
-      Enable-AtuinSearchKeys -CtrlR $true -UpArrow $true
-    }
+  }
+  if (Get-Command Enable-AtuinSearchKeys -ErrorAction SilentlyContinue) {
+    Enable-AtuinSearchKeys -CtrlR $true -UpArrow $true
   }
 }

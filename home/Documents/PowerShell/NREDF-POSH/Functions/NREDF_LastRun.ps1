@@ -20,6 +20,10 @@ function NREDF_LastRun {
     }
   }
 
+  if ([string]::IsNullOrEmpty($ENV:NREDF_LRCACHE)) {
+    return $false
+  }
+
   # Create last run cache directory if it doesn't exist
   if (-not (Test-Path -Path ${ENV:NREDF_LRCACHE})) {
     New-Item -Path ${ENV:NREDF_LRCACHE} -ItemType Directory -Force

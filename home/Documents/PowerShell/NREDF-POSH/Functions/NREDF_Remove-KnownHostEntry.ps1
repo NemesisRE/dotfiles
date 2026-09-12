@@ -8,7 +8,8 @@ function Remove-KnownHostEntry {
     [int]$LineNumber
   )
 
-  $knownHostsFile = "$env:USERPROFILE\.ssh\known_hosts"
+  $userHome = if (-not [string]::IsNullOrEmpty($env:USERPROFILE)) { $env:USERPROFILE } else { $HOME }
+  $knownHostsFile = Join-Path (Join-Path $userHome '.ssh') 'known_hosts'
 
   if (-not (Test-Path $knownHostsFile)) {
     Write-Warning "Die Datei '$knownHostsFile' wurde nicht gefunden."

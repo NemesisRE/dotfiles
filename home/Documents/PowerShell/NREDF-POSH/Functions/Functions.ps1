@@ -53,18 +53,37 @@ Options:
   }
 
   if ($Cache -or $Full) {
-    if (Test-Path -Path $ENV:NREDF_LRCACHE) {
+    if (-not [string]::IsNullOrEmpty($ENV:NREDF_LRCACHE) -and (Test-Path -Path $ENV:NREDF_LRCACHE)) {
       Write-Host "==> Clearing last-run cache..." -ForegroundColor Cyan
-      Remove-Item -Path "$ENV:NREDF_LRCACHE\*" -Recurse -Force -ErrorAction SilentlyContinue
+      $cacheItems = Join-Path $ENV:NREDF_LRCACHE '*'
+      Remove-Item -Path $cacheItems -Recurse -Force -ErrorAction SilentlyContinue
     }
   }
 
-  if ($Downloads -or $Full) {
-    $aquaPkgs = Join-Path $ENV:LOCALAPPDATA "aquaproj-aqua\pkgs"
-    if (-not (Test-Path $aquaPkgs)) {
-      $aquaPkgs = Join-Path $HOME ".local\share\aquaproj-aqua\pkgs"
+  if ($Downloads) {
+    $aquaPkgs = $null
+    if (-not [string]::IsNullOrEmpty($ENV:AQUA_ROOT_DIR)) {
+      $aquaPkgs = Join-Path $ENV:AQUA_ROOT_DIR 'pkgs'
+    } elseif ($IsWindows -and -not [string]::IsNullOrEmpty($ENV:LOCALAPPDATA)) {
+      $winPkgs = Join-Path $ENV:LOCALAPPDATA 'aquaproj-aqua\pkgs'
+      if (Test-Path $winPkgs) {
+        $aquaPkgs = $winPkgs
+      }
     }
-    if (Test-Path $aquaPkgs) {
+
+    if (-not $aquaPkgs) {
+      $dataHome = if (-not [string]::IsNullOrEmpty($ENV:XDG_DATA_HOME)) {
+        $ENV:XDG_DATA_HOME
+      } else {
+        Join-Path $HOME (if ($IsWindows) { '.local\share' } else { '.local/share' })
+      }
+      $fallbackPkgs = Join-Path (Join-Path $dataHome 'aquaproj-aqua') 'pkgs'
+      if (Test-Path $fallbackPkgs) {
+        $aquaPkgs = $fallbackPkgs
+      }
+    }
+
+    if ($aquaPkgs -and (Test-Path $aquaPkgs)) {
       Write-Host "==> Removing aqua packages..." -ForegroundColor Cyan
       Remove-Item -Path $aquaPkgs -Recurse -Force -ErrorAction SilentlyContinue
     }

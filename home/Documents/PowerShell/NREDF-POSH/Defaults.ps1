@@ -14,23 +14,6 @@ if ($isWindows) {
   if (-not $ENV:XDG_CONFIG_HOME) { $ENV:XDG_CONFIG_HOME = "$HOME\.config" }
   if (-not $ENV:XDG_DATA_HOME) { $ENV:XDG_DATA_HOME = "$HOME\.local\share" }
 
-  # Aqua environment configuration
-  $aquaConfigDir = Join-Path $HOME '.config\aquaproj-aqua'
-  $aquaBaseConfig = Join-Path $aquaConfigDir 'aqua.yaml'
-  $aquaPolicyConfig = Join-Path $aquaConfigDir 'aqua-policy.yaml'
-  $aquaMachineConfig = Join-Path $aquaConfigDir 'machine.yaml'
-
-  if (Test-Path $aquaBaseConfig) {
-    $ENV:AQUA_CONFIG = $aquaBaseConfig
-    $ENV:AQUA_GLOBAL_CONFIG = $aquaBaseConfig
-    if (Test-Path $aquaMachineConfig) {
-      $ENV:AQUA_GLOBAL_CONFIG = "$aquaBaseConfig$pathSep$aquaMachineConfig"
-    }
-  }
-  if (Test-Path $aquaPolicyConfig) {
-    $ENV:AQUA_POLICY_CONFIG = $aquaPolicyConfig
-  }
-
   $aquaLocalBin = Join-Path $ENV:LOCALAPPDATA "aquaproj-aqua\bin"
   $extraPaths = @(
     "$HOME\.local\bin",
@@ -82,6 +65,38 @@ if ($isLinux -or $IsMacOS) {
       $ENV:POSH_THEMES_PATH = "/usr/local/opt/oh-my-posh/themes"
     } else {
       $ENV:POSH_THEMES_PATH = "$ENV:XDG_CACHE_HOME/oh-my-posh/themes"
+    }
+  }
+}
+
+# Aqua environment configuration (cross-platform)
+if (-not [string]::IsNullOrEmpty($ENV:XDG_CONFIG_HOME)) {
+  $aquaConfigDir = Join-Path $ENV:XDG_CONFIG_HOME 'aquaproj-aqua'
+  $aquaBaseConfig = Join-Path $aquaConfigDir 'aqua.yaml'
+  $aquaPolicyConfig = Join-Path $aquaConfigDir 'aqua-policy.yaml'
+  $aquaMachineConfig = Join-Path $aquaConfigDir 'machine.yaml'
+
+  if (Test-Path $aquaBaseConfig) {
+    $ENV:AQUA_CONFIG = $aquaBaseConfig
+    $ENV:AQUA_GLOBAL_CONFIG = $aquaBaseConfig
+    if (Test-Path $aquaMachineConfig) {
+      $ENV:AQUA_GLOBAL_CONFIG = "$aquaBaseConfig$pathSep$aquaMachineConfig"
+    }
+  }
+  if (Test-Path $aquaPolicyConfig) {
+    $ENV:AQUA_POLICY_CONFIG = $aquaPolicyConfig
+  }
+
+  $nredfConfigDir = if ($ENV:NREDF_CONFIG) { $ENV:NREDF_CONFIG } else { Join-Path $ENV:XDG_CONFIG_HOME 'nredf' }
+  $aquaAuthConfig = Join-Path $nredfConfigDir 'aqua.env'
+  if (Test-Path $aquaAuthConfig) {
+    Get-Content $aquaAuthConfig | ForEach-Object {
+      $line = $_.Trim()
+      if ($line -and -not $line.StartsWith('#') -and $line -match '^([^=]+)=(.*)$') {
+        $varName = $matches[1].Trim()
+        $varVal = $matches[2].Trim().Trim('"').Trim("'")
+        [System.Environment]::SetEnvironmentVariable($varName, $varVal, [System.EnvironmentVariableTarget]::Process)
+      }
     }
   }
 }

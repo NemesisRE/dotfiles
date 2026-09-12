@@ -15,7 +15,9 @@ if ($Env:TERM_PROGRAM -ne 'vscode') {
   }
 
   Set-PSReadLineKeyHandler -Key Ctrl+d -Function ViExit
-  Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
+  if (-not (Get-Command atuin -ErrorAction SilentlyContinue)) {
+    Set-PSReadLineKeyHandler -Key UpArrow -Function HistorySearchBackward
+  }
   Set-PSReadLineKeyHandler -Key DownArrow -Function HistorySearchForward
   Set-PSReadLineKeyHandler -Key Alt+d -Function ShellKillWord
   Set-PSReadLineKeyHandler -Key Alt+Backspace -Function ShellBackwardKillWord
