@@ -7,7 +7,7 @@
 set -euo pipefail
 
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
-package_file="${repo_root}/dot_config/yazi/package.toml.tmpl"
+package_file="${repo_root}/home/dot_config/yazi/package.toml.tmpl"
 
 if ! command -v ya >/dev/null 2>&1; then
   echo "ya is required to refresh Yazi package lock" >&2

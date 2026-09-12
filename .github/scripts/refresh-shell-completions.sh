@@ -3,8 +3,8 @@
 set -euo pipefail
 
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
-bash_completion_dir="${repo_root}/dot_config/completion/bash"
-zsh_completion_dir="${repo_root}/dot_config/completion/zsh"
+bash_completion_dir="${repo_root}/home/dot_config/completion/bash"
+zsh_completion_dir="${repo_root}/home/dot_config/completion/zsh"
 
 BASH_MANAGED_PREFIX="aqua-"
 ZSH_MANAGED_PREFIX="_aqua_"

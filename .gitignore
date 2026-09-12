@@ -8,7 +8,6 @@
 *.swo
 *~
 .idea/
-.vscode/
 
 # chezmoi cache / state
 .chezmoicache/

@@ -18,7 +18,7 @@ jobs:
       - name: Install Yazi CLI
         run: |
           set -euo pipefail
-          version="$(sed -nE 's/^  - name: sxyazi\/yazi@(v[^[:space:]#]+).*$/\1/p' dot_config/aquaproj-aqua/aqua.yaml | head -n1)"
+          version="$(sed -nE 's/^  - name: sxyazi\/yazi@(v[^[:space:]#]+).*$/\1/p' home/dot_config/aquaproj-aqua/aqua.yaml | head -n1)"
           if [[ -z "${version}" ]]; then
             echo "Failed to determine Yazi version from aqua.yaml" >&2
             exit 1
@@ -48,12 +48,12 @@ jobs:
       - name: Commit refreshed Yazi package lock
         run: |
           set -euo pipefail
-          if git diff --quiet -- dot_config/yazi/package.toml.tmpl; then
+          if git diff --quiet -- home/dot_config/yazi/package.toml.tmpl; then
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add dot_config/yazi/package.toml.tmpl
+          git add home/dot_config/yazi/package.toml.tmpl
           git commit -m "chore(yazi): upgrade plugins and refresh hashes"
           git push

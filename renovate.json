@@ -69,7 +69,7 @@
       "customType": "regex",
       "description": "Update ble.sh release tag in ble.yaml",
       "managerFilePatterns": [
-        "/^\\.chezmoidata\\/ble\\.yaml$/"
+        "/^(home\\/)?\\.chezmoidata\\/ble\\.yaml$/"
       ],
       "matchStrings": [
         "tag:\\s*(?<currentValue>v[0-9][^\\s#]*)\\s*#\\s*renovate:\\s*depName=(?<depName>[^\\s]+)"

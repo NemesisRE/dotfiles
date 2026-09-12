@@ -101,7 +101,7 @@ aqua install -a -l
 
 ## 📝 After Install
 
-The first interactive `chezmoi apply` or `chezmoi update` prompts for missing machine-local values defined in `.chezmoidata/config/` (such as Git name/email and preferred SSH agent mode). Answers are stored in `~/.config/chezmoi/nredf-local.env` and override defaults without dirtying tracked repository files.
+The first interactive `chezmoi apply` or `chezmoi update` prompts for missing machine-local values defined in `home/.chezmoidata/config/` (such as Git name/email and preferred SSH agent mode). Answers are stored in `~/.config/chezmoi/nredf-local.env` and override defaults without dirtying tracked repository files.
 
 If neither `GITHUB_TOKEN` nor `AQUA_GITHUB_TOKEN` is set, the first interactive session also offers to run `aqua token set` and store a token in your system keyring to prevent GitHub API rate limits.
 
@@ -129,18 +129,21 @@ reload
 
 ## 📁 Directory Structure
 
+The repository uses [`.chezmoiroot`](.chezmoiroot) pointing to `home/` to cleanly separate repository management files from deployed dotfiles:
+
 | Path | Purpose |
 | :--- | :--- |
-| [`.chezmoidata/config/shell.yaml`](.chezmoidata/config/shell.yaml) | Shell defaults, multiplexer, SSH agent, and aqua options |
-| [`.chezmoidata/config/devel.yaml`](.chezmoidata/config/devel.yaml) | Developer workspace paths and defaults |
-| [`.chezmoidata/config/git.yaml`](.chezmoidata/config/git.yaml) | Git user, email, signing key, and GPG format schema |
-| [`.chezmoidata/sheldon.yaml`](.chezmoidata/sheldon.yaml) | Sheldon zsh plugin configuration overrides |
-| [`.chezmoidata/ble.yaml`](.chezmoidata/ble.yaml) | Ble.sh version tag |
-| [`.chezmoiscripts/`](.chezmoiscripts/) | Platform lifecycle hooks (run on `chezmoi apply`) |
-| [`dot_config/aquaproj-aqua/aqua.yaml`](dot_config/aquaproj-aqua/aqua.yaml) | Declarative CLI tools list managed by aqua |
-| [`Documents/PowerShell/`](Documents/PowerShell/) | Unified PowerShell profile, functions, aliases, and completions |
-| [`dot_config/oh-my-posh/config.json`](dot_config/oh-my-posh/config.json) | Shared Oh-My-Posh prompt theme |
-| [`dot_local/share/nredf/shell/`](dot_local/share/nredf/shell/) | Bash/Zsh shell function library |
+| [`.chezmoiroot`](.chezmoiroot) | Directs chezmoi to use `home/` as the target dotfiles root |
+| [`home/.chezmoidata/config/shell.yaml`](home/.chezmoidata/config/shell.yaml) | Shell defaults, multiplexer, SSH agent, and aqua options |
+| [`home/.chezmoidata/config/devel.yaml`](home/.chezmoidata/config/devel.yaml) | Developer workspace paths and defaults |
+| [`home/.chezmoidata/config/git.yaml`](home/.chezmoidata/config/git.yaml) | Git user, email, signing key, and GPG format schema |
+| [`home/.chezmoidata/sheldon.yaml`](home/.chezmoidata/sheldon.yaml) | Sheldon zsh plugin configuration overrides |
+| [`home/.chezmoidata/ble.yaml`](home/.chezmoidata/ble.yaml) | Ble.sh version tag |
+| [`home/.chezmoiscripts/`](home/.chezmoiscripts/) | Platform lifecycle hooks (run on `chezmoi apply`) |
+| [`home/dot_config/aquaproj-aqua/aqua.yaml`](home/dot_config/aquaproj-aqua/aqua.yaml) | Declarative CLI tools list managed by aqua |
+| [`home/Documents/PowerShell/`](home/Documents/PowerShell/) | Unified PowerShell profile, functions, aliases, and completions |
+| [`home/dot_config/oh-my-posh/config.json`](home/dot_config/oh-my-posh/config.json) | Shared Oh-My-Posh prompt theme |
+| [`home/dot_local/share/nredf/shell/`](home/dot_local/share/nredf/shell/) | Bash/Zsh shell function library |
 | [`docs/windows.md`](docs/windows.md) | In-depth Windows setup, tweaks, and troubleshooting guide |
 
 ---

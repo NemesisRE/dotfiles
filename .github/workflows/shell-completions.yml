@@ -3,8 +3,8 @@ name: Refresh Shell Completions
 on:
   pull_request:
     paths:
-      - dot_config/aquaproj-aqua/aqua.yaml
-      - dot_config/aquaproj-aqua/registry.yaml
+      - home/dot_config/aquaproj-aqua/aqua.yaml
+      - home/dot_config/aquaproj-aqua/registry.yaml
       - .github/scripts/refresh-shell-completions.sh
       - .github/workflows/shell-completions.yml
 
@@ -35,7 +35,7 @@ jobs:
 
       - name: Install aqua-managed tools
         env:
-          AQUA_GLOBAL_CONFIG: ${{ github.workspace }}/dot_config/aquaproj-aqua/aqua.yaml
+          AQUA_GLOBAL_CONFIG: ${{ github.workspace }}/home/dot_config/aquaproj-aqua/aqua.yaml
         run: |
           set -euo pipefail
           aqua install -a -l
@@ -47,13 +47,13 @@ jobs:
         run: |
           set -euo pipefail
 
-          if git diff --quiet -- dot_config/completion/bash dot_config/completion/zsh; then
+          if git diff --quiet -- home/dot_config/completion/bash home/dot_config/completion/zsh; then
             echo "No shell completion changes detected"
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A dot_config/completion/bash dot_config/completion/zsh
+          git add -A home/dot_config/completion/bash home/dot_config/completion/zsh
           git commit -m "chore(completion): refresh generated shell completions"
           git push

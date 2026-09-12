@@ -1,13 +1,91 @@
 # Normalize line endings — LF everywhere (unix dotfiles repo)
-*             text=auto eol=lf
+*                         text=auto eol=lf
 
 # Diff drivers for richer `git diff` output
-*.bash        diff=bash
-*.sh          diff=bash
-*.md          diff=markdown
+*.bash                    diff=bash
+*.sh                      diff=bash
+*.bash.tmpl               diff=bash
+*.sh.tmpl                 diff=bash
+*.zsh.tmpl                diff=bash
+*.md                      diff=markdown
+*.md.tmpl                 diff=markdown
+*bashrc*                  diff=bash
+*bash_profile*            diff=bash
+*bash_login*              diff=bash
+*bash_logout*             diff=bash
+*bash_aliases*            diff=bash
+*zshrc*                   diff=bash
+*zprofile*                diff=bash
+*zshenv*                  diff=bash
+*zlogin*                  diff=bash
+*zlogout*                 diff=bash
+*blerc*                   diff=bash
+rc.tmpl                   diff=bash
+functions.tmpl            diff=bash
+server-env-setup.tmpl     diff=bash
+_*.tmpl                   diff=bash
+aliases                   diff=bash
+bindings                  diff=bash
+functions                 diff=bash
+fzf                       diff=bash
+layout_monitor            diff=bash
+lfrc                      diff=bash
+
+# GitHub Linguist — Template files (*.tmpl)
+*.toml.tmpl               linguist-language=TOML
+*.yaml.tmpl               linguist-language=YAML
+*.yml.tmpl                linguist-language=YAML
+*.json.tmpl               linguist-language=JSON
+*.ps1.tmpl                linguist-language=PowerShell
+*.lua.tmpl                linguist-language=Lua
+*.kdl.tmpl                linguist-language=KDL
+*.md.tmpl                 linguist-language=Markdown
+*.sh.tmpl                 linguist-language=Shell
+*.bash.tmpl               linguist-language=Shell
+*.zsh.tmpl                linguist-language=Shell
+*.conf.tmpl               linguist-language=INI
+*.ini.tmpl                linguist-language=INI
+
+# GitHub Linguist — Standard shell scripts & dotfiles (extensionless & templates)
+*bashrc*                  linguist-language=Shell
+*bash_profile*            linguist-language=Shell
+*bash_login*              linguist-language=Shell
+*bash_logout*             linguist-language=Shell
+*bash_aliases*            linguist-language=Shell
+*zshrc*                   linguist-language=Shell
+*zprofile*                linguist-language=Shell
+*zshenv*                  linguist-language=Shell
+*zlogin*                  linguist-language=Shell
+*zlogout*                 linguist-language=Shell
+*blerc*                   linguist-language=Shell
+rc.tmpl                   linguist-language=Shell
+functions.tmpl            linguist-language=Shell
+server-env-setup.tmpl     linguist-language=Shell
+_*.tmpl                   linguist-language=Shell
+aliases                   linguist-language=Shell
+bindings                  linguist-language=Shell
+functions                 linguist-language=Shell
+fzf                       linguist-language=Shell
+layout_monitor            linguist-language=Shell
+lfrc                      linguist-language=Shell
+tmux.conf.tmpl            linguist-language=Shell
+plugins.conf              linguist-language=Shell
+
+# GitHub Linguist — Known config formats
+*gitconfig*               linguist-language=Git-Config
+*.gitconfig.tmpl          linguist-language=Git-Config
+**/dot_config/git/config* linguist-language=Git-Config
+*editorconfig*            linguist-language=EditorConfig
+*agignore*                linguist-language=Ignore-List
+*chezmoiignore*           linguist-language=Ignore-List
+*gitkeep*                 linguist-language=Ignore-List
+*flake8*                  linguist-language=INI
+**/dot_config/terminator/config* linguist-language=INI
+**/dot_local/share/konsole/* linguist-language=INI
 
 # Exclude dev/CI tooling from `git archive` tarballs
-.editorconfig export-ignore
-.shellcheckrc export-ignore
-.yamllint.yml export-ignore
-.github/      export-ignore
+.editorconfig             export-ignore
+.shellcheckrc             export-ignore
+.yamllint.yml             export-ignore
+.github/                  export-ignore
+.vscode/                  export-ignore

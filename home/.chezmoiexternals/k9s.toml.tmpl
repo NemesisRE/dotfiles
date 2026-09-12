@@ -1,0 +1,43 @@
+{{- $k9sVersion := "" }}
+{{- $aqua := include "dot_config/aquaproj-aqua/aqua.yaml" | fromYaml }}
+{{- range $aqua.packages }}
+{{-   if hasPrefix "derailed/k9s@" .name }}
+{{-     $k9sVersion = trimPrefix "derailed/k9s@" .name }}
+{{-   end }}
+{{- end }}
+{{- if $k9sVersion }}
+[".config/k9s/plugins"]
+type = "archive"
+url = "{{ printf "https://github.com/derailed/k9s/archive/refs/tags/%s.tar.gz" $k9sVersion }}"
+exact = false
+stripComponents = 2
+include = [
+  "*/plugins/cert-manager.yaml",
+  "*/plugins/crd-wizard.yaml",
+  "*/plugins/debug-container.yaml",
+  "*/plugins/flux.yaml",
+  "*/plugins/get-all-namespace-resources.yaml",
+  "*/plugins/get-all.yaml",
+  "*/plugins/helm-default-values.yaml",
+  "*/plugins/helm-diff.yaml",
+  "*/plugins/helm-purge.yaml",
+  "*/plugins/helm-values.yaml",
+  "*/plugins/job-suspend.yaml",
+  "*/plugins/log-jq.yaml",
+  "*/plugins/log-loki.yaml",
+  "*/plugins/pvc-resize.yaml",
+  "*/plugins/remove-finalizers.yaml",
+  "*/plugins/watch-events.yaml"
+]
+refreshPeriod = "168h"
+
+[".config/k9s/skins"]
+type = "archive"
+url = "{{ printf "https://github.com/derailed/k9s/archive/refs/tags/%s.tar.gz" $k9sVersion }}"
+exact = false
+stripComponents = 2
+include = [
+  "*/skins/one-dark.yaml"
+]
+refreshPeriod = "168h"
+{{- end }}
