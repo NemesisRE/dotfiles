@@ -44,7 +44,7 @@
       "customType": "regex",
       "description": "Update aqua standard registry ref in aqua.yaml",
       "managerFilePatterns": [
-        "/^dot_config\\/aquaproj-aqua\\/aqua\\.yaml$/"
+        "/^(home\\/)?dot_config\\/aquaproj-aqua\\/aqua\\.yaml$/"
       ],
       "matchStrings": [
         "ref:\\s*(?<currentValue>v[0-9][^\\s#]*)\\s*#\\s*renovate:\\s*depName=(?<depName>[^\\s]+)"
@@ -55,7 +55,7 @@
       "customType": "regex",
       "description": "Update aqua package versions in aqua.yaml",
       "managerFilePatterns": [
-        "/^dot_config\\/aquaproj-aqua\\/aqua\\.yaml$/"
+        "/^(home\\/)?dot_config\\/aquaproj-aqua\\/aqua\\.yaml$/"
       ],
       "matchStrings": [
         "-\\s+name:\\s*(?<fullName>(?<packageName>[^/\\s@#]+/[^/\\s@#]+)(?:/[^@\\s#]+)?)@(?<currentValue>(?:v|[0-9]|jq-|kustomize/)[^\\s#]*)"

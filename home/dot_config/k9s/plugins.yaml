@@ -10,3 +10,31 @@ plugins:
     args:
       - -c
       - "kubectl certificate approve --context $CONTEXT $NAME"
+
+  veleroBackupLogs:
+    shortCut: l
+    confirm: false
+    description: Velero backup logs
+    scopes:
+    - backup
+    - backups
+    - velero.io/v1/backups
+    command: sh
+    background: false
+    args:
+    - -c
+    - "velero backup logs $NAME --kubecontext $CONTEXT | less -K"
+
+  veleroBackupDescribe:
+    shortCut: Ctrl-L
+    confirm: false
+    description: Velero describe backup
+    scopes:
+    - backup
+    - backups
+    - velero.io/v1/backups
+    command: sh
+    background: false
+    args:
+    - -c
+    - "velero backup describe $NAME --kubecontext $CONTEXT | less -K"
