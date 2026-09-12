@@ -118,7 +118,7 @@ packages:
   - name: derailed/k9s@v0.51.0
     tags:
       - k8s
-  - name: nklmilojevic/sofka@v0.25.5
+  - name: nklmilojevic/sofka@v0.26.0
     registry: local
     tags:
       - k8s
