@@ -107,6 +107,13 @@ packages:
     registry: local
     tags:
       - default
+  - name: heymaikol/network-doctor@v1.16.7 # renovate: depName=heymaikol/network-doctor
+    registry: local
+    command_aliases:
+      - command: network-doctor
+        alias: netdoc
+    tags:
+      - default
 
   # ── Kubernetes (uncomment to install) ───────────────────────────────────────
   - name: kubernetes/kubernetes/kubectl@v1.37.0 # renovate: depName=kubernetes/kubernetes
@@ -119,7 +126,6 @@ packages:
     tags:
       - k8s
   - name: nklmilojevic/sofka@v0.25.5 # renovate: depName=nklmilojevic/sofka
-    registry: local
     tags:
       - k8s
   - name: kubernetes-sigs/kustomize@kustomize/v5.8.1 # renovate: depName=kubernetes-sigs/kustomize
@@ -168,6 +174,7 @@ packages:
     tags:
       - k8s
   - name: pehlicd/crd-wizard@v0.1.9 # renovate: depName=pehlicd/crd-wizard
+    registry: local
     tags:
       - k8s
 
