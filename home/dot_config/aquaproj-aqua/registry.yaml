@@ -20,3 +20,10 @@ packages:
       amd64: x86_64
       arm64: aarch64
     format: tar.gz
+
+  - type: github_release
+    repo_owner: pehlicd
+    repo_name: crd-wizard
+    description: A wizard for managing Kubernetes CRDs
+    asset: 'crd-wizard_{{.Version}}_{{.OS}}_{{.Arch}}.{{.Format}}'
+    format: tar.gz

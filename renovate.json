@@ -58,7 +58,7 @@
         "/^(home\\/)?dot_config\\/aquaproj-aqua\\/aqua\\.yaml$/"
       ],
       "matchStrings": [
-        "-\\s+name:\\s*(?<fullName>(?<packageName>[^/\\s@#]+/[^/\\s@#]+)(?:/[^@\\s#]+)?)@(?<currentValue>(?:v|[0-9]|jq-|kustomize/)[^\\s#]*)"
+        "-\\s+name:\\s*(?<fullName>(?<packageName>[^/\\s@#]+/[^/\\s@#]+)(?:/[^@\\s#]+)?)@(?<currentValue>[^\\s#]+)(?:\\s*#\\s*renovate:\\s*depName=(?<depName>[^\\s]+))?"
       ],
       "depNameTemplate": "{{{fullName}}}",
       "depTypeTemplate": "aqua-package",

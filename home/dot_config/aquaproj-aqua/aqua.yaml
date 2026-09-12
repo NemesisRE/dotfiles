@@ -16,174 +16,177 @@ registries:
 
 packages:
   # ── Shell / Terminal ────────────────────────────────────────────────────────
-  - name: rossmacarthur/sheldon@0.8.5 # zsh plugin manager
+  - name: rossmacarthur/sheldon@0.8.5 # renovate: depName=rossmacarthur/sheldon
     tags:
       - default
       - required
-  - name: atuinsh/atuin@v18.22.0 # shell history
+  - name: atuinsh/atuin@v18.22.0 # renovate: depName=atuinsh/atuin
     tags:
       - default
       - required
-  - name: junegunn/fzf@v0.74.4 # fuzzy finder
+  - name: junegunn/fzf@v0.74.4 # renovate: depName=junegunn/fzf
     tags:
       - default
       - required
-  - name: zellij-org/zellij@v0.45.1 # terminal multiplexer
+  - name: zellij-org/zellij@v0.45.1 # renovate: depName=zellij-org/zellij
     tags:
       - default
       - required
-  - name: sxyazi/yazi@v26.9.1 # terminal file manager
+  - name: sxyazi/yazi@v26.9.1 # renovate: depName=sxyazi/yazi
     tags:
       - default
       - required
 
   # ── File / Text Utils ───────────────────────────────────────────────────────
-  - name: lsd-rs/lsd@v1.2.0 # ls replacement
+  - name: lsd-rs/lsd@v1.2.0 # renovate: depName=lsd-rs/lsd
     tags:
       - default
       - required
-  - name: sharkdp/bat@v0.26.1 # cat replacement
+  - name: sharkdp/bat@v0.26.1 # renovate: depName=sharkdp/bat
     tags:
       - default
       - required
-  - name: sharkdp/fd@v10.5.0 # find replacement
+  - name: sharkdp/fd@v10.5.0 # renovate: depName=sharkdp/fd
     tags:
       - default
       - required
-  - name: sharkdp/diskus@v0.9.0 # disk usage
+  - name: sharkdp/diskus@v0.9.0 # renovate: depName=sharkdp/diskus
     tags:
       - default
-  - name: BurntSushi/ripgrep@15.2.0 # grep replacement
+  - name: BurntSushi/ripgrep@15.2.0 # renovate: depName=BurntSushi/ripgrep
     tags:
       - default
       - required
-  - name: muesli/duf@v0.9.1 # df replacement
+  - name: muesli/duf@v0.9.1 # renovate: depName=muesli/duf
     tags:
       - default
-  - name: bootandy/dust@v1.2.5 # du replacement
+  - name: bootandy/dust@v1.2.5 # renovate: depName=bootandy/dust
     tags:
       - default
-  - name: ouch-org/ouch@0.8.2 # archive tool
+  - name: ouch-org/ouch@0.8.2 # renovate: depName=ouch-org/ouch
     tags:
       - default
-  - name: natesales/q@v0.19.12 # DNS client
+  - name: natesales/q@v0.19.12 # renovate: depName=natesales/q
     registry: local
     tags:
       - default
 
   # ── Dev Tools ───────────────────────────────────────────────────────────────
-  - name: cli/cli@v2.100.0 # GitHub CLI (gh)
+  - name: cli/cli@v2.100.0 # renovate: depName=cli/cli
     tags:
       - default
-  - name: github/copilot-cli@v1.0.83 # GitHub Copilot CLI
+  - name: github/copilot-cli@v1.0.83 # renovate: depName=github/copilot-cli
     tags:
       - default
-  - name: jqlang/jq@jq-1.8.1 # JSON processor
+  - name: jqlang/jq@jq-1.8.1 # renovate: depName=jqlang/jq
     tags:
       - default
-  - name: mikefarah/yq@v4.53.6 # YAML processor
+  - name: mikefarah/yq@v4.53.6 # renovate: depName=mikefarah/yq
     tags:
       - default
-  - name: jesseduffield/lazygit@v0.65.0
+  - name: jesseduffield/lazygit@v0.65.0 # renovate: depName=jesseduffield/lazygit
     tags:
       - default
-  - name: helix-editor/helix@25.07.1
+  - name: helix-editor/helix@25.07.1 # renovate: depName=helix-editor/helix
     tags:
       - default
-  - name: aristocratos/btop@v1.4.7 # system monitor
+  - name: aristocratos/btop@v1.4.7 # renovate: depName=aristocratos/btop
     tags:
       - default
-  - name: bcicen/ctop@v0.7.7 # container monitor
+  - name: bcicen/ctop@v0.7.7 # renovate: depName=bcicen/ctop
     tags:
       - default
-  - name: JanDeDobbeleer/oh-my-posh@v31.2.1 # prompt theming engine
+  - name: JanDeDobbeleer/oh-my-posh@v31.2.1 # renovate: depName=JanDeDobbeleer/oh-my-posh
     tags:
       - default
       - required
-  - name: smallstep/cli@v0.30.6 # step CA / cert tool
+  - name: smallstep/cli@v0.30.6 # renovate: depName=smallstep/cli
     tags:
       - default
-  - name: yetidevworks/drydock@v1.1.3 # git repository dashboard
+  - name: yetidevworks/drydock@v1.1.3 # renovate: depName=yetidevworks/drydock
     registry: local
     tags:
       - default
 
   # ── Kubernetes (uncomment to install) ───────────────────────────────────────
-  - name: kubernetes/kubernetes/kubectl@v1.37.0
+  - name: kubernetes/kubernetes/kubectl@v1.37.0 # renovate: depName=kubernetes/kubernetes
     tags:
       - k8s
-  - name: kubernetes/kubernetes/kubeadm@v1.37.0
+  - name: kubernetes/kubernetes/kubeadm@v1.37.0 # renovate: depName=kubernetes/kubernetes
     tags:
       - k8s
-  - name: derailed/k9s@v0.51.0
+  - name: derailed/k9s@v0.51.0 # renovate: depName=derailed/k9s
     tags:
       - k8s
-  - name: nklmilojevic/sofka@v0.25.5
+  - name: nklmilojevic/sofka@v0.25.5 # renovate: depName=nklmilojevic/sofka
     registry: local
     tags:
       - k8s
-  - name: kubernetes-sigs/kustomize@kustomize/v5.8.1
+  - name: kubernetes-sigs/kustomize@kustomize/v5.8.1 # renovate: depName=kubernetes-sigs/kustomize
     tags:
       - k8s
-  - name: kubernetes-sigs/krew@v0.5.0
+  - name: kubernetes-sigs/krew@v0.5.0 # renovate: depName=kubernetes-sigs/krew
     tags:
       - k8s
-  - name: velero-io/velero@v1.18.2
+  - name: velero-io/velero@v1.18.2 # renovate: depName=velero-io/velero
     tags:
       - k8s
-  - name: projectcalico/calico/calicoctl@v3.32.2
+  - name: projectcalico/calico/calicoctl@v3.32.2 # renovate: depName=projectcalico/calico
     tags:
       - k8s
-  - name: bitnami-labs/sealed-secrets@v0.40.0
+  - name: bitnami-labs/sealed-secrets@v0.40.0 # renovate: depName=bitnami/sealed-secrets
     tags:
       - k8s
-  - name: doitintl/kube-no-trouble@0.7.3
+  - name: doitintl/kube-no-trouble@0.7.3 # renovate: depName=doitintl/kube-no-trouble
     tags:
       - k8s
-  - name: stern/stern@v1.34.0
+  - name: stern/stern@v1.34.0 # renovate: depName=stern/stern
     tags:
       - k8s
-  - name: oras-project/oras@v1.3.4
+  - name: oras-project/oras@v1.3.4 # renovate: depName=oras-project/oras
     tags:
       - k8s
-  - name: fluxcd/flux2@v2.9.5
+  - name: fluxcd/flux2@v2.9.5 # renovate: depName=fluxcd/flux2
     tags:
       - k8s
-  - name: helmfile/helmfile@v1.7.4
+  - name: helmfile/helmfile@v1.7.4 # renovate: depName=helmfile/helmfile
     tags:
       - k8s
-  - name: helm/helm@v4.3.0
+  - name: helm/helm@v4.3.0 # renovate: depName=helm/helm
     tags:
       - k8s
-  - name: ahmetb/kubectx@v0.11.0
+  - name: ahmetb/kubectx@v0.11.0 # renovate: depName=ahmetb/kubectx
     command_aliases:
       - command: kubectx
         alias: ctx
     tags:
       - k8s
-  - name: ahmetb/kubectx/kubens@v0.11.0
+  - name: ahmetb/kubectx/kubens@v0.11.0 # renovate: depName=ahmetb/kubectx
     command_aliases:
       - command: kubens
         alias: ns
     tags:
       - k8s
+  - name: pehlicd/crd-wizard@v0.1.9 # renovate: depName=pehlicd/crd-wizard
+    tags:
+      - k8s
 
   # ── Optional ────────────────────────────────────────────────────────────────
-  - name: bitwarden/clients@cli-v2026.8.0
+  - name: bitwarden/clients@cli-v2026.8.0 # renovate: depName=bitwarden/clients
     tags:
       - optional
-  - name: hashicorp/terraform@v1.16.2
+  - name: hashicorp/terraform@v1.16.2 # renovate: depName=hashicorp/terraform
     tags:
       - optional
-  - name: hashicorp/packer@v1.16.0
+  - name: hashicorp/packer@v1.16.0 # renovate: depName=hashicorp/packer
     tags:
       - optional
-  - name: hashicorp/vault@v2.1.0
+  - name: hashicorp/vault@v2.1.0 # renovate: depName=hashicorp/vault
     tags:
       - optional
-  - name: astral-sh/uv@0.12.13
+  - name: astral-sh/uv@0.12.13 # renovate: depName=astral-sh/uv
     tags:
       - optional
-  - name: astral-sh/ruff@0.16.7
+  - name: astral-sh/ruff@0.16.7 # renovate: depName=astral-sh/ruff
     tags:
       - optional
