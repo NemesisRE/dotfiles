@@ -26,8 +26,13 @@ if ! command -v brew >/dev/null 2>&1; then
   exit 0
 fi
 
-echo "==> Installing prerequisite packages via Homebrew bundle"
-brew bundle --no-lock --file=/dev/stdin <<BREW_BUNDLE_EOF
+# Homebrew environment variables to keep execution clean
+export HOMEBREW_NO_ANALYTICS=1
+export HOMEBREW_NO_INSTALL_CLEANUP=1
+export HOMEBREW_QUIET=1
+
+echo "==> Installing and upgrading prerequisite packages via Homebrew bundle"
+brew bundle --upgrade --no-lock --file=/dev/stdin <<BREW_BUNDLE_EOF
 {{ range .packages.darwin.brews -}}
 brew {{ . | quote }}
 {{ end -}}
@@ -36,5 +41,8 @@ cask {{ . | quote }}
 {{ end -}}
 BREW_BUNDLE_EOF
 
-echo "==> macOS prerequisites installed successfully."
+echo "==> Cleaning up Homebrew cache"
+brew cleanup >/dev/null 2>&1 || true
+
+echo "==> macOS prerequisites installed and updated successfully."
 {{- end }}
