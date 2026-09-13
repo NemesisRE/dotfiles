@@ -52,7 +52,6 @@ packages:
       - curl                    # Latest curl binary
       - diffutils               # GNU diff utilities
       - util-linux              # Linux utilities ported to macOS
-      - fnm                     # Fast Node Manager
     casks:
       - kitty                   # GPU-accelerated terminal emulator
       - font-fira-mono-nerd-font # Primary Nerd Font matching editor & prompt

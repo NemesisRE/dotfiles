@@ -11,7 +11,6 @@ packages:
       - curl
       - diffutils
       - util-linux
-      - fnm
     casks:
       - kitty
       - font-fira-mono-nerd-font
@@ -22,6 +21,7 @@ packages:
       - Git.Git
       - DEVCOM.FiraCodeFont
       - LLVM.LLVM
+      - albertony.npiperelay
   linux:
     apt:
       - git
@@ -30,6 +30,7 @@ packages:
       - kitty
       - fonts-firacode
       - build-essential
+      - socat
     pacman:
       - git
       - curl
@@ -37,6 +38,7 @@ packages:
       - kitty
       - ttf-firacode-nerd
       - base-devel
+      - socat
     dnf:
       - git
       - curl
@@ -46,3 +48,4 @@ packages:
       - gcc
       - gcc-c++
       - make
+      - socat

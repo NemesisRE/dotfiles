@@ -46,6 +46,9 @@ winget install DEVCOM.FiraCodeFont
 
 # C/C++ Compiler for Neovim Tree-sitter
 winget install LLVM.LLVM
+
+# WSL OpenSSH Agent Bridge
+winget install albertony.npiperelay
 ```
 
 > [!TIP]

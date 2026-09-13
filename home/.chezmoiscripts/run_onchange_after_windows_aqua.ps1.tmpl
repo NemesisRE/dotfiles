@@ -35,6 +35,15 @@ if (Get-Command aqua -ErrorAction SilentlyContinue) {
     } catch {
         Write-Warning "Failed to link aqua tools: $_"
     }
+
+    if (Get-Command uv -ErrorAction SilentlyContinue) {
+        Write-Host "==> Ensuring standalone Python via uv"
+        try {
+            & uv python install --default 2>$null
+        } catch {
+            & uv python install 2>$null
+        }
+    }
 }
 {{- end }}
 

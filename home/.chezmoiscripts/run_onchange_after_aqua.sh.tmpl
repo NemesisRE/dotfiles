@@ -21,4 +21,10 @@ if command -v aqua >/dev/null 2>&1; then
   aqua install -a -l >/dev/null 2>&1 || true
   echo "    Aqua tools linked successfully."
 fi
+
+# Ensure standalone Python via uv
+if command -v uv >/dev/null 2>&1; then
+  echo "==> Ensuring standalone Python via uv"
+  uv python install --default >/dev/null 2>&1 || uv python install >/dev/null 2>&1 || true
+fi
 {{- end }}
