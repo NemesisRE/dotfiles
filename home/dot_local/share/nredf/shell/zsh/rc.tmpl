@@ -47,15 +47,16 @@ fi
 
 
 # Fast path: use cached completion dump; refresh only every 24h.
-if [[ -f "${NREDF_ZCOMPDUMP}" && "${NREDF_COMPLETION_REFRESH_REQUIRED}" -eq 0 ]] && declare -f _nredf_last_run >/dev/null 2>&1 && _nredf_last_run "_nredf_zsh_compinit_refresh"; then
+if [[ -f "${NREDF_ZCOMPDUMP}" && "${NREDF_COMPLETION_REFRESH_REQUIRED}" -eq 0 ]] && (( ${+functions[_nredf_last_run]} )) && _nredf_last_run "_nredf_zsh_compinit_refresh"; then
   _nredf_compinit -C -d "${NREDF_ZCOMPDUMP}"
 else
   _nredf_compinit -u -d "${NREDF_ZCOMPDUMP}"
-  if declare -f _nredf_last_run >/dev/null 2>&1; then
+  if (( ${+functions[_nredf_last_run]} )); then
     _nredf_last_run "_nredf_zsh_compinit_refresh" "true" "86400"
   fi
   zcompile "${NREDF_ZCOMPDUMP}" >/dev/null 2>&1 || true
 fi
+
 
 zstyle ':completion:*' cache-path "${XDG_CACHE_HOME}/zsh/zcompcache"
 zstyle -e ':completion:*' special-dirs '[[ $PREFIX = (../)#(|.|..) ]] && reply=(..)'

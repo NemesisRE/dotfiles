@@ -56,7 +56,7 @@ function _nredf_set_ssh_agent_wsl() {
 function _nredf_set_ssh_agent_1password() {
   local candidates=()
 
-  if [[ "${NREDF_OS:-}" == "macos" || "$(uname -s)" == "Darwin" ]]; then
+  if [[ "${NREDF_OS:-}" == "macos" || "${OSTYPE:-}" == darwin* ]]; then
     candidates+=(
       "${HOME}/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
     )
@@ -100,7 +100,7 @@ function _nredf_set_ssh_agent_system() {
 function _nredf_set_ssh_agent_bitwarden() {
   local candidates=()
 
-  if [[ "${NREDF_OS:-}" == "macos" ]]; then
+  if [[ "${NREDF_OS:-}" == "macos" || "${OSTYPE:-}" == darwin* ]]; then
     candidates+=(
       "${HOME}/Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agent.sock"
       "${HOME}/.bitwarden-ssh-agent.sock"
@@ -115,19 +115,13 @@ function _nredf_set_ssh_agent_bitwarden() {
 
   for sock in "${candidates[@]}"; do
     if [[ -S "${sock}" ]]; then
-      if command -v ssh-add &>/dev/null; then
-        SSH_AUTH_SOCK="${sock}" ssh-add -l &>/dev/null
-        local rc=$?
-        if [[ $rc -eq 0 || $rc -eq 1 ]]; then
-          export SSH_AUTH_SOCK="${sock}"
-          return 0
-        fi
-      else
+      if _nredf_ssh_agent_socket_works "${sock}"; then
         export SSH_AUTH_SOCK="${sock}"
         return 0
       fi
     fi
   done
+  return 1
 }
 
 function _nredf_set_ssh_agent_gpg() {

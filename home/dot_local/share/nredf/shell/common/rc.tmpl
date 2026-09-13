@@ -151,14 +151,12 @@ if command -v atuin &>/dev/null; then
 fi
 _nredf_step "atuin init"
 
-# FNM env — cache env evaluation for 24h
+# FNM env — dynamic per-session multishell evaluation
 if command -v fnm &>/dev/null; then
-  _nredf_refresh_cached_shell_snippet \
-    "_nredf_fnm_env_${NREDF_SHELL_NAME}" \
-    "${XDG_CACHE_HOME}/nredf/init/fnm.${NREDF_SHELL_NAME}.sh" \
-    fnm env --use-on-cd
+  eval "$(fnm env --use-on-cd)"
 fi
 _nredf_step "fnm env"
+
 
 # Zoxide init — cache shell snippet for 24h
 if command -v zoxide &>/dev/null; then

@@ -34,7 +34,6 @@ function _nredf_last_run() {
     NEXT_RUN="${raw_next}"
   fi
 
-  [[ ! -d "${NREDF_LRCACHE}" ]] && mkdir -p "${NREDF_LRCACHE}"
   local LAST_RUN_FILE="${NREDF_LRCACHE}/last_run${CURRENT_FUNCTION}.txt"
   local LAST_RUN=0
   if [[ -f "${LAST_RUN_FILE}" ]]; then
@@ -44,7 +43,8 @@ function _nredf_last_run() {
   if [[ "${LAST_RUN}" -gt "${CURRENT_TIME}" ]]; then
     return 0
   elif [[ "${SUCCESS}" == "true" ]]; then
-    echo "${NEXT_RUN}" > "${LAST_RUN_FILE}"
+    [[ -d "${NREDF_LRCACHE}" ]] || mkdir -p "${NREDF_LRCACHE}"
+    printf '%s\n' "${NEXT_RUN}" > "${LAST_RUN_FILE}"
     return 0
   else
     return 1

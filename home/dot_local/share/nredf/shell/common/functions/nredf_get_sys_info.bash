@@ -12,7 +12,20 @@ function _nredf_get_sys_info() {
   NREDF_UNAME="${raw_s}"
   NREDF_UNAMEM="${raw_m}"
 
-  s_lower="$(printf '%s' "${raw_s}" | tr '[:upper:]' '[:lower:]')"
+  case "${raw_s}" in
+    Darwin|darwin|DARWIN)   s_lower="darwin" ;;
+    Linux|linux|LINUX)     s_lower="linux" ;;
+    FreeBSD|freebsd)       s_lower="freebsd" ;;
+    OpenBSD|openbsd)       s_lower="openbsd" ;;
+    *)
+      if [[ -n "${ZSH_VERSION:-}" ]]; then
+        s_lower="$(printf '%s' "${raw_s}" | tr '[:upper:]' '[:lower:]')"
+      else
+        s_lower="${raw_s,,}"
+      fi
+      ;;
+  esac
+
 
   NREDF_UNAME_LOWER="${s_lower}"
   NREDF_UNAMES="${s_lower}"

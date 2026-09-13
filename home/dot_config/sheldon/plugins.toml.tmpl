@@ -24,9 +24,9 @@ use = [
   "plugins/colorize/colorize.plugin.zsh",
   "plugins/cp/cp.plugin.zsh",
   "plugins/git-extras/git-extras.plugin.zsh",
-  "plugins/z/z.plugin.zsh",
   "plugins/systemadmin/systemadmin.plugin.zsh",
 ]
+
 
 [plugins.ohmyzsh.hooks]
 pre  = 'DISABLE_AUTO_TITLE=true; HYPHEN_INSENSITIVE=true; DISABLE_AUTO_UPDATE=true; ENABLE_CORRECTION=false; HIST_STAMPS="dd.mm.yyyy"; ZSH_CUSTOM="${NREDF_RC_PATH:-${HOME}/.config/zsh}"; (( ${+functions[compdef]} )) || { autoload -Uz compinit; (( ${+functions[_nredf_compinit]} )) && _nredf_compinit -i || compinit -i; }'

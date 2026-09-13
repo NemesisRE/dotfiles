@@ -38,16 +38,24 @@ function _nredf_pull_all_repos() {
   local target_dir="${REPO_HOME:-${HOME}/Repos}"
   echo "Getting all git repositories in ${target_dir}"
   if command -v fd &>/dev/null; then
-    REPOSITORIES=$(fd -H -I -t d '^\.git$' "${target_dir}" --exec dirname)
+    REPOSITORIES=$(fd -H -I -t d '^\.git$' "${target_dir}")
   else
-    REPOSITORIES=$(find "${target_dir}" -name .git -type d -prune -exec dirname {} \; 2>/dev/null)
+    REPOSITORIES=$(find "${target_dir}" -name .git -type d -prune 2>/dev/null)
   fi
 
-  while IFS= read -r REPOSITORY; do
-    [[ -z "${REPOSITORY}" ]] && continue
-    if git -C "${REPOSITORY}" remote -v | grep -q "${REMOTE_FILTER:-github}" &>/dev/null; then
+  local git_dir REPOSITORY remote_url filter="${REMOTE_FILTER:-github}"
+  while IFS= read -r git_dir; do
+    [[ -z "${git_dir}" ]] && continue
+    REPOSITORY="${git_dir%/.git}"
+    remote_url="$(git -C "${REPOSITORY}" config --get remote.origin.url 2>/dev/null)"
+    if [[ -z "${remote_url}" ]]; then
+      # Fallback to checking any remote if origin is not set
+      remote_url="$(git -C "${REPOSITORY}" remote -v 2>/dev/null)"
+    fi
+    if [[ "${remote_url}" == *"${filter}"* ]]; then
       echo "Updating Git repository in ${REPOSITORY}"
       git -C "${REPOSITORY}" pull --rebase --autostash
     fi
   done <<< "${REPOSITORIES}"
 }
+

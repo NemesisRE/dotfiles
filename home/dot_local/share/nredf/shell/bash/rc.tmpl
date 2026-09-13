@@ -3,35 +3,25 @@
 # vim: ts=2 sw=2 et ff=unix ft=bash syntax=sh
 # chezmoi-managed bash-specific rc — sourced by shell/common/rc via NREDF_RC_PATH
 
-if [ -f /etc/bash_completion ] && ! shopt -oq posix; then
-  source /etc/bash_completion
-fi
-
-if [ -f /etc/profile.d/bash_completion.sh ]; then
-  source /etc/profile.d/bash_completion.sh
-fi
-
-if [ -f /opt/homebrew/etc/profile.d/bash_completion.sh ]; then
-  source /opt/homebrew/etc/profile.d/bash_completion.sh
-fi
-
-if [ -f /usr/local/etc/profile.d/bash_completion.sh ]; then
-  source /usr/local/etc/profile.d/bash_completion.sh
-fi
-
-if [ -f /opt/homebrew/share/bash-completion/bash_completion ]; then
-  source /opt/homebrew/share/bash-completion/bash_completion
-fi
-
-if [ -f /usr/local/share/bash-completion/bash_completion ]; then
-  source /usr/local/share/bash-completion/bash_completion
+if ! shopt -oq posix; then
+  for _bc in \
+    /opt/homebrew/etc/profile.d/bash_completion.sh \
+    /usr/local/etc/profile.d/bash_completion.sh \
+    /opt/homebrew/share/bash-completion/bash_completion \
+    /usr/local/share/bash-completion/bash_completion \
+    /etc/profile.d/bash_completion.sh \
+    /etc/bash_completion; do
+    if [[ -f "${_bc}" ]]; then
+      # shellcheck disable=SC1090
+      source "${_bc}"
+      break
+    fi
+  done
+  unset _bc
 fi
 
 # Disable CTRL-S & CTRL-Q flow control
-stty stop '' 2>/dev/null || true
-stty start '' 2>/dev/null || true
-stty -ixon 2>/dev/null || true
-stty -ixoff 2>/dev/null || true
+stty stop '' start '' -ixon -ixoff 2>/dev/null || true
 
 # History Settings
 HISTCONTROL=ignoreboth
@@ -57,4 +47,3 @@ if [[ -d "${XDG_CONFIG_HOME}/completion/bash" ]]; then
   done
 fi
 
-trap _unsudo exit

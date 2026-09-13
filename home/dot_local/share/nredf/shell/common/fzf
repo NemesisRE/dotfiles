@@ -7,16 +7,46 @@
 
 _fzf_complete_ssh() {
   _fzf_complete '+m' "$@" < <(
-    cat <(awk '{ print $1 " " $1 }' ~/.ssh/hosts 2>/dev/null) \
-        <(grep -i '^host' ~/.ssh/config /etc/ssh/ssh_config 2>/dev/null | grep -v '\*' | awk '{for (i = 2; i <= NF; i++) print $1 " " $i}') \
-        <(grep -oE '^[[a-z0-9.,:-]+' ~/.ssh/known_hosts 2>/dev/null | tr ',' '\n' | tr -d '[' | awk '{ print $1 " " $1 }') \
-        <(grep -v '^\s*\(#\|$\)' /etc/hosts 2>/dev/null | grep -Fv '0.0.0.0') | awk '{if (length($2) > 0) {print $2}}' | sort -u)
+    awk '
+      FILENAME ~ /\.ssh\/hosts$/ {
+        if (NF >= 1 && $1 !~ /^#/) print $1
+        next
+      }
+      FILENAME ~ /ssh_config$/ || FILENAME ~ /\.ssh\/config$/ {
+        if (tolower($1) == "host") {
+          for (i = 2; i <= NF; i++) {
+            if ($i !~ /[*?]/) print $i
+          }
+        }
+        next
+      }
+      FILENAME ~ /\.ssh\/known_hosts$/ {
+        split($1, entries, ",")
+        for (i in entries) {
+          entry = entries[i]
+          sub(/^\[/, "", entry)
+          sub(/\](:[0-9]+)?$/, "", entry)
+          if (entry !~ /^#/ && length(entry) > 0) print entry
+        }
+        next
+      }
+      FILENAME ~ /\/etc\/hosts$/ {
+        if ($1 !~ /^#/ && $1 != "0.0.0.0") {
+          for (i = 2; i <= NF; i++) {
+            if ($i !~ /^#/) print $i
+          }
+        }
+        next
+      }
+    ' "${HOME}/.ssh/hosts" "${HOME}/.ssh/config" /etc/ssh/ssh_config "${HOME}/.ssh/known_hosts" /etc/hosts 2>/dev/null | sort -u
+  )
 }
 
 _fzf_complete_scp() {
-  _fzf_complete_ssh "@"
+  _fzf_complete_ssh "$@"
 }
 
 _fzf_complete_ping() {
-  _fzf_complete_ssh "@"
+  _fzf_complete_ssh "$@"
 }
+

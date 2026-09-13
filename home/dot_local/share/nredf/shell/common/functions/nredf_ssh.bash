@@ -100,40 +100,46 @@ function _nredf_sshpass_totp() {
     return 1
   fi
 
-  local totp_host proxyjump pj_first
-  if proxyjump=$(ssh -G "$host" | awk 'tolower($1)=="proxyjump"{print $2; f=1; exit} END{exit(f?0:1)}'); then
-    pj_first=$(
-      awk -v s="${proxyjump}" 'BEGIN {
+  local host_cfg proxyjump pj_first totp_itemid=""
+  host_cfg="$(ssh -G "$host" 2>/dev/null)" || { ssh "${@}"; return $?; }
+
+  # Helper awk script to extract TOTP_ITEMID from ssh -G output
+  _parse_totp() {
+    awk '
+      tolower($1) == "setenv" {
+        for (i = 2; i <= NF; i++) {
+          split($i, a, "=")
+          if (a[1] == "TOTP_ITEMID") { print a[2]; exit }
+        }
+      }
+    ' <<< "$1"
+  }
+
+  proxyjump=$(awk 'tolower($1)=="proxyjump" && $2!="none"{print $2; exit}' <<< "${host_cfg}")
+  if [[ -n "${proxyjump}" ]]; then
+    pj_first=$(awk -v s="${proxyjump}" 'BEGIN {
       split(s, a, ",");
       first = a[1];
       sub(/^[^@]*@/, "", first);
       sub(/:.*/, "", first);
       print first
-      }'
-    )
+    }')
+    if [[ -n "${pj_first}" ]]; then
+      local pj_cfg
+      pj_cfg="$(ssh -G "${pj_first}" 2>/dev/null)"
+      totp_itemid="$(_parse_totp "${pj_cfg}")"
+    fi
   fi
 
-  if ssh -G "$pj_first" | awk 'tolower($1)=="setenv"{for(i=2;i<=NF;i++){split($i,a,"="); if(a[1]=="TOTP_ITEMID") f=1}} END{exit(f?0:1)}'; then
-    totp_host="${pj_first}"
-  elif ssh -G "${host}" | awk 'tolower($1)=="setenv"{for(i=2;i<=NF;i++){split($i,a,"="); if(a[1]=="TOTP_ITEMID") f=1}} END{exit(f?0:1)}'; then
-    totp_host="${host}"
-  else
+  if [[ -z "${totp_itemid}" ]]; then
+    totp_itemid="$(_parse_totp "${host_cfg}")"
+  fi
+
+  if [[ -z "${totp_itemid}" ]]; then
     ssh "${@}"
     return $?
   fi
 
-  local totp_itemid
-  totp_itemid=$(
-    ssh -G "${totp_host}" | awk '
-      tolower($1)=="setenv" {
-        for (i=2; i<=NF; i++) {
-          split($i,a,"=");
-          if (a[1]=="TOTP_ITEMID") v=a[2];
-        }
-      }
-      END { if (v!="") print v }
-    '
-  )
 
   local item_totp=""
   local totp_provider="${NREDF_SHELL_SSH_TOTP_PROVIDER:-}"

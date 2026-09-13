@@ -5,45 +5,56 @@
 function _nredf_create_lock() {
   _nredf_init_paths
 
-  if [[ "${1}" != "" ]]; then
+  local CURRENT_FUNCTION=""
+  if [[ -n "${1:-}" ]]; then
     CURRENT_FUNCTION="${1}"
-  elif [[ -n $BASH_VERSION ]]; then
-    local CURRENT_FUNCTION="${FUNCNAME[1]}"
+  elif [[ -n "${BASH_VERSION:-}" ]]; then
+    CURRENT_FUNCTION="${FUNCNAME[1]}"
   else  # zsh
     # shellcheck disable=SC2124,SC2154
-    local CURRENT_FUNCTION="${funcstack[@]:1:1}"
+    CURRENT_FUNCTION="${funcstack[@]:1:1}"
   fi
 
-  [[ ! -d "${NREDF_LKCACHE}" ]] && mkdir -p "${NREDF_LKCACHE}"
-  local LOCK_FILE="${NREDF_LKCACHE}/${CURRENT_FUNCTION}.lock"
+  [[ -d "${NREDF_LKCACHE}" ]] || mkdir -p "${NREDF_LKCACHE}"
+  local LOCK_DIR="${NREDF_LKCACHE}/${CURRENT_FUNCTION}.lock"
 
-  touch "${LOCK_FILE}"
-
-  exec {FD}<>"${LOCK_FILE}"
-
-  if flock -x -w 0 ${FD}; then
+  if mkdir "${LOCK_DIR}" 2>/dev/null; then
+    printf '%s\n' "$$" > "${LOCK_DIR}/pid" 2>/dev/null || true
     return 0
-  elif [[ $(find "${LOCK_FILE}" -mtime +5 -print) ]]; then
-    _nredf_remove_lock "${CURRENT_FUNCTION}"
-    return 0
-  else
-    return 1
   fi
+
+  # Check for stale lock: if holding process is dead, break lock
+  local lock_pid=""
+  if [[ -f "${LOCK_DIR}/pid" ]]; then
+    read -r lock_pid < "${LOCK_DIR}/pid" 2>/dev/null || lock_pid=""
+    if [[ -n "${lock_pid}" ]] && ! kill -0 "${lock_pid}" 2>/dev/null; then
+      rm -rf "${LOCK_DIR}"
+      if mkdir "${LOCK_DIR}" 2>/dev/null; then
+        printf '%s\n' "$$" > "${LOCK_DIR}/pid" 2>/dev/null || true
+        return 0
+      fi
+    fi
+  fi
+
+  return 1
 }
 
 function _nredf_remove_lock() {
   _nredf_init_paths
 
-  if [[ "${1}" != "" ]]; then
+  local CURRENT_FUNCTION=""
+  if [[ -n "${1:-}" ]]; then
     CURRENT_FUNCTION="${1}"
-  elif [[ -n $BASH_VERSION ]]; then
-    local CURRENT_FUNCTION="${FUNCNAME[1]}"
+  elif [[ -n "${BASH_VERSION:-}" ]]; then
+    CURRENT_FUNCTION="${FUNCNAME[1]}"
   else  # zsh
     # shellcheck disable=SC2124,SC2154
-    local CURRENT_FUNCTION="${funcstack[@]:1:1}"
+    CURRENT_FUNCTION="${funcstack[@]:1:1}"
   fi
 
-  local LOCK_FILE="${NREDF_LKCACHE}/${CURRENT_FUNCTION}.lock"
-
-  rm -f "${LOCK_FILE}"
+  local LOCK_DIR="${NREDF_LKCACHE}/${CURRENT_FUNCTION}.lock"
+  rm -rf "${LOCK_DIR}"
+  # Clean up legacy .lock files if present
+  rm -f "${NREDF_LKCACHE}/${CURRENT_FUNCTION}.lock"
 }
+
