@@ -666,9 +666,8 @@ bleopt exec_errexit_mark=
 ## work in both the terminals with light and dark backgrounds.  A better style
 ## can be specified based on the user's preference.
 
-#ble-face auto_complete='fg=238,bg=254'           # default
-#ble-face auto_complete='fg=231,bg=69'            # blue background
-#ble-face auto_complete='fg=240,underline,italic' # darker background
+# Auto-complete suggestions (matches zsh-autosuggestions: muted grey ghost text, no background box)
+ble-face -s auto_complete 'fg=242'
 
 
 ## The setting "complete_auto_wordbreaks" is used as the delimiters for
@@ -1019,7 +1018,8 @@ bleopt exec_errexit_mark=
 #ble-face -s command_builtin_dot       fg=red,bold
 #ble-face -s command_builtin           fg=red
 #ble-face -s command_alias             fg=teal
-#ble-face -s command_function          fg=99 # fg=133
+# Shell functions: readable in OneDark-Pro (teal matching aliases like ls/ll, or 'fg=magenta' for bright OneDark purple)
+ble-face -s command_function          ref:command_alias
 #ble-face -s command_file              fg=green
 #ble-face -s command_keyword           fg=blue
 #ble-face -s command_jobs              fg=red,bold
