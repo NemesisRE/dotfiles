@@ -7,6 +7,17 @@ edit = [
 	{ run = 'nvim %s', block = true, desc = "Neovim" },
 ]
 
+[open]
+prepend_rules = [
+	# Dotfiles (e.g. .bashrc, .zshrc, .gitconfig, .profile)
+	{ url = ".*", use = "edit" },
+	# Text, scripts, configs, and source files
+	{ url = "*.{txt,md,json,yaml,yml,toml,ini,conf,cfg,sh,bash,zsh,ps1,psm1,psd1,lua,py,js,ts,go,rs,k8s,tmpl}", use = "edit" },
+	{ mime = "text/*", use = "edit" },
+	{ mime = "application/{json,ndjson,javascript,x-javascript,x-sh,x-csh,x-shellscript,xml,toml,yaml,x-yaml}", use = "edit" },
+	{ mime = "inode/{empty,x-empty}", use = "edit" },
+]
+
 [preview]
 tab_size = 2
 

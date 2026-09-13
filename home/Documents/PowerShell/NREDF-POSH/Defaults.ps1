@@ -33,6 +33,21 @@ if ($isWindows) {
     }
   }
 
+  # Configure Yazi's configuration home and AppData junction on Windows
+  $yaziConfigHome = "$HOME\.config\yazi"
+  $ENV:YAZI_CONFIG_HOME = $yaziConfigHome
+  if ([System.Environment]::GetEnvironmentVariable("YAZI_CONFIG_HOME", [System.EnvironmentVariableTarget]::User) -ne $yaziConfigHome) {
+    [System.Environment]::SetEnvironmentVariable("YAZI_CONFIG_HOME", $yaziConfigHome, [System.EnvironmentVariableTarget]::User)
+  }
+  $yaziAppData = Join-Path $ENV:APPDATA "yazi"
+  $yaziAppDataConfig = Join-Path $yaziAppData "config"
+  if (-not (Test-Path $yaziAppDataConfig)) {
+    if (-not (Test-Path $yaziAppData)) {
+      New-Item -ItemType Directory -Path $yaziAppData -Force -ErrorAction SilentlyContinue | Out-Null
+    }
+    New-Item -ItemType Junction -Path $yaziAppDataConfig -Target $yaziConfigHome -Force -ErrorAction SilentlyContinue | Out-Null
+  }
+
   if (-not $ENV:XDG_CONFIG_HOME) { $ENV:XDG_CONFIG_HOME = "$HOME\.config" }
   if (-not $ENV:XDG_DATA_HOME) { $ENV:XDG_DATA_HOME = "$HOME\.local\share" }
 

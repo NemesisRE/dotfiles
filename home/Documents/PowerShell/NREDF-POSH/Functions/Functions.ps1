@@ -182,3 +182,30 @@ Options:
     . $global:PROFILE
   }
 }
+
+# Yazi CWD wrapper (matches bash/zsh yy)
+function yy {
+  <#
+  .SYNOPSIS
+      Launch Yazi file manager and change directory on exit.
+  #>
+  if (-not (Get-Command yazi -ErrorAction SilentlyContinue)) {
+    Write-Error "Command 'yazi' does not exist on system."
+    return
+  }
+  $tmp = [System.IO.Path]::GetTempFileName()
+  try {
+    yazi $args --cwd-file="$tmp"
+    if (Test-Path $tmp) {
+      $cwd = (Get-Content -Path $tmp -Raw).Trim()
+      if ($cwd -and (Test-Path -LiteralPath $cwd) -and $cwd -ne $PWD.Path) {
+        Set-Location -LiteralPath $cwd
+      }
+    }
+  } finally {
+    if (Test-Path $tmp) {
+      Remove-Item -Path $tmp -Force -ErrorAction SilentlyContinue
+    }
+  }
+}
+

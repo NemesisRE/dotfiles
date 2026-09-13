@@ -50,5 +50,20 @@ foreach ($candidate in $yaziFileCandidates) {
     }
 }
 
+# Configure Yazi's configuration directory and AppData junction on Windows
+$yaziConfigDir = "$HOME\.config\yazi"
+$env:YAZI_CONFIG_HOME = $yaziConfigDir
+[System.Environment]::SetEnvironmentVariable("YAZI_CONFIG_HOME", $yaziConfigDir, [System.EnvironmentVariableTarget]::User)
+Write-Host "    Configured YAZI_CONFIG_HOME: $yaziConfigDir"
+
+$yaziAppDataDir = Join-Path $env:APPDATA "yazi"
+$yaziAppDataConfig = Join-Path $yaziAppDataDir "config"
+if (-not (Test-Path $yaziAppDataConfig)) {
+    if (-not (Test-Path $yaziAppDataDir)) {
+        New-Item -ItemType Directory -Path $yaziAppDataDir -Force -ErrorAction SilentlyContinue | Out-Null
+    }
+    New-Item -ItemType Junction -Path $yaziAppDataConfig -Target $yaziConfigDir -Force -ErrorAction SilentlyContinue | Out-Null
+}
+
 Write-Host "==> Windows prerequisites installed successfully."
 {{- end }}

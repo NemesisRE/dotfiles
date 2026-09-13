@@ -1,4 +1,13 @@
 {{ if and (eq .chezmoi.os "windows") (lookPath "ya") -}}
 # package.toml hash: {{ include "dot_config/yazi/package.toml.tmpl" | sha256sum }}
+$yaziConfigDir = "$HOME\.config\yazi"
+$env:YAZI_CONFIG_HOME = $yaziConfigDir
+$yaziAppDataConfig = Join-Path (Join-Path $env:APPDATA "yazi") "config"
+if (-not (Test-Path $yaziAppDataConfig)) {
+    if (-not (Test-Path (Join-Path $env:APPDATA "yazi"))) {
+        New-Item -ItemType Directory -Path (Join-Path $env:APPDATA "yazi") -Force -ErrorAction SilentlyContinue | Out-Null
+    }
+    New-Item -ItemType Junction -Path $yaziAppDataConfig -Target $yaziConfigDir -Force -ErrorAction SilentlyContinue | Out-Null
+}
 & ya pkg install --discard *>$null
 {{ end -}}

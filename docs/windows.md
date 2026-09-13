@@ -245,15 +245,18 @@ Add-MpPreference -ExclusionProcess "aqua.exe"
 Add-MpPreference -ExclusionPath "$env:LOCALAPPDATA\aquaproj-aqua"
 ```
 
-### Yazi: "Cannot find `file` to detect the file's MIME type"
-**Root Cause**:
-Yazi relies on the Unix `file` utility to detect file MIME types for previews and openers. On Windows, `file.exe` is distributed with Git for Windows (`Git\usr\bin\file.exe`).
+### Yazi: MIME Detection and Configuration Discovery on Windows
 
-**Resolution**:
-NREDF automatically detects Git for Windows and exports `YAZI_FILE_ONE` in [`Defaults.ps1`](file:///Users/skurz/Repos/chezmoi/home/Documents/PowerShell/NREDF-POSH/Defaults.ps1) as well as persisting it to the User environment during `chezmoi apply`. If running Yazi outside of NREDF PowerShell, ensure Git is installed (`winget install Git.Git`) and set the user variable:
-```powershell
-[System.Environment]::SetEnvironmentVariable("YAZI_FILE_ONE", "C:\Program Files\Git\usr\bin\file.exe", "User")
-```
+**1. "Cannot find `file` to detect the file's MIME type"**
+- **Root Cause**: Yazi relies on the Unix `file` utility to detect file MIME types for previews and openers. On Windows, `file.exe` is distributed with Git for Windows (`Git\usr\bin\file.exe`).
+- **Resolution**: NREDF automatically detects Git for Windows and exports `YAZI_FILE_ONE` in [`Defaults.ps1`](file:///Users/skurz/Repos/chezmoi/home/Documents/PowerShell/NREDF-POSH/Defaults.ps1) as well as persisting it to the User environment during `chezmoi apply`. If running Yazi outside of NREDF PowerShell, ensure Git is installed (`winget install Git.Git`) and set the user variable:
+  ```powershell
+  [System.Environment]::SetEnvironmentVariable("YAZI_FILE_ONE", "C:\Program Files\Git\usr\bin\file.exe", "User")
+  ```
+
+**2. Yazi Opens Files with VS Code Instead of Neovim**
+- **Root Cause**: On Windows, Yazi looks for configuration in `%APPDATA%\yazi\config\` unless `$env:YAZI_CONFIG_HOME` is set. Without this, Yazi ran with compiled-in preset defaults which map Windows `edit` to `code %s`.
+- **Resolution**: NREDF automatically sets `YAZI_CONFIG_HOME` to `$HOME\.config\yazi`, creates a directory junction from `%APPDATA%\yazi\config` to `$HOME\.config\yazi`, and configures explicit `[open]` prepend rules in [`yazi.toml.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/yazi/yazi.toml.tmpl) so all dotfiles (`.*`), source code, and text files route to `nvim`.
 
 ---
 

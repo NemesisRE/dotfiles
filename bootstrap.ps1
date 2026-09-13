@@ -206,6 +206,21 @@ foreach ($candidate in $yaziFileCandidates) {
     }
 }
 
+# ── Configure Yazi Config Directory & AppData Junction ───────────────────────
+$yaziConfigDir = "$HOME\.config\yazi"
+$env:YAZI_CONFIG_HOME = $yaziConfigDir
+[System.Environment]::SetEnvironmentVariable("YAZI_CONFIG_HOME", $yaziConfigDir, [System.EnvironmentVariableTarget]::User)
+Write-Info "Configured YAZI_CONFIG_HOME: $yaziConfigDir"
+
+$yaziAppDataDir = Join-Path $env:APPDATA "yazi"
+$yaziAppDataConfig = Join-Path $yaziAppDataDir "config"
+if (-not (Test-Path $yaziAppDataConfig)) {
+    if (-not (Test-Path $yaziAppDataDir)) {
+        New-Item -ItemType Directory -Path $yaziAppDataDir -Force -ErrorAction SilentlyContinue | Out-Null
+    }
+    New-Item -ItemType Junction -Path $yaziAppDataConfig -Target $yaziConfigDir -Force -ErrorAction SilentlyContinue | Out-Null
+}
+
 # ── Configure SSH Agent (Bitwarden / OpenSSH) ─────────────────────────────────
 Write-Step "Checking SSH Agent"
 $bwPipe = "\\.\pipe\openssh-ssh-agent"
