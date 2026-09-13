@@ -1,0 +1,40 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/usr/bin/env bash
+# chezmoi run_onchange_before — installs Homebrew and prerequisite packages on macOS.
+# packages.yaml hash: {{ include ".chezmoidata/packages.yaml" | sha256sum }}
+
+set -euo pipefail
+
+# Skip in CI or when the user explicitly opts out.
+[[ -n "${CI:-}" ]] && exit 0
+[[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
+
+# ── Homebrew ──────────────────────────────────────────────────────────────────
+if ! command -v brew >/dev/null 2>&1 && [[ ! -x /opt/homebrew/bin/brew && ! -x /usr/local/bin/brew ]]; then
+  echo "==> Installing Homebrew"
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
+fi
+
+if [[ -x /opt/homebrew/bin/brew ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [[ -x /usr/local/bin/brew ]]; then
+  eval "$(/usr/local/bin/brew shellenv)"
+fi
+
+if ! command -v brew >/dev/null 2>&1; then
+  echo "==> Warning: Homebrew could not be located; skipping brew bundle"
+  exit 0
+fi
+
+echo "==> Installing prerequisite packages via Homebrew bundle"
+brew bundle --no-lock --file=/dev/stdin <<BREW_BUNDLE_EOF
+{{ range .packages.darwin.brews -}}
+brew {{ . | quote }}
+{{ end -}}
+{{ range .packages.darwin.casks -}}
+cask {{ . | quote }}
+{{ end -}}
+BREW_BUNDLE_EOF
+
+echo "==> macOS prerequisites installed successfully."
+{{- end }}

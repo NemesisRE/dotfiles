@@ -1,0 +1,31 @@
+{{- if eq .chezmoi.os "windows" -}}
+# chezmoi run_onchange_before — installs prerequisite packages on Windows via winget.
+# packages.yaml hash: {{ include ".chezmoidata/packages.yaml" | sha256sum }}
+
+$ErrorActionPreference = 'SilentlyContinue'
+
+# Skip in CI or when the user explicitly opts out.
+if ($env:CI -or $env:NREDF_NO_BOOTSTRAP) {
+    exit 0
+}
+
+if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+    Write-Host "==> Warning: winget is not available on this system. Skipping OS package installation."
+    exit 0
+}
+
+Write-Host "==> Installing prerequisite packages via winget"
+$packages = @(
+{{ range .packages.windows.winget -}}
+    {{ . | quote }},
+{{ end -}}
+)
+
+foreach ($pkg in $packages) {
+    if (-not $pkg) { continue }
+    Write-Host "    Ensuring winget package: $pkg"
+    & winget install --id $pkg --exact --silent --accept-source-agreements --accept-package-agreements
+}
+
+Write-Host "==> Windows prerequisites installed successfully."
+{{- end }}

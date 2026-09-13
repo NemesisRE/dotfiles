@@ -29,7 +29,9 @@ aqua install -a -l
 
 ## 📋 Prerequisites & Recommended Tooling
 
-For the best experience on Windows, install the following packages via `winget`:
+Chezmoi automatically manages and installs these core prerequisite packages on Windows via `home/.chezmoidata/packages.yaml` and `winget` during `chezmoi apply`.
+
+If you prefer to install them manually upfront:
 
 ```powershell
 # Modern Shell & Terminal
@@ -39,10 +41,8 @@ winget install Microsoft.WindowsTerminal
 # Version Control
 winget install Git.Git
 
-# Recommended Default Font: FiraMono Nerd Font (Mono)
-# You can install via winget or download from https://www.nerdfonts.com
+# Recommended Default Font: FiraMono / FiraCode Nerd Font
 winget install DEVCOM.FiraCodeFont
-# Or install FiraMono NF zip from github.com/ryanoasis/nerd-fonts
 ```
 
 > [!TIP]

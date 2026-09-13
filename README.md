@@ -137,6 +137,7 @@ The repository uses [`.chezmoiroot`](.chezmoiroot) pointing to `home/` to cleanl
 | [`home/.chezmoidata/config/shell.yaml`](home/.chezmoidata/config/shell.yaml) | Shell defaults, multiplexer, SSH agent, and aqua options |
 | [`home/.chezmoidata/config/devel.yaml`](home/.chezmoidata/config/devel.yaml) | Developer workspace paths and defaults |
 | [`home/.chezmoidata/config/git.yaml`](home/.chezmoidata/config/git.yaml) | Git user, email, signing key, and GPG format schema |
+| [`home/.chezmoidata/packages.yaml`](home/.chezmoidata/packages.yaml) | OS prerequisite packages (Homebrew, winget, apt, fonts, terminals) |
 | [`home/dot_config/sheldon/plugins.toml.tmpl`](home/dot_config/sheldon/plugins.toml.tmpl) | Sheldon zsh plugin configuration |
 | [`home/.chezmoidata/ble.yaml`](home/.chezmoidata/ble.yaml) | Ble.sh version tag |
 | [`home/.chezmoiscripts/`](home/.chezmoiscripts/) | Platform lifecycle hooks (run on `chezmoi apply`) |

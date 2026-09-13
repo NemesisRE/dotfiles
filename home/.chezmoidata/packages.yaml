@@ -1,0 +1,37 @@
+# OS prerequisite packages managed by chezmoi
+# Separated from user CLI tools managed by aqua (aqua.yaml).
+# Re-applied automatically whenever this file changes.
+
+packages:
+  darwin:
+    brews:
+      - git
+      - curl
+    casks:
+      - kitty
+      - font-fira-mono-nerd-font
+  windows:
+    winget:
+      - Microsoft.PowerShell
+      - Microsoft.WindowsTerminal
+      - Git.Git
+      - DEVCOM.FiraCodeFont
+  linux:
+    apt:
+      - git
+      - curl
+      - zsh
+      - kitty
+      - fonts-firacode
+    pacman:
+      - git
+      - curl
+      - zsh
+      - kitty
+      - ttf-firacode-nerd
+    dnf:
+      - git
+      - curl
+      - zsh
+      - kitty
+      - fira-code-fonts
