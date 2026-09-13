@@ -52,7 +52,10 @@ function _nredf_init_paths() {
     "${NREDF_CONFIG}/shell/common" \
     "${NREDF_CONFIG}/shell/common/functions" \
     "${NREDF_CONFIG}/shell/${NREDF_SHELL_NAME}" \
-    "${NREDF_CONFIG}/shell/${NREDF_SHELL_NAME}/functions"; do
+    "${NREDF_CONFIG}/shell/${NREDF_SHELL_NAME}/functions" \
+    "${XDG_STATE_HOME}/nvim" \
+    "${XDG_STATE_HOME}/nvim/undo" \
+    "${XDG_STATE_HOME}/nvim/swap"; do
     [[ -n "${NREDF_PATH}" && ! -d "${NREDF_PATH}" ]] && mkdir -p "${NREDF_PATH}"
   done
 }

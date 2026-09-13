@@ -1,3 +1,19 @@
+# Initialize startup profiling (activated by NREDF_PROFILE_STARTUP=1 via `reload -p`)
+if ($ENV:NREDF_PROFILE_STARTUP -eq '1') {
+  $global:_nredf_sw = [System.Diagnostics.Stopwatch]::StartNew()
+  $global:_nredf_last_ms = [long]0
+  function global:NREDF_Step ([string]$label) {
+    $now = $global:_nredf_sw.ElapsedMilliseconds
+    $elapsed = $now - $global:_nredf_last_ms
+    $global:_nredf_last_ms = $now
+    $dim = if ($PSStyle) { $PSStyle.Dim } else { "$([char]27)[2m" }
+    $reset = if ($PSStyle) { $PSStyle.Reset } else { "$([char]27)[0m" }
+    Write-Host ("${dim}  [+{0,4}ms] {1}${reset}" -f $elapsed, $label)
+  }
+} else {
+  function global:NREDF_Step ([string]$label) {}
+}
+
 if ([string]::IsNullOrEmpty($ENV:NREDF_PATH)) {
   $ENV:PROFILE_PATH = (Get-Item $PROFILE).Directory
   $ENV:NREDF_PATH = Join-Path $ENV:PROFILE_PATH 'NREDF-POSH'
@@ -25,6 +41,7 @@ if (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {
   } else {
     (& oh-my-posh init pwsh | Out-String) | Invoke-Expression
   }
+  NREDF_Step "oh-my-posh init"
 
   # Upgrade check (Windows only - WindowsPrincipal is not supported on non-Windows)
   if ($IsWindows) {
@@ -38,6 +55,7 @@ if (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {
 # Daily automated sync for dotfiles and aqua tools (throttled to once per 24h)
 if (-not $ENV:CHEZMOI -and (Get-Command NREDF_DailySync -ErrorAction SilentlyContinue)) {
   NREDF_DailySync
+  NREDF_Step "NREDF_DailySync"
 }
 
 if ($Env:TERM_PROGRAM -ne 'vscode') {
@@ -61,6 +79,7 @@ if ($Env:TERM_PROGRAM -ne 'vscode') {
       }
     }
   }
+  NREDF_Step "PowerShell modules & PSFzf"
 }
 
 # Atuin shell history integration (matches bash & zsh, bound to both Ctrl+r and UpArrow)
@@ -71,4 +90,15 @@ if (Get-Command atuin -ErrorAction SilentlyContinue) {
   if (Get-Command Enable-AtuinSearchKeys -ErrorAction SilentlyContinue) {
     Enable-AtuinSearchKeys -CtrlR $true -UpArrow $true
   }
+  NREDF_Step "Atuin init"
+}
+
+# End of startup profiling
+if ($ENV:NREDF_PROFILE_STARTUP -eq '1') {
+  $total = $global:_nredf_sw.ElapsedMilliseconds
+  $cyan = if ($PSStyle) { $PSStyle.Foreground.Cyan } else { "$([char]27)[36m" }
+  $reset = if ($PSStyle) { $PSStyle.Reset } else { "$([char]27)[0m" }
+  Write-Host ("${cyan}  [+{0,4}ms] Total PowerShell profile startup time${reset}" -f $total)
+  $ENV:NREDF_PROFILE_STARTUP = $null
+  Remove-Variable _nredf_sw, _nredf_last_ms -Scope Global -ErrorAction SilentlyContinue
 }

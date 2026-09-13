@@ -1,0 +1,4 @@
+# bat configuration — managed by chezmoi
+# Set syntax highlighting theme to OneDarkPro
+--theme="OneDarkPro"
+--italic-text="always"

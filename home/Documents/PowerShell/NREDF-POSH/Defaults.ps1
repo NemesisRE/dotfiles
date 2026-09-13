@@ -138,3 +138,26 @@ if (Get-Command zoxide -ErrorAction SilentlyContinue) {
   } catch {}
 }
 
+# Editor defaults (cross-platform)
+if (Get-Command nvim -ErrorAction SilentlyContinue) {
+  $ENV:EDITOR = "nvim"
+  $ENV:VISUAL = "nvim"
+  $ENV:GIT_EDITOR = "nvim"
+} elseif (Get-Command vi -ErrorAction SilentlyContinue) {
+  $ENV:EDITOR = "vi"
+  $ENV:VISUAL = "vi"
+  $ENV:GIT_EDITOR = "vi"
+}
+
+# Bat defaults (cross-platform)
+$ENV:BAT_THEME = "OneDarkPro"
+
+# FZF defaults (cross-platform)
+$ENV:FZF_DEFAULT_OPTS = "--bind tab:down --bind btab:up --cycle --ansi --color=dark,bg+:#2c313c,bg:#282c34,gutter:#282c34,spinner:#e5c07b,hl:#e06c75,fg:#abb2bf,header:#61afef,info:#56b6c2,pointer:#c678dd,marker:#98c379,fg+:#abb2bf,prompt:#61afef,hl+:#98c379,border:#4f5666"
+if (Get-Command bat -ErrorAction SilentlyContinue) {
+  $ENV:FZF_CTRL_T_OPTS = "--preview 'bat -n --color=always --theme=OneDarkPro {}' --bind 'ctrl-/:change-preview-window(down|hidden|)'"
+}
+if (Get-Command lsd -ErrorAction SilentlyContinue) {
+  $ENV:FZF_ALT_C_OPTS = "--preview 'lsd -A --tree --depth=2 --color=always {}' --bind 'ctrl-/:change-preview-window(down|hidden|)'"
+}
+

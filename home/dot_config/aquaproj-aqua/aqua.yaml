@@ -99,7 +99,7 @@ packages:
   - name: jesseduffield/lazygit@v0.65.0 # renovate: depName=jesseduffield/lazygit
     tags:
       - default
-  - name: helix-editor/helix@25.07.1 # renovate: depName=helix-editor/helix
+  - name: neovim/neovim@v0.12.5 # renovate: depName=neovim/neovim
     tags:
       - default
   - name: aristocratos/btop@v1.4.7 # renovate: depName=aristocratos/btop

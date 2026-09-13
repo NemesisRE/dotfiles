@@ -50,15 +50,18 @@ function _nredf_set_defaults() {
   export RLWRAP_HOME="${XDG_CACHE_HOME}/RLWRAP"
   [[ -s "${HOME}/.rvm/scripts/rvm" ]] && source "${HOME}/.rvm/scripts/rvm"
 
-  #set editor to vim/nvim
-  if command -v hx &>/dev/null; then
-    export EDITOR="hx"
-    export GIT_EDITOR="hx"
-  elif command -v nvim &>/dev/null; then
+  # Set default editor (nvim -> hx -> vi)
+  if command -v nvim &>/dev/null; then
     export EDITOR="nvim"
+    export VISUAL="nvim"
     export GIT_EDITOR="nvim"
+  elif command -v hx &>/dev/null; then
+    export EDITOR="hx"
+    export VISUAL="hx"
+    export GIT_EDITOR="hx"
   else
     export EDITOR="vi"
+    export VISUAL="vi"
     export GIT_EDITOR="vi"
   fi
 
@@ -69,8 +72,11 @@ function _nredf_set_defaults() {
     eval "$(pyenv init -)"
   fi
 
+  # Bat Defaults
+  export BAT_THEME="OneDarkPro"
+
   # FZF Defaults
-  export FZF_DEFAULT_OPTS='--bind tab:down --bind btab:up --cycle --ansi'
+  export FZF_DEFAULT_OPTS='--bind tab:down --bind btab:up --cycle --ansi --color=dark,bg+:#2c313c,bg:#282c34,gutter:#282c34,spinner:#e5c07b,hl:#e06c75,fg:#abb2bf,header:#61afef,info:#56b6c2,pointer:#c678dd,marker:#98c379,fg+:#abb2bf,prompt:#61afef,hl+:#98c379,border:#4f5666'
   if command -v fd &>/dev/null; then
     export FZF_DEFAULT_COMMAND='fd --type file --follow --hidden --exclude .git --color=always'
     export FZF_ALT_C_COMMAND="fd --type directory --hidden --follow --exclude .git"
@@ -79,19 +85,26 @@ function _nredf_set_defaults() {
   fi
   export FZF_CTRL_T_COMMAND="${FZF_DEFAULT_COMMAND}"
   if command -v bat &>/dev/null; then
-    export FZF_CTRL_T_OPTS="--preview 'bat -n --color=always {}' --bind 'ctrl-/:change-preview-window(down|hidden|)'"
+    export FZF_CTRL_T_OPTS="--preview 'bat -n --color=always --theme=OneDarkPro {}' --bind 'ctrl-/:change-preview-window(down|hidden|)'"
   fi
   if command -v lsd &>/dev/null; then
     export FZF_ALT_C_OPTS="--preview 'lsd -A --tree --depth=2 --color=always {}' --bind 'ctrl-/:change-preview-window(down|hidden|)'"
   fi
 
   #  VIM/NVIM Defaults
-  # shellcheck disable=SC2016
-  export GVIMINIT='let $MYGVIMRC="$XDG_CONFIG_HOME/vim/gvimrc" | source $MYGVIMRC'
-  # shellcheck disable=SC2016
-  export VIMINIT='let $MYVIMRC="$XDG_CONFIG_HOME/vim/vimrc" | source $MYVIMRC'
-  export NVIM_LOG_FILE="${XDG_CACHE_HOME}/vim/nvim_debug.log"
-  export NVIM_RPLUGIN_MANIFESTE="${XDG_CACHE_HOME}/vim/rplugin.vim"
+  if [[ -f "${XDG_CONFIG_HOME}/vim/gvimrc" ]]; then
+    # shellcheck disable=SC2016
+    export GVIMINIT='let $MYGVIMRC="$XDG_CONFIG_HOME/vim/gvimrc" | source $MYGVIMRC'
+  else
+    unset GVIMINIT
+  fi
+  if [[ -f "${XDG_CONFIG_HOME}/vim/vimrc" ]]; then
+    # shellcheck disable=SC2016
+    export VIMINIT='let $MYVIMRC="$XDG_CONFIG_HOME/vim/vimrc" | source $MYVIMRC'
+  else
+    unset VIMINIT
+  fi
+  export NVIM_LOG_FILE="${XDG_STATE_HOME}/nvim/log"
 
   # Timewarrior
   export TIMEWARRIORDB="${XDG_CACHE_HOME}/timewarrior"

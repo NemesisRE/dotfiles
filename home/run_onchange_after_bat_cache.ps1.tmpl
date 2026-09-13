@@ -1,0 +1,6 @@
+{{ if eq .chezmoi.os "windows" -}}
+# OneDarkPro.tmTheme hash: {{ include "dot_config/bat/themes/OneDarkPro.tmTheme" | sha256sum }}
+if (Get-Command bat -ErrorAction SilentlyContinue) {
+  bat cache --build
+}
+{{ end -}}

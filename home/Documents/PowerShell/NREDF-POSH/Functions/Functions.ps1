@@ -27,51 +27,59 @@ function reload {
   .SYNOPSIS
       Reload PowerShell profile and run dotfiles / tool synchronizations.
   .DESCRIPTION
-      Runs chezmoi apply -R, aqua install -a -l, updates tools, and reloads $PROFILE.
       Mirrors the reload command in bash/zsh.
-  .PARAMETER Full
-      Full refresh: clear caches, run all updates, and reload.
   .PARAMETER Cache
       Delete 'Last Run Cache'.
   .PARAMETER Downloads
-      Delete downloaded aqua packages.
+      Delete aqua pkgs (archives + binaries, keeps bin/ symlinks).
+  .PARAMETER Full
+      Full refresh: clear caches + chezmoi/aqua.
+  .PARAMETER LastRun
+      Delete only 'Last Run Cache'.
+  .PARAMETER Profile
+      Enable startup profiling (with timestamps for each step).
   .PARAMETER Help
       Show usage help.
   #>
   param (
-    [Alias('f')]
-    [switch]$Full,
-    [Alias('s')]
-    [switch]$Sync,
-    [Alias('c', 'l')]
+    [Alias('c')]
     [switch]$Cache,
     [Alias('d')]
     [switch]$Downloads,
+    [Alias('f')]
+    [switch]$Full,
+    [Alias('l')]
+    [switch]$LastRun,
+    [Alias('p', 'Profile')]
+    [switch]$StartupProfile,
     [Alias('h')]
     [switch]$Help
   )
 
   if ($Help) {
     Write-Host @"
-NREDF Reload (PowerShell)
+NREDF Reload
 
 Usage: reload [options]
 
 Options:
-  -c, -Cache, -l    Delete 'Last Run Cache'
-  -d, -Downloads    Delete aqua packages cache
-  -f, -Full         Full refresh: clear caches + run chezmoi & aqua updates
-  -s, -Sync         Force run chezmoi & aqua sync without clearing cache
-  -h, -Help         Show this help
+-c, [--cache]               # Delete 'Last Run Cache'
+-d, [--downloads]           # Delete aqua pkgs (archives + binaries, keeps bin/ symlinks)
+-f, [--full]                # Full refresh: clear caches + chezmoi/aqua
+-l, [--last-run]            # Delete only 'Last Run Cache'
+-p, [--profile]             # Enable startup profiling (with timestamps for each step)
+-h, [--help]                # Show this help
+
 "@
     return
   }
 
-  if ($Cache -or $Full) {
+  $bold = if ($PSStyle) { $PSStyle.Bold } else { "$([char]27)[1m" }
+  $reset = if ($PSStyle) { $PSStyle.Reset } else { "$([char]27)[0m" }
+
+  if ($Cache -or $LastRun -or $Full) {
     if (-not [string]::IsNullOrEmpty($ENV:NREDF_LRCACHE) -and (Test-Path -Path $ENV:NREDF_LRCACHE)) {
-      Write-Host "==> Clearing last-run cache..." -ForegroundColor Cyan
-      $cacheItems = Join-Path $ENV:NREDF_LRCACHE '*'
-      Remove-Item -Path $cacheItems -Recurse -Force -ErrorAction SilentlyContinue
+      Remove-Item -Path $ENV:NREDF_LRCACHE -Recurse -Force -ErrorAction SilentlyContinue
     }
   }
 
@@ -99,23 +107,24 @@ Options:
     }
 
     if ($aquaPkgs -and (Test-Path $aquaPkgs)) {
-      Write-Host "==> Removing aqua packages..." -ForegroundColor Cyan
+      Write-Host "${bold}Removing aqua packages${reset}"
       Remove-Item -Path $aquaPkgs -Recurse -Force -ErrorAction SilentlyContinue
     }
   }
 
-  # Only force daily sync if -Full or -Sync is explicitly specified
-  if ($Full -or $Sync) {
-    if (Get-Command NREDF_DailySync -ErrorAction SilentlyContinue) {
-      NREDF_DailySync -Force
-    }
+  if ($Full) {
+    Write-Host "${bold}Starting full reload${reset}"
+    # LRCACHE is cleared above — chezmoi/aqua run automatically via normal shell init
   }
 
-  Write-Host "==> Reloading PowerShell profile..." -ForegroundColor Green
+  if ($StartupProfile) {
+    $ENV:NREDF_PROFILE_STARTUP = '1'
+  }
+
   if ((Get-Command Switch-Process -ErrorAction SilentlyContinue) -and -not [Console]::IsInputRedirected) {
     $pwsh = if ([System.Environment]::ProcessPath) { [System.Environment]::ProcessPath } else { (Get-Process -Id $PID).Path }
     Switch-Process -WithCommand $pwsh, '-NoLogo'
   } else {
-    . ${PROFILE}
+    . $global:PROFILE
   }
 }

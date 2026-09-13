@@ -1,0 +1,5 @@
+{{ if and (ne .chezmoi.os "windows") (lookPath "bat") -}}
+#!/usr/bin/env bash
+# OneDarkPro.tmTheme hash: {{ include "dot_config/bat/themes/OneDarkPro.tmTheme" | sha256sum }}
+bat cache --build
+{{ end -}}

@@ -25,6 +25,9 @@ function NREDF_DailySync {
   # Mark next run 24h ahead immediately to prevent concurrent shells from overlapping
   [Void] (NREDF_LastRun -CurrentFunction 'NREDF_DailySync' -Success $true -NextRun ((Get-Date).AddHours(24).ToFileTime()))
 
+  $bold = if ($PSStyle) { $PSStyle.Bold } else { "$([char]27)[1m" }
+  $reset = if ($PSStyle) { $PSStyle.Reset } else { "$([char]27)[0m" }
+
   # ── Chezmoi Dotfiles Sync ──────────────────────────────────────────────────
   if (Get-Command chezmoi -ErrorAction SilentlyContinue) {
     # Check for chezmoi binary upgrades
@@ -40,27 +43,29 @@ function NREDF_DailySync {
         $local = (git -C $chezmoiSrc rev-parse '@' 2>$null)
         $remote = (git -C $chezmoiSrc rev-parse '@{u}' 2>$null)
         if ($remote -and ($local -ne $remote)) {
-          Write-Host '==> Pulling dotfiles updates...' -ForegroundColor Cyan
+          Write-Host "${bold}Pulling dotfiles${reset}"
           git -C $chezmoiSrc pull --ff-only --quiet 2>$null
         }
       } catch {}
     }
 
-    Write-Host '==> Applying chezmoi dotfiles...' -ForegroundColor Cyan
     try {
       chezmoi apply -R
     } catch {
       Write-Warning "chezmoi apply failed: $_"
     }
+    NREDF_Step "chezmoi dotfiles sync"
   }
 
   # ── Aqua Tools Sync ────────────────────────────────────────────────────────
   if (Get-Command aqua -ErrorAction SilentlyContinue) {
     try {
+      if ($ENV:NREDF_PROFILE_STARTUP -or $ENV:NREDF_VERBOSE) {
+        Write-Host "${bold}Updating aqua${reset}"
+      }
       aqua update-aqua 2>$null
     } catch {}
 
-    Write-Host '==> Ensuring aqua-managed command links...' -ForegroundColor Cyan
     try {
       aqua install -a -l 2>$null
     } catch {
@@ -68,7 +73,11 @@ function NREDF_DailySync {
     }
 
     try {
+      if ($ENV:NREDF_PROFILE_STARTUP -or $ENV:NREDF_VERBOSE) {
+        Write-Host "${bold}Vacuuming aqua packages${reset}"
+      }
       aqua vacuum -d 30 2>$null
     } catch {}
+    NREDF_Step "aqua tools sync"
   }
 }

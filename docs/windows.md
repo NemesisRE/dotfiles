@@ -93,7 +93,7 @@ Windows PowerShell 5.1 automatically dot-sources the configuration from `Documen
 - **Terminal-Icons**: Colorized folder and file icons in directory listings.
 - **posh-git**: Rich Git status indicators in the prompt.
 - **Oh-My-Posh**: Driven by `~/.config/oh-my-posh/config.json` with the unified **OneDark-Pro** theme.
-- **CLI Replacements**: Real CLI tools un-shadowed (`ls` &rarr; `lsd`, `cat` &rarr; `bat`, `grep` &rarr; `rg`, `lg` &rarr; `lazygit`, `hx` &rarr; `helix`).
+- **CLI Replacements**: Real CLI tools un-shadowed (`ls` &rarr; `lsd`, `cat` &rarr; `bat`, `grep` &rarr; `rg`, `lg` &rarr; `lazygit`, `vim`/`vi` &rarr; `nvim`).
 - **Environment Variables**: Automatic setup of `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, and `XDG_CACHE_HOME`.
 
 ---
@@ -110,7 +110,7 @@ Aqua automatically manages cross-platform developer tools on Windows without nee
 | **bat** | Syntax-highlighting cat | `bat` |
 | **lsd** | Modern file listing | `lsd` |
 | **lazygit** | Terminal Git UI | `lazygit` |
-| **helix** | Modern modal editor | `hx` |
+| **neovim** | Hyperextensible Vim-based text editor | `nvim` |
 | **yazi** | Blazing fast terminal file manager | `yazi` |
 | **btop** | System resource monitor | `btop` |
 

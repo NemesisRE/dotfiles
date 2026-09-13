@@ -1,0 +1,64 @@
+-- AstroCore provides a central place to modify mappings, vim options, autocommands, and more!
+-- Configuration documentation can be found with `:h astrocore`
+
+---@type LazySpec
+return {
+  "AstroNvim/astrocore",
+  ---@type AstroCoreOpts
+  opts = {
+    -- Configure core features of AstroNvim
+    features = {
+      large_buf = { size = 1024 * 256, lines = 10000 }, -- set global limits for large files for disabling features like treesitter
+      autopairs = true, -- enable autopairs at start
+      cmp = true, -- enable completion at start
+      diagnostics = { virtual_text = true, virtual_lines = false }, -- diagnostic settings on startup
+      highlighturl = true, -- highlight URLs at start
+      notifications = true, -- enable notifications at start
+    },
+    -- Diagnostics configuration
+    diagnostics = {
+      virtual_text = true,
+      underline = true,
+    },
+    -- vim options can be configured here
+    options = {
+      opt = {
+        relativenumber = true,
+        number = true,
+        spell = false,
+        signcolumn = "yes",
+        wrap = false,
+        laststatus = 3, -- global statusline always active
+        showtabline = 2, -- always display tabline
+
+        -- Centralized file history, undo, and state following XDG Base Directory specification
+        undofile = true,
+        undodir = vim.fn.stdpath "state" .. "/undo",
+        swapfile = true,
+        directory = vim.fn.stdpath "state" .. "/swap//",
+        backup = false,
+        backupdir = vim.fn.stdpath "state" .. "/backup//",
+      },
+    },
+    -- Autocommand to ensure statusline is visible by default
+    autocmds = {
+      statusline_autoopen = {
+        {
+          event = { "VimEnter", "User" },
+          pattern = { "*", "SnacksDashboardOpened" },
+          desc = "Ensure statusline is visible by default",
+          callback = function(args)
+            vim.opt.laststatus = 3
+            if args.pattern == "SnacksDashboardOpened" then
+              local win = args.data and args.data.win or vim.api.nvim_get_current_win()
+              if vim.api.nvim_win_is_valid(win) then
+                vim.api.nvim_set_option_value("statusline", vim.go.statusline, { scope = "local", win = win })
+              end
+            end
+          end,
+        },
+      },
+    },
+  },
+}
+

@@ -46,9 +46,10 @@ if (Get-Command docker -ErrorAction SilentlyContinue) {
   }
 }
 
-# Helix alias
-if (Get-Command hx -ErrorAction SilentlyContinue) {
-  Set-Alias -Name helix -Value hx -Option AllScope -Force
+# Neovim aliases
+if (Get-Command nvim -ErrorAction SilentlyContinue) {
+  Set-Alias -Name vim -Value nvim -Option AllScope -Force
+  Set-Alias -Name vi -Value nvim -Option AllScope -Force
 }
 
 # bat alias (syntax-highlighted cat)
