@@ -80,4 +80,14 @@ function _nredf_load_sheldon_plugins() {
   elif command -v atuin &>/dev/null; then
     eval "$(atuin init zsh)"
   fi
+
+  # Ensure fzf-cd-widget is bound to ç and © on macOS (Option+c special character)
+  if (( ${+widgets[fzf-cd-widget]} )); then
+    bindkey -M emacs 'ç' fzf-cd-widget 2>/dev/null || true
+    bindkey -M viins 'ç' fzf-cd-widget 2>/dev/null || true
+    bindkey -M vicmd 'ç' fzf-cd-widget 2>/dev/null || true
+    bindkey -M emacs '©' fzf-cd-widget 2>/dev/null || true
+    bindkey -M viins '©' fzf-cd-widget 2>/dev/null || true
+    bindkey -M vicmd '©' fzf-cd-widget 2>/dev/null || true
+  fi
 }

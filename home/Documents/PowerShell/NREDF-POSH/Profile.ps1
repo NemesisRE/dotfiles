@@ -52,6 +52,14 @@ if ($Env:TERM_PROGRAM -ne 'vscode') {
     } else {
       Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t' -PSReadlineChordReverseHistory 'Ctrl+r' -PSReadlineChordChangeDirectory 'Alt+c'
     }
+
+    # On macOS, Option+c can produce ç or ©
+    if ($IsMacOS) {
+      if (Get-Command Invoke-FzfPsReadlineHandlerSetLocation -ErrorAction SilentlyContinue) {
+        Set-PSReadLineKeyHandler -Chord 'ç' -ScriptBlock { Invoke-FzfPsReadlineHandlerSetLocation } -ErrorAction SilentlyContinue
+        Set-PSReadLineKeyHandler -Chord '©' -ScriptBlock { Invoke-FzfPsReadlineHandlerSetLocation } -ErrorAction SilentlyContinue
+      }
+    }
   }
 }
 

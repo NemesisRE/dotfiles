@@ -1513,3 +1513,15 @@ blehook/eval-after-load keymap_vi blerc/vim-load-hook
 ## execution will be skipped.  The default value is 5.0 msec.
 
 #bleopt debug_profiler_tree_threshold=5.0
+
+{{- if eq .chezmoi.os "darwin" }}
+# macOS Option+c produces ç or © instead of \ec
+if declare -f ble-bind >/dev/null 2>&1; then
+  ble-bind -m emacs   -c 'ç' 'eval "$(__fzf_cd__)"' 2>/dev/null || true
+  ble-bind -m vi_imap -c 'ç' 'eval "$(__fzf_cd__)"' 2>/dev/null || true
+  ble-bind -m vi_nmap -c 'ç' 'eval "$(__fzf_cd__)"' 2>/dev/null || true
+  ble-bind -m emacs   -c '©' 'eval "$(__fzf_cd__)"' 2>/dev/null || true
+  ble-bind -m vi_imap -c '©' 'eval "$(__fzf_cd__)"' 2>/dev/null || true
+  ble-bind -m vi_nmap -c '©' 'eval "$(__fzf_cd__)"' 2>/dev/null || true
+fi
+{{- end }}

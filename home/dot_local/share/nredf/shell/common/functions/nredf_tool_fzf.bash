@@ -20,6 +20,19 @@ function _nredf_tool_fzf_source() {
       if [[ "${NREDF_SHELL_NAME}" == "bash" ]]; then
         # Prevent fzf's complete -D fallback from intercepting command-name completion
         complete -F _comp_complete_load -D 2>/dev/null || complete -r -D 2>/dev/null
+        # On macOS, Option+c can send ç (\xC3\xA7) or © (\xC2\xA9) instead of \ec
+        bind '"\xC3\xA7": "\ec"' 2>/dev/null || true
+        bind '"ç": "\ec"' 2>/dev/null || true
+        bind '"\xC2\xA9": "\ec"' 2>/dev/null || true
+        bind '"©": "\ec"' 2>/dev/null || true
+      elif [[ "${NREDF_SHELL_NAME}" == "zsh" ]]; then
+        # On macOS, Option+c can send ç or © instead of \ec
+        if (( ${+widgets[fzf-cd-widget]} )); then
+          bindkey 'ç' fzf-cd-widget 2>/dev/null || true
+          bindkey '©' fzf-cd-widget 2>/dev/null || true
+          bindkey -M vicmd 'ç' fzf-cd-widget 2>/dev/null || true
+          bindkey -M viins 'ç' fzf-cd-widget 2>/dev/null || true
+        fi
       fi
     fi
 
