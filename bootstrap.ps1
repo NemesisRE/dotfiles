@@ -183,6 +183,29 @@ if (Get-Command aqua -ErrorAction SilentlyContinue) {
     & aqua install -a -l
 }
 
+# ── Configure Yazi File MIME-type Detector (Git for Windows) ─────────────────
+$yaziFileCandidates = @(
+    $env:YAZI_FILE_ONE
+    (Join-Path $env:ProgramFiles "Git\usr\bin\file.exe")
+    (Join-Path ${env:ProgramFiles(x86)} "Git\usr\bin\file.exe")
+    (Join-Path $env:LOCALAPPDATA "Programs\Git\usr\bin\file.exe")
+    "C:\Program Files\Git\usr\bin\file.exe"
+)
+if (Get-Command git -ErrorAction SilentlyContinue) {
+    try {
+        $gitDir = Split-Path (Split-Path (Get-Command git).Source)
+        $yaziFileCandidates += (Join-Path $gitDir "usr\bin\file.exe")
+    } catch {}
+}
+foreach ($candidate in $yaziFileCandidates) {
+    if ($candidate -and (Test-Path $candidate)) {
+        $env:YAZI_FILE_ONE = $candidate
+        [System.Environment]::SetEnvironmentVariable("YAZI_FILE_ONE", $candidate, [System.EnvironmentVariableTarget]::User)
+        Write-Info "Configured YAZI_FILE_ONE: $candidate"
+        break
+    }
+}
+
 # ── Configure SSH Agent (Bitwarden / OpenSSH) ─────────────────────────────────
 Write-Step "Checking SSH Agent"
 $bwPipe = "\\.\pipe\openssh-ssh-agent"

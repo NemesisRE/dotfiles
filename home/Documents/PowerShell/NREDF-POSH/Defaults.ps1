@@ -9,7 +9,29 @@ $pathSep = [System.IO.Path]::PathSeparator
 if ($isWindows) {
   $ENV:NREDF_CACHE = "$ENV:LOCALAPPDATA\nredf"
   $ENV:NREDF_LRCACHE = "$ENV:NREDF_CACHE\LRCache"
-  $YAZI_FILE_ONE = "C:\Program Files\Git\usr\bin\file.exe"
+  # Configure Yazi's required 'file' MIME-type detector on Windows (shipped with Git for Windows)
+  $yaziFileCandidates = @(
+    $ENV:YAZI_FILE_ONE,
+    (Join-Path $env:ProgramFiles "Git\usr\bin\file.exe"),
+    (Join-Path ${env:ProgramFiles(x86)} "Git\usr\bin\file.exe"),
+    (Join-Path $env:LOCALAPPDATA "Programs\Git\usr\bin\file.exe"),
+    "C:\Program Files\Git\usr\bin\file.exe"
+  )
+  if (Get-Command git -ErrorAction SilentlyContinue) {
+    try {
+      $gitDir = Split-Path (Split-Path (Get-Command git).Source)
+      $yaziFileCandidates += (Join-Path $gitDir "usr\bin\file.exe")
+    } catch {}
+  }
+  foreach ($candidate in $yaziFileCandidates) {
+    if ($candidate -and (Test-Path $candidate)) {
+      $ENV:YAZI_FILE_ONE = $candidate
+      if ([System.Environment]::GetEnvironmentVariable("YAZI_FILE_ONE", [System.EnvironmentVariableTarget]::User) -ne $candidate) {
+        [System.Environment]::SetEnvironmentVariable("YAZI_FILE_ONE", $candidate, [System.EnvironmentVariableTarget]::User)
+      }
+      break
+    }
+  }
 
   if (-not $ENV:XDG_CONFIG_HOME) { $ENV:XDG_CONFIG_HOME = "$HOME\.config" }
   if (-not $ENV:XDG_DATA_HOME) { $ENV:XDG_DATA_HOME = "$HOME\.local\share" }

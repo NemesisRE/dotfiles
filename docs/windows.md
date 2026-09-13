@@ -245,6 +245,16 @@ Add-MpPreference -ExclusionProcess "aqua.exe"
 Add-MpPreference -ExclusionPath "$env:LOCALAPPDATA\aquaproj-aqua"
 ```
 
+### Yazi: "Cannot find `file` to detect the file's MIME type"
+**Root Cause**:
+Yazi relies on the Unix `file` utility to detect file MIME types for previews and openers. On Windows, `file.exe` is distributed with Git for Windows (`Git\usr\bin\file.exe`).
+
+**Resolution**:
+NREDF automatically detects Git for Windows and exports `YAZI_FILE_ONE` in [`Defaults.ps1`](file:///Users/skurz/Repos/chezmoi/home/Documents/PowerShell/NREDF-POSH/Defaults.ps1) as well as persisting it to the User environment during `chezmoi apply`. If running Yazi outside of NREDF PowerShell, ensure Git is installed (`winget install Git.Git`) and set the user variable:
+```powershell
+[System.Environment]::SetEnvironmentVariable("YAZI_FILE_ONE", "C:\Program Files\Git\usr\bin\file.exe", "User")
+```
+
 ---
 
 ## 🔄 Daily Commands

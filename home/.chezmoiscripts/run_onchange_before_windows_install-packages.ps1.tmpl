@@ -17,7 +17,7 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
 Write-Host "==> Installing prerequisite packages via winget"
 $packages = @(
 {{ range .packages.windows.winget -}}
-    {{ . | quote }},
+    {{ . | quote }}
 {{ end -}}
 )
 
@@ -25,6 +25,29 @@ foreach ($pkg in $packages) {
     if (-not $pkg) { continue }
     Write-Host "    Ensuring winget package: $pkg"
     & winget install --id $pkg --exact --silent --accept-source-agreements --accept-package-agreements
+}
+
+# Configure Yazi's required 'file' MIME-type detector on Windows (shipped with Git for Windows)
+$yaziFileCandidates = @(
+    $env:YAZI_FILE_ONE
+    (Join-Path $env:ProgramFiles "Git\usr\bin\file.exe")
+    (Join-Path ${env:ProgramFiles(x86)} "Git\usr\bin\file.exe")
+    (Join-Path $env:LOCALAPPDATA "Programs\Git\usr\bin\file.exe")
+    "C:\Program Files\Git\usr\bin\file.exe"
+)
+if (Get-Command git -ErrorAction SilentlyContinue) {
+    try {
+        $gitDir = Split-Path (Split-Path (Get-Command git).Source)
+        $yaziFileCandidates += (Join-Path $gitDir "usr\bin\file.exe")
+    } catch {}
+}
+foreach ($candidate in $yaziFileCandidates) {
+    if ($candidate -and (Test-Path $candidate)) {
+        $env:YAZI_FILE_ONE = $candidate
+        [System.Environment]::SetEnvironmentVariable("YAZI_FILE_ONE", $candidate, [System.EnvironmentVariableTarget]::User)
+        Write-Host "    Configured YAZI_FILE_ONE: $candidate"
+        break
+    }
 }
 
 Write-Host "==> Windows prerequisites installed successfully."
