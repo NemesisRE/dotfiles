@@ -20,7 +20,7 @@ function _nredf_macos_prerquisites() {
   local BREW_CLEANUP_KEY="_nredf_macos_prerquisites_brew_cleanup"
   local BREW_ENSURE_INTERVAL=21600
   local BREW_ENSURE_KEY="_nredf_macos_prerquisites_brew_ensure"
-  local FORMULAE=(bash bash-completion git diffutils util-linux fnm)
+  local FORMULAE=(bash bash-completion@2 git diffutils util-linux fnm)
   local INSTALLED_FORMULAE=""
   local MISSING_FORMULAE=()
   local FORMULA=""
@@ -31,7 +31,6 @@ function _nredf_macos_prerquisites() {
   local HOMEBREW_PREFIX=""
   local BREW_WAS_INSTALLED=false
 
-  echo -e '\033[1mChecking macOS prerequisites\033[0m'
 
   if command -v brew &>/dev/null; then
     BREW_PATH="$(command -v brew)"

@@ -45,3 +45,30 @@ if (Get-Command docker -ErrorAction SilentlyContinue) {
     }
   }
 }
+
+# Helix alias
+if (Get-Command hx -ErrorAction SilentlyContinue) {
+  Set-Alias -Name helix -Value hx -Option AllScope -Force
+}
+
+# bat alias (syntax-highlighted cat)
+if (Get-Command bat -ErrorAction SilentlyContinue) {
+  function cat { bat --paging=never @args }
+}
+
+# Utility command parity (which, touch)
+if (-not (Get-Command which -ErrorAction SilentlyContinue)) {
+  function which { Get-Command @args }
+}
+if (-not (Get-Command touch -ErrorAction SilentlyContinue)) {
+  function touch {
+    foreach ($file in $args) {
+      if (Test-Path $file) {
+        (Get-Item $file).LastWriteTime = Get-Date
+      } else {
+        New-Item -ItemType File -Path $file -Force | Out-Null
+      }
+    }
+  }
+}
+

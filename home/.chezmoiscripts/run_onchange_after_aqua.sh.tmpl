@@ -1,0 +1,24 @@
+{{- if ne .chezmoi.os "windows" -}}
+#!/usr/bin/env bash
+# chezmoi run_onchange_after hook — links aqua managed tools when aqua.yaml changes.
+# aqua.yaml hash: {{ include "dot_config/aquaproj-aqua/aqua.yaml" | sha256sum }}
+
+set -euo pipefail
+
+[[ -n "${CI:-}" ]] && exit 0
+[[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
+
+LOCAL_BIN="${HOME}/.local/bin"
+AQUA_BIN="${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-${HOME}/.local/share}/aquaproj-aqua}/bin"
+export PATH="${LOCAL_BIN}:${AQUA_BIN}:${PATH}"
+
+if command -v aqua >/dev/null 2>&1; then
+  echo "==> Linking aqua managed tools"
+  AQUA_CONFIG="${XDG_CONFIG_HOME:-${HOME}/.config}/aquaproj-aqua/aqua.yaml"
+  AQUA_POLICY="${XDG_CONFIG_HOME:-${HOME}/.config}/aquaproj-aqua/aqua-policy.yaml"
+  [[ -f "${AQUA_CONFIG}" ]] && export AQUA_GLOBAL_CONFIG="${AQUA_CONFIG}" AQUA_CONFIG="${AQUA_CONFIG}"
+  [[ -f "${AQUA_POLICY}" ]] && export AQUA_POLICY_CONFIG="${AQUA_POLICY}"
+  aqua install -a -l >/dev/null 2>&1 || true
+  echo "    Aqua tools linked successfully."
+fi
+{{- end }}

@@ -93,8 +93,10 @@ if (-not (Get-Command aqua -ErrorAction SilentlyContinue)) {
         Write-Info "Installing aqua via aqua-installer..."
         $aquaInstallerUrl = "https://raw.githubusercontent.com/aquaproj/aqua-installer/v4.0.2/aqua-installer"
         # Download aqua release directly for windows
-        $aquaReleaseUrl = "https://github.com/aquaproj/aqua/releases/latest/download/aqua_windows_amd64.zip"
+        $arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64' -or $env:PROCESSOR_ARCHITEW6432 -eq 'ARM64') { 'arm64' } else { 'amd64' }
+        $aquaReleaseUrl = "https://github.com/aquaproj/aqua/releases/latest/download/aqua_windows_${arch}.zip"
         $tmpZip = Join-Path ([System.IO.Path]::GetTempPath()) "aqua.zip"
+
         $tmpExtract = Join-Path ([System.IO.Path]::GetTempPath()) "aqua_extract"
         Invoke-WebRequest -Uri $aquaReleaseUrl -OutFile $tmpZip
         Expand-Archive -Path $tmpZip -DestinationPath $tmpExtract -Force

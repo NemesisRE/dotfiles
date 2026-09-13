@@ -36,6 +36,10 @@ packages:
     tags:
       - default
       - required
+  - name: ajeetdsouza/zoxide@v0.10.0 # renovate: depName=ajeetdsouza/zoxide
+    tags:
+      - default
+      - required
 
   # ── File / Text Utils ───────────────────────────────────────────────────────
   - name: lsd-rs/lsd@v1.2.0 # renovate: depName=lsd-rs/lsd
@@ -43,6 +47,10 @@ packages:
       - default
       - required
   - name: sharkdp/bat@v0.26.1 # renovate: depName=sharkdp/bat
+    tags:
+      - default
+      - required
+  - name: dandavison/delta@0.19.2 # renovate: depName=dandavison/delta
     tags:
       - default
       - required
@@ -57,6 +65,9 @@ packages:
     tags:
       - default
       - required
+  - name: charmbracelet/glow@v3.0.0 # renovate: depName=charmbracelet/glow
+    tags:
+      - default
   - name: muesli/duf@v0.9.1 # renovate: depName=muesli/duf
     tags:
       - default
@@ -70,6 +81,7 @@ packages:
     registry: local
     tags:
       - default
+
 
   # ── Dev Tools ───────────────────────────────────────────────────────────────
   - name: cli/cli@v2.100.0 # renovate: depName=cli/cli

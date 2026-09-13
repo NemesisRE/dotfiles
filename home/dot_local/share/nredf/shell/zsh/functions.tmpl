@@ -34,7 +34,11 @@ function _nredf_update_sheldon_plugins() {
     fi
 
     _nredf_last_run "_nredf_update_sheldon_plugins" "true" "$(($(date +%s) + 86400))"
-    sheldon --color never lock --update >/dev/null 2>&1 || true
+    local sheldon_lock_opts=(--color never)
+    if [[ -z "${NREDF_VERBOSE:-}" && -z "${NREDF_PROFILE_STARTUP:-}" ]]; then
+      sheldon_lock_opts+=(--quiet)
+    fi
+    sheldon "${sheldon_lock_opts[@]}" lock --update >/dev/null 2>&1 || true
     _nredf_remove_lock
   fi
 }
@@ -51,9 +55,29 @@ function _nredf_load_sheldon_plugins() {
       compinit -i
     fi
   fi
-  eval "$(sheldon source)"
+  local sheldon_source_opts=(--color never)
+  if [[ -z "${NREDF_VERBOSE:-}" && -z "${NREDF_PROFILE_STARTUP:-}" ]]; then
+    sheldon_source_opts+=(--quiet)
+  fi
+  eval "$(sheldon "${sheldon_source_opts[@]}" source)"
   _nredf_init_oh_my_posh --force
   if (( ${+functions[_nredf_init_kitty_shell_integration]} )); then
     _nredf_init_kitty_shell_integration --force
+  fi
+
+  # Restore atuin keybindings if active (oh-my-zsh lib/key-bindings.zsh clobbers ^r)
+  if (( ${+widgets[atuin-search]} )); then
+    bindkey -M emacs '^r' atuin-search
+    bindkey -M viins '^r' atuin-search-viins
+    bindkey -M vicmd '/' atuin-search
+    bindkey -M emacs '^[[A' atuin-up-search
+    bindkey -M vicmd '^[[A' atuin-up-search-vicmd
+    bindkey -M viins '^[[A' atuin-up-search-viins
+    bindkey -M emacs '^[OA' atuin-up-search
+    bindkey -M vicmd '^[OA' atuin-up-search-vicmd
+    bindkey -M viins '^[OA' atuin-up-search-viins
+    bindkey -M vicmd 'k' atuin-up-search-vicmd
+  elif command -v atuin &>/dev/null; then
+    eval "$(atuin init zsh)"
   fi
 }

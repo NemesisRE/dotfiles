@@ -25,12 +25,10 @@ jobs:
           scandir: home/dot_local/share/nredf/shell
           severity: warning
 
-      - name: ShellCheck — bootstrap & run-once scripts
+      - name: ShellCheck — bootstrap script
         uses: ludeeus/action-shellcheck@master
         with:
-          additional_files: >-
-            bootstrap.sh
-            home/.chezmoiscripts/run_once_before_install-tools.sh.tmpl
+          additional_files: bootstrap.sh
           severity: warning
 
   # ── YAML lint ────────────────────────────────────────────────────────────────
@@ -48,21 +46,45 @@ jobs:
 
   # ── chezmoi template dry-run ─────────────────────────────────────────────────
   chezmoi-dry-run:
-    name: chezmoi apply --dry-run
+    name: chezmoi apply --dry-run (${{ matrix.os }})
     if: github.event_name != 'pull_request' || github.actor != 'github-actions[bot]'
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install chezmoi
+      - name: Install chezmoi (Unix)
+        if: runner.os != 'Windows'
         run: sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "${HOME}/.local/bin"
 
-      - name: Dry-run — verify all templates render without errors
+      - name: Install chezmoi (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $binDir = "$HOME/.local/bin"
+          New-Item -ItemType Directory -Force -Path $binDir | Out-Null
+          Invoke-WebRequest -Uri "https://get.chezmoi.io/ps1" -OutFile "$env:TEMP/get-chezmoi.ps1"
+          & "$env:TEMP/get-chezmoi.ps1" -b $binDir
+          echo "$binDir" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Dry-run — verify all templates render without errors (Unix)
+        if: runner.os != 'Windows'
         env:
           NREDF_NO_BOOTSTRAP: "1"
         run: |
           export PATH="${HOME}/.local/bin:${PATH}"
           chezmoi apply --dry-run --force --source="${GITHUB_WORKSPACE}" 2>&1
+
+      - name: Dry-run — verify all templates render without errors (Windows)
+        if: runner.os == 'Windows'
+        env:
+          NREDF_NO_BOOTSTRAP: "1"
+        shell: pwsh
+        run: |
+          chezmoi apply --dry-run --force --source="${env:GITHUB_WORKSPACE}"
 
   # ── aqua config validation ───────────────────────────────────────────────────
   aqua-validate:

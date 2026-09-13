@@ -53,6 +53,50 @@ function _nredf_set_ssh_agent_wsl() {
   fi
 }
 
+function _nredf_set_ssh_agent_1password() {
+  local candidates=()
+
+  if [[ "${NREDF_OS:-}" == "macos" || "$(uname -s)" == "Darwin" ]]; then
+    candidates+=(
+      "${HOME}/Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock"
+    )
+  else
+    candidates+=(
+      "${HOME}/.1password/agent.sock"
+      "${HOME}/.config/1Password/agent.sock"
+    )
+  fi
+
+  for sock in "${candidates[@]}"; do
+    if [[ -S "${sock}" ]]; then
+      if _nredf_ssh_agent_socket_works "${sock}"; then
+        export SSH_AUTH_SOCK="${sock}"
+        return 0
+      fi
+    fi
+  done
+  return 1
+}
+
+function _nredf_set_ssh_agent_system() {
+  local runtime_dir="${XDG_RUNTIME_DIR:-/run/user/${UID}}"
+  local candidates=(
+    "${runtime_dir}/ssh-agent.socket"
+    "${runtime_dir}/gcr/ssh"
+    "${runtime_dir}/keyring/ssh"
+  )
+
+  for sock in "${candidates[@]}"; do
+    if [[ -S "${sock}" ]]; then
+      if _nredf_ssh_agent_socket_works "${sock}"; then
+        export SSH_AUTH_SOCK="${sock}"
+        return 0
+      fi
+    fi
+  done
+  return 1
+}
+
 function _nredf_set_ssh_agent_bitwarden() {
   local candidates=()
 
@@ -153,6 +197,16 @@ function _nredf_set_ssh_agent() {
       _nredf_ssh_agent_socket_works "${SSH_AUTH_SOCK}" && return 0
     fi
 
+    if [[ "${agent_mode}" == "1password" || "${agent_mode}" == "onepassword" ]]; then
+      _nredf_set_ssh_agent_1password
+      _nredf_ssh_agent_socket_works "${SSH_AUTH_SOCK}" && return 0
+    fi
+
+    if [[ "${agent_mode}" == "system" ]]; then
+      _nredf_set_ssh_agent_system
+      _nredf_ssh_agent_socket_works "${SSH_AUTH_SOCK}" && return 0
+    fi
+
     if _nredf_ssh_agent_socket_works "${SSH_AUTH_SOCK:-}"; then
       return 0
     fi
@@ -189,7 +243,22 @@ function _nredf_set_ssh_agent() {
     _nredf_set_ssh_agent_gpg
   elif [[ "${agent_mode}" == "bitwarden" ]]; then
     _nredf_set_ssh_agent_bitwarden
+  elif [[ "${agent_mode}" == "1password" || "${agent_mode}" == "onepassword" ]]; then
+    _nredf_set_ssh_agent_1password
+  elif [[ "${agent_mode}" == "system" ]]; then
+    _nredf_set_ssh_agent_system
   else
+    # Auto-detect running 1Password, Bitwarden, or systemd agent before spawning ssh-agent
+    if _nredf_set_ssh_agent_1password; then
+      return 0
+    fi
+    if _nredf_set_ssh_agent_bitwarden; then
+      return 0
+    fi
+    if _nredf_set_ssh_agent_system; then
+      return 0
+    fi
+
     export SSH_AUTH_SOCK="${auth_sock}"
     if command -v ssh-agent &>/dev/null; then
       unset SSH_AGENT_PID
@@ -209,7 +278,9 @@ function _nredf_set_ssh_agent() {
     if [[ ${exit_code} -eq 0 ]]; then
       return 0
     elif [[ ${exit_code} -eq 1 ]]; then
-      echo -e "\033[1;33mAdd your SSH key(s) to the agent with 'ssh-add'\033[0m"
+      if [[ -n "${NREDF_PROFILE_STARTUP:-}" ]]; then
+        printf "\033[1;33mAdd your SSH key(s) to the agent with 'ssh-add'\033[0m\n"
+      fi
       return 0
     elif [[ ${exit_code} -gt 1 ]]; then
       printf "Warning: SSH agent socket exists but agent is not responding\n" >&2

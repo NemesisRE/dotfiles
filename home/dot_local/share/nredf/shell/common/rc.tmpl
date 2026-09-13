@@ -7,6 +7,10 @@
 
 NREDF_COMMON_RC_PROFILE="${NREDF_COMMON_RC_PROFILE:-full}"
 
+if [[ -n "${ZSH_VERSION:-}" ]]; then
+  zmodload -F zsh/datetime b:EPOCHSECONDS b:EPOCHREALTIME 2>/dev/null || true
+fi
+
 # Standard 24h throttle interval for all daily operations
 NREDF_24H_INTERVAL=86400
 
@@ -18,7 +22,9 @@ _nredf_refresh_cached_shell_snippet() {
   if ! _nredf_last_run "${cache_key}" || [[ ! -s "${cache_file}" ]]; then
     mkdir -p "${cache_file%/*}"
     if "$@" >| "${cache_file}" 2>/dev/null; then
-      _nredf_last_run "${cache_key}" "true" "$(($(date +%s) + NREDF_24H_INTERVAL))"
+      local now="${EPOCHSECONDS:-}"
+      [[ -z "${now}" ]] && now="$(date +%s)"
+      _nredf_last_run "${cache_key}" "true" "$((now + NREDF_24H_INTERVAL))"
     else
       rm -f "${cache_file}"
     fi
@@ -26,6 +32,7 @@ _nredf_refresh_cached_shell_snippet() {
 
   [[ -s "${cache_file}" ]] && source "${cache_file}"
 }
+
 
 # Load all common function files
 for NREDF_FUNCTIONS in "${NREDF_DOT_PATH}/shell/common/functions/"*; do
@@ -91,7 +98,6 @@ if [[ "${NREDF_COMMON_RC_PROFILE}" == "login-minimal" ]]; then
 fi
 
 if [[ "${NREDF_COMMON_RC_PROFILE}" == "interactive-minimal" ]]; then
-  echo -e "\033[1mCustomizing Shell\033[0m"
   # shellcheck disable=SC1090
   source "${NREDF_RC_PATH}/rc"
   _nredf_step "source rc (interactive-minimal)"
@@ -112,11 +118,6 @@ if [[ -z ${SUDO_COMMAND} ]]; then
   _nredf_ensure_aqua_github_token
   _nredf_step "_nredf_ensure_aqua_github_token"
 
-  # Ensure aqua-managed command links exist (link-only, no eager downloads)
-  echo -e "\033[1mEnsuring aqua-managed command links\033[0m"
-  aqua install -a -l >/dev/null 2>&1 || true
-  _nredf_step "aqua install -a -l"
-
   _nredf_aqua_vacuum
   _nredf_step "aqua vacuum -d ${NREDF_SHELL_AQUA_VACUUM_DAYS:-30}"
 
@@ -126,7 +127,6 @@ if [[ -z ${SUDO_COMMAND} ]]; then
 fi
 
 # Shell-specific customization
-echo -e "\033[1mCustomizing Shell\033[0m"
 # shellcheck disable=SC1090
 source "${NREDF_RC_PATH}/rc"
 if [[ "${NREDF_SHELL_NAME}" != "zsh" ]]; then
@@ -156,5 +156,15 @@ if command -v fnm &>/dev/null; then
 fi
 _nredf_step "fnm env"
 
+# Zoxide init — cache shell snippet for 24h
+if command -v zoxide &>/dev/null; then
+  _nredf_refresh_cached_shell_snippet \
+    "_nredf_zoxide_init_${NREDF_SHELL_NAME}" \
+    "${XDG_CACHE_HOME}/nredf/init/zoxide.${NREDF_SHELL_NAME}.sh" \
+    zoxide init "${NREDF_SHELL_NAME}"
+fi
+_nredf_step "zoxide init"
+
 _nredf_remote_multiplexer
 _nredf_step "_nredf_remote_multiplexer"
+

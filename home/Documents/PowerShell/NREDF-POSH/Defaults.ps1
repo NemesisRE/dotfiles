@@ -26,13 +26,40 @@ if ($isWindows) {
     }
   }
 
+  # Ensure k9s discovers chezmoi-managed plugins, skins, and configs on Windows
+  $ENV:K9SCONFIG = "$HOME\.config\k9s"
+
+  # Dynamically detect Python Scripts directory (Windows Store packages or user install)
   if (Get-Command -Name python -ErrorAction SilentlyContinue) {
-    $pythonScripts = "$ENV:LOCALAPPDATA\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\Scripts"
-    if (Test-Path $pythonScripts) {
-      $ENV:PATH = "$ENV:PATH$pathSep$pythonScripts"
+    $pyAppPackages = Join-Path $ENV:LOCALAPPDATA 'Packages'
+    if (Test-Path $pyAppPackages) {
+      $pyPkgDirs = Get-ChildItem -Path $pyAppPackages -Filter 'PythonSoftwareFoundation.Python.*' -Directory -ErrorAction SilentlyContinue
+      foreach ($pkg in $pyPkgDirs) {
+        $scriptsGlob = Join-Path $pkg.FullName 'LocalCache\local-packages\*\Scripts'
+        $resolvedScripts = Resolve-Path $scriptsGlob -ErrorAction SilentlyContinue
+        if ($resolvedScripts) {
+          foreach ($s in $resolvedScripts) {
+            if ($ENV:PATH -notlike "*$($s.Path)*") {
+              $ENV:PATH = "$($s.Path)$pathSep$ENV:PATH"
+            }
+          }
+        }
+      }
+    }
+    if ($ENV:APPDATA) {
+      $userPyGlob = Join-Path $ENV:APPDATA 'Python\Python*\Scripts'
+      $resolvedUserPy = Resolve-Path $userPyGlob -ErrorAction SilentlyContinue
+      if ($resolvedUserPy) {
+        foreach ($s in $resolvedUserPy) {
+          if ($ENV:PATH -notlike "*$($s.Path)*") {
+            $ENV:PATH = "$($s.Path)$pathSep$ENV:PATH"
+          }
+        }
+      }
     }
   }
 }
+
 
 if ($isLinux -or $IsMacOS) {
   $ENV:XDG_BIN_HOME = "$HOME/.local/bin"
@@ -100,3 +127,14 @@ if (-not [string]::IsNullOrEmpty($ENV:XDG_CONFIG_HOME)) {
     }
   }
 }
+
+# Zoxide directory navigation integration (cross-platform)
+if (Get-Command zoxide -ErrorAction SilentlyContinue) {
+  try {
+    $zoxideInit = (& zoxide init powershell 2>$null | Out-String)
+    if (-not [string]::IsNullOrWhiteSpace($zoxideInit)) {
+      Invoke-Expression $zoxideInit
+    }
+  } catch {}
+}
+

@@ -3,8 +3,23 @@ function md5 { Get-FileHash -Algorithm MD5 $args }
 function sha1 { Get-FileHash -Algorithm SHA1 $args }
 function sha256 { Get-FileHash -Algorithm SHA256 $args }
 
-# From https://github.com/Pscx/Pscx
-function sudo() { Invoke-Elevated @args }
+function sudo {
+  <#
+  .SYNOPSIS
+      Run a command with elevated administrator privileges.
+  #>
+  if (Get-Command sudo.exe -ErrorAction SilentlyContinue) {
+    & (Get-Command -CommandType Application sudo.exe) @args
+  } elseif (Get-Command gsudo -ErrorAction SilentlyContinue) {
+    & gsudo @args
+  } elseif ($IsWindows) {
+    $argString = $args -join ' '
+    Start-Process powershell -Verb RunAs -ArgumentList "-NoExit -Command $argString"
+  } else {
+    & sudo @args
+  }
+}
+
 
 # Reload profile and run synchronizations
 function reload {

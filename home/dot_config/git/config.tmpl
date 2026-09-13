@@ -30,23 +30,39 @@
 {{- end }}
 
 [core]
-  editor = vim
+	editor = vim
+	pager = delta
+
+[interactive]
+	diffFilter = delta --color-only
+
+[delta]
+	navigate = true
+	dark = true
+	side-by-side = false
+	line-numbers = true
+
+[merge]
+	conflictstyle = diff3
+
+[diff]
+	colorMoved = default
 
 [init]
-  defaultBranch = main
+	defaultBranch = main
 
 [push]
-  default = simple
-  followTags = true
+	default = simple
+	followTags = true
 
 [pull]
-  rebase = true
+	rebase = true
 
 [rebase]
-  autoStash = true
+	autoStash = true
 
 [tag]
-  sort = version:refname
+	sort = version:refname
 
 [color "status"]
 	added = green bold
@@ -72,7 +88,7 @@
 	rc = rebase --continue
 	pullsub = "!f(){ git submodule sync; git submodule update --init --remote --recursive; }; f"
 	pullall = "!f(){ git pull \"$@\"; git submodule update --init --remote --recursive; }; f"
-  gone = "!f() { git fetch --prune && git branch -vv | grep \": gone]" | awk "{print \\\"$1\\\"}" | xargs -r git branch -d; }; f"
+	gone = "!f() { git fetch --prune && git branch -vv | grep \": gone]\" | awk '{print $1}' | while read -r branch; do [ -n \"$branch\" ] && git branch -d \"$branch\"; done; }; f"
 	# Productivity Shortcuts
 	undo = reset --soft HEAD~1
 	unstage = reset HEAD --

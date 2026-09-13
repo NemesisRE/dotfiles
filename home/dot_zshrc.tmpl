@@ -77,6 +77,8 @@ if command -v _nredf_tool_fzf_source &>/dev/null; then
   _nredf_tool_fzf_source
   _nredf_step "fzf source"
 fi
-if command -v atuin-search &>/dev/null; then
+if (( ${+widgets[atuin-search]} )); then
   bindkey '^r' atuin-search
+elif command -v atuin &>/dev/null; then
+  eval "$(atuin init zsh)"
 fi

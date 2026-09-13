@@ -36,25 +36,15 @@ _nredf_compinit() {
   fi
 }
 
-_nredf_mtime() {
-  if [[ "${OSTYPE}" == darwin* ]]; then
-    stat -f '%m' "$1"
-  else
-    stat -c '%Y' "$1"
-  fi
-}
-
 if [[ -f "${NREDF_ZCOMPDUMP}" && -d "${HOME}/.config/completion/zsh" ]]; then
-  NREDF_ZCOMPDUMP_MTIME="$(_nredf_mtime "${NREDF_ZCOMPDUMP}" 2>/dev/null || echo 0)"
-  for NREDF_COMPLETION_FILE in "${HOME}/.config/completion/zsh"/*; do
-    [[ -f "${NREDF_COMPLETION_FILE}" ]] || continue
-    NREDF_COMPLETION_MTIME="$(_nredf_mtime "${NREDF_COMPLETION_FILE}" 2>/dev/null || echo 0)"
-    if [[ "${NREDF_COMPLETION_MTIME}" -gt "${NREDF_ZCOMPDUMP_MTIME}" ]]; then
+  for NREDF_COMPLETION_FILE in "${HOME}/.config/completion/zsh"/*(N-.); do
+    if [[ "${NREDF_COMPLETION_FILE}" -nt "${NREDF_ZCOMPDUMP}" ]]; then
       NREDF_COMPLETION_REFRESH_REQUIRED=1
       break
     fi
   done
 fi
+
 
 # Fast path: use cached completion dump; refresh only every 24h.
 if [[ -f "${NREDF_ZCOMPDUMP}" && "${NREDF_COMPLETION_REFRESH_REQUIRED}" -eq 0 ]] && declare -f _nredf_last_run >/dev/null 2>&1 && _nredf_last_run "_nredf_zsh_compinit_refresh"; then

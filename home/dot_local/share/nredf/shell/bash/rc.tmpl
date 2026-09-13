@@ -27,40 +27,22 @@ if [ -f /usr/local/share/bash-completion/bash_completion ]; then
   source /usr/local/share/bash-completion/bash_completion
 fi
 
-# Homebrew completions: load from share directory if available
-if [ -d /opt/homebrew/share/bash-completion/completions ]; then
-  for NREDF_BREW_COMPLETION in /opt/homebrew/share/bash-completion/completions/*; do
-    [[ -f "${NREDF_BREW_COMPLETION}" ]] && source "${NREDF_BREW_COMPLETION}"
-  done
-fi
+# Disable CTRL-S & CTRL-Q flow control
+stty stop '' 2>/dev/null || true
+stty start '' 2>/dev/null || true
+stty -ixon 2>/dev/null || true
+stty -ixoff 2>/dev/null || true
 
-if [ -f /usr/lib/node_modules/npm/lib/utils/completion.sh ]; then
-  source /usr/lib/node_modules/npm/lib/utils/completion.sh
-fi
-
-# Disable CTRL-S & CTRL-Q
-stty stop ''
-stty start ''
-stty -ixon
-stty -ixoff
-
-###################################################################################################
 # History Settings
-###################################################################################################
-# bash_history: Ignore dups and add timestamp
 HISTCONTROL=ignoreboth
 HISTTIMEFORMAT="%d/%m/%y %T "
-# append to the history file, don't overwrite it
 shopt -s histappend
-HISTSIZE=1000
-HISTFILESIZE=2000
-
-# check the window size after each command and, if necessary,
-# update the values of LINES and COLUMNS.
+HISTSIZE=10000
+HISTFILESIZE=20000
 shopt -s checkwinsize
 
 # Write history after every command
-PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND$'\n'}history -a; history -c; history -r"
+PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND$'\n'}history -a"
 
 if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 4) )) && command -v oh-my-posh &>/dev/null && [[ -f "${XDG_CONFIG_HOME}/oh-my-posh/config.json" ]]; then
   eval "$(oh-my-posh init bash --config "${XDG_CONFIG_HOME}/oh-my-posh/config.json")"
@@ -71,7 +53,7 @@ if [[ -d "${XDG_CONFIG_HOME}/completion/bash" ]]; then
   for NREDF_BASH_COMPLETION in "${XDG_CONFIG_HOME}/completion/bash/"*; do
     [[ -f "${NREDF_BASH_COMPLETION}" ]] || continue
     # shellcheck disable=SC1090
-    source "${NREDF_BASH_COMPLETION}"
+    source "${NREDF_BASH_COMPLETION}" 2>/dev/null || true
   done
 fi
 

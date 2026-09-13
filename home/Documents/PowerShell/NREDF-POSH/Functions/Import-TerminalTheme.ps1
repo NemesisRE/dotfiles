@@ -52,10 +52,18 @@ function Import-TerminalScheme {
   }
 
   # Check if theme file and settings file exist
+  if (-not (Test-Path $SettingsFile)) {
+    $unpackaged = "$env:LOCALAPPDATA\Microsoft\Windows Terminal\settings.json"
+    if (Test-Path $unpackaged) {
+      $SettingsFile = $unpackaged
+    }
+  }
+
   if (!(Test-Path $ThemeFile) -or !(Test-Path $SettingsFile)) {
     Write-Warning 'One or both files were not found.'
     return
   }
+
 
   # Read theme content
   $themeContent = Get-Content $ThemeFile -Raw
@@ -83,3 +91,6 @@ function Import-TerminalScheme {
   # Save updated settings.json
   $settingsContent | ConvertTo-Json -Depth 10 | Set-Content $SettingsFile
 }
+
+Set-Alias -Name Import-TerminalTheme -Value Import-TerminalScheme -Option AllScope -Force
+

@@ -18,7 +18,6 @@ function _nredf_set_krew_path() {
 }
 
 function _nredf_set_defaults() {
-  echo -e '\033[1mSetting defaults\033[0m'
   _nredf_set_aqua_path
   _nredf_set_aqua_env
   _nredf_set_krew_path
@@ -29,19 +28,19 @@ function _nredf_set_defaults() {
   export NREDF_RC_PATH="${NREDF_DOT_PATH}/shell/${NREDF_SHELL_NAME}"
   export NREDF_RC_LOCAL="${HOME}/.config/${NREDF_SHELL_NAME}"
 
-  # Set language environment to en_US.UTF-8 if available, else fall back to C.UTF-8 or C
-  local _nredf_locale
-  if locale -a 2>/dev/null | grep -qiE '^en_US\.UTF-?8$'; then
-    _nredf_locale="en_US.UTF-8"
-  elif locale -a 2>/dev/null | grep -qiE '^C\.UTF-?8$'; then
-    _nredf_locale="C.UTF-8"
-  else
-    _nredf_locale="C"
+  # Set language environment if not already configured with a UTF-8 locale
+  if [[ -z "${LANG:-}" || "${LANG:-}" == "C" ]]; then
+    local _nredf_locale="C"
+    if locale -a 2>/dev/null | grep -qiE '^en_US\.UTF-?8$'; then
+      _nredf_locale="en_US.UTF-8"
+    elif locale -a 2>/dev/null | grep -qiE '^C\.UTF-?8$'; then
+      _nredf_locale="C.UTF-8"
+    fi
+    export LANG="${_nredf_locale}"
+    export LANGUAGE="${_nredf_locale}"
+    export LC_ALL="${_nredf_locale}"
   fi
-  export LANG="${_nredf_locale}"
-  export LANGUAGE="${_nredf_locale}"
-  export LC_ALL="${_nredf_locale}"
-  unset _nredf_locale
+
 
   _nredf_init_paths
 

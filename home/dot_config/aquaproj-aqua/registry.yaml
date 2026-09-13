@@ -20,6 +20,9 @@ packages:
       amd64: x86_64
       arm64: aarch64
     format: tar.gz
+    supported_envs:
+      - darwin
+      - linux
 
   - type: github_release
     repo_owner: pehlicd
@@ -34,3 +37,8 @@ packages:
     description: A network diagnostic tool
     asset: 'netdoc_{{trimV .Version}}_{{.OS}}_{{.Arch}}'
     format: raw
+    overrides:
+      - goos: windows
+        format: zip
+        asset: 'netdoc_{{trimV .Version}}_{{.OS}}_{{.Arch}}.zip'
+

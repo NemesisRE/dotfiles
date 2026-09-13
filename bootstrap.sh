@@ -18,7 +18,16 @@ info()  { printf '    %s\n' "$*"; }
 warn()  { printf '\033[33m    WARNING: %s\033[0m\n' "$*"; }
 
 # ── Prerequisites ──────────────────────────────────────────────────────────────
-if command -v apt-get &>/dev/null; then
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  if ! xcode-select -p &>/dev/null; then
+    step "Installing Xcode Command Line Tools"
+    xcode-select --install || true
+  fi
+  if ! command -v brew &>/dev/null && [[ ! -x /opt/homebrew/bin/brew && ! -x /usr/local/bin/brew ]]; then
+    step "Installing Homebrew"
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
+  fi
+elif command -v apt-get &>/dev/null; then
   MISSING=()
   command -v curl &>/dev/null || MISSING+=(curl)
   command -v git  &>/dev/null || MISSING+=(git)
@@ -28,6 +37,7 @@ if command -v apt-get &>/dev/null; then
     sudo apt-get install -y -qq "${MISSING[@]}"
   fi
 fi
+
 
 # ── chezmoi ────────────────────────────────────────────────────────────────────
 LOCAL_BIN="${HOME}/.local/bin"

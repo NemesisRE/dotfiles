@@ -21,6 +21,12 @@ function _nredf_init_paths() {
     export NREDF_RC_PATH="${NREDF_DOT_PATH}/shell/${NREDF_SHELL_NAME}"
   fi
 
+  # Fast path: only ensure directory tree once per shell session
+  if [[ "${_NREDF_PATHS_INITIALIZED:-0}" == "1" && -d "${NREDF_LRCACHE}" ]]; then
+    return 0
+  fi
+  _NREDF_PATHS_INITIALIZED=1
+
   local NREDF_PATH=""
   for NREDF_PATH in \
     "${NREDF_RC_LOCAL}" \
