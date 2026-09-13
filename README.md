@@ -10,7 +10,9 @@
   <a href="https://github.com/NemesisRE/chezmoi/actions/workflows/ci.yml">
     <img alt="CI" src="https://img.shields.io/github/actions/workflow/status/NemesisRE/chezmoi/ci.yml?branch=main&label=CI&style=for-the-badge&color=a6e3a1&labelColor=363a4f"/>
   </a>
-  <img alt="License" src="https://img.shields.io/github/license/NemesisRE/chezmoi?style=for-the-badge&color=b4befe&labelColor=363a4f"/>
+  <a href="LICENSE">
+    <img alt="License" src="https://img.shields.io/github/license/NemesisRE/chezmoi?style=for-the-badge&color=b4befe&labelColor=363a4f"/>
+  </a>
 </div>
 
 <div align="center">
@@ -191,3 +193,10 @@ Centralized dependency PRs prevent drift from chezmoi-managed files:
 | `NREDF_DOT_PATH` | `~/.local/share/nredf` | Shell library root |
 | `NREDF_COMMON_RC_PROFILE` | `full` | RC profile level (`full` / `login-minimal` / `interactive-minimal`) |
 | `NREDF_NO_BOOTSTRAP` | unset | Set to `1` to skip aqua install + tool linking during `chezmoi apply` |
+
+---
+
+## 📄 License
+
+This project is licensed under the [GNU General Public License v3.0](LICENSE).
+
