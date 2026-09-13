@@ -36,8 +36,10 @@ function reload {
       Full refresh: clear caches + chezmoi/aqua.
   .PARAMETER LastRun
       Delete only 'Last Run Cache'.
-  .PARAMETER Profile
+  .PARAMETER StartupProfile
       Enable startup profiling (with timestamps for each step).
+  .PARAMETER Shell
+      Reload with a different shell (e.g., zsh, bash, pwsh, powershell, cmd).
   .PARAMETER Help
       Show usage help.
   #>
@@ -52,6 +54,17 @@ function reload {
     [switch]$LastRun,
     [Alias('p', 'Profile')]
     [switch]$StartupProfile,
+    [Alias('s')]
+    [ArgumentCompleter({
+      param($commandName, $parameterName, $wordToComplete, $commandAst, $fakeBoundParameters)
+      $candidates = if ($IsWindows) {
+        @('pwsh', 'powershell', 'cmd', 'bash', 'nu')
+      } else {
+        @('zsh', 'bash', 'pwsh', 'fish', 'nu')
+      }
+      $candidates | Where-Object { $_ -like "$wordToComplete*" }
+    })]
+    [string]$Shell,
     [Alias('h')]
     [switch]$Help
   )
@@ -68,6 +81,7 @@ Options:
 -f, [--full]                # Full refresh: clear caches + chezmoi/aqua
 -l, [--last-run]            # Delete only 'Last Run Cache'
 -p, [--profile]             # Enable startup profiling (with timestamps for each step)
+-s SHELL, [--shell SHELL]   # Reload with a different shell
 -h, [--help]                # Show this help
 
 "@
@@ -119,6 +133,29 @@ Options:
 
   if ($StartupProfile) {
     $ENV:NREDF_PROFILE_STARTUP = '1'
+  }
+
+  if ($Shell) {
+    $targetCmd = Get-Command -Name $Shell -ErrorAction SilentlyContinue
+    if (-not $targetCmd) {
+      $red = if ($PSStyle) { $PSStyle.Foreground.BrightRed } else { "$([char]27)[1;31m" }
+      Write-Host "${red}✘ Command not found ($Shell)${reset}"
+      return
+    }
+
+    $targetPath = if ($targetCmd.Source) { $targetCmd.Source } elseif ($targetCmd.Path) { $targetCmd.Path } else { $Shell }
+    $shellArgs = @()
+    if ($Shell -match '^(pwsh|powershell)(\.exe)?$') {
+      $shellArgs += '-NoLogo'
+    }
+
+    if ((Get-Command Switch-Process -ErrorAction SilentlyContinue) -and -not [Console]::IsInputRedirected) {
+      Switch-Process -WithCommand (@($targetPath) + $shellArgs)
+    } else {
+      & $targetPath @shellArgs
+      exit
+    }
+    return
   }
 
   if ((Get-Command Switch-Process -ErrorAction SilentlyContinue) -and -not [Console]::IsInputRedirected) {
