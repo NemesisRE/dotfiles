@@ -9,7 +9,7 @@
 {{- $signingkey := promptStringOnce $git "signingkey" "Git signing key (SSH/GPG public key or path)" "" -}}
 {{- $gitFormat := promptChoiceOnce $git "format" "Git commit signing format" (list "ssh" "openpgp") "ssh" -}}
 {{- $projects := promptStringOnce $dev "projects" "Projects directory" "~/Repos" -}}
-{{- $multiplexer := promptBoolOnce $shell "multiplexer" "Enable remote multiplexer (attach tmux/zellij on remote login)" true -}}
+{{- $multiplexer := promptBoolOnce $shell "multiplexer" "Enable remote multiplexer (attach zellij on remote login)" true -}}
 {{- $sshAgent := promptChoiceOnce $ssh "agent" "SSH agent provider" (list "default" "bitwarden" "pipe" "gpg") "default" -}}
 
 {{- if and (hasKey .chezmoi "workingTree") (ne .chezmoi.workingTree (joinPath .chezmoi.homeDir ".local/share/chezmoi")) }}

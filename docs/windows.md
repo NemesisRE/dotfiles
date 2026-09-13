@@ -1,6 +1,6 @@
 # Windows Setup & Optimization Guide (HOWTO)
 
-This guide walks you through setting up, configuring, and optimizing your Windows environment with **NREDF dotfiles**, **chezmoi**, **PowerShell 7**, and **aqua**.
+This guide walks you through setting up, configuring, and optimizing your Windows workstation with **NREDF dotfiles**, **chezmoi**, **PowerShell 7**, and **aqua**.
 
 ---
 
@@ -29,7 +29,7 @@ aqua install -a -l
 
 ## 📋 Prerequisites & Recommended Tooling
 
-Chezmoi automatically manages and installs these core prerequisite packages on Windows via `home/.chezmoidata/packages.yaml` and `winget` during `chezmoi apply`.
+Chezmoi automatically manages and installs these core prerequisite packages on Windows via [`home/.chezmoidata/packages.yaml`](file:///Users/skurz/Repos/chezmoi/home/.chezmoidata/packages.yaml) and `winget` during `chezmoi apply`.
 
 If you prefer to install them manually upfront:
 
@@ -50,77 +50,93 @@ winget install DEVCOM.FiraCodeFont
 
 ---
 
-## 🔑 SSH & Git Signing Setup (Bitwarden SSH Agent)
+## 🐚 Supported Shells on Windows
 
-### 1. Configure Bitwarden as SSH Agent on Windows
+NREDF supports multiple shells on Windows with shared aliases, history, and modern tool replacements:
 
-Bitwarden Desktop includes a built-in SSH Agent:
-1. Open Bitwarden Desktop &rarr; **Settings** &rarr; **SSH Agent**.
-2. Check **Enable SSH Agent**.
-3. Under Windows, Bitwarden exposes the OpenSSH named pipe: `\\.\pipe\openssh-ssh-agent`.
-4. Our PowerShell profile automatically sets `$env:SSH_AUTH_SOCK = "\\.\pipe\openssh-ssh-agent"`.
+### 1. PowerShell 7+ (`pwsh`) & Windows PowerShell 5.1
+- **PowerShell 7+**: `Documents\PowerShell\Microsoft.PowerShell_profile.ps1`
+- **Windows PowerShell 5.1**: `Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` (dot-sources PowerShell 7 profile)
+- Includes `posh-git`, `PSFzf`, `Terminal-Icons`, `GuiCompletion`, and `Atuin` history search.
 
-### 2. Configure Git Commit Signing with SSH Key
+### 2. Bash & Zsh on Windows
+- **WSL (Windows Subsystem for Linux)**: Full Linux environment running native Bash (ble.sh) or Zsh (Sheldon).
+- **Git Bash (MSYS2)**: Sources common NREDF shell libraries and aliases.
 
-With Bitwarden SSH Agent active, Git uses your SSH key to sign commits seamlessly:
-
+### 3. Switching Shells On the Fly
+Switch between shells without restarting Windows Terminal:
 ```powershell
-git config --global user.name "Your Name"
-git config --global user.email "you@example.com"
-git config --global user.signingkey "$env:USERPROFILE\.ssh\id_ed25519.pub"  # Or your public key string
-git config --global gpg.format ssh
-git config --global commit.gpgsign true
+reload -s pwsh         # Reload into PowerShell 7
+reload -s powershell   # Switch to Windows PowerShell 5.1
+reload -s bash         # Switch to Git Bash / WSL Bash
+reload -s cmd          # Switch to Command Prompt
 ```
-
-Windows OpenSSH client and Git will automatically query Bitwarden for signing authorization without needing external GPG daemons!
 
 ---
 
-## ⚙️ PowerShell & Oh-My-Posh Integration
+## ⌨️ Windows Keyboard Shortcuts
 
-### Profile Structure
+### 1. Windows Terminal Shortcuts
 
-On Windows, chezmoi deploys your profile and dotfiles directly to:
-- **PowerShell 7+**: `Documents\PowerShell\Microsoft.PowerShell_profile.ps1` (along with `Aliases.ps1`, `Defaults.ps1`, `Modules.ps1`, etc.)
-- **Windows PowerShell 5.1**: `Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1`
+| Shortcut | Action |
+| :--- | :--- |
+| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>t</kbd> | Open new tab |
+| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>w</kbd> | Close active pane / tab |
+| <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>+</kbd> | Split pane vertically |
+| <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>-</kbd> | Split pane horizontally |
+| <kbd>Alt</kbd> + <kbd>&larr;</kbd> / <kbd>&rarr;</kbd> / <kbd>&uarr;</kbd> / <kbd>&darr;</kbd> | Move focus between split panes |
+| <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>f</kbd> | Search terminal buffer |
+| <kbd>Ctrl</kbd> + <kbd>,</kbd> | Open Settings UI |
 
-Windows PowerShell 5.1 automatically dot-sources the configuration from `Documents\PowerShell\Microsoft.PowerShell_profile.ps1`. On Linux and macOS, `~/.config/powershell` is symlinked to `~/Documents/PowerShell`.
+---
 
-### Key Features Included
-- **Atuin**: End-to-end encrypted, searchable shell history (`Ctrl+r`) synchronized across your machines.
-- **PSReadLine**: Predictive IntelliSense based on history, Vi exit, custom word movement.
-- **PSFzf**: Fuzzy search integration with `Ctrl+t` (files) and `Ctrl+r` (history fallback).
-- **Terminal-Icons**: Colorized folder and file icons in directory listings.
-- **posh-git**: Rich Git status indicators in the prompt.
-- **Oh-My-Posh**: Driven by `~/.config/oh-my-posh/config.json` with the unified **OneDark-Pro** theme.
-- **CLI Replacements**: Real CLI tools un-shadowed (`ls` &rarr; `lsd`, `cat` &rarr; `bat`, `grep` &rarr; `rg`, `lg` &rarr; `lazygit`, `vim`/`vi` &rarr; `nvim`).
-- **Environment Variables**: Automatic setup of `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, and `XDG_CACHE_HOME`.
+### 2. PowerShell (PSReadLine & PSFzf) Shortcuts
+
+| Shortcut | Function | Description |
+| :--- | :--- | :--- |
+| <kbd>Tab</kbd> | GuiCompletion | Rich interactive popup completion menu |
+| <kbd>Ctrl</kbd> + <kbd>r</kbd> / <kbd>&uarr;</kbd> | Atuin History | Interactive fuzzy history search across all your machines |
+| <kbd>Ctrl</kbd> + <kbd>t</kbd> | PSFzf File Search | Fuzzy find files with syntax-highlighted `bat` preview |
+| <kbd>Alt</kbd> + <kbd>c</kbd> | PSFzf CD | Fuzzy find directories with `lsd --tree` preview and jump |
+| <kbd>Ctrl</kbd> + <kbd>d</kbd> | ViExit | Exit session if buffer is empty |
+| <kbd>Alt</kbd> + <kbd>d</kbd> | ShellKillWord | Delete next word forward |
+| <kbd>Alt</kbd> + <kbd>Backspace</kbd> | ShellBackwardKillWord | Delete previous word backward |
+| <kbd>Alt</kbd> + <kbd>q</kbd> | SaveInHistory | Stash current line in history and clear buffer |
+| <kbd>"</kbd> or <kbd>'</kbd> | SmartInsertQuote | Automatically insert paired quotes and position cursor inside |
+| <kbd>&rarr;</kbd> (Right Arrow) | Prediction Accept | Accept IntelliSense prediction candidate |
+
+---
+
+## 🔑 SSH Agent Setup (Bitwarden SSH Agent)
+
+Bitwarden Desktop includes a built-in SSH Agent on Windows:
+1. Open Bitwarden Desktop &rarr; **Settings** &rarr; **SSH Agent**.
+2. Check **Enable SSH Agent**.
+3. Under Windows, Bitwarden exposes the OpenSSH named pipe: `\\.\pipe\openssh-ssh-agent`.
+4. The PowerShell profile automatically sets `$env:SSH_AUTH_SOCK = "\\.\pipe\openssh-ssh-agent"`.
+5. Windows OpenSSH client and Git will automatically query Bitwarden for authentication without needing external SSH daemons.
 
 ---
 
 ## 📦 Aqua CLI Tool Manager on Windows
 
-Aqua automatically manages cross-platform developer tools on Windows without needing separate Scoop or Chocolatey manifests:
+Aqua manages cross-platform developer tools on Windows without needing separate Scoop or Chocolatey manifests:
 
 | Tool | Purpose | Command |
 | :--- | :--- | :--- |
 | **atuin** | Shell history sync & fuzzy search | `atuin` |
 | **fzf** | Interactive fuzzy finder | `fzf` |
+| **zoxide** | Smart directory jumper | `cd` / `z` / `zi` |
 | **ripgrep** | Fast recursive regex search | `rg` |
-| **bat** | Syntax-highlighting cat | `bat` |
-| **lsd** | Modern file listing | `lsd` |
-| **lazygit** | Terminal Git UI | `lazygit` |
-| **neovim** | Hyperextensible Vim-based text editor | `nvim` |
-| **yazi** | Blazing fast terminal file manager | `yazi` |
+| **bat** | Syntax-highlighting cat (OneDarkPro) | `bat` |
+| **lsd** | Modern file listing with icons | `lsd` |
+| **lazygit** | Terminal Git UI | `lazygit` / `lg` |
+| **neovim** | Hyperextensible AstroNvim v6 editor | `nvim` |
+| **yazi** | Blazing fast terminal file manager | `yazi` / `yy` |
 | **btop** | System resource monitor | `btop` |
+| **zellij** | Builtin terminal workspace multiplexer | `zellij` |
 
-Aqua tools are linked to `%LOCALAPPDATA%\aquaproj-aqua\bin` which is automatically added to `PATH`. The global config `~/.config/aquaproj-aqua/aqua.yaml` is discovered via `AQUA_GLOBAL_CONFIG`.
-
-### Atuin Shell History Integration
-Atuin is managed by Aqua and automatically initialized in PowerShell (`Profile.ps1`):
-- **Search History**: Press <kbd>Ctrl</kbd> + <kbd>r</kbd> or <kbd>UpArrow</kbd> to open interactive fuzzy search.
-- **Sync History**: Run `atuin register` / `atuin login` to sync shell history across Windows, Linux, and macOS.
-- **Diagnostics**: Run `atuin doctor` to verify setup.
+Aqua tools are linked to `%LOCALAPPDATA%\aquaproj-aqua\bin` which is automatically added to `PATH`.
 
 ### Setting Aqua GitHub Token (Avoid Rate Limits)
 
@@ -155,6 +171,25 @@ If you dual-boot Windows alongside Linux, Windows by default interprets the moth
 
 ```powershell
 reg add "HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\TimeZoneInformation" /v RealTimeIsUniversal /d 1 /t REG_DWORD /f
+```
+
+---
+
+## 💡 Windows Tips & Tricks
+
+### 1. Visual File Navigation with CWD Tracking (`yy`)
+Run `yy` in PowerShell to launch **Yazi**. Navigate directories with syntax previews, press <kbd>q</kbd>, and PowerShell automatically switches to that directory!
+
+### 2. Profiling Profile Startup Time
+```powershell
+reload -p
+```
+Displays millisecond execution time for Oh-My-Posh, Atuin, PSFzf, and custom functions.
+
+### 3. Sudo Privileges in PowerShell
+NREDF includes a smart `sudo` command that leverages `sudo.exe` (Windows 11), `gsudo`, or an elevated process window:
+```powershell
+sudo notepad C:\Windows\System32\drivers\etc\hosts
 ```
 
 ---
@@ -209,6 +244,13 @@ Add-MpPreference -ExclusionPath "$env:LOCALAPPDATA\aquaproj-aqua"
 chezmoi update                                                         # Pull latest dotfiles and apply
 chezmoi edit Documents/PowerShell/Microsoft.PowerShell_profile.ps1      # Edit profile
 aqua install                                                           # Update/install managed CLI tools
-reload                                                            # Reload current PowerShell session
+reload                                                                 # Reload current PowerShell session
 ```
 
+---
+
+## 📖 Further Documentation
+
+- [Unified Shells Guide (Zsh, Bash, pwsh)](shells.md)
+- [Core Features & Tools Guide](tools.md)
+- [Dedicated Neovim Guide](neovim.md)

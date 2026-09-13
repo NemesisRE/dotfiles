@@ -120,12 +120,6 @@ function _nredf_set_defaults() {
   # readline config
   export INPUTRC="${XDG_CONFIG_HOME}/readline/inputrc"
 
-  # screen config
-  export SCREENRC="${XDG_CONFIG_HOME}/screen/screenrc"
-
-  # wget config
-  export WGETRC="${XDG_CONFIG_HOME}/wgetrc"
-
   export XAUTHORITY="${XDG_RUNTIME_DIR}/Xauthority"
 
   export _Z_DATA="${XDG_DATA_HOME}/z"

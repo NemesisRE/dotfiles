@@ -23,19 +23,8 @@ function _nredf_remote_multiplexer() {
 
   if [[ -n "${SSH_TTY:-}" || -n "${WSL_DISTRO_NAME:-}" ]] && command -v zellij &>/dev/null; then
     if [[ -z "${ZELLIJ:-}" ]]; then
-      printf '\033[1mStarting multiplexer\033[0m\n'
+      printf '\033[1mStarting multiplexer (zellij)\033[0m\n'
       zellij attach -c "${host_name}"
-    fi
-  elif [[ "${NREDF_OS:-}" == "linux" ]] && [[ -n "${SSH_TTY:-}" ]] && [[ -n "${PS1:-}" ]] && command -v tmux &>/dev/null; then
-    if [[ -z "${TMUX:-}" ]]; then
-      # Start tmux on connection
-      if tmux -L "${host_name}" has-session -t "${host_name}" &>/dev/null; then
-        printf '\033[1mAttach to running tmux session\033[0m\n'
-        tmux -L "${host_name}" attach-session -t "${host_name}"
-      elif command -v tmux &>/dev/null && [[ -z "${TMUX:-}" ]]; then
-        printf '\033[1mStart new tmux session\033[0m\n'
-        tmux -L "${host_name}" new-session -s "${host_name}"
-      fi
     fi
   fi
 }

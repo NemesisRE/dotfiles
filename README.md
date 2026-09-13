@@ -87,7 +87,7 @@ aqua install -a -l
 ```
 
 > [!TIP]
-> Check the comprehensive [Windows HOWTO Guide](docs/windows.md) for Windows Terminal setup, Nerd Fonts, SSH Agent service, GPG commit signing, and system performance tweaks.
+> For in-depth platform configurations, check the dedicated [Linux Guide](docs/linux.md), [macOS Guide](docs/macos.md), and [Windows Guide](docs/windows.md). Explore all tools, shells, and Neovim in the [Documentation Hub](#-documentation-hub).
 
 ---
 
@@ -103,13 +103,13 @@ aqua install -a -l
 
 ## 📝 After Install
 
-The initial `chezmoi init` prompts for machine-local values (such as Git name/email, SSH agent provider, and remote multiplexer). Answers are stored in `~/.config/chezmoi/chezmoi.toml` and override defaults without dirtying tracked repository files. To re-prompt or reconfigure anytime, run `~/.local/bin/setup_git_identity.sh` (or `chezmoi init --prompt`).
+The initial `chezmoi init` prompts for machine-local values (such as Git name/email, SSH agent provider, and remote multiplexer). Answers are stored in `~/.config/chezmoi/chezmoi.toml` and override defaults without dirtying tracked repository files. To re-prompt or reconfigure anytime, run `chezmoi init --prompt && chezmoi apply`.
 
 If neither `GITHUB_TOKEN` nor `AQUA_GITHUB_TOKEN` is set, the first interactive session also offers to run `aqua token set` and store a token in your system keyring to prevent GitHub API rate limits.
 
 ```bash
-# Reconfigure machine identity (name, email, signing key, SSH agent)
-~/.local/bin/setup_git_identity.sh
+# Reconfigure machine settings (name, email, signing key, SSH agent)
+chezmoi init --prompt && chezmoi apply
 
 # Configure aqua's GitHub token manually later
 nredf_aqua_token_setup
@@ -119,6 +119,7 @@ exec $SHELL
 ```
 
 On Windows:
+
 ```powershell
 # Store GitHub token in Windows credential manager
 aqua token set
@@ -129,27 +130,18 @@ reload
 
 ---
 
-## 📁 Directory Structure
+## 📚 Documentation Hub
 
-The repository uses [`.chezmoiroot`](.chezmoiroot) pointing to `home/` to cleanly separate repository management files from deployed dotfiles:
+Comprehensive, platform-specific and tool-specific guides:
 
-| Path | Purpose |
+| Guide | Description |
 | :--- | :--- |
-| [`.chezmoiroot`](.chezmoiroot) | Directs chezmoi to use `home/` as the target dotfiles root |
-| [`home/.chezmoi.toml.tmpl`](home/.chezmoi.toml.tmpl) | Machine-local configuration template prompted via `chezmoi init` |
-| [`home/.chezmoidata/shell.yaml`](home/.chezmoidata/shell.yaml) | Shell defaults, multiplexer, SSH agent, and aqua options |
-| [`home/.chezmoidata/dev.yaml`](home/.chezmoidata/dev.yaml) | Developer workspace paths and defaults |
-| [`home/.chezmoidata/git.yaml`](home/.chezmoidata/git.yaml) | Git user, email, signing key, and signing format schema |
-| [`home/.chezmoidata/editor.yaml`](home/.chezmoidata/editor.yaml) | Editor defaults (e.g. line numbers) |
-| [`home/.chezmoidata/packages.yaml`](home/.chezmoidata/packages.yaml) | OS prerequisite packages (Homebrew, winget, apt, fonts, terminals) |
-| [`home/dot_config/sheldon/plugins.toml.tmpl`](home/dot_config/sheldon/plugins.toml.tmpl) | Sheldon zsh plugin configuration |
-| [`home/.chezmoidata/ble.yaml`](home/.chezmoidata/ble.yaml) | Ble.sh version tag |
-| [`home/.chezmoiscripts/`](home/.chezmoiscripts/) | Platform lifecycle hooks (run on `chezmoi apply`) |
-| [`home/dot_config/aquaproj-aqua/aqua.yaml`](home/dot_config/aquaproj-aqua/aqua.yaml) | Declarative CLI tools list managed by aqua |
-| [`home/Documents/PowerShell/`](home/Documents/PowerShell/) | Unified PowerShell profile, functions, aliases, and completions |
-| [`home/dot_config/oh-my-posh/config.json`](home/dot_config/oh-my-posh/config.json) | Shared Oh-My-Posh prompt theme |
-| [`home/dot_local/share/nredf/shell/`](home/dot_local/share/nredf/shell/) | Bash/Zsh shell function library |
-| [`docs/windows.md`](docs/windows.md) | In-depth Windows setup, tweaks, and troubleshooting guide |
+| [🐧 Linux Guide](docs/linux.md) | Distro packages (`apt`, `pacman`, `dnf`), Linuxbrew, WSL with `npiperelay`, Kitty, shortcuts, tips, and troubleshooting |
+| [🍏 macOS Guide](docs/macos.md) | Apple Silicon & Intel Homebrew, modern Bash 5.x migration, Option-as-Alt fixes, Bitwarden SSH, Kitty, shortcuts, and troubleshooting |
+| [🪟 Windows Guide](docs/windows.md) | Windows Terminal, PowerShell 7+ & 5.1, Developer Mode, Win32 Long Paths, UTC RTC dual-boot fix, OneDrive junctions, Defender exclusions |
+| [🐚 Unified Shells Guide](docs/shells.md) | Feature parity matrix across **Zsh**, **Bash**, and **PowerShell (pwsh)**, keybindings, PSReadLine, `ble.sh`, unified aliases, and `reload` |
+| [🧰 Core Tools Reference](docs/tools.md) | Declarative CLI tools (`aqua`, `chezmoi`), history sync (`atuin`), fuzzy find (`fzf`), smart jump (`zoxide`), `lsd`, `bat`, `lazygit`, `yazi` (`yy`), `btop`, `ctop`, `k9s`, and builtin multiplexer **`zellij`** |
+| [⚡ Neovim Guide](docs/neovim.md) | Dedicated **AstroNvim v6** documentation: OneDark-Pro theme, full keyboard shortcuts cheat sheet, LSP, Mason, Lazy, plugins, tips, and troubleshooting |
 
 ---
 
@@ -163,6 +155,7 @@ sheldon lock            # Refresh zsh plugin lockfile
 ```
 
 On Windows (PowerShell):
+
 ```powershell
 chezmoi update          # Pull latest dotfiles and re-apply
 aqua install            # Update/install managed CLI tools
@@ -180,6 +173,7 @@ Centralized dependency PRs prevent drift from chezmoi-managed files:
 - aqua registry reference in [dot_config/aquaproj-aqua/aqua.yaml](dot_config/aquaproj-aqua/aqua.yaml) updated automatically via Renovate regex manager
 
 **Recommended workflow:**
+
 1. Let Renovate open PRs
 2. Merge PRs in this repository
 3. Apply everywhere via `chezmoi update`
@@ -199,4 +193,3 @@ Centralized dependency PRs prevent drift from chezmoi-managed files:
 ## 📄 License
 
 This project is licensed under the [GNU General Public License v3.0](LICENSE).
-
