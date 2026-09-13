@@ -5,11 +5,20 @@ plugins:
     description: Approve a csr
     scopes:
       - csr
+{{- if eq .chezmoi.os "windows" }}
+    command: powershell
+    background: false
+    args:
+      - -NoProfile
+      - -Command
+      - "kubectl certificate approve --context $env:CONTEXT $env:NAME"
+{{- else }}
     command: sh
     background: false
     args:
       - -c
       - "kubectl certificate approve --context $CONTEXT $NAME"
+{{- end }}
 
   veleroBackupLogs:
     shortCut: l
@@ -19,11 +28,20 @@ plugins:
     - backup
     - backups
     - velero.io/v1/backups
+{{- if eq .chezmoi.os "windows" }}
+    command: powershell
+    background: false
+    args:
+    - -NoProfile
+    - -Command
+    - "velero backup logs $env:NAME --kubecontext $env:CONTEXT | Out-Host -Paging"
+{{- else }}
     command: sh
     background: false
     args:
     - -c
     - "velero backup logs $NAME --kubecontext $CONTEXT | less -K"
+{{- end }}
 
   veleroBackupDescribe:
     shortCut: Ctrl-L
@@ -33,8 +51,17 @@ plugins:
     - backup
     - backups
     - velero.io/v1/backups
+{{- if eq .chezmoi.os "windows" }}
+    command: powershell
+    background: false
+    args:
+    - -NoProfile
+    - -Command
+    - "velero backup describe $env:NAME --kubecontext $env:CONTEXT | Out-Host -Paging"
+{{- else }}
     command: sh
     background: false
     args:
     - -c
     - "velero backup describe $NAME --kubecontext $CONTEXT | less -K"
+{{- end }}

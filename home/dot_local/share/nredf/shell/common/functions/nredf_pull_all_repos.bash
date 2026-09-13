@@ -35,10 +35,16 @@ function _nredf_pull_all_repos() {
     esac
   done
 
-  echo "Getting all git Repositories in ${REPO_HOME:-${HOME}/Repos}"
-  REPOSITORIES=$(find "${REPO_HOME:-${HOME}/Repos}" -type d -exec git -C {} rev-parse --show-toplevel \; 2>/dev/null | uniq)
+  local target_dir="${REPO_HOME:-${HOME}/Repos}"
+  echo "Getting all git repositories in ${target_dir}"
+  if command -v fd &>/dev/null; then
+    REPOSITORIES=$(fd -H -I -t d '^\.git$' "${target_dir}" --exec dirname)
+  else
+    REPOSITORIES=$(find "${target_dir}" -name .git -type d -prune -exec dirname {} \; 2>/dev/null)
+  fi
 
   while IFS= read -r REPOSITORY; do
+    [[ -z "${REPOSITORY}" ]] && continue
     if git -C "${REPOSITORY}" remote -v | grep -q "${REMOTE_FILTER:-github}" &>/dev/null; then
       echo "Updating Git repository in ${REPOSITORY}"
       git -C "${REPOSITORY}" pull --rebase --autostash

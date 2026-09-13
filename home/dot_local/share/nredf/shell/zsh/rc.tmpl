@@ -52,7 +52,7 @@ if [[ -f "${NREDF_ZCOMPDUMP}" && "${NREDF_COMPLETION_REFRESH_REQUIRED}" -eq 0 ]]
 else
   _nredf_compinit -u -d "${NREDF_ZCOMPDUMP}"
   if declare -f _nredf_last_run >/dev/null 2>&1; then
-    _nredf_last_run "_nredf_zsh_compinit_refresh" "true" "$(($(date +%s) + 86400))"
+    _nredf_last_run "_nredf_zsh_compinit_refresh" "true" "86400"
   fi
   zcompile "${NREDF_ZCOMPDUMP}" >/dev/null 2>&1 || true
 fi

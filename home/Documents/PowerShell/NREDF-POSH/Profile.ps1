@@ -48,9 +48,9 @@ if ($Env:TERM_PROGRAM -ne 'vscode') {
   # PSFzf settings (configured after module import)
   if (Get-Command Set-PsFzfOption -ErrorAction SilentlyContinue) {
     if (Get-Command atuin -ErrorAction SilentlyContinue) {
-      Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t'
+      Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t' -PSReadlineChordChangeDirectory 'Alt+c'
     } else {
-      Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t' -PSReadlineChordReverseHistory 'Ctrl+r'
+      Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t' -PSReadlineChordReverseHistory 'Ctrl+r' -PSReadlineChordChangeDirectory 'Alt+c'
     }
   }
 }

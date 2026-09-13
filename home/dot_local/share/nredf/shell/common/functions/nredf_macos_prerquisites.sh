@@ -25,9 +25,6 @@ function _nredf_macos_prerquisites() {
   local MISSING_FORMULAE=()
   local FORMULA=""
   local MISSING_FORMULAE_INSTALLED=false
-  local NEXT_BREW_UPGRADE="$(($(date +%s) + BREW_UPGRADE_INTERVAL))"
-  local NEXT_BREW_CLEANUP="$(($(date +%s) + BREW_CLEANUP_INTERVAL))"
-  local NEXT_BREW_ENSURE="$(($(date +%s) + BREW_ENSURE_INTERVAL))"
   local HOMEBREW_PREFIX=""
   local BREW_WAS_INSTALLED=false
 
@@ -91,13 +88,13 @@ function _nredf_macos_prerquisites() {
     fi
     MISSING_FORMULAE_INSTALLED=true
   fi
-  _nredf_last_run "${BREW_ENSURE_KEY}" "true" "${NEXT_BREW_ENSURE}"
+  _nredf_last_run "${BREW_ENSURE_KEY}" "true" "${BREW_ENSURE_INTERVAL}"
   if declare -f _nredf_step >/dev/null 2>&1; then _nredf_step "macOS: brew install required formulas"; fi
 
   if ! ${MISSING_FORMULAE_INSTALLED} && ! _nredf_last_run "${BREW_UPGRADE_KEY}"; then
     echo -e "\033[1m  Upgrading Homebrew formulas: ${FORMULAE[*]}\033[0m"
     if HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1 "${BREW_PATH}" upgrade "${FORMULAE[@]}" >/dev/null 2>&1; then
-      _nredf_last_run "${BREW_UPGRADE_KEY}" "true" "${NEXT_BREW_UPGRADE}"
+      _nredf_last_run "${BREW_UPGRADE_KEY}" "true" "${BREW_UPGRADE_INTERVAL}"
     fi
   fi
   if declare -f _nredf_step >/dev/null 2>&1; then _nredf_step "macOS: brew upgrade formulas"; fi
@@ -106,7 +103,7 @@ function _nredf_macos_prerquisites() {
   if ! _nredf_last_run "${BREW_CLEANUP_KEY}"; then
     echo -e "\033[1m  Cleaning up Homebrew\033[0m"
     "${BREW_PATH}" cleanup >/dev/null 2>&1
-    _nredf_last_run "${BREW_CLEANUP_KEY}" "true" "${NEXT_BREW_CLEANUP}"
+    _nredf_last_run "${BREW_CLEANUP_KEY}" "true" "${BREW_CLEANUP_INTERVAL}"
   fi
   if declare -f _nredf_step >/dev/null 2>&1; then _nredf_step "macOS: brew cleanup"; fi
 }

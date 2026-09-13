@@ -33,7 +33,7 @@ function _nredf_update_sheldon_plugins() {
       return 0
     fi
 
-    _nredf_last_run "_nredf_update_sheldon_plugins" "true" "$(($(date +%s) + 86400))"
+    _nredf_last_run "_nredf_update_sheldon_plugins" "true" "86400"
     local sheldon_lock_opts=(--color never)
     if [[ -z "${NREDF_VERBOSE:-}" && -z "${NREDF_PROFILE_STARTUP:-}" ]]; then
       sheldon_lock_opts+=(--quiet)

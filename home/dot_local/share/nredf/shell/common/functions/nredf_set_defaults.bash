@@ -78,6 +78,12 @@ function _nredf_set_defaults() {
     export FZF_DEFAULT_COMMAND="find -L"
   fi
   export FZF_CTRL_T_COMMAND="${FZF_DEFAULT_COMMAND}"
+  if command -v bat &>/dev/null; then
+    export FZF_CTRL_T_OPTS="--preview 'bat -n --color=always {}' --bind 'ctrl-/:change-preview-window(down|hidden|)'"
+  fi
+  if command -v lsd &>/dev/null; then
+    export FZF_ALT_C_OPTS="--preview 'lsd -A --tree --depth=2 --color=always {}' --bind 'ctrl-/:change-preview-window(down|hidden|)'"
+  fi
 
   #  VIM/NVIM Defaults
   # shellcheck disable=SC2016
@@ -125,7 +131,7 @@ function _nredf_set_defaults() {
   fi
 
   if [[ -f "${NREDF_CONFIG}/GITHUB.AUTH" ]]; then
-    eval "$(cat "${NREDF_CONFIG}"/GITHUB.AUTH)"
+    eval "$(< "${NREDF_CONFIG}/GITHUB.AUTH")"
     if [[ -n ${NREDF_GITHUB_USERNAME} && -n ${NREDF_GITHUB_TOKEN} ]]; then
       export NREDF_CURL_GITHUB_AUTH="-u ${NREDF_GITHUB_USERNAME}:${NREDF_GITHUB_TOKEN}"
     fi

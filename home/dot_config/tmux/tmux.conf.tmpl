@@ -13,6 +13,14 @@ bind -n WheelDownPane select-pane -t= \; send-keys -M
 # Start windows and panes at 1, not 0
 set -g base-index 1
 set -g pane-base-index 1
+set-window-option -g pane-base-index 1
+set -g renumber-windows on
+
+# Eliminate Escape key delay in Neovim/Helix/Vim
+set -s escape-time 0
+
+# Enable OSC 52 clipboard passthrough
+set -s set-clipboard on
 
 set -g xterm-keys on
 
@@ -21,5 +29,5 @@ bind m source-file $HOME/.local/share/nredf/shell/common/tmux/layout_monitor
 bind-key < set-window-option synchronize-panes
 
 set-option -g default-shell ${SHELL}
-set-option -sa terminal-overrides ',xterm-256color:RGB'
+set-option -sa terminal-overrides ',xterm*:Tc,xterm*:RGB,tmux*:Tc,tmux*:RGB,screen*:Tc,alacritty:RGB,ghostty:RGB'
 set -ga update-environment 'DISPLAY SSH_ASKPASS SSH_AUTH_SOCK SSH_AGENT_PID SSH_CONNECTION WINDOWID XAUTHORITY'

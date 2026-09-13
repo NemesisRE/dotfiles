@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # -----------------------------------------------------------------------------
-# SSH wrapper with Bitwarden TOTP and sshpass
+# SSH wrapper with Bitwarden / 1Password TOTP and sshpass
 #
 # Overview
 # - Provides a drop-in replacement for ssh that can automatically supply a
 #   Time-based One-Time Password (TOTP) via sshpass when connecting to hosts
-#   configured with a Bitwarden TOTP item.
+#   configured with a Bitwarden or 1Password TOTP item.
 # - The TOTP item is referenced via an SSH config SetEnv directive:
-#     SetEnv TOTP_ITEMID=<bitwarden_item_id_or_uuid>
+#     SetEnv TOTP_ITEMID=<item_id_or_uuid>
 # - If a ProxyJump is used, the first hop is inspected for TOTP_ITEMID first;
 #   otherwise the target host is checked.
 # - If no TOTP configuration is found, it falls back to a normal ssh invocation.
@@ -16,6 +16,7 @@
 # - nredf_ssh: Public alias function; currently delegates to _nredf_sshpass_totp.
 # - _nredf_sshpass_totp: Core logic to discover TOTP settings and run ssh/sshpass.
 # - _nredf_sshpass_bitwarden_totp: Fetches a TOTP code from Bitwarden CLI.
+# - _nredf_sshpass_1password_totp: Fetches a TOTP code from 1Password CLI.
 #
 # How it works
 # 1) Reads SSH configuration using `ssh -G <host>` to detect:
@@ -118,6 +119,7 @@ function _nredf_sshpass_totp() {
     totp_host="${host}"
   else
     ssh "${@}"
+    return $?
   fi
 
   local totp_itemid
@@ -133,12 +135,26 @@ function _nredf_sshpass_totp() {
     '
   )
 
+  local item_totp=""
   local totp_provider="${NREDF_SHELL_SSH_TOTP_PROVIDER:-}"
   totp_provider="${totp_provider#\#}"
 
-  if [[ "${totp_provider}" == "bitwarden" ]]; then
-    item_totp=$(_nredf_sshpass_bitwarden_totp "$totp_itemid")
+  if [[ -z "${totp_provider}" ]]; then
+    if command -v bw &>/dev/null; then
+      totp_provider="bitwarden"
+    elif command -v op &>/dev/null; then
+      totp_provider="1password"
+    fi
   fi
+
+  case "${totp_provider}" in
+    bitwarden)
+      item_totp=$(_nredf_sshpass_bitwarden_totp "$totp_itemid")
+      ;;
+    1password|onepassword|op)
+      item_totp=$(_nredf_sshpass_1password_totp "$totp_itemid")
+      ;;
+  esac
 
   if [[ -z "${item_totp}" ]]; then
     ssh "${@}"
@@ -169,6 +185,23 @@ function _nredf_sshpass_bitwarden_totp() {
   fi
 
   totp=$(bw get totp "${itemid}" --raw)
+
+  echo "$totp"
+}
+
+function _nredf_sshpass_1password_totp() {
+  local itemid="$1"
+  local totp
+
+  if ! command -v op &>/dev/null; then
+    echo "1Password CLI (op) is not installed. Run: aqua install" >&2
+    return 1
+  fi
+
+  if ! totp=$(op item get "${itemid}" --otp 2>/dev/null); then
+    echo "Failed to retrieve TOTP from 1Password for item: ${itemid}" >&2
+    return 1
+  fi
 
   echo "$totp"
 }

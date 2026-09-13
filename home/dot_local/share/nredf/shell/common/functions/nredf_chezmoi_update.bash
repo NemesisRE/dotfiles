@@ -38,7 +38,7 @@ function _nredf_chezmoi_update() {
   fi
 
   # Write 24h throttle timestamp regardless of changes (don't re-fetch every shell)
-  _nredf_last_run "" "true" "$(($(date +%s) + 86400))"
+  _nredf_last_run "" "true" "86400"
   _nredf_remove_lock
 
   if ${CHANGED}; then
@@ -65,6 +65,6 @@ function _nredf_chezmoi_upgrade() {
   echo -e '\033[1mUpgrading chezmoi\033[0m'
   chezmoi upgrade --quiet >/dev/null 2>&1 || true
   # Write 24h throttle timestamp (don't re-check every shell)
-  _nredf_last_run "" "true" "$(($(date +%s) + 86400))"
+  _nredf_last_run "" "true" "86400"
   _nredf_remove_lock
 }

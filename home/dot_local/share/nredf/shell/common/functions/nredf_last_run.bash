@@ -24,7 +24,15 @@ function _nredf_last_run() {
   fi
 
   local SUCCESS="${2:-false}"
-  local NEXT_RUN="${3:-$((CURRENT_TIME + 43200))}"
+  local raw_next="${3:-}"
+  local NEXT_RUN
+  if [[ -z "${raw_next}" ]]; then
+    NEXT_RUN="$((CURRENT_TIME + 43200))"
+  elif (( raw_next < 100000000 )); then
+    NEXT_RUN="$((CURRENT_TIME + raw_next))"
+  else
+    NEXT_RUN="${raw_next}"
+  fi
 
   [[ ! -d "${NREDF_LRCACHE}" ]] && mkdir -p "${NREDF_LRCACHE}"
   local LAST_RUN_FILE="${NREDF_LRCACHE}/last_run${CURRENT_FUNCTION}.txt"

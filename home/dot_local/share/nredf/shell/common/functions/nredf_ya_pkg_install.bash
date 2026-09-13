@@ -14,8 +14,10 @@ function _nredf_ya_pkg_install() {
     return 0
   fi
 
-  echo -e '\033[1mInstalling yazi plugins\033[0m'
+  if [[ -n "${NREDF_PROFILE_STARTUP:-}" || -n "${NREDF_VERBOSE:-}" ]]; then
+    echo -e '\033[1mInstalling yazi plugins\033[0m'
+  fi
   ya pkg install --discard >/dev/null 2>&1 || true
-  _nredf_last_run "" "true" "$(($(date +%s) + NREDF_24H_INTERVAL))"
+  _nredf_last_run "" "true" "${NREDF_24H_INTERVAL:-86400}"
   _nredf_remove_lock
 }
