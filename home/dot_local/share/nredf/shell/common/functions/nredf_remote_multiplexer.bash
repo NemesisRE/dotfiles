@@ -6,9 +6,9 @@ function _nredf_remote_multiplexer() {
   local HOSTNAME
   local multiplexer_enabled="${NREDF_SHELL_GENERELL_MULTIPLEXER:-}"
 
-  if command -pv hostname &>/dev/null; then
+  if command -v hostname &>/dev/null; then
     HOSTNAME=$(hostname -s)
-  elif command -pv hostnamectl &>/dev/null; then
+  elif command -v hostnamectl &>/dev/null; then
     HOSTNAME=$(hostnamectl hostname)
   fi
 
@@ -22,7 +22,7 @@ function _nredf_remote_multiplexer() {
         echo -e "\033[1mStarting multiplexer\033[0m"
         zellij attach -c "${HOSTNAME}"
       fi
-    elif [[ "${NREDF_OS}" == "linux" ]] && [[ -n "${SSH_TTY}" ]] && [[ "${PS1}" != "" ]] && command -pv tmux &>/dev/null; then
+    elif [[ "${NREDF_OS}" == "linux" ]] && [[ -n "${SSH_TTY}" ]] && [[ "${PS1}" != "" ]] && command -v tmux &>/dev/null; then
       if [[ -z "${TMUX}" ]]; then
         # Start tmux on connection
         if [[ "$(tmux -L "${HOSTNAME}" has-session -t "${HOSTNAME}" &>/dev/null; echo $?)" = 0 ]]; then

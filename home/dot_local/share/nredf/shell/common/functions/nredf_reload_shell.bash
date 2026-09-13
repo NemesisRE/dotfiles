@@ -50,7 +50,7 @@ Options:
         return 0
       ;;
       -s | --shell)
-        if command -pv "${2}" &> /dev/null; then
+        if command -v "${2}" &> /dev/null; then
           NREDF_SHELL_NAME="${2}"
         else
           echo -e "\033[1;31m\U274C Command not found (${2}) \033[0m"
