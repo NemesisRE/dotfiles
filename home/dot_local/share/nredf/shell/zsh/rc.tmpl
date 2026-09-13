@@ -22,7 +22,15 @@ if (( ! ${+functions[_nredf_load_sheldon_plugins]} )); then
 fi
 _nredf_step "zsh rc: source functions"
 
+# Byte-compile common functions bundle if modified
+local _bundle="${NREDF_DOT_PATH}/shell/common/functions.bundle"
+if [[ -s "${_bundle}" && ( ! -f "${_bundle}.zwc" || "${_bundle}" -nt "${_bundle}.zwc" ) ]]; then
+  zcompile "${_bundle}" 2>/dev/null || true
+fi
+unset _bundle
+
 export HISTFILE="${XDG_STATE_HOME}"/zsh/history
+
 autoload -Uz compinit
 NREDF_ZCOMPDUMP="${XDG_CACHE_HOME}/zsh/.zcompdump"
 NREDF_COMPLETION_REFRESH_REQUIRED=0

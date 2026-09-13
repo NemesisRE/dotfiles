@@ -34,11 +34,17 @@ _nredf_refresh_cached_shell_snippet() {
 }
 
 
-# Load all common function files
-for NREDF_FUNCTIONS in "${NREDF_DOT_PATH}/shell/common/functions/"*; do
+# Load all common function files (fast path: use pre-compiled/bundled file if available)
+if [[ -s "${NREDF_DOT_PATH}/shell/common/functions.bundle" ]]; then
   # shellcheck disable=SC1090
-  source "${NREDF_FUNCTIONS}"
-done
+  source "${NREDF_DOT_PATH}/shell/common/functions.bundle"
+else
+  for NREDF_FUNCTIONS in "${NREDF_DOT_PATH}/shell/common/functions/"*; do
+    [[ -f "${NREDF_FUNCTIONS}" ]] || continue
+    # shellcheck disable=SC1090
+    source "${NREDF_FUNCTIONS}"
+  done
+fi
 
 # Rebuild shell-specific paths on every init so child shells do not inherit
 # stale values such as zsh-specific rc paths from the parent environment.
@@ -58,12 +64,46 @@ if [[ -z "${NREDF_COMMON_DEFAULTS_DONE}" ]]; then
   export HOMEBREW_NO_ANALYTICS=1
   export HOMEBREW_NO_INSTALL_CLEANUP=1
   export HOMEBREW_QUIET=1
-  if [[ -x /opt/homebrew/bin/brew ]]; then
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-  elif [[ -x /usr/local/bin/brew ]]; then
-    eval "$(/usr/local/bin/brew shellenv)"
+  {{- if eq .chezmoi.arch "arm64" }}
+  if [[ -d /opt/homebrew ]]; then
+    export HOMEBREW_PREFIX="/opt/homebrew"
+    export HOMEBREW_CELLAR="/opt/homebrew/Cellar"
+    export HOMEBREW_REPOSITORY="/opt/homebrew"
+    case ":${PATH}:" in
+      *":/opt/homebrew/bin:/opt/homebrew/sbin:"*) ;;
+      *) export PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}" ;;
+    esac
+    [ -z "${MANPATH-}" ] || export MANPATH=":${MANPATH#:}"
+    export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}"
+  fi
+  {{- else }}
+  if [[ -d /usr/local/Homebrew || -x /usr/local/bin/brew ]]; then
+    export HOMEBREW_PREFIX="/usr/local"
+    export HOMEBREW_CELLAR="/usr/local/Cellar"
+    export HOMEBREW_REPOSITORY="/usr/local/Homebrew"
+    case ":${PATH}:" in
+      *":/usr/local/bin:/usr/local/sbin:"*) ;;
+      *) export PATH="/usr/local/bin:/usr/local/sbin${PATH+:$PATH}" ;;
+    esac
+    [ -z "${MANPATH-}" ] || export MANPATH=":${MANPATH#:}"
+    export INFOPATH="/usr/local/share/info:${INFOPATH:-}"
   fi
   {{- end }}
+  {{- else if eq .chezmoi.os "linux" }}
+  # Linuxbrew support
+  if [[ -d /home/linuxbrew/.linuxbrew ]]; then
+    export HOMEBREW_PREFIX="/home/linuxbrew/.linuxbrew"
+    export HOMEBREW_CELLAR="/home/linuxbrew/.linuxbrew/Cellar"
+    export HOMEBREW_REPOSITORY="/home/linuxbrew/.linuxbrew/Homebrew"
+    case ":${PATH}:" in
+      *":/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:"*) ;;
+      *) export PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin${PATH+:$PATH}" ;;
+    esac
+    [ -z "${MANPATH-}" ] || export MANPATH=":${MANPATH#:}"
+    export INFOPATH="/home/linuxbrew/.linuxbrew/share/info:${INFOPATH:-}"
+  fi
+  {{- end }}
+
 
   _nredf_chezmoi_upgrade
   _nredf_step "_nredf_chezmoi_upgrade"

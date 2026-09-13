@@ -2,6 +2,7 @@
 #
 # vim: ts=2 sw=2 et ff=unix ft=bash syntax=sh
 
+# shellcheck disable=SC2120
 function _nredf_create_lock() {
   _nredf_init_paths
 
@@ -39,6 +40,7 @@ function _nredf_create_lock() {
   return 1
 }
 
+# shellcheck disable=SC2120
 function _nredf_remove_lock() {
   _nredf_init_paths
 

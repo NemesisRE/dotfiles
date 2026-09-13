@@ -77,10 +77,18 @@ packages:
   - name: ouch-org/ouch@0.8.2 # renovate: depName=ouch-org/ouch
     tags:
       - default
+  - name: fastfetch-cli/fastfetch@2.68.1 # renovate: depName=fastfetch-cli/fastfetch
+    tags:
+      - default
+
+  - name: chmln/sd@v1.1.0 # renovate: depName=chmln/sd
+    tags:
+      - default
   - name: natesales/q@v0.19.12 # renovate: depName=natesales/q
     registry: local
     tags:
       - default
+
 
 
   # ── Dev Tools ───────────────────────────────────────────────────────────────
@@ -126,8 +134,15 @@ packages:
         alias: netdoc
     tags:
       - default
+  - name: sharkdp/hyperfine@v1.20.0 # renovate: depName=sharkdp/hyperfine
+    tags:
+      - default
+  - name: jdx/mise@v2026.9.6 # renovate: depName=jdx/mise
+    tags:
+      - default
 
   # ── Kubernetes (uncomment to install) ───────────────────────────────────────
+
   - name: kubernetes/kubernetes/kubectl@v1.37.0 # renovate: depName=kubernetes/kubernetes
     tags:
       - k8s

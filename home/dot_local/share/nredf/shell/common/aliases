@@ -2,9 +2,14 @@
 #
 # vim: ts=2 sw=2 et ff=unix ft=bash syntax=sh
 
-alias ls="lsd"
-alias ll="lsd -lFh"
-alias la="lsd -lAFh"
+if command -v lsd &>/dev/null; then
+  alias ls="lsd"
+  alias ll="lsd -lFh --git"
+  alias la="lsd -lAFh --git"
+  alias tree="lsd --tree"
+fi
+
+
 alias root="sudo -E \"HOME=\${HOME}\" su -m"
 alias aptall="sudo apt update && sudo apt full-upgrade -y; sudo apt autoremove --purge -y; sudo apt autoclean"
 alias k="kubectl"

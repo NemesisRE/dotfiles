@@ -73,15 +73,19 @@ function _nredf_load_sheldon_plugins() {
     if [[ -z "${NREDF_VERBOSE:-}" && -z "${NREDF_PROFILE_STARTUP:-}" ]]; then
       sheldon_source_opts+=(--quiet)
     fi
-    [[ -d "${sheldon_cache%/*}" ]] || mkdir -p "${sheldon_cache%/*}"
     if sheldon "${sheldon_source_opts[@]}" source >| "${sheldon_cache}" 2>/dev/null; then
+      zcompile "${sheldon_cache}" >/dev/null 2>&1 || true
       source "${sheldon_cache}"
     else
       eval "$(sheldon "${sheldon_source_opts[@]}" source)"
     fi
   else
+    if [[ ! -f "${sheldon_cache}.zwc" || "${sheldon_cache}" -nt "${sheldon_cache}.zwc" ]]; then
+      zcompile "${sheldon_cache}" >/dev/null 2>&1 || true
+    fi
     source "${sheldon_cache}"
   fi
+
 
   _nredf_init_oh_my_posh --force
 

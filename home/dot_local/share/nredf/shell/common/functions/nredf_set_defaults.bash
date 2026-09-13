@@ -91,6 +91,7 @@ function _nredf_set_defaults() {
     export FZF_ALT_C_OPTS="--preview 'lsd -A --tree --depth=2 --color=always {}' --bind 'ctrl-/:change-preview-window(down|hidden|)'"
   fi
 
+
   #  VIM/NVIM Defaults
   if [[ -f "${XDG_CONFIG_HOME}/vim/gvimrc" ]]; then
     # shellcheck disable=SC2016
