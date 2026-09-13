@@ -19,6 +19,9 @@ fi
 if ! command -v _nredf_step >/dev/null 2>&1; then
   _nredf_step() { :; }
 fi
+if ! command -v _nredf_profile_finish >/dev/null 2>&1; then
+  _nredf_profile_finish() { :; }
+fi
 
 export NREDF_SHELL_NAME="zsh"
 export NREDF_DOT_PATH="${NREDF_DOT_PATH:-${XDG_DATA_HOME}/nredf}"
@@ -63,8 +66,11 @@ if command -v sheldon >/dev/null 2>&1 && [[ -f "${XDG_CONFIG_HOME}/sheldon/plugi
     _nredf_sheldon_lazy_once() {
       add-zsh-hook -d precmd _nredf_sheldon_lazy_once
       _nredf_load_sheldon_plugins
+      _nredf_step "sheldon plugins (lazy)"
+      _nredf_profile_finish
     }
     add-zsh-hook precmd _nredf_sheldon_lazy_once
+    add-zsh-hook zshexit _nredf_profile_finish
   else
     _nredf_load_sheldon_plugins
   fi
@@ -81,4 +87,8 @@ if (( ${+widgets[atuin-search]} )); then
   bindkey '^r' atuin-search
 elif command -v atuin &>/dev/null; then
   eval "$(atuin init zsh)"
+fi
+
+if [[ "${NREDF_SHELDON_LAZY_LOAD}" != "1" ]] || ! command -v sheldon >/dev/null 2>&1 || [[ ! -f "${XDG_CONFIG_HOME}/sheldon/plugins.toml" ]]; then
+  _nredf_profile_finish
 fi

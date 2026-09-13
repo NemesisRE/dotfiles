@@ -37,7 +37,7 @@ function reload {
   .PARAMETER LastRun
       Delete only 'Last Run Cache'.
   .PARAMETER StartupProfile
-      Enable startup profiling (with timestamps for each step).
+      Toggle startup profiling (or one-shot if combined with other options).
   .PARAMETER Shell
       Reload with a different shell (e.g., zsh, bash, pwsh, powershell, cmd).
   .PARAMETER Help
@@ -80,7 +80,7 @@ Options:
 -d, [--downloads]           # Delete aqua pkgs (archives + binaries, keeps bin/ symlinks)
 -f, [--full]                # Full refresh: clear caches + chezmoi/aqua
 -l, [--last-run]            # Delete only 'Last Run Cache'
--p, [--profile]             # Enable startup profiling (with timestamps for each step)
+-p, [--profile]             # Toggle startup profiling (or one-shot if combined with other options)
 -s SHELL, [--shell SHELL]   # Reload with a different shell
 -h, [--help]                # Show this help
 
@@ -131,8 +131,25 @@ Options:
     # LRCACHE is cleared above — chezmoi/aqua run automatically via normal shell init
   }
 
+  $hasOtherOptions = $Cache -or $Downloads -or $Full -or $LastRun -or [bool]$Shell
+
   if ($StartupProfile) {
-    $ENV:NREDF_PROFILE_STARTUP = '1'
+    if (-not $hasOtherOptions) {
+      if ($ENV:NREDF_PROFILE_STARTUP -eq '1') {
+        $ENV:NREDF_PROFILE_STARTUP = $null
+        $ENV:NREDF_PROFILE_STARTUP_ONESHOT = $null
+        $yellow = if ($PSStyle) { $PSStyle.Foreground.Yellow } else { "$([char]27)[1;33m" }
+        Write-Host "${yellow}ℹ Startup profiling disabled${reset}"
+      } else {
+        $ENV:NREDF_PROFILE_STARTUP = '1'
+        $ENV:NREDF_PROFILE_STARTUP_ONESHOT = $null
+        $green = if ($PSStyle) { $PSStyle.Foreground.Green } else { "$([char]27)[1;32m" }
+        Write-Host "${green}ℹ Startup profiling enabled (persistent)${reset}"
+      }
+    } else {
+      $ENV:NREDF_PROFILE_STARTUP = '1'
+      $ENV:NREDF_PROFILE_STARTUP_ONESHOT = '1'
+    }
   }
 
   if ($Shell) {

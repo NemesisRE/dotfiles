@@ -99,6 +99,9 @@ if ($ENV:NREDF_PROFILE_STARTUP -eq '1') {
   $cyan = if ($PSStyle) { $PSStyle.Foreground.Cyan } else { "$([char]27)[36m" }
   $reset = if ($PSStyle) { $PSStyle.Reset } else { "$([char]27)[0m" }
   Write-Host ("${cyan}  [+{0,4}ms] Total PowerShell profile startup time${reset}" -f $total)
-  $ENV:NREDF_PROFILE_STARTUP = $null
+  if ($ENV:NREDF_PROFILE_STARTUP_ONESHOT -eq '1') {
+    $ENV:NREDF_PROFILE_STARTUP = $null
+    $ENV:NREDF_PROFILE_STARTUP_ONESHOT = $null
+  }
   Remove-Variable _nredf_sw, _nredf_last_ms -Scope Global -ErrorAction SilentlyContinue
 }

@@ -9,19 +9,23 @@ _nredf_reload_shell () {
   local DOWNLOADS=false
   local FULL_RELOAD=false
   local PROFILE=false
+  local HAS_OTHER_OPTIONS=false
   while [[ "$#" -gt 0 ]]; do
     case "$1" in
       -c | --cache)
         LRCACHE=true
+        HAS_OTHER_OPTIONS=true
         shift 1
       ;;
       -d | --downloads)
         DOWNLOADS=true
+        HAS_OTHER_OPTIONS=true
         shift 1
       ;;
       -f | --full)
         LRCACHE=true
         FULL_RELOAD=true
+        HAS_OTHER_OPTIONS=true
         shift 1
       ;;
       -p | --profile)
@@ -30,6 +34,7 @@ _nredf_reload_shell () {
       ;;
       -l | --last-run)
         LRCACHE=true
+        HAS_OTHER_OPTIONS=true
         shift 1
       ;;
       -h | --help)
@@ -42,7 +47,7 @@ Options:
 -d, [--downloads]           # Delete aqua pkgs (archives + binaries, keeps bin/ symlinks)
 -f, [--full]                # Full refresh: clear caches + chezmoi/aqua/(zsh:sheldon)
 -l, [--last-run]            # Delete only 'Last Run Cache'
--p, [--profile]             # Enable startup profiling (with timestamps for each step)
+-p, [--profile]             # Toggle startup profiling (or one-shot if combined with other options)
 -s SHELL, [--shell SHELL]   # Reload with a different shell
 -h, [--help]                # Show this help
 
@@ -50,6 +55,7 @@ Options:
         return 0
       ;;
       -s | --shell)
+        HAS_OTHER_OPTIONS=true
         if command -v "${2}" &> /dev/null; then
           NREDF_SHELL_NAME="${2}"
         else
@@ -86,7 +92,19 @@ Options:
 
 
   if ${PROFILE}; then
-    export NREDF_PROFILE_STARTUP=1
+    if ! ${HAS_OTHER_OPTIONS}; then
+      if [[ "${NREDF_PROFILE_STARTUP:-0}" == "1" ]]; then
+        unset NREDF_PROFILE_STARTUP NREDF_PROFILE_STARTUP_ONESHOT
+        printf "\033[1;33mℹ Startup profiling disabled\033[0m\n"
+      else
+        export NREDF_PROFILE_STARTUP=1
+        unset NREDF_PROFILE_STARTUP_ONESHOT
+        printf "\033[1;32mℹ Startup profiling enabled (persistent)\033[0m\n"
+      fi
+    else
+      export NREDF_PROFILE_STARTUP=1
+      export NREDF_PROFILE_STARTUP_ONESHOT=1
+    fi
   fi
 
   local NREDF_EXEC_SHELL="${NREDF_SHELL_NAME}"

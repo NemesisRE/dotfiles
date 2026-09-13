@@ -25,6 +25,9 @@ export SHELL="${BASH:-${SHELL:-/bin/bash}}"
 if ! command -v _nredf_step >/dev/null 2>&1; then
   _nredf_step() { :; }
 fi
+if ! command -v _nredf_profile_finish >/dev/null 2>&1; then
+  _nredf_profile_finish() { :; }
+fi
 
 export NREDF_SHELL_NAME="bash"
 export NREDF_DOT_PATH="${NREDF_DOT_PATH:-${XDG_DATA_HOME}/nredf}"
@@ -67,3 +70,5 @@ if [[ -n "${BLE_VERSION-}" ]]; then
   ble-attach
   _nredf_step "ble attach"
 fi
+
+_nredf_profile_finish
