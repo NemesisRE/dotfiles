@@ -9,6 +9,12 @@ set -euo pipefail
 [[ -n "${CI:-}" ]] && exit 0
 [[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
 
+# ── Xcode Command Line Tools (Apple Clang compiler for Tree-sitter) ───────────
+if ! xcode-select -p >/dev/null 2>&1; then
+  echo "==> Installing Xcode Command Line Tools (required for C/C++ compiler and Tree-sitter)"
+  xcode-select --install || true
+fi
+
 # ── Homebrew ──────────────────────────────────────────────────────────────────
 if ! command -v brew >/dev/null 2>&1 && [[ ! -x /opt/homebrew/bin/brew && ! -x /usr/local/bin/brew ]]; then
   echo "==> Installing Homebrew"

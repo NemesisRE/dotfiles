@@ -160,21 +160,41 @@ Recommended language tools commonly installed via Mason:
 - **Go**: `gopls`, `golangci-lint`
 - **Rust**: `rust-analyzer`
 
-### 3. Adding Community Packs (`lua/community.lua`)
-AstroCommunity provides hundreds of pre-configured language packs, tooling integrations, and plugins. To enable a language pack, simply import it into [`home/dot_config/nvim/lua/community.lua`](file:///Users/skurz/Repos/chezmoi/home/dot_config/nvim/lua/community.lua):
+### 3. AstroCommunity Language & Tooling Packs (`lua/community.lua`)
+
+AstroCommunity packs provide pre-configured treesitter parsers, Mason language servers (LSP), linters, formatters, and debug adapters (DAP). The following packs are enabled in [`home/dot_config/nvim/lua/community.lua`](file:///Users/skurz/Repos/chezmoi/home/dot_config/nvim/lua/community.lua):
+
+| Pack | Languages / Tools | Features & Included Plugins |
+| :--- | :--- | :--- |
+| **`pack.bash`** | Bash, Zsh, POSIX Shell | Treesitter parser, `bash-language-server`, `shellcheck`, `shfmt` |
+| **`pack.python`** | Python | Treesitter, LSP (`basedpyright`/`pyright`), `ruff`, DAP (`debugpy`), `venv-selector.nvim` |
+| **`pack.docker`** | Dockerfile, Compose | Treesitter, `dockerls`, `docker_compose_language_service`, `hadolint` |
+| **`pack.yaml`** | YAML | Treesitter, `yaml-language-server`, SchemaStore catalog validation |
+| **`pack.chezmoi`** | Chezmoi Dotfiles | `chezmoi.vim`, `chezmoi.nvim`, `<Leader>f.` fuzzy search, auto-watch buffer edits, template icons |
+| **`pack.ansible`** | Ansible Playbooks | Auto-detects `yaml.ansible`, `ansible-language-server`, `ansible-lint`, `ansible-vim` |
+| **`pack.json`** | JSON, JSONC | Treesitter, `json-lsp` (`jsonls`), SchemaStore schema validations |
+| **`pack.helm`** | Kubernetes Helm | Helm chart detection (`Chart.yaml`), `helm-ls`, gotmpl syntax, comment strings |
+| **`pack.markdown`** | Markdown | Treesitter (`markdown`, `markdown_inline`), `marksman` LSP |
+| **`pack.ps1`** | PowerShell | Treesitter, `powershell-editor-services` (`powershell_es`), `vim-ps1` |
+| **`pack.terraform`** | Terraform, HCL | Treesitter, `terraform-ls`, `tflint`, `tfsec`, `terraform_fmt` via `conform.nvim` |
 
 ```lua
 return {
   "AstroNvim/astrocommunity",
   { import = "astrocommunity.colorscheme.onedarkpro-nvim" },
 
-  -- Examples of community language packs:
-  -- { import = "astrocommunity.pack.bash" },
-  -- { import = "astrocommunity.pack.python" },
-  -- { import = "astrocommunity.pack.rust" },
-  -- { import = "astrocommunity.pack.go" },
-  -- { import = "astrocommunity.pack.docker" },
-  -- { import = "astrocommunity.pack.yaml" },
+  -- Language & Tooling Packs
+  { import = "astrocommunity.pack.bash" },
+  { import = "astrocommunity.pack.python" },
+  { import = "astrocommunity.pack.docker" },
+  { import = "astrocommunity.pack.yaml" },
+  { import = "astrocommunity.pack.chezmoi" },
+  { import = "astrocommunity.pack.ansible" },
+  { import = "astrocommunity.pack.json" },
+  { import = "astrocommunity.pack.helm" },
+  { import = "astrocommunity.pack.markdown" },
+  { import = "astrocommunity.pack.ps1" },
+  { import = "astrocommunity.pack.terraform" },
 }
 ```
 
@@ -228,9 +248,11 @@ Formatting can be invoked on demand with <kbd>Space</kbd> <kbd>l</kbd> <kbd>f</k
 ### Q2: Treesitter parser compilation errors on fresh install
 **Cause**: Treesitter requires a C compiler (`gcc`, `clang`, or `zig`) to compile language parsers.
 **Resolution**:
-- **Linux**: `sudo apt install build-essential` or `sudo pacman -S base-devel`.
-- **macOS**: `xcode-select --install`.
-- **Windows**: Install LLVM or MinGW (`winget install LLVM.LLVM` or `winget install MSYS2.MSYS2`), or run `:TSInstall <language>` once a compiler is in `PATH`.
+In NREDF, required C/C++ compilers are now managed automatically during `chezmoi apply` via [`home/.chezmoidata/packages.yaml`](file:///Users/skurz/Repos/chezmoi/home/.chezmoidata/packages.yaml):
+- **Linux**: `build-essential` (`apt`), `base-devel` (`pacman`), or `gcc`/`gcc-c++`/`make` (`dnf`).
+- **macOS**: Automatically checks and installs **Xcode Command Line Tools** (`xcode-select --install`).
+- **Windows**: `LLVM.LLVM` installed automatically via `winget`.
+Once installed, run `:TSUpdate` in Neovim to compile any pending language parsers.
 
 ### Q3: Where are undo history and swap files stored?
 NREDF centralizes all editor runtime files to avoid polluting projects:

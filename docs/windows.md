@@ -43,6 +43,9 @@ winget install Git.Git
 
 # Recommended Default Font: FiraMono / FiraCode Nerd Font
 winget install DEVCOM.FiraCodeFont
+
+# C/C++ Compiler for Neovim Tree-sitter
+winget install LLVM.LLVM
 ```
 
 > [!TIP]

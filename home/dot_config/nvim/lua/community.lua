@@ -6,5 +6,18 @@
 return {
   "AstroNvim/astrocommunity",
   { import = "astrocommunity.colorscheme.onedarkpro-nvim" },
+
+  -- Language & Tooling Packs
+  { import = "astrocommunity.pack.bash" },
+  { import = "astrocommunity.pack.python" },
+  { import = "astrocommunity.pack.docker" },
+  { import = "astrocommunity.pack.yaml" },
+  { import = "astrocommunity.pack.chezmoi" },
+  { import = "astrocommunity.pack.ansible" },
+  { import = "astrocommunity.pack.json" },
+  { import = "astrocommunity.pack.helm" },
+  { import = "astrocommunity.pack.markdown" },
+  { import = "astrocommunity.pack.ps1" },
+  { import = "astrocommunity.pack.terraform" },
 }
 

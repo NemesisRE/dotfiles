@@ -21,6 +21,7 @@ packages:
       - Microsoft.WindowsTerminal
       - Git.Git
       - DEVCOM.FiraCodeFont
+      - LLVM.LLVM
   linux:
     apt:
       - git
@@ -28,15 +29,20 @@ packages:
       - zsh
       - kitty
       - fonts-firacode
+      - build-essential
     pacman:
       - git
       - curl
       - zsh
       - kitty
       - ttf-firacode-nerd
+      - base-devel
     dnf:
       - git
       - curl
       - zsh
       - kitty
       - fira-code-fonts
+      - gcc
+      - gcc-c++
+      - make
