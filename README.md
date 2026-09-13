@@ -101,12 +101,12 @@ aqua install -a -l
 
 ## 📝 After Install
 
-The first interactive `chezmoi apply` or `chezmoi update` prompts for missing machine-local values defined in `home/.chezmoidata/config/` (such as Git name/email and preferred SSH agent mode). Answers are stored in `~/.config/chezmoi/nredf-local.env` and override defaults without dirtying tracked repository files.
+The initial `chezmoi init` prompts for machine-local values (such as Git name/email, SSH agent provider, and remote multiplexer). Answers are stored in `~/.config/chezmoi/chezmoi.toml` and override defaults without dirtying tracked repository files. To re-prompt or reconfigure anytime, run `~/.local/bin/setup_git_identity.sh` (or `chezmoi init --prompt`).
 
 If neither `GITHUB_TOKEN` nor `AQUA_GITHUB_TOKEN` is set, the first interactive session also offers to run `aqua token set` and store a token in your system keyring to prevent GitHub API rate limits.
 
 ```bash
-# Configure git identity (name, email, signing key)
+# Reconfigure machine identity (name, email, signing key, SSH agent)
 ~/.local/bin/setup_git_identity.sh
 
 # Configure aqua's GitHub token manually later
@@ -134,9 +134,11 @@ The repository uses [`.chezmoiroot`](.chezmoiroot) pointing to `home/` to cleanl
 | Path | Purpose |
 | :--- | :--- |
 | [`.chezmoiroot`](.chezmoiroot) | Directs chezmoi to use `home/` as the target dotfiles root |
-| [`home/.chezmoidata/config/shell.yaml`](home/.chezmoidata/config/shell.yaml) | Shell defaults, multiplexer, SSH agent, and aqua options |
-| [`home/.chezmoidata/config/devel.yaml`](home/.chezmoidata/config/devel.yaml) | Developer workspace paths and defaults |
-| [`home/.chezmoidata/config/git.yaml`](home/.chezmoidata/config/git.yaml) | Git user, email, signing key, and GPG format schema |
+| [`home/.chezmoi.toml.tmpl`](home/.chezmoi.toml.tmpl) | Machine-local configuration template prompted via `chezmoi init` |
+| [`home/.chezmoidata/shell.yaml`](home/.chezmoidata/shell.yaml) | Shell defaults, multiplexer, SSH agent, and aqua options |
+| [`home/.chezmoidata/dev.yaml`](home/.chezmoidata/dev.yaml) | Developer workspace paths and defaults |
+| [`home/.chezmoidata/git.yaml`](home/.chezmoidata/git.yaml) | Git user, email, signing key, and signing format schema |
+| [`home/.chezmoidata/editor.yaml`](home/.chezmoidata/editor.yaml) | Editor defaults (e.g. line numbers) |
 | [`home/.chezmoidata/packages.yaml`](home/.chezmoidata/packages.yaml) | OS prerequisite packages (Homebrew, winget, apt, fonts, terminals) |
 | [`home/dot_config/sheldon/plugins.toml.tmpl`](home/dot_config/sheldon/plugins.toml.tmpl) | Sheldon zsh plugin configuration |
 | [`home/.chezmoidata/ble.yaml`](home/.chezmoidata/ble.yaml) | Ble.sh version tag |

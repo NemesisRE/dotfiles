@@ -17,39 +17,14 @@ function _nredf_chezmoi_update() {
     return 0
   fi
 
-  local SRC
-  SRC="$(chezmoi source-path 2>/dev/null)" || SRC=""
-  if [[ -z "${SRC}" || ! -d "${SRC}" ]]; then
-    _nredf_remove_lock
-    return 0
+  if [[ -n "${NREDF_PROFILE_STARTUP:-}" || -n "${NREDF_VERBOSE:-}" ]]; then
+    echo -e '\033[1mUpdating dotfiles and externals via chezmoi\033[0m'
   fi
+  chezmoi update --refresh-externals --force >/dev/null 2>&1 || true
 
-  # Fast check: only fetch if remote is configured
-  local CHANGED=false
-  if command -v git &>/dev/null; then
-    if git -C "${SRC}" fetch --quiet 2>/dev/null; then
-      local LOCAL REMOTE
-      LOCAL="$(git -C "${SRC}" rev-parse @ 2>/dev/null)"
-      REMOTE="$(git -C "${SRC}" rev-parse '@{u}' 2>/dev/null)"
-      if [[ -n "${REMOTE}" && "${LOCAL}" != "${REMOTE}" ]]; then
-        echo -e '\033[1mPulling dotfiles\033[0m'
-        git -C "${SRC}" pull --ff-only --quiet 2>/dev/null || true
-        CHANGED=true
-      fi
-    fi
-  fi
-
-  echo -e '\033[1mSyncing dotfiles and externals\033[0m'
-  chezmoi apply --refresh-externals --force 2>&1 || true
-
-  # Write 24h throttle timestamp regardless of changes (don't re-fetch every shell)
+  # Write 24h throttle timestamp (don't re-fetch every shell)
   _nredf_last_run "" "true" "86400"
   _nredf_remove_lock
-
-  if ${CHANGED}; then
-    echo -e '\033[1mDotfiles updated from remote — reloading shell\033[0m'
-    exec "${SHELL}"
-  fi
 }
 
 function _nredf_chezmoi_upgrade() {

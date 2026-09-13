@@ -206,14 +206,6 @@ if (Test-Path $bwPipe) {
     }
 }
 
-# ── Git Identity Check ───────────────────────────────────────────────────────
-$gitEmail = git config --global user.email 2>$null
-if (-not $gitEmail) {
-    Write-Step "Git identity"
-    Write-Warn "Git identity not set. Please configure your Git name and email:"
-    Write-Info "  git config --global user.name  'Your Name'"
-    Write-Info "  git config --global user.email 'you@example.com'"
-}
 
 # ── Done ─────────────────────────────────────────────────────────────────────
 Write-Step "Done!"

@@ -1,0 +1,6 @@
+# Git configuration defaults
+git:
+  name: ""
+  email: ""
+  signingkey: ""
+  format: "ssh" # options: openpgp, ssh

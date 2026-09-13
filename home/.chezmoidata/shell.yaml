@@ -1,0 +1,7 @@
+# Shell defaults
+shell:
+  multiplexer: true
+  aqua:
+    vacuum_days: 30
+  ssh:
+    agent: "default" # options: default, bitwarden, pipe, gpg

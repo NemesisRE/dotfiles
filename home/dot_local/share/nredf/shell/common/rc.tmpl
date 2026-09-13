@@ -54,9 +54,16 @@ _nredf_step "_nredf_get_sys_info"
 if [[ -z "${NREDF_COMMON_DEFAULTS_DONE}" ]]; then
   _nredf_set_defaults
   _nredf_step "_nredf_set_defaults"
-  if [[ "${NREDF_OS}" == "macos" ]]; then
-    _nredf_macos_prerquisites
+  {{- if eq .chezmoi.os "darwin" }}
+  export HOMEBREW_NO_ANALYTICS=1
+  export HOMEBREW_NO_INSTALL_CLEANUP=1
+  export HOMEBREW_QUIET=1
+  if [[ -x /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [[ -x /usr/local/bin/brew ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
   fi
+  {{- end }}
 
   _nredf_chezmoi_upgrade
   _nredf_step "_nredf_chezmoi_upgrade"
@@ -121,9 +128,6 @@ if [[ -z ${SUDO_COMMAND} ]]; then
   _nredf_aqua_vacuum
   _nredf_step "aqua vacuum -d ${NREDF_SHELL_AQUA_VACUUM_DAYS:-30}"
 
-  # Install Yazi plugins/packages from package.toml — throttled to once per 24h
-  _nredf_ya_pkg_install
-  _nredf_step "ya pkg install --discard"
 fi
 
 # Shell-specific customization

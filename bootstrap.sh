@@ -62,19 +62,6 @@ if command -v aqua &>/dev/null; then
   aqua install -a -l >/dev/null 2>&1 || true
 fi
 
-# ── Git identity ───────────────────────────────────────────────────────────────
-if [[ -z "$(git config --global user.email 2>/dev/null)" ]]; then
-  SETUP_SCRIPT="${HOME}/.local/bin/setup_git_identity.sh"
-  if [[ -x "${SETUP_SCRIPT}" ]]; then
-    step "Setting up git identity"
-    bash "${SETUP_SCRIPT}"
-    chezmoi apply --no-tty 2>/dev/null || chezmoi apply
-  else
-    warn "setup_git_identity.sh not found — set git identity manually:"
-    info "  git config --global user.name  'Your Name'"
-    info "  git config --global user.email 'you@example.com'"
-  fi
-fi
 
 # ── Done ───────────────────────────────────────────────────────────────────────
 step "Done"

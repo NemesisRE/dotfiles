@@ -27,35 +27,12 @@ function _nredf_init_paths() {
   fi
   _NREDF_PATHS_INITIALIZED=1
 
-  local NREDF_PATH=""
   for NREDF_PATH in \
     "${NREDF_RC_LOCAL}" \
     "${NREDF_COMMON_RC_LOCAL}" \
-    "${XDG_CONFIG_HOME}" \
-    "${XDG_BIN_HOME}" \
-    "${XDG_CACHE_HOME}" \
     "${NREDF_CONFIG}" \
     "${NREDF_LRCACHE}" \
-    "${NREDF_LKCACHE}" \
-    "${XDG_DATA_HOME}" \
-    "${XDG_STATE_HOME}"; do
-    [[ -n "${NREDF_PATH}" && ! -d "${NREDF_PATH}" ]] && mkdir -p "${NREDF_PATH}"
-  done
-
-  for NREDF_PATH in \
-    "${XDG_CONFIG_HOME}/completion" \
-    "${XDG_CONFIG_HOME}/completion/bash" \
-    "${XDG_CONFIG_HOME}/completion/zsh" \
-    "${NREDF_CONFIG}/shell" \
-    "${NREDF_CONFIG}/shell/bash" \
-    "${NREDF_CONFIG}/shell/zsh" \
-    "${NREDF_CONFIG}/shell/common" \
-    "${NREDF_CONFIG}/shell/common/functions" \
-    "${NREDF_CONFIG}/shell/${NREDF_SHELL_NAME}" \
-    "${NREDF_CONFIG}/shell/${NREDF_SHELL_NAME}/functions" \
-    "${XDG_STATE_HOME}/nvim" \
-    "${XDG_STATE_HOME}/nvim/undo" \
-    "${XDG_STATE_HOME}/nvim/swap"; do
+    "${NREDF_LKCACHE}"; do
     [[ -n "${NREDF_PATH}" && ! -d "${NREDF_PATH}" ]] && mkdir -p "${NREDF_PATH}"
   done
 }

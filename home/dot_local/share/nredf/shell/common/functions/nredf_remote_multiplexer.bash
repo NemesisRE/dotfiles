@@ -4,7 +4,7 @@
 
 function _nredf_remote_multiplexer() {
   local HOSTNAME
-  local multiplexer_enabled="${NREDF_SHELL_GENERELL_MULTIPLEXER:-}"
+  local multiplexer_enabled="${NREDF_SHELL_MULTIPLEXER:-${NREDF_SHELL_GENERELL_MULTIPLEXER:-}}"
 
   if command -v hostname &>/dev/null; then
     HOSTNAME=$(hostname -s)

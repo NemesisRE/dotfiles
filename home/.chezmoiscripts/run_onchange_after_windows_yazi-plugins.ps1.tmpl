@@ -1,0 +1,4 @@
+{{ if and (eq .chezmoi.os "windows") (lookPath "ya") -}}
+# package.toml hash: {{ include "dot_config/yazi/package.toml.tmpl" | sha256sum }}
+& ya pkg install --discard *>$null
+{{ end -}}

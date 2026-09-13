@@ -1,0 +1,5 @@
+# Editor configuration defaults
+editor:
+  nvim:
+    relativenumber: false
+    number: true
