@@ -49,8 +49,9 @@ function NREDF_DailySync {
       } catch {}
     }
 
+    Write-Host "${bold}Syncing dotfiles and externals${reset}"
     try {
-      chezmoi apply -R
+      & chezmoi apply --refresh-externals --force
     } catch {
       Write-Warning "chezmoi apply failed: $_"
     }

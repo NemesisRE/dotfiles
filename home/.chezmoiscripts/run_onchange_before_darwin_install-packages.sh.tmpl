@@ -32,7 +32,7 @@ export HOMEBREW_NO_INSTALL_CLEANUP=1
 export HOMEBREW_QUIET=1
 
 echo "==> Installing and upgrading prerequisite packages via Homebrew bundle"
-brew bundle --upgrade --no-lock --file=/dev/stdin <<BREW_BUNDLE_EOF
+brew bundle install --force --file=- <<BREW_BUNDLE_EOF
 {{ range .packages.darwin.brews -}}
 brew {{ . | quote }}
 {{ end -}}

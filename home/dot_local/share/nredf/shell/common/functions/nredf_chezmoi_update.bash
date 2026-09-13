@@ -32,21 +32,23 @@ function _nredf_chezmoi_update() {
       LOCAL="$(git -C "${SRC}" rev-parse @ 2>/dev/null)"
       REMOTE="$(git -C "${SRC}" rev-parse '@{u}' 2>/dev/null)"
       if [[ -n "${REMOTE}" && "${LOCAL}" != "${REMOTE}" ]]; then
+        echo -e '\033[1mPulling dotfiles\033[0m'
+        git -C "${SRC}" pull --ff-only --quiet 2>/dev/null || true
         CHANGED=true
       fi
     fi
   fi
+
+  echo -e '\033[1mSyncing dotfiles and externals\033[0m'
+  chezmoi apply --refresh-externals --force 2>&1 || true
 
   # Write 24h throttle timestamp regardless of changes (don't re-fetch every shell)
   _nredf_last_run "" "true" "86400"
   _nredf_remove_lock
 
   if ${CHANGED}; then
-    echo -e '\033[1mPulling dotfiles\033[0m'
-    if chezmoi update --apply --force 2>&1; then
-      echo -e '\033[1mDotfiles updated — reloading shell\033[0m'
-      exec "${SHELL}"
-    fi
+    echo -e '\033[1mDotfiles updated from remote — reloading shell\033[0m'
+    exec "${SHELL}"
   fi
 }
 
