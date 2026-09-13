@@ -32,14 +32,6 @@ use = [
 pre  = 'DISABLE_AUTO_TITLE=true; HYPHEN_INSENSITIVE=true; DISABLE_AUTO_UPDATE=true; ENABLE_CORRECTION=false; HIST_STAMPS="dd.mm.yyyy"; ZSH_CUSTOM="${NREDF_RC_PATH:-${HOME}/.config/zsh}"; (( ${+functions[compdef]} )) || { autoload -Uz compinit; (( ${+functions[_nredf_compinit]} )) && _nredf_compinit -i || compinit -i; }'
 post = '[[ -f "${HOME}/.config/fzf/key-bindings.zsh" ]] && source "${HOME}/.config/fzf/key-bindings.zsh"'
 
-# ── enhancd (enhanced cd) ─────────────────────────────────────────────────────
-[plugins.enhancd]
-github = "babarot/enhancd"
-use = ["init.sh"]
-
-[plugins.enhancd.hooks]
-pre = "ENHANCD_DISABLE_HOME=1; ENHANCD_DISABLE_DOT=1"
-
 # ── fzf completions ───────────────────────────────────────────────────────────
 [plugins.fzf-zsh-completions]
 github = "chitoku-k/fzf-zsh-completions"

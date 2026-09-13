@@ -194,16 +194,26 @@ _nredf_step "atuin init"
 # FNM env — dynamic per-session multishell evaluation
 if command -v fnm &>/dev/null; then
   eval "$(fnm env --use-on-cd)"
+  # In bash, fnm aliases cd to __fnmcd which shadows functions and bypasses zoxide.
+  # Hook into PROMPT_COMMAND instead so zoxide can provide cd.
+  if [[ -n "${BASH_VERSION:-}" ]] && type __fnm_use_if_file_found &>/dev/null; then
+    unalias cd 2>/dev/null || true
+    if [[ "${PROMPT_COMMAND:-}" != *"__fnm_use_if_file_found"* ]]; then
+      PROMPT_COMMAND="${PROMPT_COMMAND:+${PROMPT_COMMAND};}__fnm_use_if_file_found"
+    fi
+  fi
 fi
 _nredf_step "fnm env"
 
 
-# Zoxide init — cache shell snippet for 24h
+# Zoxide init — replace cd with zoxide, keep z/zi as aliases (cache snippet for 24h)
 if command -v zoxide &>/dev/null; then
   _nredf_refresh_cached_shell_snippet \
-    "_nredf_zoxide_init_${NREDF_SHELL_NAME}" \
+    "_nredf_zoxide_init_cd_${NREDF_SHELL_NAME}" \
     "${XDG_CACHE_HOME}/nredf/init/zoxide.${NREDF_SHELL_NAME}.sh" \
-    zoxide init "${NREDF_SHELL_NAME}"
+    zoxide init "${NREDF_SHELL_NAME}" --cmd cd
+  alias z="cd" 2>/dev/null || true
+  alias zi="cdi" 2>/dev/null || true
 fi
 _nredf_step "zoxide init"
 
