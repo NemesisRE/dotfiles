@@ -48,6 +48,11 @@ if ($isWindows) {
     New-Item -ItemType Junction -Path $yaziAppDataConfig -Target $yaziConfigHome -Force -ErrorAction SilentlyContinue | Out-Null
   }
 
+  if (-not $ENV:HOME) { $ENV:HOME = $HOME }
+  if ([System.Environment]::GetEnvironmentVariable("HOME", [System.EnvironmentVariableTarget]::User) -ne $HOME) {
+    [System.Environment]::SetEnvironmentVariable("HOME", $HOME, [System.EnvironmentVariableTarget]::User)
+  }
+
   if (-not $ENV:XDG_CONFIG_HOME) { $ENV:XDG_CONFIG_HOME = "$HOME\.config" }
   if (-not $ENV:XDG_DATA_HOME) { $ENV:XDG_DATA_HOME = "$HOME\.local\share" }
 

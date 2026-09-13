@@ -258,6 +258,16 @@ Add-MpPreference -ExclusionPath "$env:LOCALAPPDATA\aquaproj-aqua"
 - **Root Cause**: On Windows, Yazi looks for configuration in `%APPDATA%\yazi\config\` unless `$env:YAZI_CONFIG_HOME` is set. Without this, Yazi ran with compiled-in preset defaults which map Windows `edit` to `code %s`.
 - **Resolution**: NREDF automatically sets `YAZI_CONFIG_HOME` to `$HOME\.config\yazi`, creates a directory junction from `%APPDATA%\yazi\config` to `$HOME\.config\yazi`, and configures explicit `[open]` prepend rules in [`yazi.toml.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/yazi/yazi.toml.tmpl) so all dotfiles (`.*`), source code, and text files route to `nvim`.
 
+### Neovim: AstroCommunity Packs & Tool Installation on Windows
+
+**1. Chezmoi Pack: "attempt to concatenate a nil value"**
+- **Root Cause**: `astrocommunity.pack.chezmoi` concatenates `os.getenv "HOME" .. "/.local/share/chezmoi"`. Because Windows defaults to `USERPROFILE` rather than `HOME`, `HOME` was unset (`nil`), causing a Lua runtime failure during lazy spec loading.
+- **Resolution**: NREDF automatically normalizes `vim.env.HOME = vim.env.USERPROFILE` at the top of Neovim's `init.lua`, persists `$env:HOME = $HOME` to Windows User environment variables, and configures Windows-compatible source paths (`%LOCALAPPDATA%\chezmoi`) in [`lua/plugins/chezmoi.lua`](file:///Users/skurz/Repos/chezmoi/home/dot_config/nvim/lua/plugins/chezmoi.lua).
+
+**2. Mason: "Installation failed for ansible-lint: Platform not supported"**
+- **Root Cause**: `ansible-lint` is an Ansible/Python CLI tool that requires POSIX APIs and does not natively support Windows. Mason's package registry explicitly restricts it to `supported_platforms: [unix]`.
+- **Resolution**: NREDF automatically filters `ansible-lint` out of Mason's automatic installer on Windows in [`lua/plugins/mason.lua`](file:///Users/skurz/Repos/chezmoi/home/dot_config/nvim/lua/plugins/mason.lua). The Ansible Language Server (`ansible-language-server` via npm) and syntax highlighting continue to work seamlessly on Windows, while `ansible-lint` is used when running in Linux/macOS/WSL.
+
 ---
 
 ## 🔄 Daily Commands

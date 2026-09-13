@@ -65,5 +65,10 @@ if (-not (Test-Path $yaziAppDataConfig)) {
     New-Item -ItemType Junction -Path $yaziAppDataConfig -Target $yaziConfigDir -Force -ErrorAction SilentlyContinue | Out-Null
 }
 
+# Normalize HOME environment variable on Windows
+if (-not $env:HOME) { $env:HOME = $HOME }
+[System.Environment]::SetEnvironmentVariable("HOME", $HOME, [System.EnvironmentVariableTarget]::User)
+Write-Host "    Configured HOME: $HOME"
+
 Write-Host "==> Windows prerequisites installed successfully."
 {{- end }}

@@ -221,6 +221,11 @@ if (-not (Test-Path $yaziAppDataConfig)) {
     New-Item -ItemType Junction -Path $yaziAppDataConfig -Target $yaziConfigDir -Force -ErrorAction SilentlyContinue | Out-Null
 }
 
+# ── Normalize HOME Environment Variable ──────────────────────────────────────
+if (-not $env:HOME) { $env:HOME = $HOME }
+[System.Environment]::SetEnvironmentVariable("HOME", $HOME, [System.EnvironmentVariableTarget]::User)
+Write-Info "Configured HOME: $HOME"
+
 # ── Configure SSH Agent (Bitwarden / OpenSSH) ─────────────────────────────────
 Write-Step "Checking SSH Agent"
 $bwPipe = "\\.\pipe\openssh-ssh-agent"

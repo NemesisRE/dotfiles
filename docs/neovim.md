@@ -273,3 +273,12 @@ chezmoi update
 aqua install
 ```
 
+### Q5: Windows: Chezmoi pack "attempt to concatenate a nil value"
+**Cause**: The upstream `astrocommunity.pack.chezmoi` hardcodes `os.getenv "HOME" .. "/.local/share/chezmoi"`. Windows does not set `$env:HOME` by default (it uses `USERPROFILE`), causing a fatal concatenation error when evaluating lazy specs.
+**Resolution**: NREDF automatically normalizes `vim.env.HOME = vim.env.USERPROFILE` at the start of `init.lua` and `community.lua`, persists `HOME` in Windows User environment variables, and configures cross-platform source directory paths (`%LOCALAPPDATA%\chezmoi`) in [`lua/plugins/chezmoi.lua`](file:///Users/skurz/Repos/chezmoi/home/dot_config/nvim/lua/plugins/chezmoi.lua).
+
+### Q6: Windows: "Installation failed for ansible-lint: Platform not supported"
+**Cause**: The upstream Ansible project and `ansible-lint` require POSIX primitives and do not support native Windows. In Mason's package registry, `ansible-lint` is strictly flagged as `supported_platforms: [unix]`.
+**Resolution**: In [`lua/plugins/mason.lua`](file:///Users/skurz/Repos/chezmoi/home/dot_config/nvim/lua/plugins/mason.lua), NREDF automatically filters out `ansible-lint` on Windows host environments while retaining the `ansible-language-server` (LSP), YAML schemas, and `ansible-vim` syntax highlighting. On Linux, macOS, and WSL, `ansible-lint` is installed and used normally.
+
+

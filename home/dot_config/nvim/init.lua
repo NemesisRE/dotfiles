@@ -1,3 +1,8 @@
+-- Ensure HOME environment variable is set on Windows for cross-platform plugins (e.g. chezmoi pack)
+if not vim.env.HOME and vim.env.USERPROFILE then
+  vim.env.HOME = vim.env.USERPROFILE
+end
+
 -- This file simply bootstraps the installation of Lazy.nvim and then calls other files for execution
 -- This file doesn't necessarily need to be touched, BE CAUTIOUS editing this file and proceed at your own risk.
 local lazypath = vim.env.LAZY or vim.fn.stdpath "data" .. "/lazy/lazy.nvim"
