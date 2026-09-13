@@ -182,6 +182,25 @@ You can verify your active profile junction anytime:
 Get-Item (Split-Path $PROFILE) | Select-Object FullName, LinkType, Target
 ```
 
+### Aqua: "remove a temporary file: The process cannot access the file because it is being used by another process" (WRN)
+When running `reload -d` or installing packages on Windows, you may occasionally see a warning:
+```text
+WRN remove a temporary file ... error="remove C:\Users\<user>\AppData\Local\Temp\<id>: The process cannot access the file because it is being used by another process."
+```
+
+**Root Cause**:
+Microsoft Defender's real-time file scanner (`MsMpEng.exe`) immediately opens a read handle on newly unpacked `.exe` binaries in `%TEMP%` to verify their safety. When aqua finishes moving the executable into `aquaproj-aqua\pkgs` and attempts to delete the temporary extraction folder, Defender is still scanning the file, triggering a Windows sharing violation (`ERROR_SHARING_VIOLATION`).
+
+**Impact**:
+This is a non-fatal warning (`WRN`). The package extraction and installation is already complete and functional. The residual file in `%TEMP%` is automatically cleaned up by Windows Storage Sense.
+
+**Resolution**:
+To eliminate the warning and speed up package downloads, add an exclusion for `aqua.exe` in Microsoft Defender (run PowerShell as Administrator):
+```powershell
+Add-MpPreference -ExclusionProcess "aqua.exe"
+Add-MpPreference -ExclusionPath "$env:LOCALAPPDATA\aquaproj-aqua"
+```
+
 ---
 
 ## 🔄 Daily Commands

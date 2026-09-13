@@ -8,12 +8,11 @@ $myDocs = [System.Environment]::GetFolderPath('MyDocuments')
 $homeDocs = Join-Path $HOME 'Documents'
 
 if ($myDocs -and ($myDocs.TrimEnd('\/') -ne $homeDocs.TrimEnd('\/'))) {
-    Write-Host "==> Detected redirected Documents folder: $myDocs"
-
     if (-not (Test-Path $myDocs)) {
         New-Item -ItemType Directory -Path $myDocs -Force | Out-Null
     }
 
+    $detectedPrinted = $false
     $foldersToLink = @('PowerShell', 'WindowsPowerShell')
     foreach ($folder in $foldersToLink) {
         $sourcePath = Join-Path $homeDocs $folder
@@ -36,6 +35,10 @@ if ($myDocs -and ($myDocs.TrimEnd('\/') -ne $homeDocs.TrimEnd('\/'))) {
         }
 
         if (-not $isLinked) {
+            if (-not $detectedPrinted) {
+                Write-Host "==> Detected redirected Documents folder: $myDocs"
+                $detectedPrinted = $true
+            }
             if (Test-Path $targetPath) {
                 $timestamp = (Get-Date -Format 'yyyyMMddHHmmss')
                 $backupPath = "${targetPath}.backup_${timestamp}"

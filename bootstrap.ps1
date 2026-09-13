@@ -172,6 +172,14 @@ if (Get-Command aqua -ErrorAction SilentlyContinue) {
         [System.Environment]::SetEnvironmentVariable("PATH", $newUserPath, [System.EnvironmentVariableTarget]::User)
     }
 
+    # Configure Microsoft Defender exclusions to prevent file locking issues during package downloads
+    if (([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        Write-Info "Configuring Microsoft Defender exclusions for aqua..."
+        Add-MpPreference -ExclusionProcess "aqua.exe" -ErrorAction SilentlyContinue
+        $aquaRoot = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA "aquaproj-aqua" } else { Join-Path $HOME ".local\share\aquaproj-aqua" }
+        Add-MpPreference -ExclusionPath $aquaRoot -ErrorAction SilentlyContinue
+    }
+
     & aqua install -a -l
 }
 
