@@ -43,8 +43,8 @@ Options:
 -f, [--full]                # Full refresh: clear caches + chezmoi/aqua/(zsh:sheldon)
 -l, [--last-run]            # Delete only 'Last Run Cache'
 -p, [--profile]             # Enable startup profiling (with timestamps for each step)
--h, [--help]                # Show this help
 -s SHELL, [--shell SHELL]   # Reload with a different shell
+-h, [--help]                # Show this help
 
 "
         return 0
