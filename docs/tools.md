@@ -15,8 +15,9 @@ All core CLI tools are declared centrally in [`home/dot_config/aquaproj-aqua/aqu
 | **CLI Replacements** | `lsd`, `bat`, `delta`, `ripgrep`, `fd` | Modern, colored replacements for `ls`, `cat`, `diff`, `grep`, `find` |
 | **Multiplexer** | `zellij` | Builtin modern terminal workspace & multiplexer |
 | **File Management** | `yazi` (`yy`) | Fast async terminal file manager with custom plugins |
-| **Git UI** | `lazygit` (`lg`) | Interactive terminal Git management |
-| **System & Containers** | `btop`, `ctop` | System resource & Docker container monitors |
+| **Git UI** | `lazygit` (`lzg` / `lg`) | Interactive terminal Git management |
+| **Containers & Logs** | `lazydocker` (`lzd`), `lazyjournal` (`lzj` / `lj`), `lnav` | Terminal UIs for Docker management, log aggregation, and SQL log analysis |
+| **System Monitoring** | `btop` | Real-time interactive system resource & process monitor |
 | **Kubernetes** | `kubectl`, `kubectx`, `kubens`, `k9s`, `helm` | Container orchestration, context switching, and TUI |
 
 ---
@@ -180,9 +181,9 @@ Use the `yy` alias in any shell to launch Yazi. When you exit with <kbd>q</kbd>,
 
 ---
 
-## 🌿 Terminal Git UI: LazyGit (`lg`)
+## 🌿 Terminal Git UI: LazyGit (`lzg` / `lg`)
 
-Launch interactive Git management with `lg` (or <kbd>Space</kbd> <kbd>g</kbd> <kbd>g</kbd> in Neovim).
+Launch interactive Git management with `lzg` or `lg` (or <kbd>Space</kbd> <kbd>g</kbd> <kbd>g</kbd> in Neovim).
 
 | Keybinding | Action |
 | :--- | :--- |
@@ -202,24 +203,65 @@ Configured with the **OneDark-Pro** color scheme and integrates with `delta` for
 
 ---
 
-## 📊 System & Container Monitoring: btop & ctop
+## 🐳 Container Management: lazydocker (`lzd`)
 
-### `btop`
-Real-time system monitor displaying CPU cores, memory, disk I/O, network bandwidth, and process tree:
+[lazydocker](https://github.com/jesseduffield/lazydocker) is an interactive terminal UI for both Docker and Docker Compose environments, aliased to `lzd`:
+
+| Keybinding | Action |
+| :--- | :--- |
+| <kbd>1</kbd> &ndash; <kbd>4</kbd> | Jump panels (Services/Containers, Images, Volumes, System) |
+| <kbd>Space</kbd> | Pause / Unpause container |
+| <kbd>r</kbd> | Restart container / service |
+| <kbd>s</kbd> | Stop container / service |
+| <kbd>d</kbd> | Remove container, image, or volume |
+| <kbd>m</kbd> | View logs (stream container logs in dedicated viewer) |
+| <kbd>e</kbd> | Exec into container (opens interactive shell) |
+| <kbd>[</kbd> / <kbd>]</kbd> | Previous / next tab in detailed panel (Logs, Stats, Config, Top) |
+| <kbd>b</kbd> | Open bulk commands menu (stop all, clean all, prune) |
+| <kbd>/</kbd> | Filter items in active list |
+| <kbd>?</kbd> | Open keybindings and help menu |
+| <kbd>q</kbd> | Quit lazydocker |
+
+---
+
+## 🪵 Log Analysis & Navigation: lazyjournal (`lzj` / `lj`) & lnav
+
+### 1. `lazyjournal` (`lzj` / `lj`)
+[lazyjournal](https://github.com/Lifailon/lazyjournal) is an all-in-one TUI for querying and navigating logs across multiple sources, aliased to `lzj` (and `lj`):
+- **Supported Sources**: Systemd `journald`, `auditd`, local log files, Docker/Podman containers, Docker Compose stacks, and Kubernetes pods.
+- **Key Features**: Live streaming, multi-level log syntax highlighting, regex filtering, and custom search queries.
+- **Keybindings**:
+  - <kbd>/</kbd>: Start search / regex query
+  - <kbd>f</kbd>: Open filter menu
+  - <kbd>h</kbd>: Toggle log highlighting
+  - <kbd>r</kbd>: Refresh / reload logs
+  - <kbd>?</kbd>: Open help cheat sheet
+  - <kbd>q</kbd>: Quit
+
+### 2. `lnav` (Log File Navigator)
+[lnav](https://lnav.org) is an advanced log viewer with an embedded SQLite query engine:
+- **Format Auto-Detection**: Automatically parses syslog, Apache, nginx, JSON logs, systemd, and more without manual setup.
+- **Timeline & Zoom**: Press <kbd>t</kbd> to view logs on a timeline; press <kbd>z</kbd> / <kbd>Z</kbd> to zoom in / out.
+- **Error Navigation**: Jump directly to errors with <kbd>e</kbd> (next error) and <kbd>E</kbd> (previous error), or warnings with <kbd>w</kbd> / <kbd>W</kbd>.
+- **Interactive Filtering**:
+  - <kbd>&amp;</kbd> `<pattern>`: Filter in (show only matching lines)
+  - <kbd>-</kbd> `<pattern>`: Filter out (hide matching lines)
+- **SQL Queries**: Query your structured log data in real time:
+  ```sql
+  ;SELECT log_time, log_level, log_message FROM log WHERE log_level = 'error' ORDER BY log_time DESC
+  ```
+
+---
+
+## 📊 System Resource Monitoring: btop
+
+[btop](https://github.com/aristocratos/btop) is an interactive real-time system monitor displaying CPU cores, memory, disk I/O, network bandwidth, and a process tree:
 - <kbd>m</kbd>: Open main menu / settings
 - <kbd>e</kbd>: Toggle process tree view
 - <kbd>f</kbd>: Filter processes by name
 - <kbd>k</kbd>: Send terminate/kill signal to selected process
 - <kbd>1</kbd> &ndash; <kbd>4</kbd>: Change sort criteria
 - <kbd>q</kbd>: Quit
-
-### `ctop`
-Top-like container resource monitoring for Docker:
-- Real-time metrics for CPU, memory, network, and disk I/O per container.
-- <kbd>Enter</kbd>: Open container menu (view logs, inspect, shell into container).
-- <kbd>s</kbd>: Change sort field.
-- <kbd>p</kbd>: Pause / unpause container.
-- <kbd>q</kbd>: Quit.
 
 ---
 

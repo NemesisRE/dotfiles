@@ -118,7 +118,9 @@ NREDF guarantees that common development commands behave identically regardless 
 | `tree` | `lsd --tree` | Recursive tree view with icons |
 | `cat` | `bat` | Syntax-highlighted output with OneDark-Pro theme |
 | `grep` | `rg` / `grep --color=auto` | Fast recursive ripgrep search |
-| `lg` | `lazygit` | Terminal UI for Git |
+| `lzg` / `lg` | `lazygit` | Terminal UI for Git |
+| `lzd` | `lazydocker` | Terminal UI for Docker and Docker Compose |
+| `lzj` / `lj` | `lazyjournal` | Terminal UI for multi-source log viewing & filtering |
 | `k` | `kubectl` | Kubernetes CLI shorthand |
 | `kctx` / `ctx` | `kubectx` | Fast Kubernetes context switcher |
 | `kns` / `ns` | `kubens` | Fast Kubernetes namespace switcher |

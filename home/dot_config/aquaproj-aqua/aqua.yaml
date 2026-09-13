@@ -113,7 +113,13 @@ packages:
   - name: aristocratos/btop@v1.4.7 # renovate: depName=aristocratos/btop
     tags:
       - default
-  - name: bcicen/ctop@v0.7.7 # renovate: depName=bcicen/ctop
+  - name: jesseduffield/lazydocker@v0.25.2 # renovate: depName=jesseduffield/lazydocker
+    tags:
+      - default
+  - name: Lifailon/lazyjournal@0.8.6 # renovate: depName=Lifailon/lazyjournal
+    tags:
+      - default
+  - name: tstack/lnav@v0.14.1 # renovate: depName=tstack/lnav
     tags:
       - default
   - name: JanDeDobbeleer/oh-my-posh@v31.2.1 # renovate: depName=JanDeDobbeleer/oh-my-posh

@@ -130,9 +130,12 @@ Aqua manages cross-platform developer tools on Windows without needing separate 
 | **ripgrep** | Fast recursive regex search | `rg` |
 | **bat** | Syntax-highlighting cat (OneDarkPro) | `bat` |
 | **lsd** | Modern file listing with icons | `lsd` |
-| **lazygit** | Terminal Git UI | `lazygit` / `lg` |
+| **lazygit** | Terminal Git UI | `lazygit` / `lzg` / `lg` |
 | **neovim** | Hyperextensible AstroNvim v6 editor | `nvim` |
 | **yazi** | Blazing fast terminal file manager | `yazi` / `yy` |
+| **lazydocker** | Terminal Docker & Compose UI | `lazydocker` / `lzd` |
+| **lazyjournal** | Multi-source log viewer & TUI | `lazyjournal` / `lzj` / `lj` |
+| **lnav** | Advanced log file navigator & SQL analyzer | `lnav` |
 | **btop** | System resource monitor | `btop` |
 | **zellij** | Builtin terminal workspace multiplexer | `zellij` |
 

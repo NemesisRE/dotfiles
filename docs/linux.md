@@ -31,7 +31,7 @@ NREDF manages native prerequisite packages automatically via [`home/.chezmoidata
 | **Fedora / RHEL** | `dnf` | `git`, `curl`, `zsh`, `kitty`, `fira-code-fonts` |
 | **Linuxbrew** | `brew` | Standalone Homebrew packages located at `/home/linuxbrew/.linuxbrew` |
 
-All developer CLI tools (such as `neovim`, `zellij`, `atuin`, `fzf`, `zoxide`, `lsd`, `bat`, `yazi`, `lazygit`, `btop`) are managed declaratively by **aqua** in `~/.config/aquaproj-aqua/aqua.yaml`, keeping system package manager pollution to a minimum.
+All developer CLI tools (such as `neovim`, `zellij`, `atuin`, `fzf`, `zoxide`, `lsd`, `bat`, `yazi`, `lazygit`, `lazydocker`, `lazyjournal`, `lnav`, `btop`) are managed declaratively by **aqua** in `~/.config/aquaproj-aqua/aqua.yaml`, keeping system package manager pollution to a minimum.
 
 ---
 

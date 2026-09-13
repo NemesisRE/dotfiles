@@ -18,9 +18,21 @@ if (Get-Command Select-KubeContext -ErrorAction SilentlyContinue) {
   function kctx { kubectl ctx @args }
 }
 
-# lazygit alias (matches bash/zsh lg)
+# lazygit alias (matches bash/zsh lzg, lg)
 if (Get-Command lazygit -ErrorAction SilentlyContinue) {
+  Set-Alias -Name lzg -Value lazygit -Option AllScope -Force
   Set-Alias -Name lg -Value lazygit -Option AllScope -Force
+}
+
+# lazydocker alias (matches bash/zsh lzd)
+if (Get-Command lazydocker -ErrorAction SilentlyContinue) {
+  Set-Alias -Name lzd -Value lazydocker -Option AllScope -Force
+}
+
+# lazyjournal alias (matches bash/zsh lzj, lj)
+if (Get-Command lazyjournal -ErrorAction SilentlyContinue) {
+  Set-Alias -Name lzj -Value lazyjournal -Option AllScope -Force
+  Set-Alias -Name lj -Value lazyjournal -Option AllScope -Force
 }
 
 # lsd aliases (matches bash/zsh ls, ll, la)
