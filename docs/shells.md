@@ -44,7 +44,7 @@ All three shells share a unified experience designed around modern developer erg
   - Target for Windows PowerShell 5.1: `Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` (dot-sources PowerShell 7 profile)
   - Linux/macOS: `~/.config/powershell` is symlinked directly to `~/Documents/PowerShell`
 - **Module Architecture (`NREDF-POSH`)**:
-  - `Defaults.ps1`: XDG paths, Aqua paths, Python paths, UTF-8 output encoding, default formatting, Zoxide init.
+  - `Defaults.ps1`: XDG paths, Aqua paths, Python paths, UTF-8 output encoding, default formatting.
   - `Modules.ps1`: Automated installation and importing of `posh-git`, `PSFzf`, `Terminal-Icons`, `PSKubeContext`, `GuiCompletion` (Windows), `Recycle` (Windows).
   - `Aliases.ps1`: Cross-platform command parity with Bash/Zsh.
   - `PSReadLine.ps1`: Keybindings, prediction source (`HistoryAndPlugin`), smart auto-pairing quotes.
@@ -201,7 +201,8 @@ Run `reload -p`. The output will display exact timing metrics for each component
   [ +12ms] NREDF_DailySync
   [ +28ms] PowerShell modules & PSFzf
   [  +6ms] Atuin init
-  [ +50ms] Total profile startup time
+  [  +4ms] zoxide init
+  [ +54ms] Total profile startup time
 ```
 Run `reload -p` a second time to turn off persistent profiling.
 

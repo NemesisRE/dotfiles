@@ -93,6 +93,21 @@ if (Get-Command atuin -ErrorAction SilentlyContinue) {
   NREDF_Step "Atuin init"
 }
 
+# Zoxide directory navigation integration (cross-platform, replace cd, keep z/zi aliases)
+# Must run after oh-my-posh so that zoxide's prompt hook wraps the final prompt function
+if (Get-Command zoxide -ErrorAction SilentlyContinue) {
+  try {
+    Remove-Variable __zoxide_hooked -Scope Global -ErrorAction SilentlyContinue
+    $zoxideInit = (& zoxide init powershell --cmd cd 2>$null | Out-String)
+    if (-not [string]::IsNullOrWhiteSpace($zoxideInit)) {
+      Invoke-Expression $zoxideInit
+      Set-Alias -Name z -Value cd -Option AllScope -Scope Global -Force -ErrorAction SilentlyContinue
+      Set-Alias -Name zi -Value cdi -Option AllScope -Scope Global -Force -ErrorAction SilentlyContinue
+    }
+  } catch {}
+  NREDF_Step "zoxide init"
+}
+
 # End of startup profiling
 if ($ENV:NREDF_PROFILE_STARTUP -eq '1') {
   $total = $global:_nredf_sw.ElapsedMilliseconds

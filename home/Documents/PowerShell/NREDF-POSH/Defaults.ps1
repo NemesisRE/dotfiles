@@ -170,17 +170,6 @@ if (-not [string]::IsNullOrEmpty($ENV:XDG_CONFIG_HOME)) {
   }
 }
 
-# Zoxide directory navigation integration (cross-platform, replace cd, keep z/zi aliases)
-if (Get-Command zoxide -ErrorAction SilentlyContinue) {
-  try {
-    $zoxideInit = (& zoxide init powershell --cmd cd 2>$null | Out-String)
-    if (-not [string]::IsNullOrWhiteSpace($zoxideInit)) {
-      Invoke-Expression $zoxideInit
-      Set-Alias -Name z -Value cd -Option AllScope -Scope Global -Force -ErrorAction SilentlyContinue
-      Set-Alias -Name zi -Value cdi -Option AllScope -Scope Global -Force -ErrorAction SilentlyContinue
-    }
-  } catch {}
-}
 
 # Editor defaults (cross-platform)
 if (Get-Command nvim -ErrorAction SilentlyContinue) {
