@@ -43,8 +43,6 @@ if [[ "${CURRENT_VERSION}" != "${TARGET_VERSION}" ]]; then
   echo "    Installing / updating Kitty to ${TARGET_VERSION} via upstream installer..."
   # Note: installer.sh automatically appends /kitty.app to dest, so dest must be ~/.local
   curl -sSfL https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin "installer=version-${TARGET_VERSION}" launch=n "dest=${HOME}/.local"
-else
-  echo "==> Upstream Kitty is up-to-date (${CURRENT_VERSION})."
 fi
 
 # Ensure symlinks in ~/.local/bin (in user PATH)
@@ -74,6 +72,15 @@ cat <<'QUAKE_EOF' > "${LOCAL_BIN}/kitty-quake"
 # Quake-mode / quick-access drop-down terminal helper for Kitty on Wayland
 set -euo pipefail
 
+# Dynamic Wayland socket detection if not already exported
+if [[ -z "${WAYLAND_DISPLAY:-}" ]]; then
+  for sock in "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"/wayland-*; do
+    if [[ -S "${sock}" ]]; then
+      export WAYLAND_DISPLAY="$(basename "${sock}")"
+      break
+    fi
+  done
+fi
 export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
 
 KITTEN_BIN="${HOME}/.local/kitty.app/bin/kitten"
@@ -99,11 +106,21 @@ Terminal=false
 Categories=System;TerminalEmulator;
 Keywords=terminal;quake;dropdown;quick-access;
 StartupNotify=false
+X-KDE-GlobalAccel-CommandShortcut=true
 DESKTOP_EOF
 
 if command -v update-desktop-database >/dev/null 2>&1; then
   update-desktop-database "${DESKTOP_DIR}" >/dev/null 2>&1 || true
 fi
+
+# Update KDE Sycoca database so KDE and KGlobalAccel immediately index kitty-quake.desktop
+if command -v kbuildsycoca6 >/dev/null 2>&1; then
+  kbuildsycoca6 --noincremental >/dev/null 2>&1 || true
+elif command -v kbuildsycoca5 >/dev/null 2>&1; then
+  kbuildsycoca5 --noincremental >/dev/null 2>&1 || true
+fi
+qdbus org.kde.KWin /KWin org.kde.KWin.reconfigure >/dev/null 2>&1 || true
+qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure >/dev/null 2>&1 || true
 
 {{- if and (ne $quakeKey "none") (ne $quakeKey "") }}
 # ── Global Shortcut Verification & Configuration ({{ $quakeKey }}) ────────────
@@ -126,8 +143,6 @@ if command -v kwriteconfig6 >/dev/null 2>&1 || command -v kwriteconfig5 >/dev/nu
     qdbus org.kde.KWin /KWin org.kde.KWin.reconfigure >/dev/null 2>&1 || true
     qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure >/dev/null 2>&1 || true
     systemctl --user restart plasma-kglobalaccel.service >/dev/null 2>&1 || true
-  else
-    echo "==> KDE Plasma global shortcut already active: {{ $quakeKey }} -> kitty-quake"
   fi
 elif [[ -f "${HOME}/.config/kglobalshortcutsrc" ]]; then
   # Direct configuration fallback if CLI tools are not installed
@@ -140,8 +155,6 @@ _k_friendly_name=Kitty Quake Terminal
 _launch={{ $quakeKey }},none,Kitty Quake Terminal
 KDE_EOF
     systemctl --user restart plasma-kglobalaccel.service >/dev/null 2>&1 || true
-  else
-    echo "==> KDE kglobalshortcutsrc already contains [kitty-quake.desktop]."
   fi
 fi
 
@@ -153,11 +166,10 @@ if command -v gsettings >/dev/null 2>&1 && [[ "${XDG_CURRENT_DESKTOP:-}" =~ [Gg]
     echo "==> Registering GNOME custom keybinding for kitty-quake"
     NEW_KB_LIST="$(echo "${CURRENT_KB_LIST}" | sed "s|]$|, '${GNOME_KB_PATH}']|; s|\[, |[|")"
     gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "${NEW_KB_LIST}" 2>/dev/null || true
+    gsettings set "org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:${GNOME_KB_PATH}" name "Kitty Quake Terminal" 2>/dev/null || true
+    gsettings set "org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:${GNOME_KB_PATH}" command "${LOCAL_BIN}/kitty-quake" 2>/dev/null || true
+    gsettings set "org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:${GNOME_KB_PATH}" binding "{{ $quakeKey }}" 2>/dev/null || true
   fi
-  gsettings set "org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:${GNOME_KB_PATH}" name "Kitty Quake Terminal" 2>/dev/null || true
-  gsettings set "org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:${GNOME_KB_PATH}" command "${LOCAL_BIN}/kitty-quake" 2>/dev/null || true
-  gsettings set "org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:${GNOME_KB_PATH}" binding "{{ $quakeKey }}" 2>/dev/null || true
-  echo "==> GNOME global shortcut verified: {{ $quakeKey }} -> kitty-quake"
 fi
 {{- else }}
 # Quake shortcut disabled; clearing any existing KDE shortcut for kitty-quake
@@ -169,8 +181,6 @@ elif command -v kwriteconfig5 >/dev/null 2>&1; then
   systemctl --user restart plasma-kglobalaccel.service >/dev/null 2>&1 || true
 fi
 {{- end }}
-
-echo "    Kitty active: $("${LOCAL_BIN}/kitty" --version 2>/dev/null || true) at $(command -v kitty 2>/dev/null || echo "${LOCAL_BIN}/kitty")"
 {{- end }}
 {{- end }}
 
