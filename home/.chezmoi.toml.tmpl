@@ -3,14 +3,45 @@
 {{- $dev := index . "dev" | default dict -}}
 {{- $shell := index . "shell" | default dict -}}
 {{- $ssh := index $shell "ssh" | default dict -}}
+{{- $kitty := index . "kitty" | default dict -}}
 
 {{- $name := promptStringOnce $git "name" "Git user name (user.name)" "Steven 'NemesisRE' Kurz" -}}
 {{- $email := promptStringOnce $git "email" "Git email address (user.email)" "nemesissre@gmail.com" -}}
 {{- $signingkey := promptStringOnce $git "signingkey" "Git signing key (SSH/GPG public key or path)" "" -}}
-{{- $gitFormat := promptChoiceOnce $git "format" "Git commit signing format" (list "ssh" "openpgp") "ssh" -}}
+
+{{- $rawGitFormat := promptStringOnce $git "format" "Git commit signing format [ssh, openpgp]" "ssh" -}}
+{{- $gitFormat := "ssh" -}}
+{{- if regexMatch "^(?i:o|openpgp|gpg)$" $rawGitFormat -}}
+{{-   $gitFormat = "openpgp" -}}
+{{- end -}}
+
 {{- $projects := promptStringOnce $dev "projects" "Projects directory" "~/Repos" -}}
-{{- $multiplexer := promptBoolOnce $shell "multiplexer" "Enable remote multiplexer (attach zellij on remote login)" true -}}
-{{- $sshAgent := promptChoiceOnce $ssh "agent" "SSH agent provider" (list "default" "bitwarden" "pipe" "gpg") "default" -}}
+
+{{- $rawMultiplexer := promptStringOnce $shell "multiplexer" "Enable remote multiplexer (attach zellij on remote login) [yes, no]" "yes" -}}
+{{- $multiplexer := true -}}
+{{- if regexMatch "^(?i:n|no|false|0)$" (print $rawMultiplexer) -}}
+{{-   $multiplexer = false -}}
+{{- end -}}
+
+{{- $rawSshAgent := promptStringOnce $ssh "agent" "SSH agent provider [default, bitwarden, pipe, gpg]" "default" -}}
+{{- $sshAgent := "default" -}}
+{{- if regexMatch "^(?i:b|bitwarden)$" $rawSshAgent -}}
+{{-   $sshAgent = "bitwarden" -}}
+{{- else if regexMatch "^(?i:p|pipe)$" $rawSshAgent -}}
+{{-   $sshAgent = "pipe" -}}
+{{- else if regexMatch "^(?i:g|gpg|gnupg)$" $rawSshAgent -}}
+{{-   $sshAgent = "gpg" -}}
+{{- end -}}
+
+{{- $rawKittyQuakeKey := promptStringOnce $kitty "quake_key" "Kitty Quake mode global shortcut key [F12, Pause, none]" "F12" -}}
+{{- $kittyQuakeKey := $rawKittyQuakeKey -}}
+{{- if regexMatch "^(?i:p|pause)$" $rawKittyQuakeKey -}}
+{{-   $kittyQuakeKey = "Pause" -}}
+{{- else if regexMatch "^(?i:n|none)$" $rawKittyQuakeKey -}}
+{{-   $kittyQuakeKey = "none" -}}
+{{- else if or (regexMatch "^(?i:f|f12)$" $rawKittyQuakeKey) (eq $rawKittyQuakeKey "") -}}
+{{-   $kittyQuakeKey = "F12" -}}
+{{- end -}}
 
 {{- if and (hasKey .chezmoi "workingTree") (ne .chezmoi.workingTree (joinPath .chezmoi.homeDir ".local/share/chezmoi")) }}
 sourceDir = {{ .chezmoi.workingTree | quote }}
@@ -30,3 +61,6 @@ sourceDir = {{ .chezmoi.workingTree | quote }}
 
 [data.shell.ssh]
     agent = {{ $sshAgent | quote }}
+
+[data.kitty]
+    quake_key = {{ $kittyQuakeKey | quote }}

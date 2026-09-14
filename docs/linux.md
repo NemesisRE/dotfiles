@@ -75,11 +75,18 @@ On Linux desktop environments, **Kitty** is the recommended GPU-accelerated term
 ### Quake-Mode (Quick Access Dropdown Terminal)
 NREDF includes pre-configured drop-down terminal settings in [`home/dot_config/kitty/quick-access-terminal.conf.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/kitty/quick-access-terminal.conf.tmpl) and installs a Wayland-aware wrapper script: `kitty-quake` (aliased to `kitty-quick-access`).
 
+* **Configuration Gate**: You can choose your preferred Quake toggle key (`F12`, `Pause`, or `none`) during `chezmoi init` or in `~/.config/chezmoi/chezmoi.toml`:
+  ```toml
+  [data.kitty]
+      quake_key = "Pause" # Options: "F12" (default), "Pause", or "none"
+  ```
+* **KDE Plasma (Automatic)**: Chezmoi automatically configures the global shortcut in KDE Plasma using `kwriteconfig` and restarts the shortcut daemon.
 * **Wayland Integration**: Automatically exports `WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"` so hotkey daemons and compositors can toggle the window reliably.
-* **Binding Global Shortcut**:
-  * **GNOME**: Go to *Settings → Keyboard → View and Customize Shortcuts → Custom Shortcuts*. Add a shortcut with command `kitty-quake` (or select *Kitty Quake Terminal*), e.g. bound to <kbd>F12</kbd> or <kbd>Ctrl</kbd>+<kbd>`</kbd>.
-  * **Sway**: Add to your config: `bindsym F12 exec ~/.local/bin/kitty-quake`
-  * **Hyprland**: Add to `hyprland.conf`: `bind = , F12, exec, ~/.local/bin/kitty-quake`
+* **Manual / Other Compositors**:
+  * **KDE Plasma (Manual)**: *System Settings → Keyboard → Shortcuts*, click **Add New** → **Add Application...**, select **Kitty Quake Terminal**, and set the shortcut.
+  * **GNOME**: Go to *Settings → Keyboard → View and Customize Shortcuts → Custom Shortcuts*. Add a shortcut with command `kitty-quake` (or select *Kitty Quake Terminal*), e.g. bound to <kbd>Pause</kbd> or <kbd>F12</kbd>.
+  * **Sway**: Add to your config: `bindsym Pause exec ~/.local/bin/kitty-quake`
+  * **Hyprland**: Add to `hyprland.conf`: `bind = , Pause, exec, ~/.local/bin/kitty-quake`
 
 ### Useful Kitty Shortcuts
 - <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd>: New window split

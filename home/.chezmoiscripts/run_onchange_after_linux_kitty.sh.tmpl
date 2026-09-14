@@ -1,8 +1,13 @@
 {{- if eq .chezmoi.os "linux" -}}
 {{- if not (.chezmoi.kernel.osrelease | lower | contains "microsoft") -}}
+{{- $quakeKey := "F12" -}}
+{{- if and (hasKey . "kitty") (hasKey .kitty "quake_key") -}}
+{{-   $quakeKey = .kitty.quake_key -}}
+{{- end -}}
 #!/usr/bin/env bash
 # chezmoi run_onchange_after — installs or updates standalone Kitty on Linux (excludes WSL)
 # kitty.yaml hash: {{ include ".chezmoidata/kitty.yaml" | sha256sum }}
+# quake_key: {{ $quakeKey }}
 
 set -euo pipefail
 
@@ -94,6 +99,30 @@ DESKTOP_EOF
 if command -v update-desktop-database >/dev/null 2>&1; then
   update-desktop-database "${DESKTOP_DIR}" >/dev/null 2>&1 || true
 fi
+
+{{- if and (ne $quakeKey "none") (ne $quakeKey "") }}
+# ── KDE Plasma Global Shortcut ({{ $quakeKey }}) ─────────────────────────────
+if command -v kwriteconfig6 >/dev/null 2>&1; then
+  echo "==> Configuring KDE Plasma 6 global shortcut: {{ $quakeKey }} -> kitty-quake"
+  kwriteconfig6 --file kglobalshortcutsrc --group "kitty-quake.desktop" --key "_k_friendly_name" "Kitty Quake Terminal"
+  kwriteconfig6 --file kglobalshortcutsrc --group "kitty-quake.desktop" --key "_launch" "{{ $quakeKey }},none,Kitty Quake Terminal"
+  systemctl --user restart plasma-kglobalaccel.service >/dev/null 2>&1 || true
+elif command -v kwriteconfig5 >/dev/null 2>&1; then
+  echo "==> Configuring KDE Plasma 5 global shortcut: {{ $quakeKey }} -> kitty-quake"
+  kwriteconfig5 --file kglobalshortcutsrc --group "kitty-quake.desktop" --key "_k_friendly_name" "Kitty Quake Terminal"
+  kwriteconfig5 --file kglobalshortcutsrc --group "kitty-quake.desktop" --key "_launch" "{{ $quakeKey }},none,Kitty Quake Terminal"
+  systemctl --user restart plasma-kglobalaccel.service >/dev/null 2>&1 || true
+fi
+{{- else }}
+# Quake shortcut disabled; clearing any existing KDE shortcut for kitty-quake
+if command -v kwriteconfig6 >/dev/null 2>&1; then
+  kwriteconfig6 --file kglobalshortcutsrc --group "kitty-quake.desktop" --key "_launch" "none,none,Kitty Quake Terminal"
+  systemctl --user restart plasma-kglobalaccel.service >/dev/null 2>&1 || true
+elif command -v kwriteconfig5 >/dev/null 2>&1; then
+  kwriteconfig5 --file kglobalshortcutsrc --group "kitty-quake.desktop" --key "_launch" "none,none,Kitty Quake Terminal"
+  systemctl --user restart plasma-kglobalaccel.service >/dev/null 2>&1 || true
+fi
+{{- end }}
 
 echo "    Kitty ready: $("${LOCAL_BIN}/kitty" --version 2>/dev/null || true)"
 {{- end }}
