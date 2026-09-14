@@ -1,0 +1,51 @@
+{{- $token := "" -}}
+{{- if and (hasKey . "secrets") (hasKey .secrets "aqua_github_token") -}}
+  {{- $ref := .secrets.aqua_github_token -}}
+  {{- if and $ref (not (env "CI")) (ne (env "NREDF_NO_BOOTSTRAP") "1") -}}
+    {{- if or (hasPrefix "bitwarden:" $ref) (hasPrefix "bw:" $ref) -}}
+      {{- if lookPath "bw" -}}
+        {{- $itemName := $ref | trimPrefix "bitwarden:" | trimPrefix "bw:" -}}
+        {{- $item := bitwarden "item" $itemName -}}
+        {{- if and (hasKey $item "login") (hasKey $item.login "password") (ne $item.login.password "") -}}
+          {{- $token = $item.login.password -}}
+        {{- else if hasKey $item "fields" -}}
+          {{- range $item.fields -}}
+            {{- if or (eq .name "token") (eq .name "aqua_github_token") (eq .name "password") -}}
+              {{- $token = .value -}}
+            {{- end -}}
+          {{- end -}}
+        {{- else if hasKey $item "notes" -}}
+          {{- $token = $item.notes -}}
+        {{- end -}}
+      {{- end -}}
+    {{- else if hasPrefix "keepassxc:" $ref -}}
+      {{- if lookPath "keepassxc-cli" -}}
+        {{- $entry := trimPrefix "keepassxc:" $ref -}}
+        {{- $item := keepassxc $entry -}}
+        {{- if and (hasKey $item "Password") (ne $item.Password "") -}}
+          {{- $token = $item.Password -}}
+        {{- else if and (hasKey $item "Notes") (ne $item.Notes "") -}}
+          {{- $token = $item.Notes -}}
+        {{- end -}}
+      {{- end -}}
+    {{- else if or (hasPrefix "onepassword:" $ref) (hasPrefix "op:" $ref) -}}
+      {{- if lookPath "op" -}}
+        {{- $itemName := $ref | trimPrefix "onepassword:" | trimPrefix "op:" -}}
+        {{- $item := onepassword "item" $itemName -}}
+        {{- if and (hasKey $item "password") (ne $item.password "") -}}
+          {{- $token = $item.password -}}
+        {{- else if hasKey $item "fields" -}}
+          {{- range $item.fields -}}
+            {{- if or (eq .id "password") (eq .id "token") (eq .label "password") (eq .label "token") -}}
+              {{- $token = .value -}}
+            {{- end -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+    {{- else -}}
+      {{- $token = $ref -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- $token | trim -}}
+

@@ -4,10 +4,47 @@
 {{- $shell := index . "shell" | default dict -}}
 {{- $ssh := index $shell "ssh" | default dict -}}
 {{- $kitty := index . "kitty" | default dict -}}
+{{- $secrets := index . "secrets" | default dict -}}
+
+{{- $rawProfile := promptStringOnce $secrets "profile" "Secrets profile preset [personal, work, custom, none]" "personal" -}}
+{{- $profile := "personal" -}}
+{{- if regexMatch "^(?i:w|work)$" $rawProfile -}}
+{{-   $profile = "work" -}}
+{{- else if regexMatch "^(?i:c|custom)$" $rawProfile -}}
+{{-   $profile = "custom" -}}
+{{- else if regexMatch "^(?i:n|none|false|0)$" $rawProfile -}}
+{{-   $profile = "none" -}}
+{{- end -}}
+
+{{- $defaultAquaToken := "" -}}
+{{- $defaultGitSigningKey := "" -}}
+{{- if eq $profile "personal" -}}
+{{-   $defaultAquaToken = "bitwarden:GitHub - Personal" -}}
+{{-   $defaultGitSigningKey = "bitwarden:SSH - Personal" -}}
+{{- else if eq $profile "work" -}}
+{{-   $defaultAquaToken = "bitwarden:GitHub - Personal" -}}
+{{-   $defaultGitSigningKey = "keepassxc:Work/Git Signing Key" -}}
+{{- end -}}
+
+{{- $aquaToken := "" -}}
+{{- $gitSigningKey := "" -}}
+{{- $keepassDb := index $secrets "keepassxc_db" | default "" -}}
+
+{{- if ne $profile "none" -}}
+{{-   $aquaToken = promptStringOnce $secrets "aqua_github_token" "Aqua GitHub token URI or value" $defaultAquaToken -}}
+{{-   $gitSigningKey = promptStringOnce $secrets "git_signing_key" "Git signing key URI or value" $defaultGitSigningKey -}}
+{{-   if or (eq $profile "work") (hasPrefix "keepassxc:" $aquaToken) (hasPrefix "keepassxc:" $gitSigningKey) -}}
+{{-     $keepassDb = promptStringOnce $secrets "keepassxc_db" "KeePassXC database path (e.g. ~/Documents/Work/work.kdbx)" "~/Documents/Work/work.kdbx" -}}
+{{-   end -}}
+{{- end -}}
 
 {{- $name := promptStringOnce $git "name" "Git user name (user.name)" "Steven 'NemesisRE' Kurz" -}}
 {{- $email := promptStringOnce $git "email" "Git email address (user.email)" "nemesissre@gmail.com" -}}
-{{- $signingkey := promptStringOnce $git "signingkey" "Git signing key (SSH/GPG public key or path)" "" -}}
+{{- $signingkeyPrompt := "Git signing key (SSH/GPG public key or path)" -}}
+{{- if ne $gitSigningKey "" -}}
+{{-   $signingkeyPrompt = "Git signing key (leave blank to resolve from secret store)" -}}
+{{- end -}}
+{{- $signingkey := promptStringOnce $git "signingkey" $signingkeyPrompt "" -}}
 
 {{- $rawGitFormat := promptStringOnce $git "format" "Git commit signing format [ssh, openpgp]" "ssh" -}}
 {{- $gitFormat := "ssh" -}}
@@ -81,3 +118,34 @@ sourceDir = {{ .chezmoi.workingTree | quote }}
 
 [data.kitty]
     quake_key = {{ $kittyQuakeKey | quote }}
+
+[data.secrets]
+    profile = {{ $profile | quote }}
+    aqua_github_token = {{ $aquaToken | quote }}
+    git_signing_key = {{ $gitSigningKey | quote }}
+{{- if ne $keepassDb "" }}
+    keepassxc_db = {{ $keepassDb | quote }}
+{{- end }}
+
+{{- $needBitwarden := or (hasPrefix "bitwarden:" $aquaToken) (hasPrefix "bw:" $aquaToken) (hasPrefix "bitwarden:" $gitSigningKey) (hasPrefix "bw:" $gitSigningKey) (eq $profile "personal") }}
+{{- if $needBitwarden }}
+[bitwarden]
+    command = "bw"
+    unlock = "auto"
+{{- end }}
+
+{{- $needKeepassxc := and (ne $keepassDb "") (or (hasPrefix "keepassxc:" $aquaToken) (hasPrefix "keepassxc:" $gitSigningKey) (eq $profile "work")) }}
+{{- if $needKeepassxc }}
+[keepassxc]
+    command = "keepassxc-cli"
+    database = {{ $keepassDb | quote }}
+    prompt = true
+{{- end }}
+
+{{- $needOnepassword := or (hasPrefix "onepassword:" $aquaToken) (hasPrefix "op:" $aquaToken) (hasPrefix "onepassword:" $gitSigningKey) (hasPrefix "op:" $gitSigningKey) }}
+{{- if $needOnepassword }}
+[onepassword]
+    command = "op"
+    prompt = true
+{{- end }}
+

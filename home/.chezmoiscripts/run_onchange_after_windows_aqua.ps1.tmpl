@@ -16,6 +16,17 @@ foreach ($p in @($localBin, $aquaBin)) {
         $env:PATH = "$p;$env:PATH"
     }
 }
+$aquaEnv = Join-Path $HOME ".config\nredf\aqua.env"
+if (Test-Path $aquaEnv) {
+    Get-Content $aquaEnv | ForEach-Object {
+        $line = $_.Trim()
+        if ($line -and -not $line.StartsWith('#') -and $line -match '^([^=]+)=(.*)$') {
+            $varName = $matches[1].Trim()
+            $varVal = $matches[2].Trim().Trim('"').Trim("'")
+            [System.Environment]::SetEnvironmentVariable($varName, $varVal, [System.EnvironmentVariableTarget]::Process)
+        }
+    }
+}
 
 if (Get-Command aqua -ErrorAction SilentlyContinue) {
     $aquaConfig = Join-Path $HOME ".config\aquaproj-aqua\aqua.yaml"

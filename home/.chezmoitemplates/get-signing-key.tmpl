@@ -1,0 +1,52 @@
+{{- $signingKey := "" -}}
+{{- if and (hasKey . "git") (hasKey .git "signingkey") -}}
+  {{- $signingKey = .git.signingkey -}}
+{{- end -}}
+{{- if and (not $signingKey) (hasKey . "secrets") (hasKey .secrets "git_signing_key") -}}
+  {{- $ref := .secrets.git_signing_key -}}
+  {{- if and $ref (not (env "CI")) (ne (env "NREDF_NO_BOOTSTRAP") "1") -}}
+    {{- if or (hasPrefix "bitwarden:" $ref) (hasPrefix "bw:" $ref) -}}
+      {{- if lookPath "bw" -}}
+        {{- $itemName := $ref | trimPrefix "bitwarden:" | trimPrefix "bw:" -}}
+        {{- $item := bitwarden "item" $itemName -}}
+        {{- if and (hasKey $item "sshKey") (hasKey $item.sshKey "publicKey") -}}
+          {{- $signingKey = $item.sshKey.publicKey -}}
+        {{- else if and (hasKey $item "notes") (regexMatch "^(ssh-|ecdsa-)" $item.notes) -}}
+          {{- $signingKey = $item.notes -}}
+        {{- else if hasKey $item "fields" -}}
+          {{- range $item.fields -}}
+            {{- if or (eq .name "publicKey") (eq .name "public_key") (eq .name "git_signing_key") -}}
+              {{- $signingKey = .value -}}
+            {{- end -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+    {{- else if hasPrefix "keepassxc:" $ref -}}
+      {{- if lookPath "keepassxc-cli" -}}
+        {{- $entry := trimPrefix "keepassxc:" $ref -}}
+        {{- $item := keepassxc $entry -}}
+        {{- if and (hasKey $item "Notes") (regexMatch "^(ssh-|ecdsa-)" $item.Notes) -}}
+          {{- $signingKey = $item.Notes -}}
+        {{- else -}}
+          {{- $signingKey = keepassxcAttribute $entry "public_key" -}}
+        {{- end -}}
+      {{- end -}}
+    {{- else if or (hasPrefix "onepassword:" $ref) (hasPrefix "op:" $ref) -}}
+      {{- if lookPath "op" -}}
+        {{- $itemName := $ref | trimPrefix "onepassword:" | trimPrefix "op:" -}}
+        {{- $item := onepassword "item" $itemName -}}
+        {{- if hasKey $item "fields" -}}
+          {{- range $item.fields -}}
+            {{- if or (eq .id "public_key") (eq .label "public key") (eq .label "public_key") -}}
+              {{- $signingKey = .value -}}
+            {{- end -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+    {{- else -}}
+      {{- $signingKey = $ref -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- $signingKey | trim -}}
+
