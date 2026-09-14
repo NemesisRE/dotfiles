@@ -21,12 +21,3 @@ if (Test-Path "$ENV:PROFILE_PATH\Functions") {
   }
 }
 NREDF_Step "Functions/*.ps1"
-Get-ChildItem -Path "$ENV:NREDF_PATH\Completions" -Filter '*.ps1' | ForEach-Object {
-  . $_.FullName
-}
-if (Test-Path "$ENV:PROFILE_PATH\Completions") {
-  Get-ChildItem -Path "$ENV:PROFILE_PATH\Completions" -Filter '*.ps1' | ForEach-Object {
-    . $_.FullName
-  }
-}
-NREDF_Step "Completions/*.ps1"

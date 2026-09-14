@@ -12,12 +12,12 @@ All three shells share a unified experience designed around modern developer erg
 | :--- | :--- | :--- | :--- |
 | **Prompt Engine** | [Oh-My-Posh](https://ohmyposh.dev) (`OneDark-Pro`) | [Oh-My-Posh](https://ohmyposh.dev) (`OneDark-Pro`) | [Oh-My-Posh](https://ohmyposh.dev) (`OneDark-Pro`) |
 | **History Sync & Search** | [Atuin](https://atuin.sh) (<kbd>Ctrl</kbd>+<kbd>r</kbd>) | [Atuin](https://atuin.sh) (<kbd>Ctrl</kbd>+<kbd>r</kbd>) | [Atuin](https://atuin.sh) (<kbd>Ctrl</kbd>+<kbd>r</kbd>, <kbd>UpArrow</kbd>) |
-| **Fuzzy Finding** | `fzf` (<kbd>Ctrl</kbd>+<kbd>t</kbd>, <kbd>Alt</kbd>+<kbd>c</kbd>) | `fzf` (<kbd>Ctrl</kbd>+<kbd>t</kbd>, <kbd>Alt</kbd>+<kbd>c</kbd>) | `PSFzf` (<kbd>Ctrl</kbd>+<kbd>t</kbd>, <kbd>Alt</kbd>+<kbd>c</kbd>) |
+| **Fuzzy Finding** | `fzf` (<kbd>Ctrl</kbd>+<kbd>t</kbd>, <kbd>Alt</kbd>+<kbd>c</kbd>) | `fzf` (<kbd>Ctrl</kbd>+<kbd>t</kbd>, <kbd>Alt</kbd>+<kbd>c</kbd>) | `fzf` (<kbd>Ctrl</kbd>+<kbd>t</kbd>, <kbd>Alt</kbd>+<kbd>c</kbd>) |
 | **Directory Navigation** | `zoxide` hooked to `cd`, `z`, `zi` | `zoxide` hooked to `cd`, `z`, `zi` | `zoxide` hooked to `cd`, `z`, `zi` |
 | **Syntax Highlighting** | `fast-syntax-highlighting` | `ble.sh` (Bash Line Editor) | `PSReadLine` |
 | **Inline Autosuggestions**| `zsh-autosuggestions` | `ble.sh` inline suggestions | `PSReadLine` (`HistoryAndPlugin`) |
 | **Auto-Pairing Quotes** | `zsh-autopair` | `ble.sh` auto-complete | Custom `PSReadLine` chord (`"`, `'`) |
-| **Plugin Manager** | [Sheldon](https://sheldon.cli.rs) | Git-cloned `ble.sh` | `Install-Module` via `NREDF-POSH` |
+| **Plugin Manager** | [Sheldon](https://sheldon.cli.rs) | Git-cloned `ble.sh` | None required (100% native CLI tooling) |
 | **Environment Sync** | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) |
 | **Startup Profiling** | `reload -p` / `NREDF_PROFILE_STARTUP=1` | `reload -p` / `NREDF_PROFILE_STARTUP=1` | `reload -p` / `NREDF_PROFILE_STARTUP=1` |
 
@@ -45,9 +45,9 @@ All three shells share a unified experience designed around modern developer erg
   - Linux/macOS: `~/.config/powershell` is symlinked directly to `~/Documents/PowerShell`
 - **Module Architecture (`NREDF-POSH`)**:
   - `Defaults.ps1`: XDG paths, Aqua paths, Python paths, UTF-8 output encoding, default formatting.
-  - `Modules.ps1`: Automated installation and importing of `posh-git`, `PSFzf`, `Terminal-Icons`, `PSKubeContext`, `GuiCompletion` (Windows), `Recycle` (Windows).
+  - `Modules.ps1`: Zero external PowerShell modules required; hooks local overrides if configured.
   - `Aliases.ps1`: Cross-platform command parity with Bash/Zsh.
-  - `PSReadLine.ps1`: Keybindings, prediction source (`HistoryAndPlugin`), smart auto-pairing quotes.
+  - `PSReadLine.ps1`: Keybindings, prediction source (`HistoryAndPlugin`), native `fzf` integration, smart auto-pairing quotes.
   - `Functions.ps1`: Utility functions (`reload`, `sudo`, `md5`, `sha256`, `NREDF_DailySync`).
 
 ---
@@ -89,14 +89,14 @@ All three shells share a unified experience designed around modern developer erg
 
 ---
 
-### 3. PowerShell Keyboard Shortcuts (PSReadLine & PSFzf)
+### 3. PowerShell Keyboard Shortcuts (PSReadLine & fzf)
 
 | Shortcut | Function | Description |
 | :--- | :--- | :--- |
-| <kbd>Tab</kbd> | Interactive Completion | **Windows**: `GuiCompletion` popup; **Linux/macOS**: `Invoke-FzfTabCompletion` |
+| <kbd>Tab</kbd> | MenuComplete | Interactive terminal completion menu across all platforms |
 | <kbd>Ctrl</kbd> + <kbd>r</kbd> / <kbd>&uarr;</kbd> | Atuin History Search | Full-screen interactive history search powered by Atuin |
-| <kbd>Ctrl</kbd> + <kbd>t</kbd> | PSFzf File Search | Fuzzy search files with `bat` syntax preview |
-| <kbd>Alt</kbd> + <kbd>c</kbd> / <kbd>Option</kbd>+<kbd>c</kbd> | PSFzf CD | Fuzzy search directories with `lsd` tree preview and jump |
+| <kbd>Ctrl</kbd> + <kbd>t</kbd> | fzf File Search | Fuzzy search files with `bat` syntax preview |
+| <kbd>Alt</kbd> + <kbd>c</kbd> / <kbd>Option</kbd>+<kbd>c</kbd> | fzf CD | Fuzzy search directories with `lsd` tree preview and jump |
 | <kbd>Ctrl</kbd> + <kbd>d</kbd> | ViExit | Exit session if buffer is empty |
 | <kbd>Alt</kbd> + <kbd>d</kbd> | ShellKillWord | Delete next word forward |
 | <kbd>Alt</kbd> + <kbd>Backspace</kbd> | ShellBackwardKillWord | Delete previous word backward |

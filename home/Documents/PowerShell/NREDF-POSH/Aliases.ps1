@@ -2,17 +2,13 @@
 if (Get-Command kubectl -ErrorAction SilentlyContinue) {
   Set-Alias -Name k -Value kubectl -Option AllScope -Force
 }
-if (Get-Command Select-KubeNamespace -ErrorAction SilentlyContinue) {
-  Set-Alias -Name kns -Value Select-KubeNamespace -Option AllScope -Force
-} elseif (Get-Command kubens -ErrorAction SilentlyContinue) {
+if (Get-Command kubens -ErrorAction SilentlyContinue) {
   Set-Alias -Name kns -Value kubens -Option AllScope -Force
 } elseif (Get-Command kubectl -ErrorAction SilentlyContinue) {
   function kns { kubectl ns @args }
 }
 
-if (Get-Command Select-KubeContext -ErrorAction SilentlyContinue) {
-  Set-Alias -Name kctx -Value Select-KubeContext -Option AllScope -Force
-} elseif (Get-Command kubectx -ErrorAction SilentlyContinue) {
+if (Get-Command kubectx -ErrorAction SilentlyContinue) {
   Set-Alias -Name kctx -Value kubectx -Option AllScope -Force
 } elseif (Get-Command kubectl -ErrorAction SilentlyContinue) {
   function kctx { kubectl ctx @args }

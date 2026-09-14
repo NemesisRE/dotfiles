@@ -9,6 +9,7 @@ $pathSep = [System.IO.Path]::PathSeparator
 if ($isWindows) {
   $ENV:NREDF_CACHE = "$ENV:LOCALAPPDATA\nredf"
   $ENV:NREDF_LRCACHE = "$ENV:NREDF_CACHE\LRCache"
+  $ENV:NREDF_INITCACHE = "$ENV:NREDF_CACHE\init"
   # Configure Yazi's required 'file' MIME-type detector on Windows (shipped with Git for Windows)
   $yaziFileCandidates = @(
     $ENV:YAZI_FILE_ONE,
@@ -111,6 +112,7 @@ if ($isLinux -or $IsMacOS) {
   $ENV:XDG_STATE_HOME = "$HOME/.local/state"
   $ENV:NREDF_CACHE = "$ENV:XDG_CACHE_HOME/nredf"
   $ENV:NREDF_LRCACHE = "$ENV:NREDF_CACHE/LRCache"
+  $ENV:NREDF_INITCACHE = "$ENV:NREDF_CACHE/init"
 
   $extraPaths = @(
     "$ENV:XDG_BIN_HOME",

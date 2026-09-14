@@ -63,7 +63,7 @@ NREDF supports multiple shells on Windows with shared aliases, history, and mode
 ### 1. PowerShell 7+ (`pwsh`) & Windows PowerShell 5.1
 - **PowerShell 7+**: `Documents\PowerShell\Microsoft.PowerShell_profile.ps1`
 - **Windows PowerShell 5.1**: `Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` (dot-sources PowerShell 7 profile)
-- Includes `posh-git`, `PSFzf`, `Terminal-Icons`, `GuiCompletion`, and `Atuin` history search.
+- 100% native CLI tooling: `fzf` (<kbd>Ctrl</kbd>+<kbd>t</kbd>, <kbd>Alt</kbd>+<kbd>c</kbd>), `lsd`, `bat`, `Atuin` history search, and `MenuComplete`.
 
 ### 2. Bash & Zsh on Windows
 - **WSL (Windows Subsystem for Linux)**: Full Linux environment running native Bash (ble.sh) or Zsh (Sheldon).
@@ -96,14 +96,14 @@ reload -s cmd          # Switch to Command Prompt
 
 ---
 
-### 2. PowerShell (PSReadLine & PSFzf) Shortcuts
+### 2. PowerShell (PSReadLine & fzf) Shortcuts
 
 | Shortcut | Function | Description |
 | :--- | :--- | :--- |
-| <kbd>Tab</kbd> | GuiCompletion | Rich interactive popup completion menu |
+| <kbd>Tab</kbd> | MenuComplete | Interactive terminal completion menu |
 | <kbd>Ctrl</kbd> + <kbd>r</kbd> / <kbd>&uarr;</kbd> | Atuin History | Interactive fuzzy history search across all your machines |
-| <kbd>Ctrl</kbd> + <kbd>t</kbd> | PSFzf File Search | Fuzzy find files with syntax-highlighted `bat` preview |
-| <kbd>Alt</kbd> + <kbd>c</kbd> | PSFzf CD | Fuzzy find directories with `lsd --tree` preview and jump |
+| <kbd>Ctrl</kbd> + <kbd>t</kbd> | fzf File Search | Fuzzy find files with syntax-highlighted `bat` preview |
+| <kbd>Alt</kbd> + <kbd>c</kbd> | fzf CD | Fuzzy find directories with `lsd --tree` preview and jump |
 | <kbd>Ctrl</kbd> + <kbd>d</kbd> | ViExit | Exit session if buffer is empty |
 | <kbd>Alt</kbd> + <kbd>d</kbd> | ShellKillWord | Delete next word forward |
 | <kbd>Alt</kbd> + <kbd>Backspace</kbd> | ShellBackwardKillWord | Delete previous word backward |

@@ -36,7 +36,23 @@ if (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {
     if (Test-Path $candidate) { $ompConfig = $candidate }
   }
 
-  if ($ompConfig) {
+  $ompInitFile = Join-Path $ENV:NREDF_INITCACHE 'omp.pwsh.ps1'
+  $ompSnippet = if (Get-Command NREDF_RefreshCachedShellSnippet -ErrorAction SilentlyContinue) {
+    NREDF_RefreshCachedShellSnippet -CacheKey 'omp_init_pwsh' -CacheFile $ompInitFile -Generator {
+      $raw = if ($ompConfig) {
+        & oh-my-posh init pwsh --config "$ompConfig" 2>$null | Out-String
+      } else {
+        & oh-my-posh init pwsh 2>$null | Out-String
+      }
+      $raw -replace '\$env:POSH_SESSION_ID\s*=\s*"[^"]+";?\s*', ''
+    }
+  } else { $null }
+
+  if ($ompSnippet) {
+    $env:POSH_SESSION_ID = [System.Guid]::NewGuid().ToString()
+    if ($ompConfig) { $env:POSH_CONFIG = $ompConfig }
+    . $ompSnippet
+  } elseif ($ompConfig) {
     (& oh-my-posh init pwsh --config "$ompConfig" | Out-String) | Invoke-Expression
   } else {
     (& oh-my-posh init pwsh | Out-String) | Invoke-Expression
@@ -58,34 +74,29 @@ if (-not $ENV:CHEZMOI -and (Get-Command NREDF_DailySync -ErrorAction SilentlyCon
   NREDF_Step "NREDF_DailySync"
 }
 
-if ($Env:TERM_PROGRAM -ne 'vscode') {
+# Optional local module importing (only runs if custom modules are defined in $PROFILE_PATH\Modules.ps1)
+if ($Env:TERM_PROGRAM -ne 'vscode' -and $MODULES -and $MODULES.Count -gt 0) {
   NREDF_InstallModules ${MODULES}
   NREDF_UpdateModule
   NREDF_ImportModules ${MODULES}
-
-  # PSFzf settings (configured after module import)
-  if (Get-Command Set-PsFzfOption -ErrorAction SilentlyContinue) {
-    if (Get-Command atuin -ErrorAction SilentlyContinue) {
-      Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t' -PSReadlineChordChangeDirectory 'Alt+c'
-    } else {
-      Set-PsFzfOption -PSReadlineChordProvider 'Ctrl+t' -PSReadlineChordReverseHistory 'Ctrl+r' -PSReadlineChordChangeDirectory 'Alt+c'
-    }
-
-    # On macOS, Option+c can produce ç or ©
-    if ($IsMacOS) {
-      if (Get-Command Invoke-FzfPsReadlineHandlerSetLocation -ErrorAction SilentlyContinue) {
-        Set-PSReadLineKeyHandler -Chord 'ç' -ScriptBlock { Invoke-FzfPsReadlineHandlerSetLocation } -ErrorAction SilentlyContinue
-        Set-PSReadLineKeyHandler -Chord '©' -ScriptBlock { Invoke-FzfPsReadlineHandlerSetLocation } -ErrorAction SilentlyContinue
-      }
-    }
-  }
-  NREDF_Step "PowerShell modules & PSFzf"
+  NREDF_Step "PowerShell modules"
 }
 
 # Atuin shell history integration (matches bash & zsh, bound to both Ctrl+r and UpArrow)
 if (Get-Command atuin -ErrorAction SilentlyContinue) {
   if (-not (Get-Module -Name Atuin -ErrorAction SilentlyContinue)) {
-    (& atuin init powershell | Out-String) | Invoke-Expression
+    $atuinInitFile = Join-Path $ENV:NREDF_INITCACHE 'atuin.pwsh.ps1'
+    $atuinSnippet = if (Get-Command NREDF_RefreshCachedShellSnippet -ErrorAction SilentlyContinue) {
+      NREDF_RefreshCachedShellSnippet -CacheKey 'atuin_init_pwsh' -CacheFile $atuinInitFile -Generator {
+        & atuin init powershell 2>$null | Out-String
+      }
+    } else { $null }
+
+    if ($atuinSnippet) {
+      . $atuinSnippet
+    } else {
+      (& atuin init powershell | Out-String) | Invoke-Expression
+    }
   }
   if (Get-Command Enable-AtuinSearchKeys -ErrorAction SilentlyContinue) {
     Enable-AtuinSearchKeys -CtrlR $true -UpArrow $true
@@ -98,12 +109,23 @@ if (Get-Command atuin -ErrorAction SilentlyContinue) {
 if (Get-Command zoxide -ErrorAction SilentlyContinue) {
   try {
     Remove-Variable __zoxide_hooked -Scope Global -ErrorAction SilentlyContinue
-    $zoxideInit = (& zoxide init powershell --cmd cd 2>$null | Out-String)
-    if (-not [string]::IsNullOrWhiteSpace($zoxideInit)) {
-      Invoke-Expression $zoxideInit
-      Set-Alias -Name z -Value cd -Option AllScope -Scope Global -Force -ErrorAction SilentlyContinue
-      Set-Alias -Name zi -Value cdi -Option AllScope -Scope Global -Force -ErrorAction SilentlyContinue
+    $zoxideInitFile = Join-Path $ENV:NREDF_INITCACHE 'zoxide.pwsh.ps1'
+    $zoxideSnippet = if (Get-Command NREDF_RefreshCachedShellSnippet -ErrorAction SilentlyContinue) {
+      NREDF_RefreshCachedShellSnippet -CacheKey 'zoxide_init_pwsh' -CacheFile $zoxideInitFile -Generator {
+        & zoxide init powershell --cmd cd 2>$null | Out-String
+      }
+    } else { $null }
+
+    if ($zoxideSnippet) {
+      . $zoxideSnippet
+    } else {
+      $zoxideInit = (& zoxide init powershell --cmd cd 2>$null | Out-String)
+      if (-not [string]::IsNullOrWhiteSpace($zoxideInit)) {
+        Invoke-Expression $zoxideInit
+      }
     }
+    Set-Alias -Name z -Value cd -Option AllScope -Scope Global -Force -ErrorAction SilentlyContinue
+    Set-Alias -Name zi -Value cdi -Option AllScope -Scope Global -Force -ErrorAction SilentlyContinue
   } catch {}
   NREDF_Step "zoxide init"
 }

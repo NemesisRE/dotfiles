@@ -95,6 +95,11 @@ Options:
     if (-not [string]::IsNullOrEmpty($ENV:NREDF_LRCACHE) -and (Test-Path -Path $ENV:NREDF_LRCACHE)) {
       Remove-Item -Path $ENV:NREDF_LRCACHE -Recurse -Force -ErrorAction SilentlyContinue
     }
+    if ($Cache -or $Full) {
+      if (-not [string]::IsNullOrEmpty($ENV:NREDF_INITCACHE) -and (Test-Path -Path $ENV:NREDF_INITCACHE)) {
+        Remove-Item -Path $ENV:NREDF_INITCACHE -Recurse -Force -ErrorAction SilentlyContinue
+      }
+    }
   }
 
   if ($Downloads) {
