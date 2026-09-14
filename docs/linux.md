@@ -26,9 +26,9 @@ NREDF manages native prerequisite packages automatically via [`home/.chezmoidata
 
 | Distribution | Package Manager | Core Prerequisites Managed |
 | :--- | :--- | :--- |
-| **Debian / Ubuntu** | `apt` | `git`, `curl`, `zsh`, `kitty`, `fonts-firacode`, `build-essential` (C/C++ compiler for Tree-sitter), `socat` |
-| **Arch Linux** | `pacman` | `git`, `curl`, `zsh`, `kitty`, `ttf-firacode-nerd`, `base-devel` (C/C++ compiler for Tree-sitter), `socat` |
-| **Fedora / RHEL** | `dnf` | `git`, `curl`, `zsh`, `kitty`, `fira-code-fonts`, `gcc`, `gcc-c++`, `make` (for Tree-sitter), `socat` |
+| **Debian / Ubuntu** | `apt` | `git`, `curl`, `zsh`, `fonts-firacode`, `build-essential` (C/C++ compiler for Tree-sitter), `socat` |
+| **Arch Linux** | `pacman` | `git`, `curl`, `zsh`, `ttf-firacode-nerd`, `base-devel` (C/C++ compiler for Tree-sitter), `socat` |
+| **Fedora / RHEL** | `dnf` | `git`, `curl`, `zsh`, `fira-code-fonts`, `gcc`, `gcc-c++`, `make` (for Tree-sitter), `socat` |
 | **Linuxbrew** | `brew` | Standalone Homebrew packages located at `/home/linuxbrew/.linuxbrew` |
 
 All developer CLI tools (such as `neovim`, `zellij`, `atuin`, `fzf`, `zoxide`, `lsd`, `bat`, `yazi`, `lazygit`, `lazydocker`, `lazyjournal`, `lnav`, `btop`, `uv`, `ruff`, `ouch`) are managed declaratively by **aqua** in `~/.config/aquaproj-aqua/aqua.yaml`, keeping system package manager pollution to a minimum (Python is managed standalone via `uv`, and all archive compression/decompression via `ouch`).
@@ -64,10 +64,22 @@ reload -s pwsh   # Switch to PowerShell
 ## 🪟 Terminal Emulation (Kitty)
 
 On Linux desktop environments, **Kitty** is the recommended GPU-accelerated terminal emulator:
+- **Upstream Installation**: Managed standalone via the official installer to `~/.local/kitty.app` with binaries linked to `~/.local/bin/` (version pinned in [`.chezmoidata/kitty.yaml`](file:///Users/skurz/Repos/chezmoi/home/.chezmoidata/kitty.yaml) and kept current with Renovate). This avoids severely outdated distribution packages (like Debian/Ubuntu `apt`).
+- **Desktop & Icon Integration**: Chezmoi automatically creates and patches `kitty.desktop` and icons in `~/.local/share/applications` and `~/.local/share/icons`.
+- **WSL Excluded**: Kitty installation is automatically skipped on WSL environments (where Windows Terminal on the host OS is used).
 - **Font**: Configured with `FiraMono Nerd Font Mono` (or `FiraCode Nerd Font`).
 - **Theme**: Automatically imports the matching **OneDark-Pro** theme (`~/.config/kitty/current-theme.conf`).
 - **Scrollback**: 10,000 lines with smart trailing space stripping.
 - **Copy on Select**: Text selected with mouse is copied to system clipboard automatically (`copy_on_select clipboard`).
+
+### Quake-Mode (Quick Access Dropdown Terminal)
+NREDF includes pre-configured drop-down terminal settings in [`home/dot_config/kitty/quick-access-terminal.conf.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/kitty/quick-access-terminal.conf.tmpl) and installs a Wayland-aware wrapper script: `kitty-quake` (aliased to `kitty-quick-access`).
+
+* **Wayland Integration**: Automatically exports `WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"` so hotkey daemons and compositors can toggle the window reliably.
+* **Binding Global Shortcut**:
+  * **GNOME**: Go to *Settings → Keyboard → View and Customize Shortcuts → Custom Shortcuts*. Add a shortcut with command `kitty-quake` (or select *Kitty Quake Terminal*), e.g. bound to <kbd>F12</kbd> or <kbd>Ctrl</kbd>+<kbd>`</kbd>.
+  * **Sway**: Add to your config: `bindsym F12 exec ~/.local/bin/kitty-quake`
+  * **Hyprland**: Add to `hyprland.conf`: `bind = , F12, exec, ~/.local/bin/kitty-quake`
 
 ### Useful Kitty Shortcuts
 - <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Enter</kbd>: New window split

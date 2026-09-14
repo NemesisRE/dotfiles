@@ -75,6 +75,17 @@
         "tag:\\s*(?<currentValue>v[0-9][^\\s#]*)\\s*#\\s*renovate:\\s*depName=(?<depName>[^\\s]+)"
       ],
       "datasourceTemplate": "github-tags"
+    },
+    {
+      "customType": "regex",
+      "description": "Update kitty release version in kitty.yaml",
+      "managerFilePatterns": [
+        "/^(home\\/)?\\.chezmoidata\\/kitty\\.yaml$/"
+      ],
+      "matchStrings": [
+        "version:\\s*\"?(?<currentValue>v[0-9][^\\s#\"]*)\"?\\s*#\\s*renovate:\\s*depName=(?<depName>[^\\s]+)"
+      ],
+      "datasourceTemplate": "github-tags"
     }
   ]
 }

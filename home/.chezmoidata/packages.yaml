@@ -27,7 +27,6 @@ packages:
       - git
       - curl
       - zsh
-      - kitty
       - fonts-firacode
       - build-essential
       - socat
@@ -35,7 +34,6 @@ packages:
       - git
       - curl
       - zsh
-      - kitty
       - ttf-firacode-nerd
       - base-devel
       - socat
@@ -43,7 +41,6 @@ packages:
       - git
       - curl
       - zsh
-      - kitty
       - fira-code-fonts
       - gcc
       - gcc-c++

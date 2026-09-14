@@ -1,0 +1,101 @@
+{{- if eq .chezmoi.os "linux" -}}
+{{- if not (.chezmoi.kernel.osrelease | lower | contains "microsoft") -}}
+#!/usr/bin/env bash
+# chezmoi run_onchange_after — installs or updates standalone Kitty on Linux (excludes WSL)
+# kitty.yaml hash: {{ include ".chezmoidata/kitty.yaml" | sha256sum }}
+
+set -euo pipefail
+
+# Skip in CI or when the user explicitly opts out.
+[[ -n "${CI:-}" ]] && exit 0
+[[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
+
+# Runtime safety check: skip if running inside WSL
+if [[ -n "${WSL_DISTRO_NAME:-}" || -n "${WSL_INTEROP:-}" ]] || grep -qi microsoft /proc/version 2>/dev/null; then
+  echo "==> WSL detected; skipping Kitty installation."
+  exit 0
+fi
+
+LOCAL_BIN="${HOME}/.local/bin"
+KITTY_APP="${HOME}/.local/kitty.app"
+DESKTOP_DIR="${XDG_DATA_HOME:-${HOME}/.local/share}/applications"
+ICONS_DIR="${XDG_DATA_HOME:-${HOME}/.local/share}/icons/hicolor/256x256/apps"
+TARGET_VERSION="{{ trimPrefix "v" .kitty.version }}"
+
+mkdir -p "${LOCAL_BIN}" "${DESKTOP_DIR}" "${ICONS_DIR}"
+
+CURRENT_VERSION=""
+if [[ -x "${KITTY_APP}/bin/kitty" ]]; then
+  CURRENT_VERSION="$("${KITTY_APP}/bin/kitty" --version 2>/dev/null | awk '{print $2}' || true)"
+fi
+
+if [[ "${CURRENT_VERSION}" != "${TARGET_VERSION}" ]]; then
+  echo "==> Installing / updating Kitty to ${TARGET_VERSION} via upstream installer..."
+  curl -sSfL https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin "installer=version-${TARGET_VERSION}" launch=n "dest=${KITTY_APP}"
+else
+  echo "==> Upstream Kitty is already up-to-date (${CURRENT_VERSION})."
+fi
+
+# Ensure symlinks in ~/.local/bin (in user PATH)
+ln -sf "${KITTY_APP}/bin/kitty" "${LOCAL_BIN}/kitty"
+ln -sf "${KITTY_APP}/bin/kitten" "${LOCAL_BIN}/kitten"
+
+# Ensure desktop entries and icon
+if [[ -f "${KITTY_APP}/share/applications/kitty.desktop" ]]; then
+  cp -f "${KITTY_APP}/share/applications/kitty.desktop" "${DESKTOP_DIR}/kitty.desktop"
+  sed -i "s|^Exec=kitty|Exec=${LOCAL_BIN}/kitty|g" "${DESKTOP_DIR}/kitty.desktop"
+  sed -i "s|^Icon=kitty|Icon=${ICONS_DIR}/kitty.png|g" "${DESKTOP_DIR}/kitty.desktop"
+fi
+
+if [[ -f "${KITTY_APP}/share/applications/kitty-open.desktop" ]]; then
+  cp -f "${KITTY_APP}/share/applications/kitty-open.desktop" "${DESKTOP_DIR}/kitty-open.desktop"
+  sed -i "s|^Exec=kitty|Exec=${LOCAL_BIN}/kitty|g" "${DESKTOP_DIR}/kitty-open.desktop"
+  sed -i "s|^Icon=kitty|Icon=${ICONS_DIR}/kitty.png|g" "${DESKTOP_DIR}/kitty-open.desktop"
+fi
+
+if [[ -f "${KITTY_APP}/share/icons/hicolor/256x256/apps/kitty.png" ]]; then
+  cp -f "${KITTY_APP}/share/icons/hicolor/256x256/apps/kitty.png" "${ICONS_DIR}/kitty.png"
+fi
+
+# ── Wayland Quake-Mode / Quick-Access Terminal Helper ────────────────────────
+echo "==> Setting up Kitty Quake-mode helper script"
+cat <<'QUAKE_EOF' > "${LOCAL_BIN}/kitty-quake"
+#!/usr/bin/env bash
+# Quake-mode / quick-access drop-down terminal helper for Kitty on Wayland
+set -euo pipefail
+
+export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
+
+KITTEN_BIN="${HOME}/.local/kitty.app/bin/kitten"
+if [[ ! -x "${KITTEN_BIN}" ]]; then
+  KITTEN_BIN="$(command -v kitten 2>/dev/null || echo "${HOME}/.local/bin/kitten")"
+fi
+
+exec "${KITTEN_BIN}" quick-access-terminal "$@"
+QUAKE_EOF
+chmod +x "${LOCAL_BIN}/kitty-quake"
+ln -sf "${LOCAL_BIN}/kitty-quake" "${LOCAL_BIN}/kitty-quick-access"
+
+# Desktop launcher for Quake-mode terminal (for desktop shortcut pickers)
+cat <<DESKTOP_EOF > "${DESKTOP_DIR}/kitty-quake.desktop"
+[Desktop Entry]
+Type=Application
+Name=Kitty Quake Terminal
+GenericName=Quick Access Terminal
+Comment=Toggle Quake-style drop-down terminal
+Exec=${LOCAL_BIN}/kitty-quake
+Icon=${ICONS_DIR}/kitty.png
+Terminal=false
+Categories=System;TerminalEmulator;
+Keywords=terminal;quake;dropdown;quick-access;
+StartupNotify=false
+DESKTOP_EOF
+
+if command -v update-desktop-database >/dev/null 2>&1; then
+  update-desktop-database "${DESKTOP_DIR}" >/dev/null 2>&1 || true
+fi
+
+echo "    Kitty ready: $("${LOCAL_BIN}/kitty" --version 2>/dev/null || true)"
+{{- end }}
+{{- end }}
+
