@@ -1,6 +1,7 @@
 # Shell defaults
 shell:
   multiplexer: true
+  wsl_multiplexer: false
   aqua:
     vacuum_days: 30
   ssh:

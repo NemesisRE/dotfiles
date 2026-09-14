@@ -89,6 +89,12 @@ Enter scroll mode, then press:
 #### 5. Locked Mode (<kbd>Ctrl</kbd> + <kbd>g</kbd>)
 Press <kbd>Ctrl</kbd> + <kbd>g</kbd> to lock Zellij. All keystrokes pass directly to inner applications (such as Neovim or remote shells) without collision. Press <kbd>Ctrl</kbd> + <kbd>g</kbd> again to unlock.
 
+### Automatic Startup & Session Attachment
+- **Remote SSH Sessions**: When connecting over SSH, NREDF automatically attaches or creates a host-named Zellij session (enabled by default; controlled by `shell.multiplexer` / `NREDF_SHELL_MULTIPLEXER`).
+- **WSL Sessions**: On Windows Subsystem for Linux (WSL), automatic multiplexer attachment is **disabled by default** so terminal tabs behave as independent native shells. You can opt in by:
+  - Running `chezmoi init --prompt && chezmoi apply` and enabling the WSL multiplexer prompt (or setting `wsl_multiplexer = true` under `[data.shell]` in `~/.config/chezmoi/chezmoi.toml`).
+  - Exporting `export NREDF_SHELL_WSL_MULTIPLEXER=true` in `~/.bashrc.local` or `~/.zshrc.local`.
+
 ---
 
 ## 📜 Encrypted Shell History: Atuin

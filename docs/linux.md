@@ -118,6 +118,9 @@ In WSL 1/2, NREDF can bridge your Windows SSH Agent (e.g. Bitwarden Desktop or W
   winget install albertony.npiperelay
   ```
   In WSL, NREDF automatically detects `npiperelay.exe` and establishes the relay socket.
+- **Terminal Multiplexer (Zellij)**: Automatic Zellij startup is disabled by default on WSL so terminal tabs open directly into your shell. To have Zellij auto-attach on WSL:
+  - Run `chezmoi init --prompt && chezmoi apply` and answer `yes` to the WSL multiplexer prompt (or set `wsl_multiplexer = true` in `~/.config/chezmoi/chezmoi.toml` under `[data.shell]`).
+  - Alternatively, set `export NREDF_SHELL_WSL_MULTIPLEXER=true` in `~/.bashrc.local` or `~/.zshrc.local`.
 
 ---
 

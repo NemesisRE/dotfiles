@@ -20,10 +20,15 @@ function _nredf_chezmoi_update() {
   if [[ -n "${NREDF_PROFILE_STARTUP:-}" || -n "${NREDF_VERBOSE:-}" ]]; then
     echo -e '\033[1mUpdating dotfiles and externals via chezmoi\033[0m'
   fi
-  chezmoi update --refresh-externals --force >/dev/null 2>&1 || true
-
-  # Write 24h throttle timestamp (don't re-fetch every shell)
-  _nredf_last_run "" "true" "86400"
+  local _chezmoi_err=""
+  if _chezmoi_err="$(chezmoi update --refresh-externals --force 2>&1)"; then
+    # Write 24h throttle timestamp (don't re-fetch every shell)
+    _nredf_last_run "" "true" "86400"
+  else
+    if [[ -n "${_chezmoi_err}" ]]; then
+      printf '\033[1;33m⚠ chezmoi update failed: %s\033[0m\n' "${_chezmoi_err}" >&2
+    fi
+  fi
   _nredf_remove_lock
 }
 
@@ -39,9 +44,12 @@ function _nredf_chezmoi_upgrade() {
     return 0
   fi
 
-  echo -e '\033[1mUpgrading chezmoi\033[0m'
-  chezmoi upgrade --quiet >/dev/null 2>&1 || true
-  # Write 24h throttle timestamp (don't re-check every shell)
-  _nredf_last_run "" "true" "86400"
+  if [[ -n "${NREDF_PROFILE_STARTUP:-}" || -n "${NREDF_VERBOSE:-}" ]]; then
+    echo -e '\033[1mUpgrading chezmoi\033[0m'
+  fi
+  if chezmoi upgrade --quiet 2>/dev/null; then
+    # Write 24h throttle timestamp (don't re-check every shell)
+    _nredf_last_run "" "true" "86400"
+  fi
   _nredf_remove_lock
 }

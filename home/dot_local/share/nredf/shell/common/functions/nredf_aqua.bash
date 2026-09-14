@@ -213,8 +213,9 @@ function _nredf_aqua_vacuum() {
   if [[ -n "${NREDF_PROFILE_STARTUP:-}" || -n "${NREDF_VERBOSE:-}" ]]; then
     echo -e '\033[1mVacuuming aqua packages\033[0m'
   fi
-  aqua vacuum -d "${_nredf_vacuum_days}" >/dev/null 2>&1 || true
-  _nredf_last_run "" "true" "${NREDF_24H_INTERVAL:-86400}"
+  if aqua vacuum -d "${_nredf_vacuum_days}" >/dev/null 2>&1; then
+    _nredf_last_run "" "true" "${NREDF_24H_INTERVAL:-86400}"
+  fi
   _nredf_remove_lock
 }
 
@@ -233,7 +234,8 @@ function _nredf_aqua_update() {
   if [[ -n "${NREDF_PROFILE_STARTUP:-}" || -n "${NREDF_VERBOSE:-}" ]]; then
     echo -e '\033[1mUpdating aqua\033[0m'
   fi
-  aqua update-aqua >/dev/null 2>&1 || true
-  _nredf_last_run "" "true" "${NREDF_24H_INTERVAL:-86400}"
+  if aqua update-aqua >/dev/null 2>&1; then
+    _nredf_last_run "" "true" "${NREDF_24H_INTERVAL:-86400}"
+  fi
   _nredf_remove_lock
 }

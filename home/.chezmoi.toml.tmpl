@@ -23,6 +23,22 @@
 {{-   $multiplexer = false -}}
 {{- end -}}
 
+{{- $isWsl := false -}}
+{{- if or (env "WSL_DISTRO_NAME") (env "WSL_INTEROP") (and (eq .chezmoi.os "linux") (hasKey .chezmoi "kernel") (hasKey .chezmoi.kernel "osrelease") (.chezmoi.kernel.osrelease | regexMatch "(?i:microsoft|wsl)")) -}}
+{{-   $isWsl = true -}}
+{{- end -}}
+
+{{- $rawWslMultiplexer := "no" -}}
+{{- if or $isWsl (hasKey $shell "wsl_multiplexer") -}}
+{{-   $rawWslMultiplexer = promptStringOnce $shell "wsl_multiplexer" "Enable multiplexer on WSL (attach zellij on WSL startup) [yes, no]" "no" -}}
+{{- else -}}
+{{-   $rawWslMultiplexer = index $shell "wsl_multiplexer" | default "no" -}}
+{{- end -}}
+{{- $wslMultiplexer := false -}}
+{{- if regexMatch "^(?i:y|yes|true|1)$" (print $rawWslMultiplexer) -}}
+{{-   $wslMultiplexer = true -}}
+{{- end -}}
+
 {{- $rawSshAgent := promptStringOnce $ssh "agent" "SSH agent provider [default, bitwarden, pipe, gpg]" "default" -}}
 {{- $sshAgent := "default" -}}
 {{- if regexMatch "^(?i:b|bitwarden)$" $rawSshAgent -}}
@@ -58,6 +74,7 @@ sourceDir = {{ .chezmoi.workingTree | quote }}
 
 [data.shell]
     multiplexer = {{ $multiplexer }}
+    wsl_multiplexer = {{ $wslMultiplexer }}
 
 [data.shell.ssh]
     agent = {{ $sshAgent | quote }}
