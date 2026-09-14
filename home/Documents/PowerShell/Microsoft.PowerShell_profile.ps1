@@ -1,5 +1,9 @@
 # Load NRE Dotfiles
-$ENV:PROFILE_PATH = (Get-Item $PROFILE).Directory
+if ($global:_NREDF_LOADED -and -not $global:_NREDF_RELOAD) { return }
+$global:_NREDF_LOADED = $true
+
+$scriptDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $PROFILE }
+$ENV:PROFILE_PATH = $scriptDir
 if (-not (Test-Path (Join-Path $ENV:PROFILE_PATH 'NREDF-POSH'))) {
   $altProfilePath = Join-Path (Join-Path $HOME 'Documents') 'PowerShell'
   if (Test-Path (Join-Path $altProfilePath 'NREDF-POSH')) {

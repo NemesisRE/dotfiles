@@ -179,7 +179,19 @@ Options:
     $pwsh = if ([System.Environment]::ProcessPath) { [System.Environment]::ProcessPath } else { (Get-Process -Id $PID).Path }
     Switch-Process -WithCommand $pwsh, '-NoLogo'
   } else {
-    . $global:PROFILE
+    $global:_NREDF_RELOAD = $true
+    $targetProfile = $global:PROFILE
+    if (-not (Test-Path -LiteralPath $targetProfile)) {
+      $localProfile = Join-Path (Join-Path $HOME 'Documents') 'PowerShell\Microsoft.PowerShell_profile.ps1'
+      if (Test-Path -LiteralPath $localProfile) {
+        $targetProfile = $localProfile
+      }
+    }
+    try {
+      . $targetProfile
+    } finally {
+      $global:_NREDF_RELOAD = $false
+    }
   }
 }
 

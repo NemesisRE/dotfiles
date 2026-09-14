@@ -212,18 +212,28 @@ By default, Windows blocks script execution. Update your execution policy for yo
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
-### OneDrive Documents Redirection
-If OneDrive Known Folder Move redirects your `Documents` folder (e.g. `C:\Users\<user>\OneDrive\Documents` or localized `C:\Users\<user>\OneDrive\Dokumente`), PowerShell resolves `$PROFILE` to the redirected path.
+### Redirected Documents (OneDrive & Corporate SMB Network Shares)
+In Windows environments, your `Documents` folder may be redirected away from `$HOME\Documents`:
 
-**This is handled automatically.**
-- `bootstrap.ps1` and chezmoi's post-apply hook (`.chezmoiscripts/run_after_windows_sync-profiles.ps1.tmpl`) detect when `[System.Environment]::GetFolderPath('MyDocuments')` differs from `$HOME\Documents`.
-- They automatically create NTFS directory junctions (`PowerShell` and `WindowsPowerShell`) pointing from OneDrive's Documents folder to `$HOME\Documents\PowerShell`.
-- Directory junctions do **not** require Developer Mode or Administrator privileges.
-- Any preexisting unlinked profile directory is safely backed up with a timestamp before creating the junction.
+1. **OneDrive Known Folder Move** (e.g. `C:\Users\<user>\OneDrive\Documents`):
+   - PowerShell resolves `$PROFILE` to the OneDrive path.
+   - `bootstrap.ps1` and chezmoi's post-apply hook (`.chezmoiscripts/run_after_windows_sync-profiles.ps1.tmpl`) automatically create NTFS directory junctions (`PowerShell` and `WindowsPowerShell`) pointing from OneDrive's Documents folder to `$HOME\Documents\PowerShell`.
+   - Directory junctions are local NTFS reparse points that do not require Administrator privileges.
 
-You can verify your active profile junction anytime:
+2. **Corporate Network / SMB Shares** (e.g. `\\server\home$\<user>\Documents` or mapped drive `H:\...`):
+   - NTFS junctions and remote symlinks cannot be created across network shares, and corporate file servers (FSRM) frequently block `.ps1` scripts on network shares or trigger "Access is denied".
+   - NREDF dotfiles automatically detect UNC / network paths and install an **AllUsers profile trampoline** into `$PROFILE.AllUsersCurrentHost` (`C:\Program Files\PowerShell\7\Microsoft.PowerShell_profile.ps1` and Windows PowerShell 5.1).
+   - This trampoline automatically sources your local profile (`$HOME\Documents\PowerShell\Microsoft.PowerShell_profile.ps1`) before PowerShell evaluates the remote network profile.
+   - **Isolated UAC Elevation**: If running unprivileged, the script requests standard UAC elevation *solely* to install the AllUsers trampoline files without elevating the rest of the dotfiles process.
+   - **Non-Admin Fallback**: If you lack administrator rights, you can configure your terminal to load your local profile directly:
+     - **Windows Terminal (`settings.json`)**:
+       `"commandline": "pwsh.exe -NoExit -Command \". '$env:USERPROFILE\\Documents\\PowerShell\\Microsoft.PowerShell_profile.ps1'\""`
+     - **VS Code (`settings.json`)**:
+       `"terminal.integrated.profiles.windows": { "PowerShell": { "path": "pwsh.exe", "args": ["-NoExit", "-Command", ". '${env:USERPROFILE}\\Documents\\PowerShell\\Microsoft.PowerShell_profile.ps1'"] } }`
+
+You can verify your active profile anytime:
 ```powershell
-Get-Item (Split-Path $PROFILE) | Select-Object FullName, LinkType, Target
+$PROFILE | Format-List *
 ```
 
 ### Aqua: "remove a temporary file: The process cannot access the file because it is being used by another process" (WRN)

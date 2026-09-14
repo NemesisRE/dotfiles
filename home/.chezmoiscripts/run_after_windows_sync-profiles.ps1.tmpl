@@ -1,5 +1,5 @@
 {{- if eq .chezmoi.os "windows" -}}
-# chezmoi run_after Windows hook — ensures PowerShell profiles in redirected Documents (e.g. OneDrive) are linked.
+# chezmoi run_after Windows hook — ensures PowerShell profiles in redirected Documents (e.g. OneDrive or SMB) are linked/loaded.
 # Runs automatically after `chezmoi apply` or `chezmoi update`.
 
 $ErrorActionPreference = 'Continue'
@@ -8,63 +8,189 @@ $myDocs = [System.Environment]::GetFolderPath('MyDocuments')
 $homeDocs = Join-Path $HOME 'Documents'
 
 if ($myDocs -and ($myDocs.TrimEnd('\/') -ne $homeDocs.TrimEnd('\/'))) {
-    if (-not (Test-Path $myDocs)) {
-        New-Item -ItemType Directory -Path $myDocs -Force | Out-Null
+    # Detect whether Documents is on an SMB / UNC share or a mapped network drive
+    $isUnc = $myDocs.StartsWith('\\') -or ([System.Uri]::new($myDocs).IsUnc)
+    $isNetworkDrive = $false
+    if (-not $isUnc -and $myDocs.Length -ge 2 -and $myDocs[1] -eq ':') {
+        try {
+            $driveLetter = $myDocs.Substring(0, 1)
+            $driveInfo = [System.IO.DriveInfo]::new($driveLetter)
+            $isNetworkDrive = ($driveInfo.DriveType -eq [System.IO.DriveType]::Network)
+        } catch {}
     }
+    $isRemoteDocs = $isUnc -or $isNetworkDrive
 
-    $detectedPrinted = $false
-    $foldersToLink = @('PowerShell', 'WindowsPowerShell')
-    foreach ($folder in $foldersToLink) {
-        $sourcePath = Join-Path $homeDocs $folder
-        $targetPath = Join-Path $myDocs $folder
+    if ($isRemoteDocs) {
+        Write-Host "==> Detected network-redirected Documents folder (SMB/UNC): $myDocs"
+        Write-Host "    NTFS junctions cannot be created across network shares, and remote scripts may be restricted."
 
-        if (-not (Test-Path $sourcePath)) {
-            continue
+        # Define targets for AllUsers profile trampoline
+        $trampolineSnippet = @'
+# NREDF dotfiles profile fallback for network-redirected Documents
+$nredfLocalProfile = Join-Path $HOME "Documents\PowerShell\Microsoft.PowerShell_profile.ps1"
+if (Test-Path -LiteralPath $nredfLocalProfile) {
+    . $nredfLocalProfile
+}
+'@.Trim()
+
+        $targets = @()
+        # PowerShell 7+ AllUsers profile:
+        $posh7Dir = if ($env:ProgramFiles) { Join-Path $env:ProgramFiles 'PowerShell\7' } else { "C:\Program Files\PowerShell\7" }
+        if (Test-Path -LiteralPath $posh7Dir) {
+            $targets += Join-Path $posh7Dir "Microsoft.PowerShell_profile.ps1"
+        } elseif (Get-Command pwsh.exe -ErrorAction SilentlyContinue) {
+            $pwshDir = Split-Path -Parent (Get-Command pwsh.exe).Source
+            $targets += Join-Path $pwshDir "Microsoft.PowerShell_profile.ps1"
+        }
+        # Windows PowerShell 5.1 AllUsers profile:
+        $winPoshDir = Join-Path $env:windir 'System32\WindowsPowerShell\v1.0'
+        if (Test-Path -LiteralPath $winPoshDir) {
+            $targets += Join-Path $winPoshDir "Microsoft.PowerShell_profile.ps1"
         }
 
-        # Check if targetPath is already a junction or symlink pointing to sourcePath
-        $isLinked = $false
-        if (Test-Path $targetPath) {
-            $item = Get-Item -LiteralPath $targetPath -Force
-            if ($item.LinkType -and $item.Target) {
-                $targets = @($item.Target)
-                if ($targets -contains $sourcePath) {
-                    $isLinked = $true
+        # Check if all existing targets already contain the trampoline
+        $needsInstall = $false
+        foreach ($target in $targets) {
+            if (-not (Test-Path -LiteralPath $target)) {
+                $needsInstall = $true
+                break
+            } else {
+                $content = Get-Content -LiteralPath $target -Raw -ErrorAction SilentlyContinue
+                if ($content -notlike "*NREDF dotfiles profile fallback*") {
+                    $needsInstall = $true
+                    break
                 }
             }
         }
 
-        if (-not $isLinked) {
-            if (-not $detectedPrinted) {
-                Write-Host "==> Detected redirected Documents folder: $myDocs"
-                $detectedPrinted = $true
-            }
-            if (Test-Path $targetPath) {
-                $timestamp = (Get-Date -Format 'yyyyMMddHHmmss')
-                $backupPath = "${targetPath}.backup_${timestamp}"
-                Write-Host "==> Backing up existing $folder in $myDocs to $backupPath"
-
-                # If target has custom Modules not present in source, preserve them by copying over
-                $targetModules = Join-Path $targetPath "Modules"
-                $sourceModules = Join-Path $sourcePath "Modules"
-                if ((Test-Path $targetModules) -and (-not (Test-Path $sourceModules))) {
-                    Copy-Item -Path $targetModules -Destination $sourceModules -Recurse -Force -ErrorAction SilentlyContinue
-                }
-
-                Move-Item -Path $targetPath -Destination $backupPath -Force
-            }
-
-            Write-Host "==> Linking $targetPath -> $sourcePath"
-            try {
-                New-Item -ItemType Junction -Path $targetPath -Target $sourcePath -Force | Out-Null
-                Write-Host "    Junction successfully created."
-            } catch {
-                Write-Warning "Could not create junction: $_. Attempting symbolic link..."
+        if (-not $needsInstall) {
+            Write-Host "    AllUsers profile trampoline is already installed." -ForegroundColor Green
+        } else {
+            Write-Host "==> Installing AllUsers profile trampoline to load local profiles..."
+            $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+            if ($isAdmin) {
                 try {
-                    New-Item -ItemType SymbolicLink -Path $targetPath -Target $sourcePath -Force | Out-Null
-                    Write-Host "    Symbolic link successfully created."
+                    foreach ($target in $targets) {
+                        $targetDir = Split-Path -Parent $target
+                        if (-not (Test-Path -LiteralPath $targetDir)) {
+                            New-Item -ItemType Directory -Path $targetDir -Force -ErrorAction Stop | Out-Null
+                        }
+                        if (Test-Path -LiteralPath $target) {
+                            $content = Get-Content -LiteralPath $target -Raw -ErrorAction Stop
+                            if ($content -notlike "*NREDF dotfiles profile fallback*") {
+                                Add-Content -LiteralPath $target -Value "`n$trampolineSnippet`n" -Force -ErrorAction Stop
+                            }
+                        } else {
+                            Set-Content -LiteralPath $target -Value "$trampolineSnippet`n" -Force -ErrorAction Stop
+                        }
+                        Write-Host "    Configured: $target" -ForegroundColor Green
+                    }
                 } catch {
-                    Write-Warning "Could not create symbolic link: $_"
+                    Write-Warning "Failed to configure AllUsers profile: $_"
+                }
+            } else {
+                # Unprivileged: Elevate via UAC just for writing the trampoline
+                Write-Host "    Requesting administrator elevation (UAC) to configure AllUsers profiles..." -ForegroundColor Yellow
+                $encodedSnippet = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($trampolineSnippet))
+                $targetsFormatted = ($targets | ForEach-Object { "'$_'" }) -join ','
+                $elevatedScript = @"
+`$targets = @($targetsFormatted)
+`$snippet = [System.Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('$encodedSnippet'))
+foreach (`$target in `$targets) {
+    `$targetDir = Split-Path -Parent `$target
+    if (-not (Test-Path -LiteralPath `$targetDir)) {
+        New-Item -ItemType Directory -Path `$targetDir -Force -ErrorAction Stop | Out-Null
+    }
+    if (Test-Path -LiteralPath `$target) {
+        `$content = Get-Content -LiteralPath `$target -Raw -ErrorAction Stop
+        if (`$content -notlike "*NREDF dotfiles profile fallback*") {
+            Add-Content -LiteralPath `$target -Value "`n`$snippet`n" -Force -ErrorAction Stop
+        }
+    } else {
+        Set-Content -LiteralPath `$target -Value "`$snippet`n" -Force -ErrorAction Stop
+    }
+}
+"@
+                $encodedCmd = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($elevatedScript))
+                $shellExe = if (Get-Command pwsh.exe -ErrorAction SilentlyContinue) { "pwsh.exe" } else { "powershell.exe" }
+                try {
+                    $proc = Start-Process -FilePath $shellExe -ArgumentList "-NoProfile -NonInteractive -EncodedCommand $encodedCmd" -Verb RunAs -Wait -PassThru -ErrorAction Stop
+                    if ($proc.ExitCode -eq 0) {
+                        Write-Host "    AllUsers profile trampoline successfully installed via elevated prompt." -ForegroundColor Green
+                    } else {
+                        Write-Warning "Elevated installation exited with code $($proc.ExitCode)."
+                    }
+                } catch {
+                    Write-Warning "Elevation was declined or failed: $_"
+                    Write-Host "    To load your profile without admin rights, configure your Windows Terminal or VS Code profile command line:" -ForegroundColor Yellow
+                    Write-Host "    pwsh.exe -NoExit -Command `". '`$env:USERPROFILE\Documents\PowerShell\Microsoft.PowerShell_profile.ps1'`"" -ForegroundColor Yellow
+                }
+            }
+        }
+    } else {
+        # Local redirected folder (e.g. OneDrive Known Folder Move)
+        if (-not (Test-Path $myDocs)) {
+            New-Item -ItemType Directory -Path $myDocs -Force | Out-Null
+        }
+
+        $detectedPrinted = $false
+        $foldersToLink = @('PowerShell', 'WindowsPowerShell')
+        foreach ($folder in $foldersToLink) {
+            $sourcePath = Join-Path $homeDocs $folder
+            $targetPath = Join-Path $myDocs $folder
+
+            if (-not (Test-Path $sourcePath)) {
+                continue
+            }
+
+            # Check if targetPath is already a junction or symlink pointing to sourcePath
+            $isLinked = $false
+            if (Test-Path $targetPath) {
+                $item = Get-Item -LiteralPath $targetPath -Force
+                if ($item.LinkType -and $item.Target) {
+                    $targets = @($item.Target)
+                    if ($targets -contains $sourcePath) {
+                        $isLinked = $true
+                    }
+                }
+            }
+
+            if (-not $isLinked) {
+                if (-not $detectedPrinted) {
+                    Write-Host "==> Detected local redirected Documents folder: $myDocs"
+                    $detectedPrinted = $true
+                }
+                if (Test-Path $targetPath) {
+                    $timestamp = (Get-Date -Format 'yyyyMMddHHmmss')
+                    $backupPath = "${targetPath}.backup_${timestamp}"
+                    Write-Host "==> Backing up existing $folder in $myDocs to $backupPath"
+
+                    # If target has custom Modules not present in source, preserve them by copying over
+                    $targetModules = Join-Path $targetPath "Modules"
+                    $sourceModules = Join-Path $sourcePath "Modules"
+                    if ((Test-Path $targetModules) -and (-not (Test-Path $sourceModules))) {
+                        Copy-Item -Path $targetModules -Destination $sourceModules -Recurse -Force -ErrorAction SilentlyContinue
+                    }
+
+                    try {
+                        Move-Item -Path $targetPath -Destination $backupPath -Force -ErrorAction Stop
+                    } catch {
+                        Write-Warning "Could not backup existing folder '$targetPath': $_"
+                    }
+                }
+
+                Write-Host "==> Linking $targetPath -> $sourcePath"
+                try {
+                    New-Item -ItemType Junction -Path $targetPath -Target $sourcePath -Force -ErrorAction Stop | Out-Null
+                    Write-Host "    Junction successfully created."
+                } catch {
+                    Write-Warning "Could not create junction: $_. Attempting symbolic link..."
+                    try {
+                        New-Item -ItemType SymbolicLink -Path $targetPath -Target $sourcePath -Force -ErrorAction Stop | Out-Null
+                        Write-Host "    Symbolic link successfully created."
+                    } catch {
+                        Write-Warning "Could not create symbolic link: $_"
+                    }
                 }
             }
         }
