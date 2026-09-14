@@ -5,9 +5,7 @@
 {{-   $quakeKey = .kitty.quake_key -}}
 {{- end -}}
 #!/usr/bin/env bash
-# chezmoi run_onchange_after — installs or updates standalone Kitty on Linux (excludes WSL)
-# kitty.yaml hash: {{ include ".chezmoidata/kitty.yaml" | sha256sum }}
-# quake_key: {{ $quakeKey }}
+# chezmoi run_after — ensures installed Kitty on Linux matches desired state (excludes WSL)
 
 set -euo pipefail
 
@@ -17,7 +15,6 @@ set -euo pipefail
 
 # Runtime safety check: skip if running inside WSL
 if [[ -n "${WSL_DISTRO_NAME:-}" || -n "${WSL_INTEROP:-}" ]] || grep -qi microsoft /proc/version 2>/dev/null; then
-  echo "==> WSL detected; skipping Kitty installation."
   exit 0
 fi
 
@@ -29,16 +26,25 @@ TARGET_VERSION="{{ trimPrefix "v" .kitty.version }}"
 
 mkdir -p "${LOCAL_BIN}" "${DESKTOP_DIR}" "${ICONS_DIR}"
 
+# Clean up any nested kitty.app directory if created by prior buggy dest argument
+if [[ -d "${KITTY_APP}/kitty.app" ]]; then
+  echo "==> Cleaning up nested ${KITTY_APP}/kitty.app directory"
+  rm -rf "${KITTY_APP}/kitty.app"
+fi
+
+# Check reality: what version is actually installed?
 CURRENT_VERSION=""
 if [[ -x "${KITTY_APP}/bin/kitty" ]]; then
   CURRENT_VERSION="$("${KITTY_APP}/bin/kitty" --version 2>/dev/null | awk '{print $2}' || true)"
 fi
 
 if [[ "${CURRENT_VERSION}" != "${TARGET_VERSION}" ]]; then
-  echo "==> Installing / updating Kitty to ${TARGET_VERSION} via upstream installer..."
-  curl -sSfL https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin "installer=version-${TARGET_VERSION}" launch=n "dest=${KITTY_APP}"
+  echo "==> Kitty version mismatch (installed: '${CURRENT_VERSION:-none}', desired: '${TARGET_VERSION}')"
+  echo "    Installing / updating Kitty to ${TARGET_VERSION} via upstream installer..."
+  # Note: installer.sh automatically appends /kitty.app to dest, so dest must be ~/.local
+  curl -sSfL https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin "installer=version-${TARGET_VERSION}" launch=n "dest=${HOME}/.local"
 else
-  echo "==> Upstream Kitty is already up-to-date (${CURRENT_VERSION})."
+  echo "==> Upstream Kitty is up-to-date (${CURRENT_VERSION})."
 fi
 
 # Ensure symlinks in ~/.local/bin (in user PATH)
@@ -63,7 +69,6 @@ if [[ -f "${KITTY_APP}/share/icons/hicolor/256x256/apps/kitty.png" ]]; then
 fi
 
 # ── Wayland Quake-Mode / Quick-Access Terminal Helper ────────────────────────
-echo "==> Setting up Kitty Quake-mode helper script"
 cat <<'QUAKE_EOF' > "${LOCAL_BIN}/kitty-quake"
 #!/usr/bin/env bash
 # Quake-mode / quick-access drop-down terminal helper for Kitty on Wayland
@@ -124,7 +129,7 @@ elif command -v kwriteconfig5 >/dev/null 2>&1; then
 fi
 {{- end }}
 
-echo "    Kitty ready: $("${LOCAL_BIN}/kitty" --version 2>/dev/null || true)"
+echo "    Kitty active: $("${LOCAL_BIN}/kitty" --version 2>/dev/null || true) at $(command -v kitty 2>/dev/null || echo "${LOCAL_BIN}/kitty")"
 {{- end }}
 {{- end }}
 
