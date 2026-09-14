@@ -2,4 +2,3 @@
 kitty:
   version: "v0.48.2" # renovate: depName=kovidgoyal/kitty
   quake_key: "F12"
-
