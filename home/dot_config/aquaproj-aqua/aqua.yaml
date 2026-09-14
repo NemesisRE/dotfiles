@@ -78,7 +78,7 @@ packages:
   - name: bootandy/dust@v1.2.5 # renovate: depName=bootandy/dust
     tags:
       - default
-  - name: ouch-org/ouch@0.8.3 # renovate: depName=ouch-org/ouch
+  - name: ouch-org/ouch@0.8.2 # renovate: depName=ouch-org/ouch
     tags:
       - default
   - name: fastfetch-cli/fastfetch@2.68.1 # renovate: depName=fastfetch-cli/fastfetch
