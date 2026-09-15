@@ -10,7 +10,8 @@ bleopt complete_auto_delay=100
 bleopt complete_menu_maxlines=10
 
 # Silence terminal bell / beeps
-bleopt bell_style=none
+bleopt edit_abell=
+bleopt edit_vbell=
 
 # ── 2. Prompt & Layout ────────────────────────────────────────────────────────
 # Required for multi-line prompts & Oh-My-Posh layout sync
@@ -19,17 +20,13 @@ bleopt prompt_command_changes_layout=1
 # Disable the red [ble: exit N] error marker to keep prompt clean
 bleopt exec_errexit_mark=
 
-# ── 3. Fzf & Carapace Completion Integration ──────────────────────────────────
+# ── 3. Fzf Integration ────────────────────────────────────────────────────────
 # Base directory for fzf shell scripts (managed via .chezmoiexternal in .config/fzf)
 _ble_contrib_fzf_base="${XDG_CONFIG_HOME:-$HOME/.config}/fzf"
 
 if command -v fzf &>/dev/null; then
-  ble-import -d integration/fzf-completion
-  ble-import -d integration/fzf-key-bindings
-  ble-import -d integration/fzf-menu -C '
-    bleopt integration_fzf_menu_enabled=0
-    ble-bind -c "C-@" "bleopt integration_fzf_menu_enabled=1; ble/widget/menu-complete; bleopt integration_fzf_menu_enabled=0"
-  '
+  ble-import -d -f integration/fzf-completion
+  ble-import -d -f integration/fzf-key-bindings
 fi
 
 # ── 4. OneDark-Pro Theme & UI Faces ───────────────────────────────────────────
@@ -47,13 +44,20 @@ function blerc/vim-load-hook {
 }
 blehook/eval-after-load keymap_vi blerc/vim-load-hook
 
-{{- if eq .chezmoi.os "darwin" }}
 if declare -f ble-bind >/dev/null 2>&1; then
+  # Optional fuzzy tab completion with descriptions via fzf modal on Ctrl+Space
+  ble-bind -m emacs   -x 'C-@' _nredf_fzf_tab_complete 2>/dev/null || true
+  ble-bind -m emacs   -x 'C-SPCE' _nredf_fzf_tab_complete 2>/dev/null || true
+  ble-bind -m emacs   -x 'C-NUL' _nredf_fzf_tab_complete 2>/dev/null || true
+  ble-bind -m vi_imap -x 'C-@' _nredf_fzf_tab_complete 2>/dev/null || true
+  ble-bind -m vi_imap -x 'C-SPCE' _nredf_fzf_tab_complete 2>/dev/null || true
+  ble-bind -m vi_imap -x 'C-NUL' _nredf_fzf_tab_complete 2>/dev/null || true
+{{- if eq .chezmoi.os "darwin" }}
   ble-bind -m emacs   -c 'ç' 'eval "$(__fzf_cd__)"' 2>/dev/null || true
   ble-bind -m vi_imap -c 'ç' 'eval "$(__fzf_cd__)"' 2>/dev/null || true
   ble-bind -m vi_nmap -c 'ç' 'eval "$(__fzf_cd__)"' 2>/dev/null || true
   ble-bind -m emacs   -c '©' 'eval "$(__fzf_cd__)"' 2>/dev/null || true
   ble-bind -m vi_imap -c '©' 'eval "$(__fzf_cd__)"' 2>/dev/null || true
   ble-bind -m vi_nmap -c '©' 'eval "$(__fzf_cd__)"' 2>/dev/null || true
-fi
 {{- end }}
+fi

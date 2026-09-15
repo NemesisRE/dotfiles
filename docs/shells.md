@@ -67,6 +67,7 @@ All three shells share a unified experience designed around modern developer erg
 | :--- | :--- | :--- |
 | <kbd>Tab</kbd> | Completion Menu | Interactive tab completion with descriptions via fzf-tab |
 | <kbd>Shift</kbd> + <kbd>Tab</kbd> | Backward Cycle | Cycle backward through completion candidates in fzf-tab |
+| <kbd>Ctrl</kbd> + <kbd>Space</kbd> | fzf Tab Completion | Open interactive fzf completion modal with descriptions |
 | <kbd>Ctrl</kbd> + <kbd>r</kbd> | Atuin Search | Interactive fuzzy search across full command history |
 | <kbd>Ctrl</kbd> + <kbd>t</kbd> | Fzf File Search | Fuzzy search files in CWD and insert selected path at cursor |
 | <kbd>Alt</kbd> + <kbd>c</kbd> / <kbd>Option</kbd>+<kbd>c</kbd> | Fzf CD | Fuzzy search subdirectories and immediately `cd` into selection |
@@ -89,7 +90,7 @@ All three shells share a unified experience designed around modern developer erg
 | :--- | :--- | :--- |
 | <kbd>Tab</kbd> | Menu Completion | Open interactive ble.sh completion menu with Carapace descriptions |
 | <kbd>Shift</kbd> + <kbd>Tab</kbd> | Backward Cycle | Cycle backward through completion candidates |
-| <kbd>Ctrl</kbd> + <kbd>Space</kbd> | fzf Menu Search | Open fzf fuzzy modal for completion candidates on demand |
+| <kbd>Ctrl</kbd> + <kbd>Space</kbd> | fzf Tab Completion | Open fzf fuzzy modal with completion candidates and descriptions |
 | <kbd>Ctrl</kbd> + <kbd>r</kbd> | Atuin Search | Interactive fuzzy history search via `__atuin_history` |
 | <kbd>Ctrl</kbd> + <kbd>t</kbd> | Fzf File Search | Fuzzy search files with live `bat` syntax preview |
 | <kbd>Alt</kbd> + <kbd>c</kbd> / <kbd>Option</kbd>+<kbd>c</kbd> | Fzf CD | Fuzzy search directories with live `lsd` tree preview |

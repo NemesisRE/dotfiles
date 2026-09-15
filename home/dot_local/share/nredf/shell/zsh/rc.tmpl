@@ -58,5 +58,7 @@ zstyle -e ':completion:*' special-dirs '[[ $PREFIX = (../)#(|.|..) ]] && reply=(
 zstyle ':completion:*:descriptions' format '[%d]'
 zstyle ':fzf-tab:*' fzf-flags --ansi
 zstyle ':fzf-tab:*' fzf-bindings 'tab:down' 'btab:up'
+bindkey '^@' fzf-tab-complete 2>/dev/null || true
+bindkey '^ ' fzf-tab-complete 2>/dev/null || true
 zmodload zsh/mathfunc
 _nredf_step "zsh rc: compinit"
