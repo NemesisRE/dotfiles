@@ -7,8 +7,7 @@ fi
 
 [[ ! -d "${XDG_STATE_HOME}/zsh" ]] && mkdir -p "${XDG_STATE_HOME}/zsh"
 [[ ! -d "${XDG_CACHE_HOME}/zsh" ]] && mkdir -p "${XDG_CACHE_HOME}/zsh"
-fpath=("${HOME}/.config/completion/zsh" "${fpath[@]}")
-_nredf_step "zsh rc: dirs + fpath"
+_nredf_step "zsh rc: dirs"
 
 if (( ! ${+functions[_nredf_load_sheldon_plugins]} )); then
   export NREDF_RC_PATH="${NREDF_RC_PATH:-${NREDF_DOT_PATH}/shell/${NREDF_SHELL_NAME}}"
@@ -33,8 +32,6 @@ export HISTFILE="${XDG_STATE_HOME}"/zsh/history
 
 autoload -Uz compinit
 NREDF_ZCOMPDUMP="${XDG_CACHE_HOME}/zsh/.zcompdump"
-NREDF_COMPLETION_REFRESH_REQUIRED=0
-
 NREDF_DOCKER_COMPLETION="/usr/share/zsh/vendor-completions/_docker"
 _nredf_compinit() {
   if [[ -L "${NREDF_DOCKER_COMPLETION}" && ! -e "${NREDF_DOCKER_COMPLETION}" ]]; then
@@ -44,18 +41,8 @@ _nredf_compinit() {
   fi
 }
 
-if [[ -f "${NREDF_ZCOMPDUMP}" && -d "${HOME}/.config/completion/zsh" ]]; then
-  for NREDF_COMPLETION_FILE in "${HOME}/.config/completion/zsh"/*(N-.); do
-    if [[ "${NREDF_COMPLETION_FILE}" -nt "${NREDF_ZCOMPDUMP}" ]]; then
-      NREDF_COMPLETION_REFRESH_REQUIRED=1
-      break
-    fi
-  done
-fi
-
-
 # Fast path: use cached completion dump; refresh only every 24h.
-if [[ -f "${NREDF_ZCOMPDUMP}" && "${NREDF_COMPLETION_REFRESH_REQUIRED}" -eq 0 ]] && (( ${+functions[_nredf_last_run]} )) && _nredf_last_run "_nredf_zsh_compinit_refresh"; then
+if [[ -f "${NREDF_ZCOMPDUMP}" ]] && (( ${+functions[_nredf_last_run]} )) && _nredf_last_run "_nredf_zsh_compinit_refresh"; then
   _nredf_compinit -C -d "${NREDF_ZCOMPDUMP}"
 else
   _nredf_compinit -u -d "${NREDF_ZCOMPDUMP}"

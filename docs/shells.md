@@ -15,7 +15,8 @@ All three shells share a unified experience designed around modern developer erg
 | **Fuzzy Finding** | `fzf` (<kbd>Ctrl</kbd>+<kbd>t</kbd>, <kbd>Alt</kbd>+<kbd>c</kbd>) | `fzf` (<kbd>Ctrl</kbd>+<kbd>t</kbd>, <kbd>Alt</kbd>+<kbd>c</kbd>) | `fzf` (<kbd>Ctrl</kbd>+<kbd>t</kbd>, <kbd>Alt</kbd>+<kbd>c</kbd>) |
 | **Directory Navigation** | `zoxide` hooked to `cd`, `z`, `zi` | `zoxide` hooked to `cd`, `z`, `zi` | `zoxide` hooked to `cd`, `z`, `zi` |
 | **Syntax Highlighting** | `fast-syntax-highlighting` | `ble.sh` (Bash Line Editor) | `PSReadLine` |
-| **Inline Autosuggestions**| `zsh-autosuggestions` | `ble.sh` inline suggestions | `PSReadLine` (`HistoryAndPlugin`) |
+| **Inline Autosuggestions** | `zsh-autosuggestions` | `ble.sh` inline suggestions | `PSReadLine` (`HistoryAndPlugin`) |
+| **Tab Completion Engine** | [Carapace](https://carapace.sh) (`carapace-bin`) | [Carapace](https://carapace.sh) (`carapace-bin`) | [Carapace](https://carapace.sh) (`carapace-bin`) |
 | **Auto-Pairing Quotes** | `zsh-autopair` | `ble.sh` auto-complete | Custom `PSReadLine` chord (`"`, `'`) |
 | **Plugin Manager** | [Sheldon](https://sheldon.cli.rs) | Git-cloned `ble.sh` | None required (100% native CLI tooling) |
 | **Environment Sync** | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) |
@@ -26,19 +27,24 @@ All three shells share a unified experience designed around modern developer erg
 ## ⚙️ Shell Implementations & Initialization
 
 ### 1. Zsh Architecture
+
 - **Dotfiles**: [`.zshenv.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_zshenv.tmpl), [`.zprofile.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_zprofile.tmpl), [`.zshrc.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_zshrc.tmpl)
 - **Plugin Management**: Managed by **Sheldon** via [`~/.config/sheldon/plugins.toml`](file:///Users/skurz/Repos/chezmoi/home/dot_config/sheldon/plugins.toml.tmpl)
   - Loads Oh-My-Zsh core libraries (`completion.zsh`, `history.zsh`, `key-bindings.zsh`)
   - Curated plugins: `npm`, `rvm`, `extract`, `colored-man-pages`, `colorize`, `cp`, `git-extras`, `systemadmin`, `fzf-zsh-completions`, `zsh-autopair`, `calc`, `atuin`, `zsh-autosuggestions`, `fast-syntax-highlighting`
   - **Lazy Loading**: Plugins are lazy-loaded on the first prompt display via `add-zsh-hook precmd` to guarantee sub-millisecond shell startup.
+- **Completion Engine**: Managed by **Carapace** (`carapace-bin`) cached for 24 hours via `_nredf_refresh_cached_shell_snippet`, with custom declarative specs in `~/.config/carapace/specs/`.
 
 ### 2. Bash Architecture
+
 - **Dotfiles**: [`.bash_profile.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_bash_profile.tmpl), [`.bashrc.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_bashrc.tmpl), [`.blerc.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_blerc.tmpl)
 - **Engine**: Modern **Bash 4.4+ / 5.x** with [ble.sh](https://github.com/akinomyoga/ble.sh) (Bash Line Editor)
   - On macOS, automatically detects and invokes Homebrew Bash (`/opt/homebrew/bin/bash` or `/usr/local/bin/bash`), bypassing Apple's legacy Bash 3.2.
   - `ble.sh` sources at the top of `.bashrc` (`--attach=none`) and attaches at the very end (`ble-attach`), providing syntax highlighting, fish-like autosuggestions, vim-mode support, and menu completion in standard Bash.
+- **Completion Engine**: Managed by **Carapace** (`carapace-bin`) running after system `bash_completion` and cached for 24 hours via `_nredf_refresh_cached_shell_snippet`, with custom declarative specs in `~/.config/carapace/specs/`.
 
 ### 3. PowerShell (pwsh) Architecture
+
 - **Dotfiles**: [`home/Documents/PowerShell/`](file:///Users/skurz/Repos/chezmoi/home/Documents/PowerShell/)
   - Target for PowerShell 7+: `Documents\PowerShell\Microsoft.PowerShell_profile.ps1`
   - Target for Windows PowerShell 5.1: `Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` (dot-sources PowerShell 7 profile)
@@ -49,6 +55,7 @@ All three shells share a unified experience designed around modern developer erg
   - `Aliases.ps1`: Cross-platform command parity with Bash/Zsh.
   - `PSReadLine.ps1`: Keybindings, prediction source (`HistoryAndPlugin`), native `fzf` integration, smart auto-pairing quotes.
   - `Functions.ps1`: Utility functions (`reload`, `sudo`, `md5`, `sha256`, `NREDF_DailySync`).
+  - `Profile.ps1`: High-performance startup orchestration with snippet caching (`NREDF_RefreshCachedShellSnippet`) for Oh-My-Posh, Atuin, Zoxide, and **Carapace** completions (including custom specs in `~/.config/carapace/specs/`).
 
 ---
 
@@ -150,20 +157,28 @@ Options:
 ```
 
 ### Examples
+
 - **Fast shell refresh**:
+
   ```bash
   reload
   ```
+
 - **Measure shell startup latency**:
+
   ```bash
   reload -p
   ```
+
   *Prints step-by-step millisecond timings for Oh-My-Posh, Atuin, plugins, and custom functions.*
 - **Switch to PowerShell from Bash/Zsh**:
+
   ```bash
   reload -s pwsh
   ```
+
 - **Force clean rebuild of all CLI packages & cached scripts**:
+
   ```bash
   reload -f
   ```
@@ -177,6 +192,7 @@ Running standard `yazi` leaves the shell in whatever directory you started in. N
 ```bash
 yy
 ```
+
 When you navigate to a directory inside Yazi and quit with <kbd>q</kbd>, your shell automatically changes its working directory to the directory you were viewing in Yazi!
 
 ---
@@ -184,25 +200,31 @@ When you navigate to a directory inside Yazi and quit with <kbd>q</kbd>, your sh
 ## ❓ FAQ & Troubleshooting
 
 ### Q1: In Bash, why does `cd` sometimes behave differently from Zsh?
+
 **Cause**: If node version manager `fnm` is installed, its default `--use-on-cd` hook aliases `cd` to `__fnmcd`, which can shadow `zoxide`.
 **Resolution**: NREDF automatically detects this in `.bashrc`, unaliases `__fnmcd`, and attaches `__fnm_use_if_file_found` to `PROMPT_COMMAND` so `zoxide` handles `cd` seamlessly.
 
 ### Q2: PowerShell shows script execution error on Windows
+
 **Error**: `File ... cannot be loaded because running scripts is disabled on this system`.
 **Resolution**: Run this command once in PowerShell:
+
 ```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
 ### Q3: How do I test shell startup performance?
+
 Run `reload -p`. The output will display exact timing metrics for each component:
+
 ```text
   [  +4ms] oh-my-posh init
   [ +12ms] NREDF_DailySync
   [ +28ms] PowerShell modules & PSFzf
   [  +6ms] Atuin init
   [  +4ms] zoxide init
-  [ +54ms] Total profile startup time
+  [  +3ms] carapace completions
+  [ +57ms] Total profile startup time
 ```
-Run `reload -p` a second time to turn off persistent profiling.
 
+Run `reload -p` a second time to turn off persistent profiling.

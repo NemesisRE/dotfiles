@@ -61,16 +61,20 @@ winget install albertony.npiperelay
 NREDF supports multiple shells on Windows with shared aliases, history, and modern tool replacements:
 
 ### 1. PowerShell 7+ (`pwsh`) & Windows PowerShell 5.1
+
 - **PowerShell 7+**: `Documents\PowerShell\Microsoft.PowerShell_profile.ps1`
 - **Windows PowerShell 5.1**: `Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` (dot-sources PowerShell 7 profile)
 - 100% native CLI tooling: `fzf` (<kbd>Ctrl</kbd>+<kbd>t</kbd>, <kbd>Alt</kbd>+<kbd>c</kbd>), `lsd`, `bat`, `Atuin` history search, and `MenuComplete`.
 
 ### 2. Bash & Zsh on Windows
+
 - **WSL (Windows Subsystem for Linux)**: Full Linux environment running native Bash (ble.sh) or Zsh (Sheldon).
 - **Git Bash (MSYS2)**: Sources common NREDF shell libraries and aliases.
 
 ### 3. Switching Shells On the Fly
+
 Switch between shells without restarting Windows Terminal:
+
 ```powershell
 reload -s pwsh         # Reload into PowerShell 7
 reload -s powershell   # Switch to Windows PowerShell 5.1
@@ -116,6 +120,7 @@ reload -s cmd          # Switch to Command Prompt
 ## 🔑 SSH Agent Setup (Bitwarden SSH Agent)
 
 Bitwarden Desktop includes a built-in SSH Agent on Windows:
+
 1. Open Bitwarden Desktop &rarr; **Settings** &rarr; **SSH Agent**.
 2. Check **Enable SSH Agent**.
 3. Under Windows, Bitwarden exposes the OpenSSH named pipe: `\\.\pipe\openssh-ssh-agent`.
@@ -187,16 +192,21 @@ reg add "HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\TimeZoneInformation
 ## 💡 Windows Tips & Tricks
 
 ### 1. Visual File Navigation with CWD Tracking (`yy`)
+
 Run `yy` in PowerShell to launch **Yazi**. Navigate directories with syntax previews, press <kbd>q</kbd>, and PowerShell automatically switches to that directory!
 
 ### 2. Profiling Profile Startup Time
+
 ```powershell
 reload -p
 ```
+
 Displays millisecond execution time for Oh-My-Posh, Atuin, PSFzf, and custom functions.
 
 ### 3. Sudo Privileges in PowerShell
+
 NREDF includes a smart `sudo` command that leverages `sudo.exe` (Windows 11), `gsudo`, or an elevated process window:
+
 ```powershell
 sudo notepad C:\Windows\System32\drivers\etc\hosts
 ```
@@ -206,6 +216,7 @@ sudo notepad C:\Windows\System32\drivers\etc\hosts
 ## ❓ Troubleshooting & FAQs
 
 ### "File cannot be loaded because running scripts is disabled on this system"
+
 By default, Windows blocks script execution. Update your execution policy for your user account:
 
 ```powershell
@@ -213,6 +224,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
 ### Redirected Documents (OneDrive & Corporate SMB Network Shares)
+
 In Windows environments, your `Documents` folder may be redirected away from `$HOME\Documents`:
 
 1. **OneDrive Known Folder Move** (e.g. `C:\Users\<user>\OneDrive\Documents`):
@@ -232,12 +244,15 @@ In Windows environments, your `Documents` folder may be redirected away from `$H
        `"terminal.integrated.profiles.windows": { "PowerShell": { "path": "pwsh.exe", "args": ["-NoExit", "-Command", ". '${env:USERPROFILE}\\Documents\\PowerShell\\Microsoft.PowerShell_profile.ps1'"] } }`
 
 You can verify your active profile anytime:
+
 ```powershell
 $PROFILE | Format-List *
 ```
 
 ### Aqua: "remove a temporary file: The process cannot access the file because it is being used by another process" (WRN)
+
 When running `reload -d` or installing packages on Windows, you may occasionally see a warning:
+
 ```text
 WRN remove a temporary file ... error="remove C:\Users\<user>\AppData\Local\Temp\<id>: The process cannot access the file because it is being used by another process."
 ```
@@ -250,6 +265,7 @@ This is a non-fatal warning (`WRN`). The package extraction and installation is 
 
 **Resolution**:
 To eliminate the warning and speed up package downloads, add an exclusion for `aqua.exe` in Microsoft Defender (run PowerShell as Administrator):
+
 ```powershell
 Add-MpPreference -ExclusionProcess "aqua.exe"
 Add-MpPreference -ExclusionPath "$env:LOCALAPPDATA\aquaproj-aqua"
@@ -258,23 +274,28 @@ Add-MpPreference -ExclusionPath "$env:LOCALAPPDATA\aquaproj-aqua"
 ### Yazi: MIME Detection and Configuration Discovery on Windows
 
 **1. "Cannot find `file` to detect the file's MIME type"**
+
 - **Root Cause**: Yazi relies on the Unix `file` utility to detect file MIME types for previews and openers. On Windows, `file.exe` is distributed with Git for Windows (`Git\usr\bin\file.exe`).
 - **Resolution**: NREDF automatically detects Git for Windows and exports `YAZI_FILE_ONE` in [`Defaults.ps1`](file:///Users/skurz/Repos/chezmoi/home/Documents/PowerShell/NREDF-POSH/Defaults.ps1) as well as persisting it to the User environment during `chezmoi apply`. If running Yazi outside of NREDF PowerShell, ensure Git is installed (`winget install Git.Git`) and set the user variable:
+
   ```powershell
   [System.Environment]::SetEnvironmentVariable("YAZI_FILE_ONE", "C:\Program Files\Git\usr\bin\file.exe", "User")
   ```
 
 **2. Yazi Opens Files with VS Code Instead of Neovim**
+
 - **Root Cause**: On Windows, Yazi looks for configuration in `%APPDATA%\yazi\config\` unless `$env:YAZI_CONFIG_HOME` is set. Without this, Yazi ran with compiled-in preset defaults which map Windows `edit` to `code %s`.
 - **Resolution**: NREDF automatically sets `YAZI_CONFIG_HOME` to `$HOME\.config\yazi`, creates a directory junction from `%APPDATA%\yazi\config` to `$HOME\.config\yazi`, and configures explicit `[open]` prepend rules in [`yazi.toml.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/yazi/yazi.toml.tmpl) so all dotfiles (`.*`), source code, and text files route to `nvim`.
 
 ### Neovim: AstroCommunity Packs & Tool Installation on Windows
 
 **1. Chezmoi Pack: "attempt to concatenate a nil value"**
+
 - **Root Cause**: `astrocommunity.pack.chezmoi` concatenates `os.getenv "HOME" .. "/.local/share/chezmoi"`. Because Windows defaults to `USERPROFILE` rather than `HOME`, `HOME` was unset (`nil`), causing a Lua runtime failure during lazy spec loading.
 - **Resolution**: NREDF automatically normalizes `vim.env.HOME = vim.env.USERPROFILE` at the top of Neovim's `init.lua`, persists `$env:HOME = $HOME` to Windows User environment variables, and configures Windows-compatible source paths (`%LOCALAPPDATA%\chezmoi`) in [`lua/plugins/chezmoi.lua`](file:///Users/skurz/Repos/chezmoi/home/dot_config/nvim/lua/plugins/chezmoi.lua).
 
 **2. Mason: "Installation failed for ansible-lint: Platform not supported"**
+
 - **Root Cause**: `ansible-lint` is an Ansible/Python CLI tool that requires POSIX APIs and does not natively support Windows. Mason's package registry explicitly restricts it to `supported_platforms: [unix]`.
 - **Resolution**: NREDF automatically filters `ansible-lint` out of Mason's automatic installer on Windows in [`lua/plugins/mason.lua`](file:///Users/skurz/Repos/chezmoi/home/dot_config/nvim/lua/plugins/mason.lua). The Ansible Language Server (`ansible-language-server` via npm) and syntax highlighting continue to work seamlessly on Windows, while `ansible-lint` is used when running in Linux/macOS/WSL.
 

@@ -130,6 +130,26 @@ if (Get-Command zoxide -ErrorAction SilentlyContinue) {
   NREDF_Step "zoxide init"
 }
 
+# Carapace multi-shell multi-command completion integration (cross-platform, cached for fast startup)
+if (Get-Command carapace -ErrorAction SilentlyContinue) {
+  $carapaceInitFile = Join-Path $ENV:NREDF_INITCACHE 'carapace.pwsh.ps1'
+  $carapaceSnippet = if (Get-Command NREDF_RefreshCachedShellSnippet -ErrorAction SilentlyContinue) {
+    NREDF_RefreshCachedShellSnippet -CacheKey 'carapace_init_pwsh' -CacheFile $carapaceInitFile -Generator {
+      & carapace _carapace powershell 2>$null | Out-String
+    }
+  } else { $null }
+
+  if ($carapaceSnippet) {
+    . $carapaceSnippet
+  } else {
+    $carapaceInit = (& carapace _carapace powershell 2>$null | Out-String)
+    if (-not [string]::IsNullOrWhiteSpace($carapaceInit)) {
+      Invoke-Expression $carapaceInit
+    }
+  }
+  NREDF_Step "carapace completions"
+}
+
 # End of startup profiling
 if ($ENV:NREDF_PROFILE_STARTUP -eq '1') {
   $total = $global:_nredf_sw.ElapsedMilliseconds

@@ -26,6 +26,7 @@ Neovim configuration resides in [`home/dot_config/nvim/`](file:///Users/skurz/Re
 ```
 
 ### Key Architectural Highlights
+
 1. **Plugin Manager**: Managed with [lazy.nvim](https://github.com/folke/lazy.nvim) for fast, asynchronous, lockfile-backed plugin loading.
 2. **Community Ecosystem**: Extensible via [AstroCommunity](https://github.com/AstroNvim/astrocommunity) in `lua/community.lua`.
 3. **Unified Colorscheme**: Styled with **OneDark-Pro** (`astrocommunity.colorscheme.onedarkpro-nvim`) to maintain visual consistency across Kitty, Windows Terminal, Bat, and Oh-My-Posh.
@@ -133,26 +134,33 @@ The leader key is set to <kbd>Space</kbd> and the local leader is set to <kbd>,<
 ## 📦 Managing Plugins & Language Servers
 
 ### 1. Lazy.nvim Plugin Management
+
 Open the plugin manager dashboard with:
+
 ```vim
 :Lazy
 ```
+
 - <kbd>S</kbd>: Sync all plugins (install missing, update existing, clean removed).
 - <kbd>U</kbd>: Update all plugins.
 - <kbd>C</kbd>: Clean unused plugins.
 - <kbd>x</kbd>: Inspect detailed plugin status.
 
 ### 2. Mason Tool Management
+
 [Mason](https://github.com/williamboman/mason.nvim) manages language servers, linters, debuggers, and formatters directly:
+
 ```vim
 :Mason
 ```
+
 - <kbd>i</kbd>: Install selected server/tool.
 - <kbd>u</kbd>: Update selected server/tool.
 - <kbd>X</kbd>: Uninstall selected server/tool.
 - <kbd>/</kbd>: Search for language servers, formatters, or linters.
 
 Recommended language tools commonly installed via Mason:
+
 - **Lua**: `lua-language-server`, `stylua`
 - **Bash/Zsh**: `bash-language-server`, `shellcheck`, `shfmt`
 - **Python**: `pyright` or `basedpyright`, `ruff`
@@ -199,6 +207,7 @@ return {
 ```
 
 ### 4. Custom User Plugins (`lua/plugins/user.lua`)
+
 To add a completely new plugin not available in AstroCommunity, declare it in [`home/dot_config/nvim/lua/plugins/user.lua`](file:///Users/skurz/Repos/chezmoi/home/dot_config/nvim/lua/plugins/user.lua) (remember to remove `if true then return {} end`):
 
 ```lua
@@ -219,19 +228,24 @@ return {
 ## 💡 Tips & Tricks
 
 ### Fast File Jump & Navigation
+
 - Press <kbd>Space</kbd> <kbd>f</kbd> <kbd>f</kbd> to find files. Type any substring (e.g. `zshrc` or `profile`) and press <kbd>Enter</kbd> to jump straight there.
 - Use <kbd>Space</kbd> <kbd>f</kbd> <kbd>w</kbd> (live grep) to search across the entire repository. Press <kbd>Ctrl</kbd> + <kbd>q</kbd> in the search popup to send all results into a quickfix list.
 
 ### Seamless Clipboard Sharing (OSC 52)
+
 NREDF configures terminal clipboard integration with OSC 52 passthrough. Even across remote SSH sessions or inside Zellij multiplexer sessions, copying with `y` or `"+y` syncs directly to your local desktop clipboard.
 
 ### Floating Git Workflow
+
 Never leave your editor to manage branches or commits:
+
 1. Press <kbd>Space</kbd> <kbd>g</kbd> <kbd>g</kbd> to open **LazyGit** in a full floating window.
 2. Stage files, review diffs, write commit messages, or push to remote.
 3. Press <kbd>q</kbd> to exit LazyGit and immediately return to your buffer with updated git gutters!
 
 ### Code Formatting on Save
+
 Formatting can be invoked on demand with <kbd>Space</kbd> <kbd>l</kbd> <kbd>f</kbd>. To enable format-on-save globally, toggle it in AstroCore or run `:AstroCore format_on_save`.
 
 ---
@@ -239,46 +253,56 @@ Formatting can be invoked on demand with <kbd>Space</kbd> <kbd>l</kbd> <kbd>f</k
 ## ❓ FAQ & Troubleshooting
 
 ### Q1: Why are icons showing as boxes or broken question marks?
+
 **Cause**: Neovim uses Nerd Font glyphs for file types, git signs, and diagnostics.
 **Resolution**:
+
 - Ensure your terminal uses **FiraMono Nerd Font Mono** or **FiraCode Nerd Font**.
 - On Windows Terminal: Settings (`Ctrl+,`) &rarr; **Defaults** &rarr; **Appearance** &rarr; **Font face** &rarr; `FiraMono Nerd Font Mono`.
 - On Kitty: font is configured automatically via `font_family family="FiraMono Nerd Font Mono"`.
 
 ### Q2: Treesitter parser compilation errors on fresh install
+
 **Cause**: Treesitter requires a C compiler (`gcc`, `clang`, or `zig`) to compile language parsers.
 **Resolution**:
 In NREDF, required C/C++ compilers are now managed automatically during `chezmoi apply` via [`home/.chezmoidata/packages.yaml`](file:///Users/skurz/Repos/chezmoi/home/.chezmoidata/packages.yaml):
+
 - **Linux**: `build-essential` (`apt`), `base-devel` (`pacman`), or `gcc`/`gcc-c++`/`make` (`dnf`).
 - **macOS**: Automatically checks and installs **Xcode Command Line Tools** (`xcode-select --install`).
 - **Windows**: `LLVM.LLVM` installed automatically via `winget`.
 Once installed, run `:TSUpdate` in Neovim to compile any pending language parsers.
 
 ### Q3: Where are undo history and swap files stored?
+
 NREDF centralizes all editor runtime files to avoid polluting projects:
+
 - **Undo History**: `~/.local/state/nvim/undo/`
 - **Swap Files**: `~/.local/state/nvim/swap/`
 - **Backup Files**: `~/.local/state/nvim/backup/`
 Directories are created automatically during initialization in `lua/polish.lua`.
 
 ### Q4: How do I update AstroNvim and all plugins?
+
 Run the following inside Neovim:
+
 ```vim
 :Lazy update
 :MasonUpdate
 ```
+
 Or to update dotfiles and tools from your terminal:
+
 ```bash
 chezmoi update
 aqua install
 ```
 
 ### Q5: Windows: Chezmoi pack "attempt to concatenate a nil value"
+
 **Cause**: The upstream `astrocommunity.pack.chezmoi` hardcodes `os.getenv "HOME" .. "/.local/share/chezmoi"`. Windows does not set `$env:HOME` by default (it uses `USERPROFILE`), causing a fatal concatenation error when evaluating lazy specs.
 **Resolution**: NREDF automatically normalizes `vim.env.HOME = vim.env.USERPROFILE` at the start of `init.lua` and `community.lua`, persists `HOME` in Windows User environment variables, and configures cross-platform source directory paths (`%LOCALAPPDATA%\chezmoi`) in [`lua/plugins/chezmoi.lua`](file:///Users/skurz/Repos/chezmoi/home/dot_config/nvim/lua/plugins/chezmoi.lua).
 
 ### Q6: Windows: "Installation failed for ansible-lint: Platform not supported"
+
 **Cause**: The upstream Ansible project and `ansible-lint` require POSIX primitives and do not support native Windows. In Mason's package registry, `ansible-lint` is strictly flagged as `supported_platforms: [unix]`.
 **Resolution**: In [`lua/plugins/mason.lua`](file:///Users/skurz/Repos/chezmoi/home/dot_config/nvim/lua/plugins/mason.lua), NREDF automatically filters out `ansible-lint` on Windows host environments while retaining the `ansible-language-server` (LSP), YAML schemas, and `ansible-vim` syntax highlighting. On Linux, macOS, and WSL, `ansible-lint` is installed and used normally.
-
-

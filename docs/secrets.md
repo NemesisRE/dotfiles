@@ -76,6 +76,7 @@ In `~/.config/chezmoi/chezmoi.toml`:
 ```
 
 During `chezmoi apply`:
+
 1. Chezmoi calls `bw` to retrieve `GitHub - Personal` (prompting for unlock if locked).
 2. Chezmoi calls `keepassxc-cli` to retrieve `Work/Git Signing Key` (prompting for KDBX password if required).
 3. Both tools receive their credentials in a single apply step.
@@ -85,22 +86,27 @@ During `chezmoi apply`:
 ## ⚙️ Managed Secrets & Output Files
 
 ### 1. Aqua GitHub Token (`~/.config/nredf/aqua.env`)
+
 * **Template**: `home/dot_config/nredf/private_aqua.env.tmpl`
 * **Target**: `~/.config/nredf/aqua.env` (permissions `0600`)
 * **Variables Exported**:
+
   ```bash
   AQUA_GITHUB_TOKEN="ghp_xxxxxxxxxxxx"
   GITHUB_TOKEN="ghp_xxxxxxxxxxxx"
   ```
+
 * Automatically sourced by:
-  - Bash / Zsh (`dot_local/share/nredf/shell/common/rc.tmpl`)
-  - PowerShell (`Documents/PowerShell/NREDF-POSH/Defaults.ps1`)
-  - Post-apply aqua run-onchange hooks on Linux, macOS, and Windows.
+  * Bash / Zsh (`dot_local/share/nredf/shell/common/rc.tmpl`)
+  * PowerShell (`Documents/PowerShell/NREDF-POSH/Defaults.ps1`)
+  * Post-apply aqua run-onchange hooks on Linux, macOS, and Windows.
 
 ### 2. Git Commit Signing Key (`~/.config/git/config`)
+
 * **Template**: `home/dot_config/git/config.tmpl`
 * **Target**: `~/.config/git/config`
 * **Output**:
+
   ```ini
   [user]
       signingkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... user@email.com"
@@ -111,6 +117,7 @@ During `chezmoi apply`:
   [gpg]
       format = ssh
   ```
+
 * When using Bitwarden or 1Password, the private key stays securely inside the password manager's desktop SSH Agent — only the public key string is rendered into `git/config`.
 
 ---
@@ -119,15 +126,17 @@ During `chezmoi apply`:
 
 ### Step 1: Prepare Vault Items
 
-#### In Bitwarden:
-1. **GitHub Item**:
-   - Create a **Login** or **Secure Note** named `GitHub - Personal`.
-   - Put your GitHub Personal Access Token (PAT with `read:packages` or public repo access) in the **Password** field (or custom field `token`).
-2. **SSH Key Item**:
-   - Create an **SSH Key** item named `SSH - Personal`.
-   - Store your private and public key. (Bitwarden Desktop SSH Agent will automatically serve this key for daily Git and SSH operations).
+#### In Bitwarden
 
-#### In KeePassXC (if using KeePassXC for work):
+1. **GitHub Item**:
+   * Create a **Login** or **Secure Note** named `GitHub - Personal`.
+   * Put your GitHub Personal Access Token (PAT with `read:packages` or public repo access) in the **Password** field (or custom field `token`).
+2. **SSH Key Item**:
+   * Create an **SSH Key** item named `SSH - Personal`.
+   * Store your private and public key. (Bitwarden Desktop SSH Agent will automatically serve this key for daily Git and SSH operations).
+
+#### In KeePassXC (if using KeePassXC for work)
+
 1. Create an entry named `Work/Git Signing Key`.
 2. Add the public key in an attribute named `public_key` or in the entry **Notes**.
 
@@ -142,9 +151,10 @@ chezmoi init
 ```
 
 Choose your preset:
-- For personal machines, select `personal`.
-- For work machines, select `work` and provide your `.kdbx` path.
-- When prompted for `Git signing key`, leave it blank to automatically resolve from your secret store.
+
+* For personal machines, select `personal`.
+* For work machines, select `work` and provide your `.kdbx` path.
+* When prompted for `Git signing key`, leave it blank to automatically resolve from your secret store.
 
 ---
 
@@ -161,6 +171,7 @@ Chezmoi will unlock your secret store(s), retrieve the credentials, and populate
 ## 🔍 Verification & Troubleshooting
 
 ### Test Secret Resolution Directly
+
 You can test template resolution in your terminal without modifying files:
 
 ```bash
@@ -172,11 +183,13 @@ chezmoi execute-template '{{ includeTemplate "get-github-token.tmpl" . }}'
 ```
 
 ### Dry-Run Apply
+
 ```bash
 chezmoi apply --dry-run
 ```
 
 ### Checking `aqua.env`
+
 ```bash
 # On Unix:
 cat ~/.config/nredf/aqua.env
@@ -186,5 +199,5 @@ Get-Content "$HOME\.config\nredf\aqua.env"
 ```
 
 ### CI / Headless Mode
-When running in automated CI environments (`CI=true`) or when `NREDF_NO_BOOTSTRAP=1` is set, all secret lookups safely return empty strings, preventing interactive CLI prompts or failed builds.
 
+When running in automated CI environments (`CI=true`) or when `NREDF_NO_BOOTSTRAP=1` is set, all secret lookups safely return empty strings, preventing interactive CLI prompts or failed builds.

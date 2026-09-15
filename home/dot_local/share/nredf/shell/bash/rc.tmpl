@@ -38,12 +38,4 @@ if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 4) )
   eval "$(oh-my-posh init bash --config "${XDG_CONFIG_HOME}/oh-my-posh/config.json")"
 fi
 
-# Dynamic completions
-if [[ -d "${XDG_CONFIG_HOME}/completion/bash" ]]; then
-  for NREDF_BASH_COMPLETION in "${XDG_CONFIG_HOME}/completion/bash/"*; do
-    [[ -f "${NREDF_BASH_COMPLETION}" ]] || continue
-    # shellcheck disable=SC1090
-    source "${NREDF_BASH_COMPLETION}" 2>/dev/null || true
-  done
-fi
 

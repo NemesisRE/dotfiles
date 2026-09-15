@@ -36,13 +36,6 @@ post = '[[ -f "${HOME}/.config/fzf/key-bindings.zsh" ]] && source "${HOME}/.conf
 [plugins.fzf-zsh-completions]
 github = "chitoku-k/fzf-zsh-completions"
 
-# ── completion generators / helpers ──────────────────────────────────────────
-[plugins.zsh-completion-generator]
-github = "RobSis/zsh-completion-generator"
-
-[plugins.zsh-completion-generator.hooks]
-pre = "GENCOMPL_PY=${GENCOMPL_PY:-python3}"
-
 [plugins.zsh-completions]
 github = "zsh-users/zsh-completions"
 apply = ["fpath"]

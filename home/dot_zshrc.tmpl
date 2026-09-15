@@ -37,12 +37,6 @@ else
 fi
 export NREDF_SHELDON_LAZY_LOAD="${NREDF_SHELDON_LAZY_LOAD:-1}"
 
-# Some plugins still invoke `python`; prefer python3 when only python3 exists.
-if ! command -v python >/dev/null 2>&1 && command -v python3 >/dev/null 2>&1; then
-  python() { command python3 "$@"; }
-fi
-export GENCOMPL_PY="${GENCOMPL_PY:-python3}"
-
 # Always source common rc first (it chains into shell-specific rc).
 if [[ -f "${NREDF_DOT_PATH}/shell/common/rc" ]]; then
   source "${NREDF_DOT_PATH}/shell/common/rc"

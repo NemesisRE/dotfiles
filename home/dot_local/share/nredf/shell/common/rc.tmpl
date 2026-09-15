@@ -217,6 +217,15 @@ if command -v zoxide &>/dev/null; then
 fi
 _nredf_step "zoxide init"
 
+# Carapace completions — multi-shell multi-command completion generator (cache snippet for 24h)
+if command -v carapace &>/dev/null; then
+  _nredf_refresh_cached_shell_snippet \
+    "_nredf_carapace_init_${NREDF_SHELL_NAME}" \
+    "${XDG_CACHE_HOME}/nredf/init/carapace.${NREDF_SHELL_NAME}.sh" \
+    carapace _carapace "${NREDF_SHELL_NAME}"
+fi
+_nredf_step "carapace completions"
+
 _nredf_remote_multiplexer
 _nredf_step "_nredf_remote_multiplexer"
 

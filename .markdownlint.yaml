@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/DavidAnson/markdownlint/v0.34.0/schema/markdownlint-config-schema.json
+default: true
+
+# MD013/line-length: relaxed for documentation with wide tables and URLs
+MD013: false
+
+# MD024/no-duplicate-heading: allow duplicate headings across different parent sections
+MD024:
+  siblings_only: true
+
+# MD033/no-inline-html: allow standard documentation and badge HTML elements
+MD033:
+  allowed_elements:
+    - a
+    - br
+    - div
+    - h1
+    - img
+    - kbd
+    - p
+    - span
+    - sub
+    - sup
+    - table
+    - tbody
+    - td
+    - th
+    - thead
+    - tr
+
+# MD036/no-emphasis-as-heading: allow bold text as visual subheaders in FAQs
+MD036: false

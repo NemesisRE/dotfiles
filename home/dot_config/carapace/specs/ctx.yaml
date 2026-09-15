@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+name: ctx
+description: Fast way to switch between clusters in kubectl (kubectx alias)
+flags:
+  -c, --current: show current context
+  -u, --unset: unset current context
+  -d=: delete context
+completion:
+  flag:
+    d: ["$carapace.tools.kubectl.Contexts"]
+  positional:
+    - ["$carapace.tools.kubectl.Contexts"]

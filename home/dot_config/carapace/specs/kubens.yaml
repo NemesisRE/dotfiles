@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+name: kubens
+aliases: ["kns", "ns"]
+description: Fast way to switch between namespaces in kubectl
+flags:
+  -c, --current: show current namespace
+  -u, --unset: unset current namespace
+completion:
+  positional:
+    - ["$carapace.tools.kubectl.Resources({types: 'namespaces'})"]

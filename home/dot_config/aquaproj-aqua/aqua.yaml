@@ -44,6 +44,10 @@ packages:
     tags:
       - default
       - required
+  - name: carapace-sh/carapace-bin@v1.7.3 # renovate: depName=carapace-sh/carapace-bin
+    tags:
+      - default
+      - required
 
   # ── File / Text Utils ───────────────────────────────────────────────────────
   - name: lsd-rs/lsd@v1.2.0 # renovate: depName=lsd-rs/lsd
@@ -92,8 +96,6 @@ packages:
     registry: local
     tags:
       - default
-
-
 
   # ── Dev Tools ───────────────────────────────────────────────────────────────
   - name: cli/cli@v2.100.0 # renovate: depName=cli/cli
@@ -158,6 +160,10 @@ packages:
       - default
       - required
   - name: astral-sh/ruff@0.16.7 # renovate: depName=astral-sh/ruff
+    tags:
+      - default
+      - required
+  - name: oven-sh/bun@bun-v1.4.2 # renovate: depName=oven-sh/bun
     tags:
       - default
       - required

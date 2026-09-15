@@ -11,7 +11,7 @@ All core CLI tools are declared centrally in [`home/dot_config/aquaproj-aqua/aqu
 | Category | Primary Tools | Role / Description |
 | :--- | :--- | :--- |
 | **Dotfiles & Packages** | `chezmoi`, `aqua`, `sheldon` | Declarative system state & tool management |
-| **Shell & History** | `oh-my-posh`, `atuin`, `fzf`, `zoxide` | Prompt, encrypted history sync, fuzzy search, smart cd |
+| **Shell & History** | `oh-my-posh`, `atuin`, `fzf`, `zoxide`, `carapace` | Prompt, encrypted history sync, fuzzy search, smart cd, multi-shell completion |
 | **CLI Replacements** | `lsd`, `bat`, `delta`, `ripgrep`, `fd` | Modern, colored replacements for `ls`, `cat`, `diff`, `grep`, `find` |
 | **Multiplexer** | `zellij` | Builtin modern terminal workspace & multiplexer |
 | **File Management** | `yazi` (`yy`) | Fast async terminal file manager with custom plugins |
@@ -27,6 +27,7 @@ All core CLI tools are declared centrally in [`home/dot_config/aquaproj-aqua/aqu
 **Zellij** is the default and builtin terminal workspace manager in NREDF. It is configured in [`home/dot_config/zellij/config.kdl.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/zellij/config.kdl.tmpl) with the unified **OneDark-Pro** theme.
 
 ### Zellij Modal Architecture
+
 Zellij uses a modal interface where a shortcut switches you into a specific mode:
 
 ```text
@@ -45,7 +46,9 @@ Normal Mode ──┬──► Ctrl + p : Pane Mode (split, focus, float, fullsc
 ### Zellij Keyboard Shortcuts Cheatsheet
 
 #### 1. Pane Mode (<kbd>Ctrl</kbd> + <kbd>p</kbd>)
+
 Enter pane mode, then press:
+
 - <kbd>d</kbd>: New pane split **Down**
 - <kbd>r</kbd>: New pane split **Right**
 - <kbd>n</kbd>: New generic pane
@@ -58,7 +61,9 @@ Enter pane mode, then press:
 - <kbd>Esc</kbd> or <kbd>Enter</kbd>: Return to Normal mode
 
 #### 2. Tab Mode (<kbd>Ctrl</kbd> + <kbd>t</kbd>)
+
 Enter tab mode, then press:
+
 - <kbd>n</kbd>: New tab
 - <kbd>x</kbd>: Close active tab
 - <kbd>r</kbd>: Rename tab
@@ -69,14 +74,18 @@ Enter tab mode, then press:
 - <kbd>[</kbd> / <kbd>]</kbd>: Break active pane out into a new tab (left/right)
 
 #### 3. Resize Mode (<kbd>Ctrl</kbd> + <kbd>n</kbd>)
+
 Enter resize mode, then press:
+
 - <kbd>h</kbd> / <kbd>j</kbd> / <kbd>k</kbd> / <kbd>l</kbd>: Increase pane size in that direction
 - <kbd>H</kbd> / <kbd>J</kbd> / <kbd>K</kbd> / <kbd>L</kbd>: Decrease pane size in that direction
 - <kbd>+</kbd> / <kbd>=</kbd>: Increase overall size
 - <kbd>-</kbd>: Decrease overall size
 
 #### 4. Scroll & Search Mode (<kbd>Ctrl</kbd> + <kbd>s</kbd>)
+
 Enter scroll mode, then press:
+
 - <kbd>s</kbd>: Open interactive search prompt
 - <kbd>n</kbd> / <kbd>p</kbd>: Search next / previous match
 - <kbd>c</kbd>: Toggle case sensitivity
@@ -87,9 +96,11 @@ Enter scroll mode, then press:
 - <kbd>e</kbd>: **Edit Scrollback**: Open the entire terminal buffer directly in Neovim!
 
 #### 5. Locked Mode (<kbd>Ctrl</kbd> + <kbd>g</kbd>)
+
 Press <kbd>Ctrl</kbd> + <kbd>g</kbd> to lock Zellij. All keystrokes pass directly to inner applications (such as Neovim or remote shells) without collision. Press <kbd>Ctrl</kbd> + <kbd>g</kbd> again to unlock.
 
 ### Automatic Startup & Session Attachment
+
 - **Remote SSH Sessions**: When connecting over SSH, NREDF automatically attaches or creates a host-named Zellij session (enabled by default; controlled by `shell.multiplexer` / `NREDF_SHELL_MULTIPLEXER`).
 - **WSL Sessions**: On Windows Subsystem for Linux (WSL), automatic multiplexer attachment is **disabled by default** so terminal tabs behave as independent native shells. You can opt in by:
   - Running `chezmoi init --prompt && chezmoi apply` and enabling the WSL multiplexer prompt (or setting `wsl_multiplexer = true` under `[data.shell]` in `~/.config/chezmoi/chezmoi.toml`).
@@ -102,6 +113,7 @@ Press <kbd>Ctrl</kbd> + <kbd>g</kbd> to lock Zellij. All keystrokes pass directl
 [Atuin](https://atuin.sh) replaces your default shell history with an SQLite database backed by end-to-end encrypted synchronization across machines.
 
 ### Daily Usage
+
 - **Search History**: Press <kbd>Ctrl</kbd> + <kbd>r</kbd> in any shell (or <kbd>&uarr;</kbd> in PowerShell).
 - **Filter Modes**: While searching, press:
   - <kbd>Ctrl</kbd> + <kbd>r</kbd>: Cycle search modes (`HOST`, `SESSION`, `DIRECTORY`, `GLOBAL`).
@@ -110,6 +122,7 @@ Press <kbd>Ctrl</kbd> + <kbd>g</kbd> to lock Zellij. All keystrokes pass directl
   - <kbd>Delete</kbd>: Delete highlighted entry from history.
 
 ### Synchronizing Machines
+
 ```bash
 # First machine: create an account
 atuin register -u <username> -e <email>
@@ -131,10 +144,12 @@ Configured with custom **OneDark-Pro** theme colors and preview commands:
 | <kbd>Ctrl</kbd> + <kbd>t</kbd> | Zsh, Bash, pwsh | `bat` syntax highlighted preview | Fuzzy search files in workspace |
 | <kbd>Alt</kbd> + <kbd>c</kbd> / <kbd>Option</kbd>+<kbd>c</kbd> | Zsh, Bash, pwsh | `lsd --tree` preview | Fuzzy search directories and `cd` |
 | <kbd>Ctrl</kbd> + <kbd>/</kbd> | Any fzf window | &mdash; | Toggle preview window (hidden/bottom/right) |
-| <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd>| Any fzf window | &mdash; | Multi-select items / move cursor |
+| <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> | Any fzf window | &mdash; | Multi-select items / move cursor |
 
 ### SSH & Network Completions
+
 Typing `ssh **` or `scp **` followed by <kbd>Tab</kbd> automatically fuzzy searches known hosts across:
+
 - `~/.ssh/config` and `/etc/ssh/ssh_config`
 - `~/.ssh/known_hosts`
 - `~/.ssh/hosts` and `/etc/hosts`
@@ -155,12 +170,14 @@ Typing `ssh **` or `scp **` followed by <kbd>Tab</kbd> automatically fuzzy searc
 ## 📁 Modern File Listing & Viewing: lsd & bat
 
 ### `lsd` (Next-Gen `ls`)
+
 - `ls`: Colorized listing with file type icons.
 - `ll`: Long format listing with Git modified flags (`--git`) and permissions.
 - `la`: Long format including hidden dotfiles.
 - `tree`: Full recursive directory tree with icons.
 
 ### `bat` (Syntax-Highlighted `cat`)
+
 - Aliased to `cat` in PowerShell and used as the default preview engine in `fzf`.
 - Uses the **OneDarkPro** theme (`~/.config/bat/themes/OneDarkPro.tmTheme`).
 - Displays line numbers, Git modifications in the gutter, and automatic syntax detection.
@@ -172,7 +189,9 @@ Typing `ssh **` or `scp **` followed by <kbd>Tab</kbd> automatically fuzzy searc
 [Yazi](https://yazi-rs.github.io) is an ultra-fast terminal file manager written in Rust.
 
 ### Features & Plugins Configured
+
 NREDF configures Yazi with the following plugins in [`home/dot_config/yazi/keymap.toml.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/yazi/keymap.toml.tmpl):
+
 - **Smart Enter (`l`)**: Enters directory or opens file in Neovim automatically.
 - **Smart Paste (`p`)**: Intelligently pastes into the hovered folder or CWD.
 - **Git VCS Changes (`g` `c`)**: Filters and shows only Git modified files.
@@ -183,6 +202,7 @@ NREDF configures Yazi with the following plugins in [`home/dot_config/yazi/keyma
 - **Mount (`M`)**: Interactive mount plugin.
 
 ### Shell Working Directory Integration (`yy`)
+
 Use the `yy` alias in any shell to launch Yazi. When you exit with <kbd>q</kbd>, your shell automatically changes directories to the folder you were navigating!
 
 ---
@@ -233,7 +253,9 @@ Configured with the **OneDark-Pro** color scheme and integrates with `delta` for
 ## 🪵 Log Analysis & Navigation: lazyjournal (`lzj` / `lj`) & lnav
 
 ### 1. `lazyjournal` (`lzj` / `lj`)
+
 [lazyjournal](https://github.com/Lifailon/lazyjournal) is an all-in-one TUI for querying and navigating logs across multiple sources, aliased to `lzj` (and `lj`):
+
 - **Supported Sources**: Systemd `journald`, `auditd`, local log files, Docker/Podman containers, Docker Compose stacks, and Kubernetes pods.
 - **Key Features**: Live streaming, multi-level log syntax highlighting, regex filtering, and custom search queries.
 - **Keybindings**:
@@ -245,7 +267,9 @@ Configured with the **OneDark-Pro** color scheme and integrates with `delta` for
   - <kbd>q</kbd>: Quit
 
 ### 2. `lnav` (Log File Navigator)
+
 [lnav](https://lnav.org) is an advanced log viewer with an embedded SQLite query engine:
+
 - **Format Auto-Detection**: Automatically parses syslog, Apache, nginx, JSON logs, systemd, and more without manual setup.
 - **Timeline & Zoom**: Press <kbd>t</kbd> to view logs on a timeline; press <kbd>z</kbd> / <kbd>Z</kbd> to zoom in / out.
 - **Error Navigation**: Jump directly to errors with <kbd>e</kbd> (next error) and <kbd>E</kbd> (previous error), or warnings with <kbd>w</kbd> / <kbd>W</kbd>.
@@ -253,6 +277,7 @@ Configured with the **OneDark-Pro** color scheme and integrates with `delta` for
   - <kbd>&amp;</kbd> `<pattern>`: Filter in (show only matching lines)
   - <kbd>-</kbd> `<pattern>`: Filter out (hide matching lines)
 - **SQL Queries**: Query your structured log data in real time:
+
   ```sql
   ;SELECT log_time, log_level, log_message FROM log WHERE log_level = 'error' ORDER BY log_time DESC
   ```
@@ -262,6 +287,7 @@ Configured with the **OneDark-Pro** color scheme and integrates with `delta` for
 ## 📊 System Resource Monitoring: btop
 
 [btop](https://github.com/aristocratos/btop) is an interactive real-time system monitor displaying CPU cores, memory, disk I/O, network bandwidth, and a process tree:
+
 - <kbd>m</kbd>: Open main menu / settings
 - <kbd>e</kbd>: Toggle process tree view
 - <kbd>f</kbd>: Filter processes by name
@@ -284,7 +310,9 @@ Declarative Kubernetes management configured across all operating systems:
 | `dipls` | Custom function/alias to list all Docker containers with IP addresses and hostnames |
 
 ### `k9s` Quick Keys & Plugins
+
 Configured in [`home/dot_config/k9s/`](file:///Users/skurz/Repos/chezmoi/home/dot_config/k9s/):
+
 - **Resource Jump Keys**:
   - <kbd>F1</kbd>: Pods
   - <kbd>F2</kbd>: Contexts
@@ -310,6 +338,7 @@ Configured in [`home/dot_config/k9s/`](file:///Users/skurz/Repos/chezmoi/home/do
 NREDF uses **aqua** to declaratively install, lock, and manage CLI tools across Linux, macOS, and Windows.
 
 ### Common Commands
+
 ```bash
 aqua install             # Install all packages declared in aqua.yaml
 aqua install -a -l       # Install and link all packages to bin/
@@ -319,8 +348,9 @@ aqua vacuum -d 30        # Clean up package versions unused for 30+ days
 ```
 
 ### Avoiding GitHub API Rate Limits
+
 Aqua queries the GitHub API to download binaries. To eliminate rate limit errors:
+
 - **Automatic Secret Store Sync (Recommended)**: Use the builtin [Secrets Management Guide](secrets.md) to automatically resolve and populate `AQUA_GITHUB_TOKEN` from Bitwarden, KeePassXC, or 1Password.
 - **System Keyring Fallback**: Run `aqua token set` (or `nredf_aqua_token_setup`) to store a token in your OS keyring.
 - **Manual Environment Variable**: Export `AQUA_GITHUB_TOKEN` or `GITHUB_TOKEN` in your environment.
-
