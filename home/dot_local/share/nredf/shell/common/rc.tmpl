@@ -219,10 +219,15 @@ _nredf_step "zoxide init"
 
 # Carapace completions — multi-shell multi-command completion generator (cache snippet for 24h)
 if command -v carapace &>/dev/null; then
+  _nredf_carapace_shell="${NREDF_SHELL_NAME}"
+  if [[ "${NREDF_SHELL_NAME}" == "bash" ]] && [[ -f "${XDG_DATA_HOME}/blesh/ble.sh" || -n "${BLE_VERSION-}" ]]; then
+    _nredf_carapace_shell="bash-ble"
+  fi
   _nredf_refresh_cached_shell_snippet \
-    "_nredf_carapace_init_${NREDF_SHELL_NAME}" \
-    "${XDG_CACHE_HOME}/nredf/init/carapace.${NREDF_SHELL_NAME}.sh" \
-    carapace _carapace "${NREDF_SHELL_NAME}"
+    "_nredf_carapace_init_${_nredf_carapace_shell}" \
+    "${XDG_CACHE_HOME}/nredf/init/carapace.${_nredf_carapace_shell}.sh" \
+    carapace _carapace "${_nredf_carapace_shell}"
+  unset _nredf_carapace_shell
 fi
 _nredf_step "carapace completions"
 

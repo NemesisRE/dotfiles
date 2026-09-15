@@ -16,7 +16,7 @@ All three shells share a unified experience designed around modern developer erg
 | **Directory Navigation** | `zoxide` hooked to `cd`, `z`, `zi` | `zoxide` hooked to `cd`, `z`, `zi` | `zoxide` hooked to `cd`, `z`, `zi` |
 | **Syntax Highlighting** | `fast-syntax-highlighting` | `ble.sh` (Bash Line Editor) | `PSReadLine` |
 | **Inline Autosuggestions** | `zsh-autosuggestions` | `ble.sh` inline suggestions | `PSReadLine` (`HistoryAndPlugin`) |
-| **Tab Completion Engine** | [Carapace](https://carapace.sh) (`carapace-bin`) | [Carapace](https://carapace.sh) (`carapace-bin`) | [Carapace](https://carapace.sh) (`carapace-bin`) |
+| **Tab Completion Engine** | [Carapace](https://carapace.sh) (`carapace-bin` + `fzf-tab`) | [Carapace](https://carapace.sh) (`bash-ble` with descriptions) | [Carapace](https://carapace.sh) (native menu + `fzf` modal) |
 | **Auto-Pairing Quotes** | `zsh-autopair` | `ble.sh` auto-complete | Custom `PSReadLine` chord (`"`, `'`) |
 | **Plugin Manager** | [Sheldon](https://sheldon.cli.rs) | Git-cloned `ble.sh` | None required (100% native CLI tooling) |
 | **Environment Sync** | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) |
@@ -65,6 +65,8 @@ All three shells share a unified experience designed around modern developer erg
 
 | Shortcut | Function | Description |
 | :--- | :--- | :--- |
+| <kbd>Tab</kbd> | Completion Menu | Interactive tab completion with descriptions via fzf-tab |
+| <kbd>Shift</kbd> + <kbd>Tab</kbd> | Backward Cycle | Cycle backward through completion candidates in fzf-tab |
 | <kbd>Ctrl</kbd> + <kbd>r</kbd> | Atuin Search | Interactive fuzzy search across full command history |
 | <kbd>Ctrl</kbd> + <kbd>t</kbd> | Fzf File Search | Fuzzy search files in CWD and insert selected path at cursor |
 | <kbd>Alt</kbd> + <kbd>c</kbd> / <kbd>Option</kbd>+<kbd>c</kbd> | Fzf CD | Fuzzy search subdirectories and immediately `cd` into selection |
@@ -85,12 +87,14 @@ All three shells share a unified experience designed around modern developer erg
 
 | Shortcut | Function | Description |
 | :--- | :--- | :--- |
+| <kbd>Tab</kbd> | Menu Completion | Open interactive ble.sh completion menu with Carapace descriptions |
+| <kbd>Shift</kbd> + <kbd>Tab</kbd> | Backward Cycle | Cycle backward through completion candidates |
+| <kbd>Ctrl</kbd> + <kbd>Space</kbd> | fzf Menu Search | Open fzf fuzzy modal for completion candidates on demand |
 | <kbd>Ctrl</kbd> + <kbd>r</kbd> | Atuin Search | Interactive fuzzy history search via `__atuin_history` |
 | <kbd>Ctrl</kbd> + <kbd>t</kbd> | Fzf File Search | Fuzzy search files with live `bat` syntax preview |
 | <kbd>Alt</kbd> + <kbd>c</kbd> / <kbd>Option</kbd>+<kbd>c</kbd> | Fzf CD | Fuzzy search directories with live `lsd` tree preview |
 | <kbd>&rarr;</kbd> (Right Arrow) | ble.sh Complete | Accept highlighted completion candidate or inline autosuggestion |
 | <kbd>Ctrl</kbd> + <kbd>x</kbd> <kbd>Ctrl</kbd> + <kbd>e</kbd> | Edit in $EDITOR | Open current command in Neovim/Vim, save to execute |
-| <kbd>Tab</kbd> | Menu Completion | Open interactive ble.sh completion menu |
 | <kbd>Ctrl</kbd> + <kbd>c</kbd> | Cancel / Interrupt | Abort current input or running process |
 | <kbd>Ctrl</kbd> + <kbd>l</kbd> | Clear Screen | Clear terminal screen and redraw prompt |
 
@@ -100,7 +104,9 @@ All three shells share a unified experience designed around modern developer erg
 
 | Shortcut | Function | Description |
 | :--- | :--- | :--- |
-| <kbd>Tab</kbd> | MenuComplete | Interactive terminal completion menu across all platforms |
+| <kbd>Tab</kbd> | MenuComplete | Interactive terminal completion menu with Carapace descriptions |
+| <kbd>Shift</kbd> + <kbd>Tab</kbd> | TabCompletePrevious | Cycle backward through completion candidates |
+| <kbd>Ctrl</kbd> + <kbd>Space</kbd> | fzf Tab Completion | Open fzf fuzzy modal with completion candidates and descriptions |
 | <kbd>Ctrl</kbd> + <kbd>r</kbd> / <kbd>&uarr;</kbd> | Atuin History Search | Full-screen interactive history search powered by Atuin |
 | <kbd>Ctrl</kbd> + <kbd>t</kbd> | fzf File Search | Fuzzy search files with `bat` syntax preview |
 | <kbd>Alt</kbd> + <kbd>c</kbd> / <kbd>Option</kbd>+<kbd>c</kbd> | fzf CD | Fuzzy search directories with `lsd` tree preview and jump |

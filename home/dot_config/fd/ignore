@@ -1,0 +1,36 @@
+# fd global ignore file — managed by chezmoi
+# https://github.com/sharkdp/fd#excluding-specific-files-or-directories
+
+# Version control
+.git/
+.hg/
+.svn/
+
+# Package managers & dependencies
+node_modules/
+vendor/bundle/
+
+# Python caches and environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.tox/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Build outputs & frontend frameworks
+.turbo/
+.next/
+.nuxt/
+dist/
+build/
+
+# Cache directories
+.cache/
+
+# OS-generated metadata
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -138,6 +138,15 @@ function _nredf_set_defaults() {
     if [[ -e "${XDG_CONFIG_HOME}/dircolors" ]]; then eval "$(dircolors "${XDG_CONFIG_HOME}/dircolors")"; fi
   fi
 
+  # Less pager defaults & history hygiene
+  export LESS="-R -F -X -i"
+  export LESSHISTFILE="${XDG_STATE_HOME:-${HOME}/.local/state}/less/history"
+
+  # Tool config paths
+  export WGETRC="${XDG_CONFIG_HOME}/wgetrc"
+  export RIPGREP_CONFIG_PATH="${XDG_CONFIG_HOME}/ripgrep/config"
+  export GH_CONFIG_DIR="${XDG_CONFIG_HOME}/gh"
+
   if [[ -f "${NREDF_CONFIG}/GITHUB.AUTH" ]]; then
     eval "$(< "${NREDF_CONFIG}/GITHUB.AUTH")"
     if [[ -n ${NREDF_GITHUB_USERNAME} && -n ${NREDF_GITHUB_TOKEN} ]]; then

@@ -196,3 +196,17 @@ if (Get-Command lsd -ErrorAction SilentlyContinue) {
   $ENV:FZF_ALT_C_OPTS = "--preview 'lsd -A --tree --depth=2 --color=always {}' --bind 'ctrl-/:change-preview-window(down|hidden|)'"
 }
 
+# Less pager defaults (cross-platform)
+$ENV:LESS = "-R -F -X -i"
+if ($isWindows) {
+  $ENV:LESSHISTFILE = Join-Path $ENV:LOCALAPPDATA 'less\history'
+} elseif ($ENV:XDG_STATE_HOME) {
+  $ENV:LESSHISTFILE = Join-Path $ENV:XDG_STATE_HOME 'less/history'
+}
+
+# Tool config paths (cross-platform)
+if (-not [string]::IsNullOrEmpty($ENV:XDG_CONFIG_HOME)) {
+  $ENV:WGETRC = Join-Path $ENV:XDG_CONFIG_HOME 'wgetrc'
+  $ENV:RIPGREP_CONFIG_PATH = Join-Path $ENV:XDG_CONFIG_HOME 'ripgrep\config'
+  $ENV:GH_CONFIG_DIR = Join-Path $ENV:XDG_CONFIG_HOME 'gh'
+}

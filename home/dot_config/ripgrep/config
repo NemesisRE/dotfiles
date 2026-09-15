@@ -1,0 +1,28 @@
+# ripgrep configuration — managed by chezmoi
+# Loaded via $RIPGREP_CONFIG_PATH
+
+# Case-insensitive if pattern is all lowercase; case-sensitive if uppercase
+--smart-case
+
+# Search hidden files and directories (dotfiles)
+--hidden
+
+# Exclude internal .git repository directory from recursive search
+--glob=!.git/*
+
+# Truncate overly long lines to prevent terminal lockup on minified files
+--max-columns=150
+--max-columns-preview
+
+# OneDarkPro color theme:
+# Path in blue (#61afef)
+--colors=path:fg:97,175,239
+--colors=path:style:bold
+
+# Line numbers in yellow (#e5c07b)
+--colors=line:fg:229,192,123
+
+# Matches in red bold (#e06c75)
+--colors=match:fg:224,108,117
+--colors=match:style:bold
+

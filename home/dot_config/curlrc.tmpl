@@ -1,0 +1,22 @@
+# curl configuration — managed by chezmoi
+# https://curl.se/docs/manpage.html
+
+# Enforce HTTPS by default for schemeless URLs
+proto-default = "https"
+
+# Automatically follow HTTP 3xx redirects
+location
+max-redirs = 50
+
+# Display error messages even when run with --silent / -s
+show-error
+
+# Request compressed response (gzip, brotli, zstd)
+compressed
+
+# Send Referer header when following redirects
+referer = ";auto"
+
+# Connection timeout in seconds
+connect-timeout = 30
+

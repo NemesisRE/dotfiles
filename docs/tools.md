@@ -19,6 +19,8 @@ All core CLI tools are declared centrally in [`home/dot_config/aquaproj-aqua/aqu
 | **Containers & Logs** | `lazydocker` (`lzd`), `lazyjournal` (`lzj` / `lj`), `lnav` | Terminal UIs for Docker management, log aggregation, and SQL log analysis |
 | **System Monitoring** | `btop` | Real-time interactive system resource & process monitor |
 | **Kubernetes** | `kubectl`, `kubectx`, `kubens`, `k9s`, `helm` | Container orchestration, context switching, and TUI |
+| **Network & Transfers** | `curl`, `wget` | Hardened, XDG-compliant network transfer clients |
+| **Developer Ecosystem** | `gh`, `uv`, `ruff`, `mise` | GitHub CLI, Python toolchain, and runtime manager |
 
 ---
 
@@ -184,6 +186,50 @@ Typing `ssh **` or `scp **` followed by <kbd>Tab</kbd> automatically fuzzy searc
 
 ---
 
+## 🔍 Fast Search & File Discovery: ripgrep & fd
+
+### `ripgrep` (`rg`)
+
+Configured via `$RIPGREP_CONFIG_PATH` pointing to [`home/dot_config/ripgrep/config`](file:///Users/skurz/Repos/chezmoi/home/dot_config/ripgrep/config):
+
+- **Smart Case**: Case-insensitive searches when queries are lowercase; case-sensitive when uppercase characters are typed.
+- **Hidden Files**: Automatically searches dotfiles while ignoring internal `.git` repository trees.
+- **Terminal Protection**: Truncates lines longer than 150 columns (`--max-columns=150` and `--max-columns-preview`) to prevent terminal freezing on minified assets.
+- **OneDark-Pro Palette**: Matches terminal highlights with bold blue paths (`#61afef`), yellow line numbers (`#e5c07b`), and bold red matches (`#e06c75`).
+
+### `fd`
+
+Configured with global ignore rules in [`home/dot_config/fd/ignore`](file:///Users/skurz/Repos/chezmoi/home/dot_config/fd/ignore):
+
+- Automatically excludes noise such as `.git/`, `node_modules/`, `vendor/bundle/`, `__pycache__/`, `.venv/`, `.turbo/`, `.cache/`, `.DS_Store`, and `Thumbs.db`.
+
+---
+
+## 🌐 Network & Transfer Utilities: curl & wget
+
+Both utilities follow strict **XDG Base Directory** specifications to prevent cluttering `$HOME`.
+
+### `curl`
+
+Configured in [`home/dot_config/curlrc.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/curlrc.tmpl) (`$XDG_CONFIG_HOME/curlrc`):
+
+- **HTTPS Enforcement**: Defaults schemeless URLs to HTTPS (`proto-default = "https"`).
+- **Automated Redirects**: Automatically follows HTTP 3xx redirects (`location`, `max-redirs = 50`).
+- **Compression**: Enables automated gzip/brotli/zstd response decompression (`compressed`).
+- **Resilient Timeouts**: Caps connection negotiation at 30 seconds (`connect-timeout = 30`).
+- **Error Visibility**: Ensures error details remain visible even when running silent mode (`show-error`).
+
+### `wget`
+
+Configured via `$WGETRC` pointing to [`home/dot_config/wgetrc.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/wgetrc.tmpl) (`$XDG_CONFIG_HOME/wgetrc`):
+
+- **Resilient Downloads**: Resumes interrupted transfers (`continue = on`) with a 3-try limit and 30-second timeout.
+- **Timestamping**: Re-downloads files only when remote copies are newer (`timestamping = on`).
+- **Security**: Validates TLS certificates by default (`check_certificate = on`).
+- **Cache Cleanliness**: Relocates the HSTS tracking database to `~/.cache/wget-hsts`, eliminating home directory clutter.
+
+---
+
 ## 🗂️ Terminal File Manager: Yazi
 
 [Yazi](https://yazi-rs.github.io) is an ultra-fast terminal file manager written in Rust.
@@ -297,6 +343,28 @@ Configured with the **OneDark-Pro** color scheme and integrates with `delta` for
 
 ---
 
+## 📖 Markdown, System Info & Disk Usage: glow, fastfetch & dust
+
+### `glow`
+
+Configured in [`home/dot_config/glow/glow.yml.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/glow/glow.yml.tmpl):
+
+- Terminal Markdown reader configured with dark styling, mouse scrolling, and pager support.
+
+### `fastfetch`
+
+Configured in [`home/dot_config/fastfetch/config.jsonc.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/fastfetch/config.jsonc.tmpl):
+
+- Clean, structured system information dashboard themed with **OneDarkPro** accent colors.
+
+### `dust`
+
+Configured in [`home/dot_config/dust/config.toml.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/dust/config.toml.tmpl):
+
+- Interactive disk usage tool configured with `reverse = true` (largest directories positioned at the bottom next to the prompt) and right-aligned progress bars.
+
+---
+
 ## ☸️ Kubernetes Tooling Suite
 
 Declarative Kubernetes management configured across all operating systems:
@@ -330,6 +398,25 @@ Configured in [`home/dot_config/k9s/`](file:///Users/skurz/Repos/chezmoi/home/do
   - <kbd>a</kbd> (in CSR view): Automatically approve certificate signing request (`kubectl certificate approve`).
   - <kbd>l</kbd> (in Backup view): Stream Velero backup logs.
   - <kbd>Ctrl</kbd> + <kbd>l</kbd> (in Backup view): Describe Velero backup.
+
+---
+
+## 🛠️ Developer Ecosystem: gh, uv, ruff & mise
+
+### `gh` (GitHub CLI)
+
+Configured via `$GH_CONFIG_DIR` pointing to [`home/dot_config/gh/config.yml.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/gh/config.yml.tmpl):
+
+- Configured to use SSH Git protocol, Neovim (`editor: nvim`), and `delta` as the default diff pager.
+
+### `uv` & `ruff` (Python Toolchain)
+
+- **`uv`**: Configured in [`home/dot_config/uv/uv.toml.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/uv/uv.toml.tmpl) to prefer managed Python versions (`python-preference = "managed"`).
+- **`ruff`**: Configured in [`home/dot_config/ruff/ruff.toml.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/ruff/ruff.toml.tmpl) with 88-character line length, Python 3.12 target, and standard flake8/isort rule selection.
+
+### `mise`
+
+Configured in [`home/dot_config/mise/config.toml.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/mise/config.toml.tmpl) to automatically detect legacy version files (`.nvmrc`, `.python-version`, etc.) and auto-install missing tool runtimes.
 
 ---
 

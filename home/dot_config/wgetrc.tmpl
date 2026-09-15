@@ -1,0 +1,21 @@
+# GNU Wget / Wget2 configuration — managed by chezmoi
+# https://www.gnu.org/software/wget/manual/html_node/Wgetrc-Syntax.html
+
+# Automatically resume interrupted downloads
+continue = on
+
+# Maximum number of retries before giving up
+tries = 3
+
+# Network read/connect timeout in seconds
+timeout = 30
+
+# Only download files newer than local copies
+timestamping = on
+
+# Enforce TLS certificate verification
+check_certificate = on
+
+# Keep $HOME clean by storing HSTS database in user cache
+hsts-file = {{ .chezmoi.homeDir | replace "\\" "/" }}/.cache/wget-hsts
+
