@@ -21,28 +21,29 @@ function _nredf_chezmoi_update() {
     echo -e '\033[1mUpdating dotfiles and externals via chezmoi\033[0m'
   fi
 
-  # Restore BW_SESSION from the OS keychain only — never attempt an interactive
-  # unlock during shell startup. If no cached session exists, or if the cached
-  # token is stale, we skip silently; the chezmoi wrapper handles unlocking on
-  # demand when the user runs chezmoi directly.
-  #
-  # NOTE: _nredf_bw_ensure_session is intentionally NOT used here. Even with
-  # 2>/dev/null, it falls through to _nredf_bw_do_unlock → `bw unlock --raw`,
-  # which blocks on stdin/tty regardless of stderr redirection.
+  # If bw is installed, ensure the vault is unlocked before running chezmoi —
+  # templates need BW secrets. Try the keychain first (silent); if the vault is
+  # still locked, prompt the user interactively (stderr visible so the master-
+  # password prompt is not hidden). Only skip the update if unlock fails.
   if command -v bw &>/dev/null \
     && [[ "${NREDF_NO_BOOTSTRAP:-}" != "1" && "${CI:-}" != "true" ]]; then
-    local _bw_cached
-    if _bw_cached="$(_nredf_bw_keychain_get 2>/dev/null)" && [[ -n "${_bw_cached}" ]]; then
-      BW_SESSION="${_bw_cached}"
-      export BW_SESSION
-      # Validate; if stale, clear it so the wrapper can prompt interactively
-      bw unlock --check &>/dev/null \
-        || { unset BW_SESSION; _nredf_bw_keychain_del 2>/dev/null || true; }
+    if [[ -z "${BW_SESSION:-}" ]]; then
+      local _bw_cached
+      if _bw_cached="$(_nredf_bw_keychain_get 2>/dev/null)" && [[ -n "${_bw_cached}" ]]; then
+        BW_SESSION="${_bw_cached}"
+        export BW_SESSION
+      fi
+    fi
+    if ! bw unlock --check &>/dev/null; then
+      _nredf_bw_ensure_session || { _nredf_remove_lock; return 0; }
     fi
   fi
 
   local _chezmoi_err=""
-  if _chezmoi_err="$(chezmoi update --refresh-externals --force 2>&1)"; then
+  # Use `command chezmoi` to bypass the BW wrapper — the keychain pre-load
+  # above already exported BW_SESSION when a cached session existed. Chezmoi's
+  # own `unlock = "auto"` config handles any remaining BW auth for templates.
+  if _chezmoi_err="$(command chezmoi update --refresh-externals --force 2>&1)"; then
     # Write 24h throttle timestamp (don't re-fetch every shell)
     _nredf_last_run "" "true" "86400"
   else
