@@ -136,6 +136,10 @@ _nredf_step "_nredf_set_aqua_env/path + _nredf_set_krew_path"
 _nredf_set_ssh_agent
 _nredf_step "_nredf_set_ssh_agent"
 
+# Restore Bitwarden session from keychain if available (silent, non-blocking)
+_nredf_bw_restore_session
+_nredf_step "_nredf_bw_restore_session"
+
 if [[ "${NREDF_COMMON_RC_PROFILE}" == "login-minimal" ]]; then
   if command -v fnm &>/dev/null; then
     eval "$(fnm env --use-on-cd)"

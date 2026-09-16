@@ -17,6 +17,9 @@
 # - bwu               Ensure BW_SESSION is set (keychain → fresh unlock),
 #                     export it, print confirmation.
 # - bwlock            Lock the vault, unset BW_SESSION, remove keychain entry.
+# - _nredf_bw_restore_session
+#                     Restores BW_SESSION from keychain if available (silent,
+#                     non-blocking, called during shell startup).
 # - chezmoi           Wrapper: restores BW_SESSION from keychain before
 #                     delegating to the real chezmoi binary, so template
 #                     functions like {{ bitwarden "item" "..." }} never prompt
@@ -35,37 +38,16 @@ _NREDF_BW_SERVICE="nredf.bw_session"
 _NREDF_BW_ACCOUNT="${USER:-$(id -un 2>/dev/null)}"
 
 # ---------------------------------------------------------------------------
-# Internal: detect which keychain backend is available
-# ---------------------------------------------------------------------------
-_nredf_bw_keychain_backend() {
-  if [[ "${OSTYPE:-}" == darwin* ]]; then
-    echo "macos"
-    return 0
-  fi
-
-  if command -v kwallet-query &>/dev/null; then
-    echo "kwallet"
-    return 0
-  fi
-
-  if command -v secret-tool &>/dev/null; then
-    echo "secret-tool"
-    return 0
-  fi
-
-  echo "fallback"
-}
-
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
 # Internal: helpers for interacting with KWallet via gdbus / D-Bus
 # Works natively on KDE Plasma 6 (kwalletd6) and Plasma 5 (kwalletd5).
 # ---------------------------------------------------------------------------
 _nredf_bw_kwallet_service() {
+  command -v gdbus &>/dev/null || return 1
+  local en
   for s in org.kde.kwalletd6 org.kde.kwalletd5; do
-    if gdbus call --session --dest "${s}" --object-path "/modules/${s##*.}" \
-      --method org.kde.KWallet.isEnabled &>/dev/null; then
+    en="$(gdbus call --session --dest "${s}" --object-path "/modules/${s##*.}" \
+      --method org.kde.KWallet.isEnabled 2>/dev/null)" || continue
+    if [[ "${en}" == *true* ]]; then
       printf "%s" "${s}"
       return 0
     fi
@@ -88,6 +70,28 @@ _nredf_bw_kwallet_open() {
     return 0
   fi
   return 1
+}
+
+# ---------------------------------------------------------------------------
+# Internal: detect which keychain backend is available
+# ---------------------------------------------------------------------------
+_nredf_bw_keychain_backend() {
+  if [[ "${OSTYPE:-}" == darwin* ]]; then
+    echo "macos"
+    return 0
+  fi
+
+  if command -v kwallet-query &>/dev/null || (command -v gdbus &>/dev/null && _nredf_bw_kwallet_service &>/dev/null); then
+    echo "kwallet"
+    return 0
+  fi
+
+  if command -v secret-tool &>/dev/null; then
+    echo "secret-tool"
+    return 0
+  fi
+
+  echo "fallback"
 }
 
 # ---------------------------------------------------------------------------
@@ -116,8 +120,9 @@ _nredf_bw_keychain_get() {
             for f in "nredf" "Passwords"; do
               raw="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
                 --method org.kde.KWallet.readPassword "${handle}" "${f}" "${_NREDF_BW_SERVICE}" "nredf" 2>/dev/null)" || true
-              if [[ "${raw}" =~ \(\'([^\']*)\',\) ]]; then
-                token="${BASH_REMATCH[1]}"
+              if [[ "${raw}" == \(\'* ]]; then
+                token="${raw#*(\'}"
+                token="${token%\',)}"
                 [[ -n "${token}" ]] && break
               fi
             done
@@ -291,6 +296,22 @@ _nredf_bw_do_unlock() {
   BW_SESSION="${session}"
   export BW_SESSION
   return 0
+}
+
+# ---------------------------------------------------------------------------
+# Public: _nredf_bw_restore_session
+# Restores BW_SESSION from the OS keychain if not already set in the environment.
+# Fast and non-blocking: never prompts, suitable for shell startup.
+# ---------------------------------------------------------------------------
+function _nredf_bw_restore_session() {
+  [[ -n "${BW_SESSION:-}" ]] && return 0
+  command -v bw &>/dev/null || return 0
+
+  local cached
+  if cached="$(_nredf_bw_keychain_get 2>/dev/null)" && [[ -n "${cached}" ]]; then
+    BW_SESSION="${cached}"
+    export BW_SESSION
+  fi
 }
 
 # ---------------------------------------------------------------------------

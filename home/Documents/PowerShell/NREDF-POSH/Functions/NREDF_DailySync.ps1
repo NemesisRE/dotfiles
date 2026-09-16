@@ -41,10 +41,7 @@ function NREDF_DailySync {
     if ((Get-Command bw -ErrorAction SilentlyContinue) -and
         $ENV:NREDF_NO_BOOTSTRAP -ne '1' -and
         $ENV:CI -ne 'true') {
-      if ([string]::IsNullOrEmpty($env:BW_SESSION)) {
-        $cached = NREDF_BwKeychainGet
-        if (-not [string]::IsNullOrEmpty($cached)) { $env:BW_SESSION = $cached }
-      }
+      NREDF_BwRestoreSession
       & bw unlock --check 2>$null | Out-Null
       if ($LASTEXITCODE -ne 0) {
         # Vault is locked — prompt interactively (stderr visible)

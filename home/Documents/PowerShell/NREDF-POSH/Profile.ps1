@@ -21,6 +21,12 @@ if ([string]::IsNullOrEmpty($ENV:NREDF_PATH)) {
 
 . (Join-Path $ENV:NREDF_PATH 'Sources.ps1')
 
+# Restore Bitwarden session from keychain if available (silent, non-blocking)
+if (Get-Command NREDF_BwRestoreSession -ErrorAction SilentlyContinue) {
+  NREDF_BwRestoreSession
+  NREDF_Step "NREDF_BwRestoreSession"
+}
+
 # Set Oh-My-Posh Theme to match bash and zsh profiles
 if (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {
   $ompConfig = $null

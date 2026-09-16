@@ -8,8 +8,9 @@
 # - Linux   : kwallet-query (KDE) → secret-tool (GNOME) → $env:XDG_RUNTIME_DIR file
 #
 # Exported commands
-# - bwu       Ensure BW_SESSION is set (keychain → fresh unlock), export it.
-# - bwlock    Lock the vault, unset BW_SESSION, remove keychain entry.
+# - bwu                    Ensure BW_SESSION is set (keychain → fresh unlock), export it.
+# - bwlock                 Lock the vault, unset BW_SESSION, remove keychain entry.
+# - NREDF_BwRestoreSession Restores BW_SESSION from keychain if available (startup).
 #
 # Internal helpers
 # - NREDF_BwKeychainGet / Set / Del
@@ -255,6 +256,26 @@ function NREDF_BwDoUnlock {
   NREDF_BwKeychainSet -Token $session
   $env:BW_SESSION = $session
   return $true
+}
+
+# ---------------------------------------------------------------------------
+# Public: NREDF_BwRestoreSession
+# Restores $env:BW_SESSION from the OS keychain if not already set.
+# Fast and non-blocking: never prompts, suitable for shell startup.
+# ---------------------------------------------------------------------------
+function NREDF_BwRestoreSession {
+  <#
+  .SYNOPSIS
+      Restores $env:BW_SESSION from the OS keychain if not already set.
+      Fast and non-blocking: never prompts, suitable for shell startup.
+  #>
+  if (-not [string]::IsNullOrEmpty($env:BW_SESSION)) { return }
+  if (-not (Get-Command bw -ErrorAction SilentlyContinue)) { return }
+
+  $cached = NREDF_BwKeychainGet
+  if (-not [string]::IsNullOrEmpty($cached)) {
+    $env:BW_SESSION = $cached
+  }
 }
 
 # ---------------------------------------------------------------------------
