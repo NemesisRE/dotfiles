@@ -45,7 +45,30 @@ function NREDF_BwKeychainGet {
     return $null
   }
 
-  # Linux — try kwallet first, then secret-tool, then fallback file
+  # Linux — try gdbus / kwallet-query first, then secret-tool, then fallback file
+  if (Get-Command gdbus -ErrorAction SilentlyContinue) {
+    $service = @('org.kde.kwalletd6', 'org.kde.kwalletd5') | Where-Object {
+      $mod = "/modules/$($_ -replace '^.*\.','')"
+      $out = & gdbus call --session --dest $_ --object-path $mod --method org.kde.KWallet.isEnabled 2>$null
+      $out -match 'true'
+    } | Select-Object -First 1
+
+    if ($service) {
+      $mod = "/modules/$($service -replace '^.*\.','')"
+      $openRes = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.open kdewallet 0 'nredf' 2>$null
+      $handle = ($openRes -replace '\D', '')
+      if ($handle) {
+        foreach ($folder in @('nredf', 'Passwords')) {
+          $raw = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.readPassword [int64]$handle $folder $script:_NREDF_BW_SERVICE 'nredf' 2>$null
+          if ($raw -match "\('([^']*)',\)") {
+            $token = $Matches[1]
+            if (-not [string]::IsNullOrEmpty($token)) { return $token.Trim() }
+          }
+        }
+      }
+    }
+  }
+
   if (Get-Command kwallet-query -ErrorAction SilentlyContinue) {
     # Try nredf folder first, then fallback to standard Passwords folder
     $token = & kwallet-query --read-password $script:_NREDF_BW_SERVICE --folder nredf kdewallet 2>$null
@@ -107,23 +130,32 @@ function NREDF_BwKeychainSet {
   }
 
   # Linux
-  if (Get-Command kwallet-query -ErrorAction SilentlyContinue) {
-    # Attempt to ensure folder exists via qdbus if available
-    $qdbusCmd = Get-Command qdbus6, qdbus -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($qdbusCmd) {
-      $service = @('org.kde.kwalletd6', 'org.kde.kwalletd5') | Where-Object { & $qdbusCmd.Source $_ 2>$null } | Select-Object -First 1
-      if ($service) {
-        $mod = "/modules/$($service -replace '^.*\.','')"
-        $handle = & $qdbusCmd.Source $service $mod open kdewallet 0 'nredf' 2>$null
-        if ($handle -and [int]$handle -ge 0) {
-          $hasFolder = & $qdbusCmd.Source $service $mod hasFolder [int]$handle 'nredf' 2>$null
-          if ($hasFolder -ne 'true') {
-            & $qdbusCmd.Source $service $mod createFolder [int]$handle 'nredf' 2>$null | Out-Null
-          }
+  if (Get-Command gdbus -ErrorAction SilentlyContinue) {
+    $service = @('org.kde.kwalletd6', 'org.kde.kwalletd5') | Where-Object {
+      $mod = "/modules/$($_ -replace '^.*\.','')"
+      $out = & gdbus call --session --dest $_ --object-path $mod --method org.kde.KWallet.isEnabled 2>$null
+      $out -match 'true'
+    } | Select-Object -First 1
+
+    if ($service) {
+      $mod = "/modules/$($service -replace '^.*\.','')"
+      $openRes = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.open kdewallet 0 'nredf' 2>$null
+      $handle = ($openRes -replace '\D', '')
+      if ($handle) {
+        $hasFolder = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.hasFolder [int64]$handle 'nredf' 2>$null
+        if ($hasFolder -notmatch 'true') {
+          & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.createFolder [int64]$handle 'nredf' 2>$null | Out-Null
         }
+        $writeRes = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.writePassword [int64]$handle 'nredf' $script:_NREDF_BW_SERVICE $Token 'nredf' 2>$null
+        if ($writeRes -match '\(0,\)') { return }
+
+        $writeRes = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.writePassword [int64]$handle 'Passwords' $script:_NREDF_BW_SERVICE $Token 'nredf' 2>$null
+        if ($writeRes -match '\(0,\)') { return }
       }
     }
+  }
 
+  if (Get-Command kwallet-query -ErrorAction SilentlyContinue) {
     $Token | & kwallet-query --write-password $script:_NREDF_BW_SERVICE --folder nredf kdewallet 2>$null | Out-Null
     if ($LASTEXITCODE -eq 0) { return }
 
@@ -168,6 +200,24 @@ function NREDF_BwKeychainDel {
   }
 
   # Linux
+  if (Get-Command gdbus -ErrorAction SilentlyContinue) {
+    $service = @('org.kde.kwalletd6', 'org.kde.kwalletd5') | Where-Object {
+      $mod = "/modules/$($_ -replace '^.*\.','')"
+      $out = & gdbus call --session --dest $_ --object-path $mod --method org.kde.KWallet.isEnabled 2>$null
+      $out -match 'true'
+    } | Select-Object -First 1
+
+    if ($service) {
+      $mod = "/modules/$($service -replace '^.*\.','')"
+      $openRes = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.open kdewallet 0 'nredf' 2>$null
+      $handle = ($openRes -replace '\D', '')
+      if ($handle) {
+        & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.removeEntry [int64]$handle 'nredf' $script:_NREDF_BW_SERVICE 'nredf' 2>$null | Out-Null
+        & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.removeEntry [int64]$handle 'Passwords' $script:_NREDF_BW_SERVICE 'nredf' 2>$null | Out-Null
+      }
+    }
+  }
+
   if (Get-Command kwallet-query -ErrorAction SilentlyContinue) {
     & kwallet-query --delete-entry $script:_NREDF_BW_SERVICE --folder nredf kdewallet 2>$null | Out-Null
     & kwallet-query --delete-entry $script:_NREDF_BW_SERVICE --folder Passwords kdewallet 2>$null | Out-Null

@@ -58,39 +58,33 @@ _nredf_bw_keychain_backend() {
 
 # ---------------------------------------------------------------------------
 # ---------------------------------------------------------------------------
-# Internal: helper to ensure folder exists in KWallet via qdbus
 # ---------------------------------------------------------------------------
-_nredf_bw_kwallet_ensure_folder() {
-  local folder="$1"
-  local wallet="${2:-kdewallet}"
-  local qdbus_cmd=""
-  local service=""
-
-  for cmd in qdbus6 qdbus; do
-    if command -v "${cmd}" &>/dev/null; then
-      qdbus_cmd="${cmd}"
-      break
-    fi
-  done
-  [[ -z "${qdbus_cmd}" ]] && return 1
-
+# Internal: helpers for interacting with KWallet via gdbus / D-Bus
+# Works natively on KDE Plasma 6 (kwalletd6) and Plasma 5 (kwalletd5).
+# ---------------------------------------------------------------------------
+_nredf_bw_kwallet_service() {
   for s in org.kde.kwalletd6 org.kde.kwalletd5; do
-    if "${qdbus_cmd}" "${s}" &>/dev/null; then
-      service="${s}"
-      break
+    if gdbus call --session --dest "${s}" --object-path "/modules/${s##*.}" \
+      --method org.kde.KWallet.isEnabled &>/dev/null; then
+      printf "%s" "${s}"
+      return 0
     fi
   done
-  [[ -z "${service}" ]] && return 1
+  return 1
+}
 
+_nredf_bw_kwallet_open() {
+  local service="$1"
+  local wallet="${2:-kdewallet}"
   local mod="/modules/${service##*.}"
+  local res
+  res="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
+    --method org.kde.KWallet.open "${wallet}" 0 "nredf" 2>/dev/null)" || return 1
+  # Extract numeric handle
   local handle
-  handle="$("${qdbus_cmd}" "${service}" "${mod}" open "${wallet}" 0 "nredf" 2>/dev/null)" || return 1
+  handle="$(printf "%s" "${res}" | tr -dc '0-9')"
   if [[ -n "${handle}" && "${handle}" -ge 0 ]]; then
-    local has_folder
-    has_folder="$("${qdbus_cmd}" "${service}" "${mod}" hasFolder "${handle}" "${folder}" 2>/dev/null)"
-    if [[ "${has_folder}" != "true" ]]; then
-      "${qdbus_cmd}" "${service}" "${mod}" createFolder "${handle}" "${folder}" &>/dev/null || true
-    fi
+    printf "%s" "${handle}"
     return 0
   fi
   return 1
@@ -112,16 +106,31 @@ _nredf_bw_keychain_get() {
         -w 2>/dev/null)"
       ;;
     kwallet)
-      # Try nredf folder first, fallback to standard Passwords folder
-      token="$(kwallet-query \
-        --read-password "${_NREDF_BW_SERVICE}" \
-        --folder "nredf" \
-        kdewallet 2>/dev/null)"
-      if [[ -z "${token}" ]]; then
-        token="$(kwallet-query \
-          --read-password "${_NREDF_BW_SERVICE}" \
-          --folder "Passwords" \
-          kdewallet 2>/dev/null)"
+      # Primary: native D-Bus via gdbus (Plasma 6 / 5)
+      if command -v gdbus &>/dev/null; then
+        local service handle raw
+        if service="$(_nredf_bw_kwallet_service)"; then
+          if handle="$(_nredf_bw_kwallet_open "${service}")"; then
+            local mod="/modules/${service##*.}"
+            # Check nredf folder first, fallback to Passwords
+            for f in "nredf" "Passwords"; do
+              raw="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
+                --method org.kde.KWallet.readPassword "${handle}" "${f}" "${_NREDF_BW_SERVICE}" "nredf" 2>/dev/null)" || true
+              if [[ "${raw}" =~ \(\'([^\']*)\',\) ]]; then
+                token="${BASH_REMATCH[1]}"
+                [[ -n "${token}" ]] && break
+              fi
+            done
+          fi
+        fi
+      fi
+
+      # Fallback: kwallet-query CLI
+      if [[ -z "${token}" ]] && command -v kwallet-query &>/dev/null; then
+        token="$(kwallet-query --read-password "${_NREDF_BW_SERVICE}" --folder "nredf" kdewallet 2>/dev/null)"
+        if [[ -z "${token}" ]]; then
+          token="$(kwallet-query --read-password "${_NREDF_BW_SERVICE}" --folder "Passwords" kdewallet 2>/dev/null)"
+        fi
       fi
       ;;
     secret-tool)
@@ -163,22 +172,40 @@ _nredf_bw_keychain_set() {
         -U &>/dev/null
       ;;
     kwallet)
-      local write_ok=1
-      # Ensure 'nredf' folder exists via qdbus if possible
-      _nredf_bw_kwallet_ensure_folder "nredf" "kdewallet" 2>/dev/null || true
-      if printf "%s" "${token}" | kwallet-query \
-        --write-password "${_NREDF_BW_SERVICE}" \
-        --folder "nredf" \
-        kdewallet &>/dev/null; then
-        write_ok=0
-      else
-        # Fallback to default 'Passwords' folder which always exists
-        if printf "%s" "${token}" | kwallet-query \
-          --write-password "${_NREDF_BW_SERVICE}" \
-          --folder "Passwords" \
-          kdewallet &>/dev/null; then
-          write_ok=0
+      local saved=1
+      # Primary: native D-Bus via gdbus (persists reliably in Plasma 6 & 5)
+      if command -v gdbus &>/dev/null; then
+        local service handle
+        if service="$(_nredf_bw_kwallet_service)"; then
+          if handle="$(_nredf_bw_kwallet_open "${service}")"; then
+            local mod="/modules/${service##*.}"
+            # Ensure folder nredf exists or create it
+            local has_f
+            has_f="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
+              --method org.kde.KWallet.hasFolder "${handle}" "nredf" 2>/dev/null)"
+            if [[ "${has_f}" != *true* ]]; then
+              gdbus call --session --dest "${service}" --object-path "${mod}" \
+                --method org.kde.KWallet.createFolder "${handle}" "nredf" &>/dev/null || true
+            fi
+            # Write to nredf folder, fallback to Passwords
+            local res
+            res="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
+              --method org.kde.KWallet.writePassword "${handle}" "nredf" "${_NREDF_BW_SERVICE}" "${token}" "nredf" 2>/dev/null)"
+            if [[ "${res}" == *\(0,\)* ]]; then
+              saved=0
+            else
+              res="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
+                --method org.kde.KWallet.writePassword "${handle}" "Passwords" "${_NREDF_BW_SERVICE}" "${token}" "nredf" 2>/dev/null)"
+              [[ "${res}" == *\(0,\)* ]] && saved=0
+            fi
+          fi
         fi
+      fi
+
+      # Secondary: kwallet-query CLI
+      if [[ "${saved}" -ne 0 ]] && command -v kwallet-query &>/dev/null; then
+        printf "%s" "${token}" | kwallet-query --write-password "${_NREDF_BW_SERVICE}" --folder "nredf" kdewallet &>/dev/null \
+          || printf "%s" "${token}" | kwallet-query --write-password "${_NREDF_BW_SERVICE}" --folder "Passwords" kdewallet &>/dev/null || true
       fi
       ;;
     secret-tool)
@@ -209,14 +236,22 @@ _nredf_bw_keychain_del() {
         -a "${_NREDF_BW_ACCOUNT}" &>/dev/null || true
       ;;
     kwallet)
-      kwallet-query \
-        --delete-entry "${_NREDF_BW_SERVICE}" \
-        --folder "nredf" \
-        kdewallet &>/dev/null || true
-      kwallet-query \
-        --delete-entry "${_NREDF_BW_SERVICE}" \
-        --folder "Passwords" \
-        kdewallet &>/dev/null || true
+      if command -v gdbus &>/dev/null; then
+        local service handle
+        if service="$(_nredf_bw_kwallet_service)"; then
+          if handle="$(_nredf_bw_kwallet_open "${service}")"; then
+            local mod="/modules/${service##*.}"
+            gdbus call --session --dest "${service}" --object-path "${mod}" \
+              --method org.kde.KWallet.removeEntry "${handle}" "nredf" "${_NREDF_BW_SERVICE}" "nredf" &>/dev/null || true
+            gdbus call --session --dest "${service}" --object-path "${mod}" \
+              --method org.kde.KWallet.removeEntry "${handle}" "Passwords" "${_NREDF_BW_SERVICE}" "nredf" &>/dev/null || true
+          fi
+        fi
+      fi
+      if command -v kwallet-query &>/dev/null; then
+        kwallet-query --delete-entry "${_NREDF_BW_SERVICE}" --folder "nredf" kdewallet &>/dev/null || true
+        kwallet-query --delete-entry "${_NREDF_BW_SERVICE}" --folder "Passwords" kdewallet &>/dev/null || true
+      fi
       ;;
     secret-tool)
       secret-tool clear \
