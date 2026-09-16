@@ -1,0 +1,50 @@
+# Completion scripts replaced by Carapace declarative specs (86f7273)
+.config/completion/bash/chezmoi.bash
+.config/completion/bash/kubectx.bash
+.config/completion/bash/kubens.bash
+.config/completion/bash/nova.bash
+.config/completion/zsh/_chezmoi
+.config/completion/zsh/_kubectx
+.config/completion/zsh/_kubens
+.config/completion/zsh/_nova
+
+# Deprecated config files removed (b45edfa)
+.agignore
+.ctags
+.puppet-lint.rc
+.config/task/taskrc
+.config/tilda/config_0
+
+# Deprecated config files removed (77919c8)
+.config/.curlrc
+.config/flake8
+.config/lf/lfrc
+.config/screen/screenrc
+.config/terminator/config
+.config/tmux/tmux.conf
+.config/nredf/README.md
+.local/bin/setup_git_identity.sh
+.local/share/nredf/shell/common/tmux/layout_monitor
+.local/share/nredf/shell/common/tmux/plugins.conf
+.vscode-server/server-env-setup
+
+{{- if eq .chezmoi.os "windows" }}
+# Windows-only files removed (aac56b9)
+Documents/PowerShell/.editorconfig
+Documents/PowerShell/NREDF-POSH/.editorconfig
+Documents/PowerShell/NREDF-POSH/WindowsTerminal/settings.json
+
+# PowerShell completions replaced by Carapace / native tooling (a610c59)
+Documents/PowerShell/NREDF-POSH/Completions/Completions.ps1
+Documents/PowerShell/NREDF-POSH/Completions/_kubectl.ps1
+Documents/PowerShell/NREDF-POSH/Completions/_yazi.ps1
+
+# Windows deprecated files removed (77919c8)
+Documents/PowerShell/NREDF-POSH/NREDF-POSH.sst
+Documents/PowerShell/NREDF-POSH/README.md
+Documents/PowerShell/NREDF-POSH/Scripts/EnableSSHAgent.ps1
+{{- end }}
+
+# Linux/Windows shell compatibility files removed (77919c8)
+.minttyrc
+.Xresources
