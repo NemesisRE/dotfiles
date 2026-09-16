@@ -47,7 +47,11 @@ function NREDF_BwKeychainGet {
 
   # Linux — try kwallet first, then secret-tool, then fallback file
   if (Get-Command kwallet-query -ErrorAction SilentlyContinue) {
+    # Try nredf folder first, then fallback to standard Passwords folder
     $token = & kwallet-query --read-password $script:_NREDF_BW_SERVICE --folder nredf kdewallet 2>$null
+    if (-not ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrEmpty($token))) {
+      $token = & kwallet-query --read-password $script:_NREDF_BW_SERVICE --folder Passwords kdewallet 2>$null
+    }
     if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrEmpty($token)) {
       return $token.Trim()
     }
@@ -104,7 +108,27 @@ function NREDF_BwKeychainSet {
 
   # Linux
   if (Get-Command kwallet-query -ErrorAction SilentlyContinue) {
+    # Attempt to ensure folder exists via qdbus if available
+    $qdbusCmd = Get-Command qdbus6, qdbus -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($qdbusCmd) {
+      $service = @('org.kde.kwalletd6', 'org.kde.kwalletd5') | Where-Object { & $qdbusCmd.Source $_ 2>$null } | Select-Object -First 1
+      if ($service) {
+        $mod = "/modules/$($service -replace '^.*\.','')"
+        $handle = & $qdbusCmd.Source $service $mod open kdewallet 0 'nredf' 2>$null
+        if ($handle -and [int]$handle -ge 0) {
+          $hasFolder = & $qdbusCmd.Source $service $mod hasFolder [int]$handle 'nredf' 2>$null
+          if ($hasFolder -ne 'true') {
+            & $qdbusCmd.Source $service $mod createFolder [int]$handle 'nredf' 2>$null | Out-Null
+          }
+        }
+      }
+    }
+
     $Token | & kwallet-query --write-password $script:_NREDF_BW_SERVICE --folder nredf kdewallet 2>$null | Out-Null
+    if ($LASTEXITCODE -eq 0) { return }
+
+    # Fallback to standard Passwords folder
+    $Token | & kwallet-query --write-password $script:_NREDF_BW_SERVICE --folder Passwords kdewallet 2>$null | Out-Null
     if ($LASTEXITCODE -eq 0) { return }
   }
 
@@ -146,6 +170,7 @@ function NREDF_BwKeychainDel {
   # Linux
   if (Get-Command kwallet-query -ErrorAction SilentlyContinue) {
     & kwallet-query --delete-entry $script:_NREDF_BW_SERVICE --folder nredf kdewallet 2>$null | Out-Null
+    & kwallet-query --delete-entry $script:_NREDF_BW_SERVICE --folder Passwords kdewallet 2>$null | Out-Null
   }
   if (Get-Command secret-tool -ErrorAction SilentlyContinue) {
     & secret-tool clear service $script:_NREDF_BW_SERVICE username $script:_NREDF_BW_ACCOUNT 2>$null | Out-Null

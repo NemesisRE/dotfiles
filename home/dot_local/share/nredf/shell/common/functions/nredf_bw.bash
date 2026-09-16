@@ -57,6 +57,46 @@ _nredf_bw_keychain_backend() {
 }
 
 # ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
+# Internal: helper to ensure folder exists in KWallet via qdbus
+# ---------------------------------------------------------------------------
+_nredf_bw_kwallet_ensure_folder() {
+  local folder="$1"
+  local wallet="${2:-kdewallet}"
+  local qdbus_cmd=""
+  local service=""
+
+  for cmd in qdbus6 qdbus; do
+    if command -v "${cmd}" &>/dev/null; then
+      qdbus_cmd="${cmd}"
+      break
+    fi
+  done
+  [[ -z "${qdbus_cmd}" ]] && return 1
+
+  for s in org.kde.kwalletd6 org.kde.kwalletd5; do
+    if "${qdbus_cmd}" "${s}" &>/dev/null; then
+      service="${s}"
+      break
+    fi
+  done
+  [[ -z "${service}" ]] && return 1
+
+  local mod="/modules/${service##*.}"
+  local handle
+  handle="$("${qdbus_cmd}" "${service}" "${mod}" open "${wallet}" 0 "nredf" 2>/dev/null)" || return 1
+  if [[ -n "${handle}" && "${handle}" -ge 0 ]]; then
+    local has_folder
+    has_folder="$("${qdbus_cmd}" "${service}" "${mod}" hasFolder "${handle}" "${folder}" 2>/dev/null)"
+    if [[ "${has_folder}" != "true" ]]; then
+      "${qdbus_cmd}" "${service}" "${mod}" createFolder "${handle}" "${folder}" &>/dev/null || true
+    fi
+    return 0
+  fi
+  return 1
+}
+
+# ---------------------------------------------------------------------------
 # Internal: retrieve session token from keychain
 # Returns 0 and prints token on success, returns 1 on miss.
 # ---------------------------------------------------------------------------
@@ -72,10 +112,17 @@ _nredf_bw_keychain_get() {
         -w 2>/dev/null)"
       ;;
     kwallet)
+      # Try nredf folder first, fallback to standard Passwords folder
       token="$(kwallet-query \
         --read-password "${_NREDF_BW_SERVICE}" \
         --folder "nredf" \
         kdewallet 2>/dev/null)"
+      if [[ -z "${token}" ]]; then
+        token="$(kwallet-query \
+          --read-password "${_NREDF_BW_SERVICE}" \
+          --folder "Passwords" \
+          kdewallet 2>/dev/null)"
+      fi
       ;;
     secret-tool)
       token="$(secret-tool lookup \
@@ -116,10 +163,23 @@ _nredf_bw_keychain_set() {
         -U &>/dev/null
       ;;
     kwallet)
-      printf "%s" "${token}" | kwallet-query \
+      local write_ok=1
+      # Ensure 'nredf' folder exists via qdbus if possible
+      _nredf_bw_kwallet_ensure_folder "nredf" "kdewallet" 2>/dev/null || true
+      if printf "%s" "${token}" | kwallet-query \
         --write-password "${_NREDF_BW_SERVICE}" \
         --folder "nredf" \
-        kdewallet &>/dev/null
+        kdewallet &>/dev/null; then
+        write_ok=0
+      else
+        # Fallback to default 'Passwords' folder which always exists
+        if printf "%s" "${token}" | kwallet-query \
+          --write-password "${_NREDF_BW_SERVICE}" \
+          --folder "Passwords" \
+          kdewallet &>/dev/null; then
+          write_ok=0
+        fi
+      fi
       ;;
     secret-tool)
       printf "%s" "${token}" | secret-tool store \
@@ -152,6 +212,10 @@ _nredf_bw_keychain_del() {
       kwallet-query \
         --delete-entry "${_NREDF_BW_SERVICE}" \
         --folder "nredf" \
+        kdewallet &>/dev/null || true
+      kwallet-query \
+        --delete-entry "${_NREDF_BW_SERVICE}" \
+        --folder "Passwords" \
         kdewallet &>/dev/null || true
       ;;
     secret-tool)
