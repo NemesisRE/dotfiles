@@ -145,8 +145,21 @@ _nredf_bw_keychain_get() {
 
           for w in "${wallets[@]}"; do
             if handle="$(_nredf_bw_kwallet_open "${service}" "${w}")"; then
-              for folder in "Passwords" "nredf"; do
-                for key in "${_NREDF_BW_SERVICE}" "bw_session" "BW_SESSION"; do
+              local folders=()
+              local f_raw
+              f_raw="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
+                --method org.kde.KWallet.folderList "${handle}" "nredf" 2>/dev/null)" || true
+              if [[ "${f_raw}" == \(\[* ]]; then
+                while IFS= read -r f_item; do
+                  [[ -n "${f_item}" ]] && folders+=("${f_item}")
+                done < <(printf "%s" "${f_raw}" | tr -d "[],()'" | tr ' ' '\n')
+              fi
+              for std_f in "Passwords" "nredf"; do
+                [[ " ${folders[*]} " != *" ${std_f} "* ]] && folders+=("${std_f}")
+              done
+
+              for folder in "${folders[@]}"; do
+                for key in "${_NREDF_BW_SERVICE}" "bw_session" "BW_SESSION" "bitwarden" "Bitwarden" "bw"; do
                   raw="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
                     --method org.kde.KWallet.readPassword "${handle}" "${folder}" "${key}" "nredf" 2>/dev/null)" || true
                   if [[ "${raw}" == \(\'* ]]; then
@@ -166,7 +179,7 @@ _nredf_bw_keychain_get() {
       # Fallback: kwallet-query CLI
       if [[ -z "${token}" ]] && command -v kwallet-query &>/dev/null; then
         for folder in "Passwords" "nredf"; do
-          for key in "${_NREDF_BW_SERVICE}" "bw_session" "BW_SESSION"; do
+          for key in "${_NREDF_BW_SERVICE}" "bw_session" "BW_SESSION" "bitwarden" "Bitwarden" "bw"; do
             token="$(kwallet-query --read-password "${key}" --folder "${folder}" kdewallet 2>/dev/null)" || true
             if [[ -n "${token}" && "${token}" != *"kann nicht gelesen werden"* && "${token}" != *"cannot be read"* ]]; then
               break 2
@@ -211,15 +224,16 @@ _nredf_bw_keychain_set() {
 
   case "${backend}" in
     macos)
-      # Delete existing entry silently before adding to avoid duplicate errors
-      security delete-generic-password \
-        -s "${_NREDF_BW_SERVICE}" \
-        -a "${_NREDF_BW_ACCOUNT}" &>/dev/null || true
-      security add-generic-password \
-        -s "${_NREDF_BW_SERVICE}" \
-        -a "${_NREDF_BW_ACCOUNT}" \
-        -w "${token}" \
-        -U &>/dev/null
+      for k in "${_NREDF_BW_SERVICE}" "bw_session"; do
+        security delete-generic-password \
+          -s "${k}" \
+          -a "${_NREDF_BW_ACCOUNT}" &>/dev/null || true
+        security add-generic-password \
+          -s "${k}" \
+          -a "${_NREDF_BW_ACCOUNT}" \
+          -w "${token}" \
+          -U &>/dev/null || true
+      done
       ;;
     kwallet)
       local saved=1
@@ -229,13 +243,14 @@ _nredf_bw_keychain_set() {
         if service="$(_nredf_bw_kwallet_service)"; then
           if handle="$(_nredf_bw_kwallet_open "${service}")"; then
             local mod="/modules/${service##*.}"
-            # Write to Passwords folder first (standard KWallet), fallback to nredf
+            # Write to Passwords folder for both nredf.bw_session and bw_session
             local res
-            res="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
-              --method org.kde.KWallet.writePassword "${handle}" "Passwords" "${_NREDF_BW_SERVICE}" "${token}" "nredf" 2>/dev/null)"
-            if [[ "${res}" == *\(0,\)* ]]; then
-              saved=0
-            else
+            for k in "${_NREDF_BW_SERVICE}" "bw_session"; do
+              res="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
+                --method org.kde.KWallet.writePassword "${handle}" "Passwords" "${k}" "${token}" "nredf" 2>/dev/null)" || true
+              [[ "${res}" == *\(0,\)* ]] && saved=0
+            done
+            if [[ "${saved}" -ne 0 ]]; then
               local has_f
               has_f="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
                 --method org.kde.KWallet.hasFolder "${handle}" "nredf" 2>/dev/null)"
@@ -243,9 +258,11 @@ _nredf_bw_keychain_set() {
                 gdbus call --session --dest "${service}" --object-path "${mod}" \
                   --method org.kde.KWallet.createFolder "${handle}" "nredf" &>/dev/null || true
               fi
-              res="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
-                --method org.kde.KWallet.writePassword "${handle}" "nredf" "${_NREDF_BW_SERVICE}" "${token}" "nredf" 2>/dev/null)"
-              [[ "${res}" == *\(0,\)* ]] && saved=0
+              for k in "${_NREDF_BW_SERVICE}" "bw_session"; do
+                res="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
+                  --method org.kde.KWallet.writePassword "${handle}" "nredf" "${k}" "${token}" "nredf" 2>/dev/null)" || true
+                [[ "${res}" == *\(0,\)* ]] && saved=0
+              done
             fi
           fi
         fi
@@ -253,15 +270,19 @@ _nredf_bw_keychain_set() {
 
       # Secondary: kwallet-query CLI
       if [[ "${saved}" -ne 0 ]] && command -v kwallet-query &>/dev/null; then
-        printf "%s" "${token}" | kwallet-query --write-password "${_NREDF_BW_SERVICE}" --folder "Passwords" kdewallet &>/dev/null \
-          || printf "%s" "${token}" | kwallet-query --write-password "${_NREDF_BW_SERVICE}" --folder "nredf" kdewallet &>/dev/null || true
+        for k in "${_NREDF_BW_SERVICE}" "bw_session"; do
+          printf "%s" "${token}" | kwallet-query --write-password "${k}" --folder "Passwords" kdewallet &>/dev/null \
+            || printf "%s" "${token}" | kwallet-query --write-password "${k}" --folder "nredf" kdewallet &>/dev/null || true
+        done
       fi
       ;;
     secret-tool)
-      printf "%s" "${token}" | secret-tool store \
-        --label "NREDF Bitwarden session" \
-        service "${_NREDF_BW_SERVICE}" \
-        username "${_NREDF_BW_ACCOUNT}" &>/dev/null
+      for k in "${_NREDF_BW_SERVICE}" "bw_session"; do
+        printf "%s" "${token}" | secret-tool store \
+          --label "NREDF Bitwarden session" \
+          service "${k}" \
+          username "${_NREDF_BW_ACCOUNT}" &>/dev/null || true
+      done
       ;;
     fallback)
       local f="${XDG_RUNTIME_DIR:-/tmp}/nredf_bw_session"
@@ -327,18 +348,28 @@ _nredf_bw_keychain_del() {
 # Returns 0 if Bitwarden is configured in chezmoi.toml or chezmoidata, 1 otherwise.
 # ---------------------------------------------------------------------------
 _nredf_bw_secret_configured() {
-  local cfg="${XDG_CONFIG_HOME:-${HOME}/.config}/chezmoi/chezmoi.toml"
-  [[ -f "${cfg}" ]] || cfg="${HOME}/.config/chezmoi/chezmoi.toml"
-
-  # 1. Check chezmoi.toml if present
-  if [[ -f "${cfg}" ]]; then
-    if grep -Eq '^[[:blank:]]*\[bitwarden\]' "${cfg}" 2>/dev/null; then
-      return 0
+  local config_dir="${XDG_CONFIG_HOME:-${HOME}/.config}/chezmoi"
+  local c
+  for c in \
+    "${config_dir}/chezmoi.toml" \
+    "${config_dir}/chezmoi.yaml" \
+    "${config_dir}/chezmoi.json" \
+    "${HOME}/.config/chezmoi/chezmoi.toml" \
+    "${HOME}/.config/chezmoi/chezmoi.yaml" \
+    "${HOME}/.chezmoi.toml" \
+    "${HOME}/.chezmoi.yaml"; do
+    if [[ -f "${c}" ]]; then
+      if grep -Eq '^[[:blank:]]*\[bitwarden\]' "${c}" 2>/dev/null; then
+        return 0
+      fi
+      if grep -Eq '["'\'' ](bitwarden|bw):' "${c}" 2>/dev/null; then
+        return 0
+      fi
+      if grep -Eq 'bitwarden' "${c}" 2>/dev/null; then
+        return 0
+      fi
     fi
-    if grep -Eq '["'\'' ](bitwarden|bw):' "${cfg}" 2>/dev/null; then
-      return 0
-    fi
-  fi
+  done
 
   # 2. Check repo-level chezmoidata if present
   local src_dir="${NREDF_DOT_PATH:-${HOME}/.local/share/chezmoi}"
@@ -416,6 +447,7 @@ function _nredf_bw_ensure_session() {
   # 1. If BW_SESSION is already set in the environment, validate it.
   if [[ -n "${BW_SESSION:-}" ]]; then
     if bw unlock --check &>/dev/null; then
+      _nredf_bw_keychain_set "${BW_SESSION}"
       return 0
     fi
     # Token is stale — fall through to keychain lookup
@@ -449,6 +481,12 @@ function _nredf_bw_ensure_session() {
 # Ensures the vault is unlocked and BW_SESSION is exported.
 # ---------------------------------------------------------------------------
 function bwu() {
+  if [[ -n "${BW_SESSION:-}" ]] && bw unlock --check &>/dev/null; then
+    _nredf_bw_keychain_set "${BW_SESSION}"
+    printf "\033[1;32m✔ Bitwarden vault already unlocked (keychain synchronized)\033[0m\n"
+    return 0
+  fi
+
   if _nredf_bw_ensure_session --force; then
     printf "\033[1;32m✔ Bitwarden vault unlocked\033[0m\n"
     return 0
@@ -476,18 +514,31 @@ function bwlock() {
 # Public: chezmoi wrapper
 # Pre-loads BW_SESSION from the keychain so chezmoi template functions like
 # {{ bitwarden "item" "..." }} never prompt for the master password.
-# Only activates when `bw` is on PATH, not in bootstrap/CI, and a Bitwarden
-# secret is actually used in the config.
-#
-# NOTE: stderr is intentionally NOT suppressed here — bw unlock writes its
-# "? Master password:" prompt to stderr and we need it visible on the terminal.
+# Unlocks, exports BW_SESSION, and persists to keychain before running chezmoi.
 # ---------------------------------------------------------------------------
 function chezmoi() {
+  case "${1:-}" in
+    -h|--help|version|--version|completion)
+      command chezmoi "$@"
+      return $?
+      ;;
+  esac
+
   if command -v bw &>/dev/null \
     && [[ "${NREDF_NO_BOOTSTRAP:-}" != "1" && "${CI:-}" != "true" ]]; then
     if _nredf_bw_secret_configured; then
-      _nredf_bw_ensure_session || true
+      _nredf_bw_ensure_session
+    else
+      _nredf_bw_restore_session
     fi
   fi
+
   command chezmoi "$@"
+  local ret=$?
+
+  if [[ -n "${BW_SESSION:-}" ]] && command -v bw &>/dev/null; then
+    _nredf_bw_keychain_set "${BW_SESSION}"
+  fi
+
+  return ${ret}
 }

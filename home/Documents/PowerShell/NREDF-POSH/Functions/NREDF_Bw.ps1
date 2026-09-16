@@ -80,8 +80,20 @@ function NREDF_BwKeychainGet {
         if ($openRes -match '\((-?\d+),\)') {
           $handle = [int64]$Matches[1]
           if ($handle -ge 0) {
-            foreach ($folder in @('Passwords', 'nredf')) {
-              foreach ($key in @($script:_NREDF_BW_SERVICE, 'bw_session', 'BW_SESSION')) {
+            $folders = [System.Collections.Generic.List[string]]::new()
+            $fRes = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.folderList $handle 'nredf' 2>$null
+            if ($fRes -match "\(\[([^\]]*)\],\)") {
+              $Matches[1] -split ',' | ForEach-Object {
+                $f = $_.Trim(" '`"")
+                if (-not [string]::IsNullOrEmpty($f) -and -not $folders.Contains($f)) { $folders.Add($f) }
+              }
+            }
+            foreach ($stdF in @('Passwords', 'nredf')) {
+              if (-not $folders.Contains($stdF)) { $folders.Add($stdF) }
+            }
+
+            foreach ($folder in $folders) {
+              foreach ($key in @($script:_NREDF_BW_SERVICE, 'bw_session', 'BW_SESSION', 'bitwarden', 'Bitwarden', 'bw')) {
                 $raw = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.readPassword $handle $folder $key 'nredf' 2>$null
                 if ($raw -match "\('([^']*)',\)") {
                   $token = $Matches[1]
@@ -97,7 +109,7 @@ function NREDF_BwKeychainGet {
 
   if (Get-Command kwallet-query -ErrorAction SilentlyContinue) {
     foreach ($folder in @('Passwords', 'nredf')) {
-      foreach ($key in @($script:_NREDF_BW_SERVICE, 'bw_session', 'BW_SESSION')) {
+      foreach ($key in @($script:_NREDF_BW_SERVICE, 'bw_session', 'BW_SESSION', 'bitwarden', 'Bitwarden', 'bw')) {
         $token = & kwallet-query --read-password $key --folder $folder kdewallet 2>$null
         if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrEmpty($token) -and $token -notmatch 'kann nicht gelesen werden|cannot be read') {
           return $token.Trim()
@@ -107,7 +119,7 @@ function NREDF_BwKeychainGet {
   }
 
   if (Get-Command secret-tool -ErrorAction SilentlyContinue) {
-    foreach ($key in @($script:_NREDF_BW_SERVICE, 'bw_session')) {
+    foreach ($key in @($script:_NREDF_BW_SERVICE, 'bw_session', 'BW_SESSION', 'bitwarden', 'Bitwarden', 'bw')) {
       $token = & secret-tool lookup service $key username $script:_NREDF_BW_ACCOUNT 2>$null
       if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrEmpty($token)) { return $token.Trim() }
       $token = & secret-tool lookup service $key 2>$null
@@ -288,9 +300,15 @@ function NREDF_BwKeychainDel {
 # Returns $true if Bitwarden is configured in chezmoi.toml or chezmoidata, $false otherwise.
 # ---------------------------------------------------------------------------
 function NREDF_BwSecretConfigured {
+  $configDir = Join-Path ($env:XDG_CONFIG_HOME ?? (Join-Path $HOME '.config')) 'chezmoi'
   $candidatePaths = @(
+    (Join-Path $configDir 'chezmoi.toml'),
+    (Join-Path $configDir 'chezmoi.yaml'),
+    (Join-Path $configDir 'chezmoi.json'),
     (Join-Path $HOME '.config/chezmoi/chezmoi.toml'),
-    (Join-Path ($env:XDG_CONFIG_HOME ?? (Join-Path $HOME '.config')) 'chezmoi/chezmoi.toml')
+    (Join-Path $HOME '.config/chezmoi/chezmoi.yaml'),
+    (Join-Path $HOME '.chezmoi.toml'),
+    (Join-Path $HOME '.chezmoi.yaml')
   ) | Select-Object -Unique
 
   foreach ($path in $candidatePaths) {
@@ -298,6 +316,7 @@ function NREDF_BwSecretConfigured {
       $content = Get-Content $path -Raw
       if ($content -match '(?m)^\s*\[bitwarden\]') { return $true }
       if ($content -match '["''](?:bitwarden|bw):') { return $true }
+      if ($content -match 'bitwarden') { return $true }
     }
   }
 
@@ -381,7 +400,10 @@ function NREDF_BwEnsureSession {
   # 1. Validate existing env session
   if (-not [string]::IsNullOrEmpty($env:BW_SESSION)) {
     & bw unlock --check 2>$null | Out-Null
-    if ($LASTEXITCODE -eq 0) { return $true }
+    if ($LASTEXITCODE -eq 0) {
+      NREDF_BwKeychainSet -Token $env:BW_SESSION
+      return $true
+    }
     $env:BW_SESSION = $null
   }
 
@@ -413,6 +435,17 @@ function bwu {
   .SYNOPSIS
       Unlock the Bitwarden vault and export BW_SESSION (via OS keychain / biometrics).
   #>
+  if (-not [string]::IsNullOrEmpty($env:BW_SESSION)) {
+    & bw unlock --check 2>$null | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+      NREDF_BwKeychainSet -Token $env:BW_SESSION
+      $green = if ($PSStyle) { $PSStyle.Foreground.Green } else { "`e[1;32m" }
+      $reset = if ($PSStyle) { $PSStyle.Reset } else { "`e[0m" }
+      Write-Host "${green}✔ Bitwarden vault already unlocked (keychain synchronized)${reset}"
+      return
+    }
+  }
+
   if (NREDF_BwEnsureSession -Force) {
     $green = if ($PSStyle) { $PSStyle.Foreground.Green } else { "`e[1;32m" }
     $reset = if ($PSStyle) { $PSStyle.Reset } else { "`e[0m" }
@@ -458,14 +491,28 @@ function bwlock {
 function chezmoi {
   <#
   .SYNOPSIS
-      Wrapper around chezmoi that pre-loads BW_SESSION from the OS keychain.
+      Wrapper around chezmoi that pre-loads BW_SESSION from the OS keychain,
+      or unlocks, exports, and persists it when Bitwarden secrets are configured.
   #>
+  $firstArg = $args | Select-Object -First 1
+  if ($firstArg -in @('-h', '--help', 'version', '--version', 'completion')) {
+    & (Get-Command chezmoi -CommandType Application -ErrorAction Stop) @args
+    return
+  }
+
   if ((Get-Command bw -ErrorAction SilentlyContinue) -and
       $env:NREDF_NO_BOOTSTRAP -ne '1' -and
       $env:CI -ne 'true') {
     if (NREDF_BwSecretConfigured) {
       NREDF_BwEnsureSession | Out-Null
+    } else {
+      NREDF_BwRestoreSession
     }
   }
+
   & (Get-Command chezmoi -CommandType Application -ErrorAction Stop) @args
+
+  if (-not [string]::IsNullOrEmpty($env:BW_SESSION) -and (Get-Command bw -ErrorAction SilentlyContinue)) {
+    NREDF_BwKeychainSet -Token $env:BW_SESSION
+  }
 }
