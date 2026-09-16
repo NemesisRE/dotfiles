@@ -61,9 +61,11 @@
 #   - nredf_ssh target -p 2222 -i ~/.ssh/id_ed25519
 #
 # Bitwarden session handling
-# - If not logged in: runs `bw login --raw` and exports BW_SESSION.
-# - If locked: runs `bw unlock --raw` and exports BW_SESSION.
-# - Requires interactive input if credentials are not already available.
+# - Uses _nredf_bw_ensure_session (from nredf_bw.bash) which restores
+#   BW_SESSION from the OS keychain (Touch ID / Windows Hello / KDE Wallet /
+#   GNOME Keyring) before falling back to an interactive bw unlock prompt.
+# - BW_SESSION is cached in the keychain after the first unlock.
+# - Requires interactive input only when the keychain has no valid entry.
 #
 # Exit codes
 # - 1 if no host argument is provided.
@@ -180,14 +182,10 @@ function _nredf_sshpass_bitwarden_totp() {
     return 1
   fi
 
-  if ! bw login --check &>/dev/null; then
-    BW_SESSION=$(bw login --raw)
-    export BW_SESSION
-  fi
-
-  if ! bw unlock --check &>/dev/null; then
-    BW_SESSION=$(bw unlock --raw)
-    export BW_SESSION
+  # Ensure the vault is unlocked (uses keychain / biometrics when available)
+  if ! _nredf_bw_ensure_session; then
+    echo "Bitwarden: failed to unlock vault" >&2
+    return 1
   fi
 
   totp=$(bw get totp "${itemid}" --raw)
