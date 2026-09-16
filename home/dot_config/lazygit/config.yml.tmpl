@@ -29,10 +29,11 @@ gui:
 git:
   autoFetch: true
   autoRefresh: true
-  allBranchesLogCmd: "git log --graph --all --color=always --abbrev-commit --date=relative --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(cyan)<%an>%Creset'"
+  allBranchesLogCmds:
+    - git log --graph --all --color=always --abbrev-commit --date=relative --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(cyan)<%an>%Creset'
+  diffRenderers:
 {{- if lookPath "delta" }}
-  paging:
-    colorArg: always
-    pager: delta --dark --paging=never
+    - colorArg: always
+      pager: delta --dark --paging=never
 {{- end }}
 
