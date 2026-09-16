@@ -30,13 +30,31 @@ function NREDF_DailySync {
 
   # ── Chezmoi Dotfiles Sync ──────────────────────────────────────────────────
   if (Get-Command chezmoi -ErrorAction SilentlyContinue) {
-    # Check for chezmoi binary upgrades
-    try {
-      chezmoi upgrade --quiet 2>$null
-    } catch {}
+    # Pre-load BW_SESSION from keychain once so template functions used by
+    # chezmoi apply don't prompt interactively at startup. Suppressed — if no
+    # valid session exists we skip silently; the chezmoi wrapper will handle
+    # interactive unlocking when the user runs chezmoi directly.
+    # Mirrors the pattern in nredf_chezmoi_update.bash.
+    if ((Get-Command bw -ErrorAction SilentlyContinue) -and
+        $ENV:NREDF_NO_BOOTSTRAP -ne '1' -and
+        $ENV:CI -ne 'true') {
+      NREDF_BwEnsureSession 2>$null | Out-Null
+    }
+
+    # Resolve the real chezmoi binary (bypasses the BW wrapper for subcommands
+    # that never read Bitwarden-backed templates, avoiding a redundant/blocking
+    # session check for upgrade and source-path).
+    $chezmoiBin = Get-Command chezmoi -CommandType Application -ErrorAction SilentlyContinue
+
+    # Check for chezmoi binary upgrades (no BW templates involved)
+    if ($chezmoiBin) {
+      try {
+        & $chezmoiBin upgrade --quiet 2>$null
+      } catch {}
+    }
 
     # Check for git updates in chezmoi source directory if git is available
-    $chezmoiSrc = (chezmoi source-path 2>$null)
+    $chezmoiSrc = if ($chezmoiBin) { & $chezmoiBin source-path 2>$null } else { $null }
     if ($chezmoiSrc -and (Test-Path $chezmoiSrc) -and (Get-Command git -ErrorAction SilentlyContinue)) {
       try {
         git -C $chezmoiSrc fetch --quiet 2>$null
@@ -51,6 +69,8 @@ function NREDF_DailySync {
 
     Write-Host "${bold}Syncing dotfiles and externals${reset}"
     try {
+      # chezmoi (wrapper) will re-check the session if it has become stale,
+      # but should hit the already-cached token from the pre-load above.
       & chezmoi apply --refresh-externals --force
     } catch {
       Write-Warning "chezmoi apply failed: $_"
