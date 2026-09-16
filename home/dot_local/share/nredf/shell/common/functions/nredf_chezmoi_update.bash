@@ -27,9 +27,11 @@ function _nredf_chezmoi_update() {
   # password prompt is not hidden). Only skip the update if unlock fails.
   if command -v bw &>/dev/null \
     && [[ "${NREDF_NO_BOOTSTRAP:-}" != "1" && "${CI:-}" != "true" ]]; then
-    _nredf_bw_restore_session
-    if ! bw unlock --check &>/dev/null; then
-      _nredf_bw_ensure_session || { _nredf_remove_lock; return 0; }
+    if _nredf_bw_secret_configured; then
+      _nredf_bw_restore_session
+      if ! bw unlock --check &>/dev/null; then
+        _nredf_bw_ensure_session || { _nredf_remove_lock; return 0; }
+      fi
     fi
   fi
 

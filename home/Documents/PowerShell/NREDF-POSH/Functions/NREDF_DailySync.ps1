@@ -41,13 +41,15 @@ function NREDF_DailySync {
     if ((Get-Command bw -ErrorAction SilentlyContinue) -and
         $ENV:NREDF_NO_BOOTSTRAP -ne '1' -and
         $ENV:CI -ne 'true') {
-      NREDF_BwRestoreSession
-      & bw unlock --check 2>$null | Out-Null
-      if ($LASTEXITCODE -ne 0) {
-        # Vault is locked — prompt interactively (stderr visible)
-        if (-not (NREDF_BwEnsureSession)) {
-          $env:BW_SESSION = $null
-          $bwSkip = $true
+      if (NREDF_BwSecretConfigured) {
+        NREDF_BwRestoreSession
+        & bw unlock --check 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+          # Vault is locked — prompt interactively (stderr visible)
+          if (-not (NREDF_BwEnsureSession -Force)) {
+            $env:BW_SESSION = $null
+            $bwSkip = $true
+          }
         }
       }
     }

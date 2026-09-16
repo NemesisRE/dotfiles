@@ -183,7 +183,7 @@ function _nredf_sshpass_bitwarden_totp() {
   fi
 
   # Ensure the vault is unlocked (uses keychain / biometrics when available)
-  if ! _nredf_bw_ensure_session; then
+  if ! _nredf_bw_ensure_session --force; then
     echo "Bitwarden: failed to unlock vault" >&2
     return 1
   fi

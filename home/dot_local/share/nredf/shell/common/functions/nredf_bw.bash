@@ -270,6 +270,40 @@ _nredf_bw_keychain_del() {
 }
 
 # ---------------------------------------------------------------------------
+# Internal: detect whether any Bitwarden secret is actually used in config
+# Returns 0 if Bitwarden is configured in chezmoi.toml or chezmoidata, 1 otherwise.
+# ---------------------------------------------------------------------------
+_nredf_bw_secret_configured() {
+  local cfg="${XDG_CONFIG_HOME:-${HOME}/.config}/chezmoi/chezmoi.toml"
+  [[ -f "${cfg}" ]] || cfg="${HOME}/.config/chezmoi/chezmoi.toml"
+
+  # 1. Check chezmoi.toml if present
+  if [[ -f "${cfg}" ]]; then
+    if grep -Eq '^[[:blank:]]*\[bitwarden\]' "${cfg}" 2>/dev/null; then
+      return 0
+    fi
+    if grep -Eq '["'\'' ](bitwarden|bw):' "${cfg}" 2>/dev/null; then
+      return 0
+    fi
+  fi
+
+  # 2. Check repo-level chezmoidata if present
+  local src_dir="${NREDF_DOT_PATH:-${HOME}/.local/share/chezmoi}"
+  if [[ -d "${src_dir}/home/.chezmoidata" ]]; then
+    if grep -rEq '["'\'' ](bitwarden|bw):' "${src_dir}/home/.chezmoidata" 2>/dev/null; then
+      return 0
+    fi
+  fi
+  if [[ -f "${src_dir}/home/.chezmoidata.yaml" ]]; then
+    if grep -Eq '["'\'' ](bitwarden|bw):' "${src_dir}/home/.chezmoidata.yaml" 2>/dev/null; then
+      return 0
+    fi
+  fi
+
+  return 1
+}
+
+# ---------------------------------------------------------------------------
 # Internal: perform a fresh bw unlock/login and persist the session
 # ---------------------------------------------------------------------------
 _nredf_bw_do_unlock() {
@@ -317,8 +351,11 @@ function _nredf_bw_restore_session() {
 # ---------------------------------------------------------------------------
 # Public: _nredf_bw_ensure_session
 # Ensures BW_SESSION is set and valid. Returns 0 on success, 1 on failure.
+# If not forced, only prompts/unlocks if a Bitwarden secret is configured.
 # ---------------------------------------------------------------------------
 function _nredf_bw_ensure_session() {
+  local force="${1:-false}"
+
   if ! command -v bw &>/dev/null; then
     printf "Bitwarden CLI (bw) is not installed. Run: aqua install\n" >&2
     return 1
@@ -335,7 +372,7 @@ function _nredf_bw_ensure_session() {
 
   # 2. Try to restore from keychain
   local cached_session
-  if cached_session="$(_nredf_bw_keychain_get)"; then
+  if cached_session="$(_nredf_bw_keychain_get 2>/dev/null)"; then
     BW_SESSION="${cached_session}"
     export BW_SESSION
     if bw unlock --check &>/dev/null; then
@@ -346,7 +383,12 @@ function _nredf_bw_ensure_session() {
     _nredf_bw_keychain_del
   fi
 
-  # 3. Fresh unlock
+  # 3. Only do a fresh unlock if explicitly forced (e.g. bwu / ssh TOTP) or if a Bitwarden secret is configured
+  if [[ "${force}" != "true" && "${force}" != "--force" ]] && ! _nredf_bw_secret_configured; then
+    return 0
+  fi
+
+  # 4. Fresh unlock
   _nredf_bw_do_unlock
 }
 
@@ -355,7 +397,7 @@ function _nredf_bw_ensure_session() {
 # Ensures the vault is unlocked and BW_SESSION is exported.
 # ---------------------------------------------------------------------------
 function bwu() {
-  if _nredf_bw_ensure_session; then
+  if _nredf_bw_ensure_session --force; then
     printf "\033[1;32m✔ Bitwarden vault unlocked\033[0m\n"
     return 0
   else
@@ -382,17 +424,18 @@ function bwlock() {
 # Public: chezmoi wrapper
 # Pre-loads BW_SESSION from the keychain so chezmoi template functions like
 # {{ bitwarden "item" "..." }} never prompt for the master password.
-# Only activates when `bw` is on PATH; otherwise delegates transparently.
+# Only activates when `bw` is on PATH, not in bootstrap/CI, and a Bitwarden
+# secret is actually used in the config.
 #
 # NOTE: stderr is intentionally NOT suppressed here — bw unlock writes its
 # "? Master password:" prompt to stderr and we need it visible on the terminal.
 # ---------------------------------------------------------------------------
 function chezmoi() {
-  # Only inject the session when bw is available and this is not a bootstrap
-  # run that explicitly opts out (NREDF_NO_BOOTSTRAP=1 or CI=true).
   if command -v bw &>/dev/null \
     && [[ "${NREDF_NO_BOOTSTRAP:-}" != "1" && "${CI:-}" != "true" ]]; then
-    _nredf_bw_ensure_session || true
+    if _nredf_bw_secret_configured; then
+      _nredf_bw_ensure_session || true
+    fi
   fi
   command chezmoi "$@"
 }

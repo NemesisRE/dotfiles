@@ -231,6 +231,40 @@ function NREDF_BwKeychainDel {
 }
 
 # ---------------------------------------------------------------------------
+# Internal: detect whether any Bitwarden secret is actually used in config
+# Returns $true if Bitwarden is configured in chezmoi.toml or chezmoidata, $false otherwise.
+# ---------------------------------------------------------------------------
+function NREDF_BwSecretConfigured {
+  $candidatePaths = @(
+    (Join-Path $HOME '.config/chezmoi/chezmoi.toml'),
+    (Join-Path ($env:XDG_CONFIG_HOME ?? (Join-Path $HOME '.config')) 'chezmoi/chezmoi.toml')
+  ) | Select-Object -Unique
+
+  foreach ($path in $candidatePaths) {
+    if (Test-Path $path) {
+      $content = Get-Content $path -Raw
+      if ($content -match '(?m)^\s*\[bitwarden\]') { return $true }
+      if ($content -match '["''](?:bitwarden|bw):') { return $true }
+    }
+  }
+
+  $sourceDir = $env:NREDF_DOT_PATH ?? (Join-Path $HOME '.local/share/chezmoi')
+  $secretsDir = Join-Path $sourceDir 'home/.chezmoidata'
+  if (Test-Path $secretsDir) {
+    $matched = Get-ChildItem -Path $secretsDir -Filter '*.yaml' -ErrorAction SilentlyContinue |
+      Select-String -Pattern '["'']?(?:bitwarden|bw):' -SimpleMatch:$false
+    if ($matched) { return $true }
+  }
+
+  $singleData = Join-Path $sourceDir 'home/.chezmoidata.yaml'
+  if (Test-Path $singleData) {
+    if ((Get-Content $singleData -Raw) -match '["'']?(?:bitwarden|bw):') { return $true }
+  }
+
+  return $false
+}
+
+# ---------------------------------------------------------------------------
 # Internal: perform a fresh bw login/unlock and persist the session
 # ---------------------------------------------------------------------------
 function NREDF_BwDoUnlock {
@@ -281,8 +315,12 @@ function NREDF_BwRestoreSession {
 # ---------------------------------------------------------------------------
 # Public: NREDF_BwEnsureSession
 # Ensures $env:BW_SESSION is set and valid. Returns $true/$false.
+# If not forced, only prompts/unlocks if a Bitwarden secret is configured.
 # ---------------------------------------------------------------------------
 function NREDF_BwEnsureSession {
+  [CmdletBinding()]
+  param([switch]$Force)
+
   if (-not (Get-Command bw -ErrorAction SilentlyContinue)) {
     Write-Error 'Bitwarden CLI (bw) is not installed. Run: aqua install'
     return $false
@@ -306,7 +344,12 @@ function NREDF_BwEnsureSession {
     NREDF_BwKeychainDel
   }
 
-  # 3. Fresh unlock
+  # 3. Only do a fresh unlock if explicitly forced (e.g. bwu) or if a Bitwarden secret is configured
+  if (-not $Force -and -not (NREDF_BwSecretConfigured)) {
+    return $true
+  }
+
+  # 4. Fresh unlock
   return NREDF_BwDoUnlock
 }
 
@@ -318,7 +361,7 @@ function bwu {
   .SYNOPSIS
       Unlock the Bitwarden vault and export BW_SESSION (via OS keychain / biometrics).
   #>
-  if (NREDF_BwEnsureSession) {
+  if (NREDF_BwEnsureSession -Force) {
     $green = if ($PSStyle) { $PSStyle.Foreground.Green } else { "`e[1;32m" }
     $reset = if ($PSStyle) { $PSStyle.Reset } else { "`e[0m" }
     Write-Host "${green}✔ Bitwarden vault unlocked${reset}"
@@ -354,7 +397,8 @@ function bwlock {
 # Public: chezmoi wrapper
 # Pre-loads BW_SESSION from the keychain so chezmoi template functions like
 # {{ bitwarden "item" "..." }} never prompt for the master password.
-# Only activates when bw is available and not in CI / bootstrap context.
+# Only activates when bw is available, not in CI/bootstrap, and a Bitwarden
+# secret is actually used in the config.
 #
 # NOTE: stderr is intentionally NOT suppressed — bw unlock writes its
 # "? Master password:" prompt to stderr and must be visible to the user.
@@ -367,7 +411,9 @@ function chezmoi {
   if ((Get-Command bw -ErrorAction SilentlyContinue) -and
       $env:NREDF_NO_BOOTSTRAP -ne '1' -and
       $env:CI -ne 'true') {
-    NREDF_BwEnsureSession | Out-Null
+    if (NREDF_BwSecretConfigured) {
+      NREDF_BwEnsureSession | Out-Null
+    }
   }
   & (Get-Command chezmoi -CommandType Application -ErrorAction Stop) @args
 }
