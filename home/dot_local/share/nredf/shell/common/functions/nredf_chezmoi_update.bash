@@ -21,15 +21,24 @@ function _nredf_chezmoi_update() {
     echo -e '\033[1mUpdating dotfiles and externals via chezmoi\033[0m'
   fi
 
-  # Pre-load BW_SESSION from keychain so bitwarden template functions don't
-  # prompt interactively at shell startup (no-op if bw is not installed).
-  # stderr IS suppressed here intentionally: this runs during shell init and
-  # a blocking password prompt would freeze every new shell. If no valid
-  # keychain session exists we skip silently; the interactive chezmoi wrapper
-  # function will handle unlocking when the user runs chezmoi directly.
+  # Restore BW_SESSION from the OS keychain only — never attempt an interactive
+  # unlock during shell startup. If no cached session exists, or if the cached
+  # token is stale, we skip silently; the chezmoi wrapper handles unlocking on
+  # demand when the user runs chezmoi directly.
+  #
+  # NOTE: _nredf_bw_ensure_session is intentionally NOT used here. Even with
+  # 2>/dev/null, it falls through to _nredf_bw_do_unlock → `bw unlock --raw`,
+  # which blocks on stdin/tty regardless of stderr redirection.
   if command -v bw &>/dev/null \
     && [[ "${NREDF_NO_BOOTSTRAP:-}" != "1" && "${CI:-}" != "true" ]]; then
-    _nredf_bw_ensure_session 2>/dev/null || true
+    local _bw_cached
+    if _bw_cached="$(_nredf_bw_keychain_get 2>/dev/null)" && [[ -n "${_bw_cached}" ]]; then
+      BW_SESSION="${_bw_cached}"
+      export BW_SESSION
+      # Validate; if stale, clear it so the wrapper can prompt interactively
+      bw unlock --check &>/dev/null \
+        || { unset BW_SESSION; _nredf_bw_keychain_del 2>/dev/null || true; }
+    fi
   fi
 
   local _chezmoi_err=""
@@ -59,7 +68,9 @@ function _nredf_chezmoi_upgrade() {
   if [[ -n "${NREDF_PROFILE_STARTUP:-}" || -n "${NREDF_VERBOSE:-}" ]]; then
     echo -e '\033[1mUpgrading chezmoi\033[0m'
   fi
-  if chezmoi upgrade --quiet 2>/dev/null; then
+  # Use `command chezmoi` to bypass the BW wrapper — upgrade never reads
+  # Bitwarden-backed templates, so no session injection is needed.
+  if command chezmoi upgrade --quiet 2>/dev/null; then
     # Write 24h throttle timestamp (don't re-check every shell)
     _nredf_last_run "" "true" "86400"
   fi
