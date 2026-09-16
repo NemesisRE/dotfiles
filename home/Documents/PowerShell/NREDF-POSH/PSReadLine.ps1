@@ -54,12 +54,73 @@ if (Get-Command fzf -ErrorAction SilentlyContinue) {
     }
   }
 
-  Set-PSReadLineKeyHandler -Chord 'Ctrl+t' -BriefDescription 'FzfFileSearch' -Description 'Fuzzy search files in current directory and insert at cursor' -ScriptBlock {
+  # Helper: invoke fzf via System.Diagnostics.Process so that --height works on Windows.
+  # PowerShell pipelines (Invoke-Expression ... | fzf) prevent fzf from accessing the raw
+  # console, which is required for partial-height rendering (PSFzf documents this same issue).
+  function script:NREDF_InvokeFzf {
+    param(
+      [string[]]$FzfArgs,       # extra fzf CLI arguments
+      [string]  $InputCommand,  # optional shell command whose stdout feeds fzf stdin
+      [string]  $ExtraOpts      # extra FZF_DEFAULT_OPTS to append
+    )
     $origOpts = $env:FZF_DEFAULT_OPTS
     try {
-      if ($env:FZF_CTRL_T_OPTS) {
-        $env:FZF_DEFAULT_OPTS = if ($origOpts) { "$origOpts $env:FZF_CTRL_T_OPTS" } else { $env:FZF_CTRL_T_OPTS }
+      if ($ExtraOpts) {
+        $env:FZF_DEFAULT_OPTS = if ($origOpts) { "$origOpts $ExtraOpts" } else { $ExtraOpts }
       }
+
+      $fzfExe = (Get-Command fzf -ErrorAction Stop).Source
+      $process = [System.Diagnostics.Process]::new()
+      $process.StartInfo.FileName = $fzfExe
+      $process.StartInfo.Arguments = ($FzfArgs -join ' ')
+      $process.StartInfo.UseShellExecute = $false
+      $process.StartInfo.RedirectStandardOutput = $true
+      $process.StartInfo.StandardOutputEncoding = [System.Text.Encoding]::UTF8
+      if ($InputCommand) {
+        $process.StartInfo.RedirectStandardInput = $true
+      }
+      if ($PWD.Provider.Name -eq 'FileSystem') {
+        $process.StartInfo.WorkingDirectory = $PWD.ProviderPath
+      }
+
+      $stdOutId = "NREDF_FzfOut-$([System.Guid]::NewGuid())"
+      $stdOutEvent = Register-ObjectEvent -InputObject $process -EventName OutputDataReceived -SourceIdentifier $stdOutId
+
+      $process.Start() | Out-Null
+      $process.BeginOutputReadLine()
+
+      if ($InputCommand) {
+        $enc = [System.Text.UTF8Encoding]::new($false)
+        $writer = [System.IO.StreamWriter]::new($process.StandardInput.BaseStream, $enc)
+        try {
+          Invoke-Expression $InputCommand | ForEach-Object {
+            try { $writer.WriteLine($_) } catch {}
+          }
+        } finally {
+          try { $writer.Flush(); $writer.Close() } catch {}
+        }
+      }
+
+      $process.WaitForExit()
+
+      $result = Get-Event -SourceIdentifier $stdOutId -ErrorAction SilentlyContinue |
+        Where-Object { $null -ne $_.SourceEventArgs.Data } |
+        Sort-Object TimeGenerated |
+        ForEach-Object { $_.SourceEventArgs.Data }
+
+      Get-Event -SourceIdentifier $stdOutId -ErrorAction SilentlyContinue |
+        ForEach-Object { Remove-Event -EventIdentifier $_.EventIdentifier -ErrorAction SilentlyContinue }
+      Unregister-Event -SourceIdentifier $stdOutId -ErrorAction SilentlyContinue
+      if ($stdOutEvent) { Stop-Job $stdOutEvent -ErrorAction SilentlyContinue; Remove-Job $stdOutEvent -Force -ErrorAction SilentlyContinue }
+
+      return $result
+    } finally {
+      $env:FZF_DEFAULT_OPTS = $origOpts
+    }
+  }
+
+  Set-PSReadLineKeyHandler -Chord 'Ctrl+t' -BriefDescription 'FzfFileSearch' -Description 'Fuzzy search files in current directory and insert at cursor' -ScriptBlock {
+    try {
       $cmd = if ($env:FZF_CTRL_T_COMMAND) {
         $env:FZF_CTRL_T_COMMAND
       } elseif (Get-Command fd -ErrorAction SilentlyContinue) {
@@ -68,11 +129,10 @@ if (Get-Command fzf -ErrorAction SilentlyContinue) {
         $null
       }
 
-      $selected = if ($cmd) {
-        Invoke-Expression $cmd | fzf -m
-      } else {
-        fzf -m
-      }
+      $selected = NREDF_InvokeFzf `
+        -FzfArgs @('--multi', '--height=40%', '--reverse') `
+        -InputCommand $cmd `
+        -ExtraOpts $env:FZF_CTRL_T_OPTS
 
       if ($selected) {
         $quoted = $selected | ForEach-Object {
@@ -81,17 +141,12 @@ if (Get-Command fzf -ErrorAction SilentlyContinue) {
         [Microsoft.PowerShell.PSConsoleReadLine]::Insert(($quoted -join ' '))
       }
     } finally {
-      $env:FZF_DEFAULT_OPTS = $origOpts
       [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
     }
   }
 
   $altCScript = {
-    $origOpts = $env:FZF_DEFAULT_OPTS
     try {
-      if ($env:FZF_ALT_C_OPTS) {
-        $env:FZF_DEFAULT_OPTS = if ($origOpts) { "$origOpts $env:FZF_ALT_C_OPTS" } else { $env:FZF_ALT_C_OPTS }
-      }
       $cmd = if ($env:FZF_ALT_C_COMMAND) {
         $env:FZF_ALT_C_COMMAND
       } elseif (Get-Command fd -ErrorAction SilentlyContinue) {
@@ -100,17 +155,15 @@ if (Get-Command fzf -ErrorAction SilentlyContinue) {
         $null
       }
 
-      $selected = if ($cmd) {
-        Invoke-Expression $cmd | fzf +m
-      } else {
-        fzf +m
-      }
+      $selected = NREDF_InvokeFzf `
+        -FzfArgs @('--no-multi', '--height=40%', '--reverse') `
+        -InputCommand $cmd `
+        -ExtraOpts $env:FZF_ALT_C_OPTS
 
       if ($selected -and (Test-Path -LiteralPath $selected)) {
         Set-Location -LiteralPath $selected
       }
     } finally {
-      $env:FZF_DEFAULT_OPTS = $origOpts
       [Microsoft.PowerShell.PSConsoleReadLine]::InvokePrompt()
     }
   }

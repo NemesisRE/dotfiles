@@ -1,36 +1,28 @@
 {
     "$help": "https://aka.ms/terminal-documentation",
-    "$schema": "https://aka.ms/terminal-profiles-schema-preview",
+    "$schema": "https://aka.ms/terminal-profiles-schema",
     "actions":
     [
         {
-            "command": {
+            "command":
+            {
                 "action": "quakeMode"
             },
-            "id": "User.quakeMode.F1E129A4",
-            "keys": "vk(19)"
+            "id": "User.quakeMode.F1E129A4"
         },
         {
-            "command": "unbound",
-            "keys": "win+sc(41)"
-        },
-        {
-            "command": {
+            "command":
+            {
                 "action": "nextTab"
             },
-            "id": "User.nextTab.0",
-            "keys": "shift+right"
+            "id": "User.nextTab.0"
         },
         {
-            "command": {
+            "command":
+            {
                 "action": "prevTab"
             },
-            "id": "User.prevTab.0",
-            "keys": "shift+left"
-        },
-        {
-            "command": "unbound",
-            "keys": "f11"
+            "id": "User.prevTab.0"
         }
     ],
     "alwaysShowNotificationIcon": true,
@@ -41,6 +33,29 @@
     "firstWindowPreference": "persistedWindowLayout",
     "initialCols": 180,
     "initialRows": 50,
+    "keybindings":
+    [
+        {
+            "id": "User.quakeMode.F1E129A4",
+            "keys": "vk(19)"
+        },
+        {
+            "id": null,
+            "keys": "win+sc(41)"
+        },
+        {
+            "id": "User.nextTab.0",
+            "keys": "shift+right"
+        },
+        {
+            "id": null,
+            "keys": "f11"
+        },
+        {
+            "id": "User.prevTab.0",
+            "keys": "shift+left"
+        }
+    ],
     "launchMode": "maximized",
     "minimizeToNotificationArea": false,
     "newTabMenu":
@@ -66,7 +81,6 @@
             "cursorShape": "filledBox",
             "experimental.repositionCursorWithMouse": true,
             "experimental.retroTerminalEffect": false,
-            "experimental.rightClickContextMenu": true,
             "font":
             {
                 "cellHeight": "1.2",
@@ -77,6 +91,7 @@
             "historySize": 200000,
             "intenseTextStyle": "bold",
             "opacity": 85,
+            "rightClickContextMenu": true,
             "showMarksOnScrollbar": true,
             "useAcrylic": true
         },
