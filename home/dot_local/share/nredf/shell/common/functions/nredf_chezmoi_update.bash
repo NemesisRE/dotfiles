@@ -20,6 +20,18 @@ function _nredf_chezmoi_update() {
   if [[ -n "${NREDF_PROFILE_STARTUP:-}" || -n "${NREDF_VERBOSE:-}" ]]; then
     echo -e '\033[1mUpdating dotfiles and externals via chezmoi\033[0m'
   fi
+
+  # Pre-load BW_SESSION from keychain so bitwarden template functions don't
+  # prompt interactively at shell startup (no-op if bw is not installed).
+  # stderr IS suppressed here intentionally: this runs during shell init and
+  # a blocking password prompt would freeze every new shell. If no valid
+  # keychain session exists we skip silently; the interactive chezmoi wrapper
+  # function will handle unlocking when the user runs chezmoi directly.
+  if command -v bw &>/dev/null \
+    && [[ "${NREDF_NO_BOOTSTRAP:-}" != "1" && "${CI:-}" != "true" ]]; then
+    _nredf_bw_ensure_session 2>/dev/null || true
+  fi
+
   local _chezmoi_err=""
   if _chezmoi_err="$(chezmoi update --refresh-externals --force 2>&1)"; then
     # Write 24h throttle timestamp (don't re-fetch every shell)

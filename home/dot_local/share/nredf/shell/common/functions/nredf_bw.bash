@@ -17,6 +17,10 @@
 # - bwu               Ensure BW_SESSION is set (keychain → fresh unlock),
 #                     export it, print confirmation.
 # - bwlock            Lock the vault, unset BW_SESSION, remove keychain entry.
+# - chezmoi           Wrapper: restores BW_SESSION from keychain before
+#                     delegating to the real chezmoi binary, so template
+#                     functions like {{ bitwarden "item" "..." }} never prompt
+#                     for the master password interactively.
 # - _nredf_bw_ensure_session
 #                     Low-level helper for use by other nredf functions (e.g.
 #                     nredf_ssh TOTP helper). Sets and exports BW_SESSION.
@@ -254,3 +258,21 @@ function bwlock() {
   printf "\033[1;33m⚿ Bitwarden vault locked and session cleared\033[0m\n"
 }
 
+# ---------------------------------------------------------------------------
+# Public: chezmoi wrapper
+# Pre-loads BW_SESSION from the keychain so chezmoi template functions like
+# {{ bitwarden "item" "..." }} never prompt for the master password.
+# Only activates when `bw` is on PATH; otherwise delegates transparently.
+#
+# NOTE: stderr is intentionally NOT suppressed here — bw unlock writes its
+# "? Master password:" prompt to stderr and we need it visible on the terminal.
+# ---------------------------------------------------------------------------
+function chezmoi() {
+  # Only inject the session when bw is available and this is not a bootstrap
+  # run that explicitly opts out (NREDF_NO_BOOTSTRAP=1 or CI=true).
+  if command -v bw &>/dev/null \
+    && [[ "${NREDF_NO_BOOTSTRAP:-}" != "1" && "${CI:-}" != "true" ]]; then
+    _nredf_bw_ensure_session || true
+  fi
+  command chezmoi "$@"
+}

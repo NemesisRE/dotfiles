@@ -254,3 +254,24 @@ function bwlock {
   Write-Host "${yellow}⚿ Bitwarden vault locked and session cleared${reset}"
 }
 
+# ---------------------------------------------------------------------------
+# Public: chezmoi wrapper
+# Pre-loads BW_SESSION from the keychain so chezmoi template functions like
+# {{ bitwarden "item" "..." }} never prompt for the master password.
+# Only activates when bw is available and not in CI / bootstrap context.
+#
+# NOTE: stderr is intentionally NOT suppressed — bw unlock writes its
+# "? Master password:" prompt to stderr and must be visible to the user.
+# ---------------------------------------------------------------------------
+function chezmoi {
+  <#
+  .SYNOPSIS
+      Wrapper around chezmoi that pre-loads BW_SESSION from the OS keychain.
+  #>
+  if ((Get-Command bw -ErrorAction SilentlyContinue) -and
+      $env:NREDF_NO_BOOTSTRAP -ne '1' -and
+      $env:CI -ne 'true') {
+    NREDF_BwEnsureSession | Out-Null
+  }
+  & (Get-Command chezmoi -CommandType Application -ErrorAction Stop) @args
+}
