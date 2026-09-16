@@ -202,7 +202,7 @@ foreach (`$target in `$targets) {
     }
     if (Test-Path -LiteralPath `$target) {
         `$content = Get-Content -LiteralPath `$target -Raw -ErrorAction Stop
-        if (`$content -notlike "*`$snippet*") {
+        if (`$content -notlike '*NREDF dotfiles profile fallback*') {
             Add-Content -LiteralPath `$target -Value "`n`$snippet`n" -Force -ErrorAction Stop
         }
     } else {
