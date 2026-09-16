@@ -25,45 +25,70 @@ $script:_NREDF_BW_ACCOUNT = $env:USERNAME ?? $env:USER ?? (& id -un 2>$null)
 # ---------------------------------------------------------------------------
 function NREDF_BwKeychainGet {
   if ($IsWindows) {
-    try {
-      $vault = [Windows.Security.Credentials.PasswordVault, Windows.Security.Credentials, ContentType = WindowsRuntime]::new()
-      $cred = $vault.Retrieve($script:_NREDF_BW_SERVICE, $script:_NREDF_BW_ACCOUNT)
-      $cred.RetrievePassword()
-      return $cred.Password
-    } catch {
-      return $null
+    foreach ($key in @($script:_NREDF_BW_SERVICE, 'bw_session', 'BW_SESSION')) {
+      try {
+        $vault = [Windows.Security.Credentials.PasswordVault, Windows.Security.Credentials, ContentType = WindowsRuntime]::new()
+        $cred = $vault.Retrieve($key, $script:_NREDF_BW_ACCOUNT)
+        $cred.RetrievePassword()
+        if (-not [string]::IsNullOrEmpty($cred.Password)) { return $cred.Password }
+      } catch {}
     }
+    return $null
   }
 
   if ($IsMacOS) {
-    $token = & security find-generic-password `
-      -s $script:_NREDF_BW_SERVICE `
-      -a $script:_NREDF_BW_ACCOUNT `
-      -w 2>$null
-    if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrEmpty($token)) {
-      return $token.Trim()
+    foreach ($key in @($script:_NREDF_BW_SERVICE, 'bw_session', 'BW_SESSION')) {
+      $token = & security find-generic-password `
+        -s $key `
+        -a $script:_NREDF_BW_ACCOUNT `
+        -w 2>$null
+      if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrEmpty($token)) {
+        return $token.Trim()
+      }
     }
     return $null
   }
 
   # Linux — try gdbus / kwallet-query first, then secret-tool, then fallback file
   if (Get-Command gdbus -ErrorAction SilentlyContinue) {
-    $service = @('org.kde.kwalletd6', 'org.kde.kwalletd5') | Where-Object {
+    $service = @('org.kde.kwalletd6', 'org.kde.kwalletd5', 'org.kde.kwalletd') | Where-Object {
       $mod = "/modules/$($_ -replace '^.*\.','')"
       $out = & gdbus call --session --dest $_ --object-path $mod --method org.kde.KWallet.isEnabled 2>$null
       $out -match 'true'
     } | Select-Object -First 1
 
+    if (-not $service) {
+      $service = @('org.kde.kwalletd6', 'org.kde.kwalletd5', 'org.kde.kwalletd') | Where-Object {
+        $mod = "/modules/$($_ -replace '^.*\.','')"
+        $null -ne (& gdbus call --session --dest $_ --object-path $mod --method org.freedesktop.DBus.Peer.Ping 2>$null)
+      } | Select-Object -First 1
+    }
+
     if ($service) {
       $mod = "/modules/$($service -replace '^.*\.','')"
-      $openRes = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.open kdewallet 0 'nredf' 2>$null
-      $handle = ($openRes -replace '\D', '')
-      if ($handle) {
-        foreach ($folder in @('nredf', 'Passwords')) {
-          $raw = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.readPassword [int64]$handle $folder $script:_NREDF_BW_SERVICE 'nredf' 2>$null
-          if ($raw -match "\('([^']*)',\)") {
-            $token = $Matches[1]
-            if (-not [string]::IsNullOrEmpty($token)) { return $token.Trim() }
+      $wallets = [System.Collections.Generic.List[string]]::new()
+      foreach ($m in @('networkWallet', 'localWallet')) {
+        $wRes = & gdbus call --session --dest $service --object-path $mod --method "org.kde.KWallet.$m" 2>$null
+        if ($wRes -match "\('([^']*)',\)" -and -not [string]::IsNullOrEmpty($Matches[1])) {
+          if (-not $wallets.Contains($Matches[1])) { $wallets.Add($Matches[1]) }
+        }
+      }
+      if (-not $wallets.Contains('kdewallet')) { $wallets.Add('kdewallet') }
+
+      foreach ($w in $wallets) {
+        $openRes = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.open $w 0 'nredf' 2>$null
+        if ($openRes -match '\((-?\d+),\)') {
+          $handle = [int64]$Matches[1]
+          if ($handle -ge 0) {
+            foreach ($folder in @('Passwords', 'nredf')) {
+              foreach ($key in @($script:_NREDF_BW_SERVICE, 'bw_session', 'BW_SESSION')) {
+                $raw = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.readPassword $handle $folder $key 'nredf' 2>$null
+                if ($raw -match "\('([^']*)',\)") {
+                  $token = $Matches[1]
+                  if (-not [string]::IsNullOrEmpty($token)) { return $token.Trim() }
+                }
+              }
+            }
           }
         }
       }
@@ -71,20 +96,22 @@ function NREDF_BwKeychainGet {
   }
 
   if (Get-Command kwallet-query -ErrorAction SilentlyContinue) {
-    # Try nredf folder first, then fallback to standard Passwords folder
-    $token = & kwallet-query --read-password $script:_NREDF_BW_SERVICE --folder nredf kdewallet 2>$null
-    if (-not ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrEmpty($token))) {
-      $token = & kwallet-query --read-password $script:_NREDF_BW_SERVICE --folder Passwords kdewallet 2>$null
-    }
-    if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrEmpty($token)) {
-      return $token.Trim()
+    foreach ($folder in @('Passwords', 'nredf')) {
+      foreach ($key in @($script:_NREDF_BW_SERVICE, 'bw_session', 'BW_SESSION')) {
+        $token = & kwallet-query --read-password $key --folder $folder kdewallet 2>$null
+        if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrEmpty($token) -and $token -notmatch 'kann nicht gelesen werden|cannot be read') {
+          return $token.Trim()
+        }
+      }
     }
   }
 
   if (Get-Command secret-tool -ErrorAction SilentlyContinue) {
-    $token = & secret-tool lookup service $script:_NREDF_BW_SERVICE username $script:_NREDF_BW_ACCOUNT 2>$null
-    if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrEmpty($token)) {
-      return $token.Trim()
+    foreach ($key in @($script:_NREDF_BW_SERVICE, 'bw_session')) {
+      $token = & secret-tool lookup service $key username $script:_NREDF_BW_ACCOUNT 2>$null
+      if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrEmpty($token)) { return $token.Trim() }
+      $token = & secret-tool lookup service $key 2>$null
+      if ($LASTEXITCODE -eq 0 -and -not [string]::IsNullOrEmpty($token)) { return $token.Trim() }
     }
   }
 
@@ -132,36 +159,43 @@ function NREDF_BwKeychainSet {
 
   # Linux
   if (Get-Command gdbus -ErrorAction SilentlyContinue) {
-    $service = @('org.kde.kwalletd6', 'org.kde.kwalletd5') | Where-Object {
+    $service = @('org.kde.kwalletd6', 'org.kde.kwalletd5', 'org.kde.kwalletd') | Where-Object {
       $mod = "/modules/$($_ -replace '^.*\.','')"
       $out = & gdbus call --session --dest $_ --object-path $mod --method org.kde.KWallet.isEnabled 2>$null
       $out -match 'true'
     } | Select-Object -First 1
+
+    if (-not $service) {
+      $service = @('org.kde.kwalletd6', 'org.kde.kwalletd5', 'org.kde.kwalletd') | Where-Object {
+        $mod = "/modules/$($_ -replace '^.*\.','')"
+        $null -ne (& gdbus call --session --dest $_ --object-path $mod --method org.freedesktop.DBus.Peer.Ping 2>$null)
+      } | Select-Object -First 1
+    }
 
     if ($service) {
       $mod = "/modules/$($service -replace '^.*\.','')"
       $openRes = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.open kdewallet 0 'nredf' 2>$null
       $handle = ($openRes -replace '\D', '')
       if ($handle) {
+        # Try Passwords folder first (standard KWallet), fallback to nredf
+        $writeRes = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.writePassword [int64]$handle 'Passwords' $script:_NREDF_BW_SERVICE $Token 'nredf' 2>$null
+        if ($writeRes -match '\(0,\)') { return }
+
         $hasFolder = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.hasFolder [int64]$handle 'nredf' 2>$null
         if ($hasFolder -notmatch 'true') {
           & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.createFolder [int64]$handle 'nredf' 2>$null | Out-Null
         }
         $writeRes = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.writePassword [int64]$handle 'nredf' $script:_NREDF_BW_SERVICE $Token 'nredf' 2>$null
         if ($writeRes -match '\(0,\)') { return }
-
-        $writeRes = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.writePassword [int64]$handle 'Passwords' $script:_NREDF_BW_SERVICE $Token 'nredf' 2>$null
-        if ($writeRes -match '\(0,\)') { return }
       }
     }
   }
 
   if (Get-Command kwallet-query -ErrorAction SilentlyContinue) {
-    $Token | & kwallet-query --write-password $script:_NREDF_BW_SERVICE --folder nredf kdewallet 2>$null | Out-Null
+    $Token | & kwallet-query --write-password $script:_NREDF_BW_SERVICE --folder Passwords kdewallet 2>$null | Out-Null
     if ($LASTEXITCODE -eq 0) { return }
 
-    # Fallback to standard Passwords folder
-    $Token | & kwallet-query --write-password $script:_NREDF_BW_SERVICE --folder Passwords kdewallet 2>$null | Out-Null
+    $Token | & kwallet-query --write-password $script:_NREDF_BW_SERVICE --folder nredf kdewallet 2>$null | Out-Null
     if ($LASTEXITCODE -eq 0) { return }
   }
 
@@ -186,45 +220,64 @@ function NREDF_BwKeychainSet {
 # ---------------------------------------------------------------------------
 function NREDF_BwKeychainDel {
   if ($IsWindows) {
-    try {
-      $vault = [Windows.Security.Credentials.PasswordVault, Windows.Security.Credentials, ContentType = WindowsRuntime]::new()
-      try { $vault.Remove($vault.Retrieve($script:_NREDF_BW_SERVICE, $script:_NREDF_BW_ACCOUNT)) } catch {}
-    } catch {}
+    foreach ($key in @($script:_NREDF_BW_SERVICE, 'bw_session', 'BW_SESSION')) {
+      try {
+        $vault = [Windows.Security.Credentials.PasswordVault, Windows.Security.Credentials, ContentType = WindowsRuntime]::new()
+        try { $vault.Remove($vault.Retrieve($key, $script:_NREDF_BW_ACCOUNT)) } catch {}
+      } catch {}
+    }
     return
   }
 
   if ($IsMacOS) {
-    & security delete-generic-password `
-      -s $script:_NREDF_BW_SERVICE `
-      -a $script:_NREDF_BW_ACCOUNT 2>$null | Out-Null
+    foreach ($key in @($script:_NREDF_BW_SERVICE, 'bw_session', 'BW_SESSION')) {
+      & security delete-generic-password `
+        -s $key `
+        -a $script:_NREDF_BW_ACCOUNT 2>$null | Out-Null
+    }
     return
   }
 
   # Linux
   if (Get-Command gdbus -ErrorAction SilentlyContinue) {
-    $service = @('org.kde.kwalletd6', 'org.kde.kwalletd5') | Where-Object {
+    $service = @('org.kde.kwalletd6', 'org.kde.kwalletd5', 'org.kde.kwalletd') | Where-Object {
       $mod = "/modules/$($_ -replace '^.*\.','')"
       $out = & gdbus call --session --dest $_ --object-path $mod --method org.kde.KWallet.isEnabled 2>$null
       $out -match 'true'
     } | Select-Object -First 1
+
+    if (-not $service) {
+      $service = @('org.kde.kwalletd6', 'org.kde.kwalletd5', 'org.kde.kwalletd') | Where-Object {
+        $mod = "/modules/$($_ -replace '^.*\.','')"
+        $null -ne (& gdbus call --session --dest $_ --object-path $mod --method org.freedesktop.DBus.Peer.Ping 2>$null)
+      } | Select-Object -First 1
+    }
 
     if ($service) {
       $mod = "/modules/$($service -replace '^.*\.','')"
       $openRes = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.open kdewallet 0 'nredf' 2>$null
       $handle = ($openRes -replace '\D', '')
       if ($handle) {
-        & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.removeEntry [int64]$handle 'nredf' $script:_NREDF_BW_SERVICE 'nredf' 2>$null | Out-Null
-        & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.removeEntry [int64]$handle 'Passwords' $script:_NREDF_BW_SERVICE 'nredf' 2>$null | Out-Null
+        foreach ($folder in @('Passwords', 'nredf')) {
+          foreach ($key in @($script:_NREDF_BW_SERVICE, 'bw_session', 'BW_SESSION')) {
+            & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.removeEntry [int64]$handle $folder $key 'nredf' 2>$null | Out-Null
+          }
+        }
       }
     }
   }
 
   if (Get-Command kwallet-query -ErrorAction SilentlyContinue) {
-    & kwallet-query --delete-entry $script:_NREDF_BW_SERVICE --folder nredf kdewallet 2>$null | Out-Null
-    & kwallet-query --delete-entry $script:_NREDF_BW_SERVICE --folder Passwords kdewallet 2>$null | Out-Null
+    foreach ($folder in @('Passwords', 'nredf')) {
+      foreach ($key in @($script:_NREDF_BW_SERVICE, 'bw_session', 'BW_SESSION')) {
+        & kwallet-query --delete-entry $key --folder $folder kdewallet 2>$null | Out-Null
+      }
+    }
   }
   if (Get-Command secret-tool -ErrorAction SilentlyContinue) {
-    & secret-tool clear service $script:_NREDF_BW_SERVICE username $script:_NREDF_BW_ACCOUNT 2>$null | Out-Null
+    foreach ($key in @($script:_NREDF_BW_SERVICE, 'bw_session')) {
+      & secret-tool clear service $key username $script:_NREDF_BW_ACCOUNT 2>$null | Out-Null
+    }
   }
   $runtimeDir = $env:XDG_RUNTIME_DIR ?? '/tmp'
   Remove-Item (Join-Path $runtimeDir 'nredf_bw_session') -Force -ErrorAction SilentlyContinue
@@ -304,7 +357,6 @@ function NREDF_BwRestoreSession {
       Fast and non-blocking: never prompts, suitable for shell startup.
   #>
   if (-not [string]::IsNullOrEmpty($env:BW_SESSION)) { return }
-  if (-not (Get-Command bw -ErrorAction SilentlyContinue)) { return }
 
   $cached = NREDF_BwKeychainGet
   if (-not [string]::IsNullOrEmpty($cached)) {

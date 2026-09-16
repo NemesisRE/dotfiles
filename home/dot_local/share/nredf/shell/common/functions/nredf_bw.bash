@@ -43,11 +43,19 @@ _NREDF_BW_ACCOUNT="${USER:-$(id -un 2>/dev/null)}"
 # ---------------------------------------------------------------------------
 _nredf_bw_kwallet_service() {
   command -v gdbus &>/dev/null || return 1
-  local en
-  for s in org.kde.kwalletd6 org.kde.kwalletd5; do
+  local s en
+  for s in org.kde.kwalletd6 org.kde.kwalletd5 org.kde.kwalletd; do
     en="$(gdbus call --session --dest "${s}" --object-path "/modules/${s##*.}" \
-      --method org.kde.KWallet.isEnabled 2>/dev/null)" || continue
+      --method org.kde.KWallet.isEnabled 2>/dev/null)" || true
     if [[ "${en}" == *true* ]]; then
+      printf "%s" "${s}"
+      return 0
+    fi
+    if [[ "${en}" == *false* ]]; then
+      continue
+    fi
+    if gdbus call --session --dest "${s}" --object-path "/modules/${s##*.}" \
+      --method org.freedesktop.DBus.Peer.Ping 2>/dev/null; then
       printf "%s" "${s}"
       return 0
     fi
@@ -62,9 +70,9 @@ _nredf_bw_kwallet_open() {
   local res
   res="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
     --method org.kde.KWallet.open "${wallet}" 0 "nredf" 2>/dev/null)" || return 1
-  # Extract numeric handle
+  # Extract numeric handle (guard against converting negative -1 into 1)
   local handle
-  handle="$(printf "%s" "${res}" | tr -dc '0-9')"
+  handle="$(printf "%s" "${res}" | grep -oE -- '-?[0-9]+' | head -n1)"
   if [[ -n "${handle}" && "${handle}" -ge 0 ]]; then
     printf "%s" "${handle}"
     return 0
@@ -104,44 +112,81 @@ _nredf_bw_keychain_get() {
 
   case "${backend}" in
     macos)
-      token="$(security find-generic-password \
-        -s "${_NREDF_BW_SERVICE}" \
-        -a "${_NREDF_BW_ACCOUNT}" \
-        -w 2>/dev/null)"
+      for key in "${_NREDF_BW_SERVICE}" "bw_session" "BW_SESSION"; do
+        token="$(security find-generic-password \
+          -s "${key}" \
+          -a "${_NREDF_BW_ACCOUNT}" \
+          -w 2>/dev/null)" || true
+        [[ -n "${token}" ]] && break
+      done
       ;;
     kwallet)
       # Primary: native D-Bus via gdbus (Plasma 6 / 5)
       if command -v gdbus &>/dev/null; then
         local service handle raw
         if service="$(_nredf_bw_kwallet_service)"; then
-          if handle="$(_nredf_bw_kwallet_open "${service}")"; then
-            local mod="/modules/${service##*.}"
-            # Check nredf folder first, fallback to Passwords
-            for f in "nredf" "Passwords"; do
-              raw="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
-                --method org.kde.KWallet.readPassword "${handle}" "${f}" "${_NREDF_BW_SERVICE}" "nredf" 2>/dev/null)" || true
-              if [[ "${raw}" == \(\'* ]]; then
-                token="${raw#*(\'}"
-                token="${token%\',)}"
-                [[ -n "${token}" ]] && break
+          local mod="/modules/${service##*.}"
+          local wallets=()
+          local def_w
+          for m in networkWallet localWallet; do
+            def_w="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
+              --method "org.kde.KWallet.${m}" 2>/dev/null)" || true
+            if [[ "${def_w}" == \(\'* ]]; then
+              def_w="${def_w#*(\'}"
+              def_w="${def_w%\',)}"
+              if [[ -n "${def_w}" && " ${wallets[*]} " != *" ${def_w} "* ]]; then
+                wallets+=("${def_w}")
               fi
-            done
+            fi
+          done
+          if [[ " ${wallets[*]} " != *" kdewallet "* ]]; then
+            wallets+=("kdewallet")
           fi
+
+          for w in "${wallets[@]}"; do
+            if handle="$(_nredf_bw_kwallet_open "${service}" "${w}")"; then
+              for folder in "Passwords" "nredf"; do
+                for key in "${_NREDF_BW_SERVICE}" "bw_session" "BW_SESSION"; do
+                  raw="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
+                    --method org.kde.KWallet.readPassword "${handle}" "${folder}" "${key}" "nredf" 2>/dev/null)" || true
+                  if [[ "${raw}" == \(\'* ]]; then
+                    token="${raw#*(\'}"
+                    token="${token%\',)}"
+                    if [[ -n "${token}" ]]; then
+                      break 3
+                    fi
+                  fi
+                done
+              done
+            fi
+          done
         fi
       fi
 
       # Fallback: kwallet-query CLI
       if [[ -z "${token}" ]] && command -v kwallet-query &>/dev/null; then
-        token="$(kwallet-query --read-password "${_NREDF_BW_SERVICE}" --folder "nredf" kdewallet 2>/dev/null)"
-        if [[ -z "${token}" ]]; then
-          token="$(kwallet-query --read-password "${_NREDF_BW_SERVICE}" --folder "Passwords" kdewallet 2>/dev/null)"
-        fi
+        for folder in "Passwords" "nredf"; do
+          for key in "${_NREDF_BW_SERVICE}" "bw_session" "BW_SESSION"; do
+            token="$(kwallet-query --read-password "${key}" --folder "${folder}" kdewallet 2>/dev/null)" || true
+            if [[ -n "${token}" && "${token}" != *"kann nicht gelesen werden"* && "${token}" != *"cannot be read"* ]]; then
+              break 2
+            else
+              token=""
+            fi
+          done
+        done
       fi
       ;;
     secret-tool)
-      token="$(secret-tool lookup \
-        service "${_NREDF_BW_SERVICE}" \
-        username "${_NREDF_BW_ACCOUNT}" 2>/dev/null)"
+      for key in "${_NREDF_BW_SERVICE}" "bw_session"; do
+        token="$(secret-tool lookup \
+          service "${key}" \
+          username "${_NREDF_BW_ACCOUNT}" 2>/dev/null)" || true
+        [[ -n "${token}" ]] && break
+        token="$(secret-tool lookup \
+          service "${key}" 2>/dev/null)" || true
+        [[ -n "${token}" ]] && break
+      done
       ;;
     fallback)
       local f="${XDG_RUNTIME_DIR:-/tmp}/nredf_bw_session"
@@ -184,23 +229,22 @@ _nredf_bw_keychain_set() {
         if service="$(_nredf_bw_kwallet_service)"; then
           if handle="$(_nredf_bw_kwallet_open "${service}")"; then
             local mod="/modules/${service##*.}"
-            # Ensure folder nredf exists or create it
-            local has_f
-            has_f="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
-              --method org.kde.KWallet.hasFolder "${handle}" "nredf" 2>/dev/null)"
-            if [[ "${has_f}" != *true* ]]; then
-              gdbus call --session --dest "${service}" --object-path "${mod}" \
-                --method org.kde.KWallet.createFolder "${handle}" "nredf" &>/dev/null || true
-            fi
-            # Write to nredf folder, fallback to Passwords
+            # Write to Passwords folder first (standard KWallet), fallback to nredf
             local res
             res="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
-              --method org.kde.KWallet.writePassword "${handle}" "nredf" "${_NREDF_BW_SERVICE}" "${token}" "nredf" 2>/dev/null)"
+              --method org.kde.KWallet.writePassword "${handle}" "Passwords" "${_NREDF_BW_SERVICE}" "${token}" "nredf" 2>/dev/null)"
             if [[ "${res}" == *\(0,\)* ]]; then
               saved=0
             else
+              local has_f
+              has_f="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
+                --method org.kde.KWallet.hasFolder "${handle}" "nredf" 2>/dev/null)"
+              if [[ "${has_f}" != *true* ]]; then
+                gdbus call --session --dest "${service}" --object-path "${mod}" \
+                  --method org.kde.KWallet.createFolder "${handle}" "nredf" &>/dev/null || true
+              fi
               res="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
-                --method org.kde.KWallet.writePassword "${handle}" "Passwords" "${_NREDF_BW_SERVICE}" "${token}" "nredf" 2>/dev/null)"
+                --method org.kde.KWallet.writePassword "${handle}" "nredf" "${_NREDF_BW_SERVICE}" "${token}" "nredf" 2>/dev/null)"
               [[ "${res}" == *\(0,\)* ]] && saved=0
             fi
           fi
@@ -209,8 +253,8 @@ _nredf_bw_keychain_set() {
 
       # Secondary: kwallet-query CLI
       if [[ "${saved}" -ne 0 ]] && command -v kwallet-query &>/dev/null; then
-        printf "%s" "${token}" | kwallet-query --write-password "${_NREDF_BW_SERVICE}" --folder "nredf" kdewallet &>/dev/null \
-          || printf "%s" "${token}" | kwallet-query --write-password "${_NREDF_BW_SERVICE}" --folder "Passwords" kdewallet &>/dev/null || true
+        printf "%s" "${token}" | kwallet-query --write-password "${_NREDF_BW_SERVICE}" --folder "Passwords" kdewallet &>/dev/null \
+          || printf "%s" "${token}" | kwallet-query --write-password "${_NREDF_BW_SERVICE}" --folder "nredf" kdewallet &>/dev/null || true
       fi
       ;;
     secret-tool)
@@ -236,9 +280,11 @@ _nredf_bw_keychain_del() {
 
   case "${backend}" in
     macos)
-      security delete-generic-password \
-        -s "${_NREDF_BW_SERVICE}" \
-        -a "${_NREDF_BW_ACCOUNT}" &>/dev/null || true
+      for key in "${_NREDF_BW_SERVICE}" "bw_session" "BW_SESSION"; do
+        security delete-generic-password \
+          -s "${key}" \
+          -a "${_NREDF_BW_ACCOUNT}" &>/dev/null || true
+      done
       ;;
     kwallet)
       if command -v gdbus &>/dev/null; then
@@ -246,22 +292,29 @@ _nredf_bw_keychain_del() {
         if service="$(_nredf_bw_kwallet_service)"; then
           if handle="$(_nredf_bw_kwallet_open "${service}")"; then
             local mod="/modules/${service##*.}"
-            gdbus call --session --dest "${service}" --object-path "${mod}" \
-              --method org.kde.KWallet.removeEntry "${handle}" "nredf" "${_NREDF_BW_SERVICE}" "nredf" &>/dev/null || true
-            gdbus call --session --dest "${service}" --object-path "${mod}" \
-              --method org.kde.KWallet.removeEntry "${handle}" "Passwords" "${_NREDF_BW_SERVICE}" "nredf" &>/dev/null || true
+            for folder in "Passwords" "nredf"; do
+              for key in "${_NREDF_BW_SERVICE}" "bw_session" "BW_SESSION"; do
+                gdbus call --session --dest "${service}" --object-path "${mod}" \
+                  --method org.kde.KWallet.removeEntry "${handle}" "${folder}" "${key}" "nredf" &>/dev/null || true
+              done
+            done
           fi
         fi
       fi
       if command -v kwallet-query &>/dev/null; then
-        kwallet-query --delete-entry "${_NREDF_BW_SERVICE}" --folder "nredf" kdewallet &>/dev/null || true
-        kwallet-query --delete-entry "${_NREDF_BW_SERVICE}" --folder "Passwords" kdewallet &>/dev/null || true
+        for folder in "Passwords" "nredf"; do
+          for key in "${_NREDF_BW_SERVICE}" "bw_session" "BW_SESSION"; do
+            kwallet-query --delete-entry "${key}" --folder "${folder}" kdewallet &>/dev/null || true
+          done
+        done
       fi
       ;;
     secret-tool)
-      secret-tool clear \
-        service "${_NREDF_BW_SERVICE}" \
-        username "${_NREDF_BW_ACCOUNT}" &>/dev/null || true
+      for key in "${_NREDF_BW_SERVICE}" "bw_session"; do
+        secret-tool clear \
+          service "${key}" \
+          username "${_NREDF_BW_ACCOUNT}" &>/dev/null || true
+      done
       ;;
     fallback)
       rm -f "${XDG_RUNTIME_DIR:-/tmp}/nredf_bw_session"
@@ -339,7 +392,6 @@ _nredf_bw_do_unlock() {
 # ---------------------------------------------------------------------------
 function _nredf_bw_restore_session() {
   [[ -n "${BW_SESSION:-}" ]] && return 0
-  command -v bw &>/dev/null || return 0
 
   local cached
   if cached="$(_nredf_bw_keychain_get 2>/dev/null)" && [[ -n "${cached}" ]]; then
