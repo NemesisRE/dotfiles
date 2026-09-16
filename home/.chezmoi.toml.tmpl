@@ -5,6 +5,12 @@
 {{- $ssh := index $shell "ssh" | default dict -}}
 {{- $kitty := index . "kitty" | default dict -}}
 {{- $secrets := index . "secrets" | default dict -}}
+{{- $windows := index . "windows" | default dict -}}
+{{- $microsoftTerminal := index $windows "microsoftTerminal" | default (index $windows "microsoft_terminal" | default (index $windows "windowsTerminal" | default dict)) -}}
+{{- $explorer := index $windows "explorer" | default dict -}}
+{{- $systemTweaks := index $windows "systemTweaks" | default (index $windows "system_tweaks" | default dict) -}}
+{{- $wsl := index $windows "wsl" | default dict -}}
+{{- $winget := index $windows "winget" | default dict -}}
 
 {{- $rawProfile := promptStringOnce $secrets "profile" "Secrets profile preset [personal, work, custom, none]" "personal" -}}
 {{- $profile := "personal" -}}
@@ -96,6 +102,61 @@
 {{-   $kittyQuakeKey = "F12" -}}
 {{- end -}}
 
+{{- $rawSyncTerminalSettings := "no" -}}
+{{- if or (eq .chezmoi.os "windows") (hasKey $microsoftTerminal "sync_settings") -}}
+{{-   $rawSyncTerminalSettings = promptStringOnce $microsoftTerminal "sync_settings" "Sync Microsoft Terminal settings in AppData [yes, no]" "no" -}}
+{{- else -}}
+{{-   $rawSyncTerminalSettings = index $microsoftTerminal "sync_settings" | default "no" -}}
+{{- end -}}
+{{- $syncTerminalSettings := false -}}
+{{- if regexMatch "^(?i:y|yes|true|1)$" (print $rawSyncTerminalSettings) -}}
+{{-   $syncTerminalSettings = true -}}
+{{- end -}}
+
+{{- $rawExplorerTweaks := "no" -}}
+{{- if or (eq .chezmoi.os "windows") (hasKey $explorer "apply_tweaks") -}}
+{{-   $rawExplorerTweaks = promptStringOnce $explorer "apply_tweaks" "Apply Windows File Explorer developer tweaks (show extensions & hidden files) [yes, no]" "no" -}}
+{{- else -}}
+{{-   $rawExplorerTweaks = index $explorer "apply_tweaks" | default "no" -}}
+{{- end -}}
+{{- $explorerTweaks := false -}}
+{{- if regexMatch "^(?i:y|yes|true|1)$" (print $rawExplorerTweaks) -}}
+{{-   $explorerTweaks = true -}}
+{{- end -}}
+
+{{- $rawSystemTweaks := "no" -}}
+{{- if or (eq .chezmoi.os "windows") (hasKey $systemTweaks "apply_tweaks") -}}
+{{-   $rawSystemTweaks = promptStringOnce $systemTweaks "apply_tweaks" "Apply Windows system tweaks (Developer Mode symlinks, Long Paths, UTC clock) [yes, no]" "no" -}}
+{{- else -}}
+{{-   $rawSystemTweaks = index $systemTweaks "apply_tweaks" | default "no" -}}
+{{- end -}}
+{{- $systemTweaksVal := false -}}
+{{- if regexMatch "^(?i:y|yes|true|1)$" (print $rawSystemTweaks) -}}
+{{-   $systemTweaksVal = true -}}
+{{- end -}}
+
+{{- $rawWslSyncConfig := "no" -}}
+{{- if or (eq .chezmoi.os "windows") (hasKey $wsl "sync_config") -}}
+{{-   $rawWslSyncConfig = promptStringOnce $wsl "sync_config" "Sync WSL configuration (.wslconfig) [yes, no]" "no" -}}
+{{- else -}}
+{{-   $rawWslSyncConfig = index $wsl "sync_config" | default "no" -}}
+{{- end -}}
+{{- $wslSyncConfig := false -}}
+{{- if regexMatch "^(?i:y|yes|true|1)$" (print $rawWslSyncConfig) -}}
+{{-   $wslSyncConfig = true -}}
+{{- end -}}
+
+{{- $rawWingetSyncSettings := "no" -}}
+{{- if or (eq .chezmoi.os "windows") (hasKey $winget "sync_settings") -}}
+{{-   $rawWingetSyncSettings = promptStringOnce $winget "sync_settings" "Sync winget package manager settings in AppData [yes, no]" "no" -}}
+{{- else -}}
+{{-   $rawWingetSyncSettings = index $winget "sync_settings" | default "no" -}}
+{{- end -}}
+{{- $wingetSyncSettings := false -}}
+{{- if regexMatch "^(?i:y|yes|true|1)$" (print $rawWingetSyncSettings) -}}
+{{-   $wingetSyncSettings = true -}}
+{{- end -}}
+
 {{- if and (hasKey .chezmoi "workingTree") (ne .chezmoi.workingTree (joinPath .chezmoi.homeDir ".local/share/chezmoi")) }}
 sourceDir = {{ .chezmoi.workingTree | quote }}
 {{- end }}
@@ -118,6 +179,24 @@ sourceDir = {{ .chezmoi.workingTree | quote }}
 
 [data.kitty]
     quake_key = {{ $kittyQuakeKey | quote }}
+
+[data.windows.microsoftTerminal]
+    sync_settings = {{ $syncTerminalSettings }}
+
+[data.windows.explorer]
+    apply_tweaks = {{ $explorerTweaks }}
+
+[data.windows.systemTweaks]
+    apply_tweaks = {{ $systemTweaksVal }}
+
+[data.windows.wsl]
+    sync_config = {{ $wslSyncConfig }}
+    memory = {{ index $wsl "memory" | default "16GB" | quote }}
+    processors = {{ index $wsl "processors" | default 8 }}
+    networking_mode = {{ index $wsl "networking_mode" | default "mirrored" | quote }}
+
+[data.windows.winget]
+    sync_settings = {{ $wingetSyncSettings }}
 
 [data.secrets]
     profile = {{ $profile | quote }}

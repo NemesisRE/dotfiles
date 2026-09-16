@@ -1,0 +1,32 @@
+{{- if and (eq .chezmoi.os "windows") (hasKey . "windows") (hasKey .windows "explorer") (hasKey .windows.explorer "apply_tweaks") .windows.explorer.apply_tweaks -}}
+# chezmoi run_onchange_after Windows hook — applies File Explorer developer tweaks.
+# explorer.apply_tweaks: {{ .windows.explorer.apply_tweaks }}
+
+$ErrorActionPreference = 'Continue'
+
+if ($env:CI -or $env:NREDF_NO_BOOTSTRAP) {
+    exit 0
+}
+
+Write-Host "==> Applying Windows File Explorer developer tweaks..."
+
+$advancedKey = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
+if (-not (Test-Path $advancedKey)) {
+    New-Item -Path $advancedKey -Force | Out-Null
+}
+
+# 1. Always show file extensions (HideFileExt = 0)
+Set-ItemProperty -Path $advancedKey -Name "HideFileExt" -Value 0 -Type DWord
+
+# 2. Show hidden files (Hidden = 1)
+Set-ItemProperty -Path $advancedKey -Name "Hidden" -Value 1 -Type DWord
+
+# 3. Launch File Explorer to "This PC" (LaunchTo = 1)
+Set-ItemProperty -Path $advancedKey -Name "LaunchTo" -Value 1 -Type DWord
+
+# 4. Enable compact mode in Windows 11 Explorer (UseCompactMode = 1)
+Set-ItemProperty -Path $advancedKey -Name "UseCompactMode" -Value 1 -Type DWord
+
+Write-Host "    File Explorer tweaks applied successfully." -ForegroundColor Green
+{{- end }}
+

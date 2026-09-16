@@ -1,7 +1,29 @@
+{{- $syncTerminalSettings := false -}}
+{{- if and (hasKey . "windows") (hasKey .windows "microsoftTerminal") (hasKey .windows.microsoftTerminal "sync_settings") -}}
+{{-   $syncTerminalSettings = .windows.microsoftTerminal.sync_settings -}}
+{{- else if and (hasKey . "windows") (hasKey .windows "microsoft_terminal") (hasKey .windows.microsoft_terminal "sync_settings") -}}
+{{-   $syncTerminalSettings = .windows.microsoft_terminal.sync_settings -}}
+{{- else if and (hasKey . "windows") (hasKey .windows "windowsTerminal") (hasKey .windows.windowsTerminal "sync_settings") -}}
+{{-   $syncTerminalSettings = .windows.windowsTerminal.sync_settings -}}
+{{- else if and (hasKey . "windows") (hasKey .windows "sync_terminal_settings") -}}
+{{-   $syncTerminalSettings = .windows.sync_terminal_settings -}}
+{{- end -}}
+
+{{- $syncWslConfig := false -}}
+{{- if and (hasKey . "windows") (hasKey .windows "wsl") (hasKey .windows.wsl "sync_config") -}}
+{{-   $syncWslConfig = .windows.wsl.sync_config -}}
+{{- end -}}
+
+{{- $syncWingetSettings := false -}}
+{{- if and (hasKey . "windows") (hasKey .windows "winget") (hasKey .windows.winget "sync_settings") -}}
+{{-   $syncWingetSettings = .windows.winget.sync_settings -}}
+{{- end -}}
+
 {{- if ne .chezmoi.os "windows" }}
 AppData
 Documents/WindowsPowerShell
 Documents/WindowsTerminal
+.wslconfig
 .chezmoiscripts/*.ps1
 {{- end }}
 
@@ -17,4 +39,15 @@ Documents/WindowsTerminal
 .config/tilda
 .config/screen
 .config/powershell
+{{-   if not $syncTerminalSettings }}
+AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe
+{{-   end }}
+{{-   if not $syncWingetSettings }}
+AppData/Local/Packages/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe
+{{-   end }}
+{{-   if not $syncWslConfig }}
+.wslconfig
+{{-   end }}
 {{- end }}
+
+

@@ -1,0 +1,15 @@
+# Windows configuration defaults
+windows:
+  microsoftTerminal:
+    sync_settings: false
+  explorer:
+    apply_tweaks: false
+  systemTweaks:
+    apply_tweaks: false
+  wsl:
+    sync_config: false
+    memory: "16GB"
+    processors: 8
+    networking_mode: "mirrored"
+  winget:
+    sync_settings: false

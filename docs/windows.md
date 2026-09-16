@@ -54,6 +54,30 @@ winget install albertony.npiperelay
 > [!TIP]
 > In Windows Terminal Settings (`Ctrl+,`) &rarr; **Defaults** &rarr; **Appearance** &rarr; **Font face**, set the font to **FiraMono Nerd Font Mono** (or **FiraMono Nerd Font**) to match kitty terminal.
 
+### Windows Optional Features & Synchronization
+
+By default, NREDF uses safe defaults (`false`) and will **not** overwrite pre-existing Windows settings or system configurations. You can opt in during `chezmoi init --prompt` or by editing `~/.config/chezmoi/chezmoi.toml`:
+
+```toml
+[data.windows.microsoftTerminal]
+    sync_settings = true     # Sync Microsoft Terminal settings.json in AppData
+
+[data.windows.winget]
+    sync_settings = true     # Sync winget settings.json (telemetry off, rainbow bar)
+
+[data.windows.wsl]
+    sync_config = true       # Sync ~/.wslconfig (memory limits, mirrored networking)
+    memory = "16GB"
+    processors = 8
+    networking_mode = "mirrored"
+
+[data.windows.explorer]
+    apply_tweaks = true      # Show file extensions, hidden files, compact mode
+
+[data.windows.systemTweaks]
+    apply_tweaks = true      # Developer Mode (unprivileged symlinks), Long Paths, UTC Clock
+```
+
 ---
 
 ## 🐚 Supported Shells on Windows
@@ -162,6 +186,10 @@ aqua token set
 ---
 
 ## 🛠️ Windows System Tweaks & Optimizations
+
+> [!TIP]
+> You can automatically apply these tweaks by setting `apply_tweaks = true` under `[data.windows.systemTweaks]` and `[data.windows.explorer]` in `~/.config/chezmoi/chezmoi.toml`.
+> To apply them manually upfront, run the commands below in an elevated (Administrator) PowerShell prompt.
 
 ### 1. Enable Developer Mode (Allow Unprivileged Symlinks)
 

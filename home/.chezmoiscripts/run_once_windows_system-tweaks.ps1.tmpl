@@ -1,0 +1,43 @@
+{{- if and (eq .chezmoi.os "windows") (hasKey . "windows") (hasKey .windows "systemTweaks") (hasKey .windows.systemTweaks "apply_tweaks") .windows.systemTweaks.apply_tweaks -}}
+# chezmoi run_once Windows hook — applies system developer optimizations (Developer Mode, Long Paths, UTC Clock).
+# systemTweaks.apply_tweaks: {{ .windows.systemTweaks.apply_tweaks }}
+
+$ErrorActionPreference = 'Continue'
+
+if ($env:CI -or $env:NREDF_NO_BOOTSTRAP) {
+    exit 0
+}
+
+Write-Host "==> Applying Windows system developer tweaks (Admin required)..."
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+$commands = @'
+reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d 1
+reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
+reg add "HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\TimeZoneInformation" /v RealTimeIsUniversal /d 1 /t REG_DWORD /f
+'@
+
+if ($isAdmin) {
+    Invoke-Expression $commands
+    Write-Host "    System developer tweaks applied successfully." -ForegroundColor Green
+} else {
+    Write-Host "    Requesting UAC elevation to apply system registry tweaks..."
+    try {
+        $tmpScript = Join-Path ([System.IO.Path]::GetTempPath()) "nredf_system_tweaks.ps1"
+        Set-Content -Path $tmpScript -Value $commands -Encoding UTF8
+        $proc = Start-Process -FilePath "powershell.exe" -ArgumentList "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$tmpScript`"" -Verb RunAs -Wait -PassThru
+        Remove-Item -Path $tmpScript -Force -ErrorAction SilentlyContinue
+        if ($proc.ExitCode -eq 0) {
+            Write-Host "    System developer tweaks applied successfully." -ForegroundColor Green
+        } else {
+            Write-Warning "    System developer tweaks returned exit code $($proc.ExitCode)."
+        }
+    } catch {
+        Write-Warning "    Elevation was cancelled or failed: $_"
+        Write-Host "    You can run these commands manually in an elevated PowerShell prompt:"
+        Write-Host $commands
+    }
+}
+{{- end }}
+

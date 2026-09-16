@@ -1,0 +1,19 @@
+{
+    "$schema": "https://aka.ms/winget-settings.schema.json",
+    "source": {
+        "autoUpdateIntervalInMinutes": 1440
+    },
+    "installBehavior": {
+        "preferences": {
+            "scope": "user"
+        },
+        "bypassSaveForOfflineVerification": true
+    },
+    "visual": {
+        "progressBar": "rainbow"
+    },
+    "telemetry": {
+        "disable": true
+    }
+}
+
