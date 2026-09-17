@@ -70,6 +70,7 @@ By default, NREDF uses safe defaults (`false`) and will **not** overwrite pre-ex
     memory = "16GB"
     processors = 8
     networking_mode = "mirrored"
+    nested_virtualization = true # Enable nested virtualization (true/false)
 
 [data.windows.explorer]
     apply_tweaks = true      # Show file extensions, hidden files, compact mode

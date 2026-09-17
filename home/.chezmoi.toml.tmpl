@@ -194,6 +194,7 @@ sourceDir = {{ .chezmoi.workingTree | quote }}
     memory = {{ index $wsl "memory" | default "16GB" | quote }}
     processors = {{ index $wsl "processors" | default 8 }}
     networking_mode = {{ index $wsl "networking_mode" | default "mirrored" | quote }}
+    nested_virtualization = {{ if hasKey $wsl "nested_virtualization" }}{{ index $wsl "nested_virtualization" }}{{ else if hasKey $wsl "nestedVirtualization" }}{{ index $wsl "nestedVirtualization" }}{{ else }}true{{ end }}
 
 [data.windows.winget]
     sync_settings = {{ $wingetSyncSettings }}

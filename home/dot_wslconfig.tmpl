@@ -5,6 +5,7 @@
 memory={{ if and (hasKey . "windows") (hasKey .windows "wsl") (hasKey .windows.wsl "memory") }}{{ .windows.wsl.memory }}{{ else }}16GB{{ end }}
 processors={{ if and (hasKey . "windows") (hasKey .windows "wsl") (hasKey .windows.wsl "processors") }}{{ .windows.wsl.processors }}{{ else }}8{{ end }}
 localhostForwarding=true
+nestedVirtualization={{ if and (hasKey . "windows") (hasKey .windows "wsl") (hasKey .windows.wsl "nested_virtualization") }}{{ .windows.wsl.nested_virtualization }}{{ else if and (hasKey . "windows") (hasKey .windows "wsl") (hasKey .windows.wsl "nestedVirtualization") }}{{ .windows.wsl.nestedVirtualization }}{{ else }}true{{ end }}
 networkingMode={{ if and (hasKey . "windows") (hasKey .windows "wsl") (hasKey .windows.wsl "networking_mode") }}{{ .windows.wsl.networking_mode }}{{ else }}mirrored{{ end }}
 autoProxy=true
 dnsTunneling=true
@@ -13,4 +14,3 @@ firewall=true
 [experimental]
 autoMemoryReclaim=gradual
 sparseVhd=true
-
