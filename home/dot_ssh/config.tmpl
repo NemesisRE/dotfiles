@@ -1,0 +1,56 @@
+# ==============================================================================
+# OpenSSH Client Configuration
+# Managed by chezmoi — do not edit directly
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Modular Configuration Includes
+# ------------------------------------------------------------------------------
+# Custom host configurations are loaded from ~/.ssh/config.d/ in lexicographical
+# order (first-match-wins per directive):
+#   - Place host-specific configs in ~/.ssh/config.d/ (e.g. 10_work.conf)
+Include ~/.ssh/config.d/*
+{{- if eq .chezmoi.os "darwin" }}
+Include ~/.config/colima/ssh_config
+{{- end }}
+
+# ------------------------------------------------------------------------------
+# Local Configuration Overrides
+# ------------------------------------------------------------------------------
+# Local machine-specific overrides (untracked by chezmoi once created).
+# Any settings defined here take precedence over the global defaults below.
+Include ~/.ssh/config.override
+
+# ------------------------------------------------------------------------------
+# Global Defaults
+# (Can be overridden via ~/.ssh/config.override or in ~/.ssh/config.d/)
+# ------------------------------------------------------------------------------
+Host *
+  # Agent & Key Management
+  AddKeysToAgent yes
+{{- if eq .chezmoi.os "darwin" }}
+  UseKeychain yes
+{{- end }}
+
+  # Connection Keep-Alive & Resilience
+  ServerAliveInterval 60
+  ServerAliveCountMax 3
+  TCPKeepAlive yes
+  ConnectTimeout 10
+
+{{- if ne .chezmoi.os "windows" }}
+  # Connection Multiplexing (Socket reuse for fast reconnects/git/rsync)
+  ControlMaster auto
+  ControlPath ~/.ssh/cm-%C
+  ControlPersist 10m
+{{- end }}
+
+  # Security Defaults
+  ForwardAgent no
+  ForwardX11 no
+  StrictHostKeyChecking ask
+  VerifyHostKeyDNS ask
+  HashKnownHosts no
+
+  # Environment Passing
+  SendEnv LANG LC_*

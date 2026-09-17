@@ -1,0 +1,30 @@
+# ==============================================================================
+# SSH Local Configuration Overrides (~/.ssh/config.override)
+# ==============================================================================
+#
+# This file is for local, machine-specific overrides and additions to your
+# SSH configuration. Chezmoi creates this file once as a template and will
+# NEVER overwrite your local edits here.
+#
+# Evaluation Order:
+#   1. Specific host configurations in ~/.ssh/config.d/*.conf
+#   2. This file (~/.ssh/config.override)
+#   3. Global defaults in ~/.ssh/config (Host *)
+#
+# Because OpenSSH uses first-match-wins per directive:
+#   - Directives defined here take precedence over global defaults in ~/.ssh/config.
+#   - Specific host definitions in ~/.ssh/config.d/ take precedence over this file.
+#
+# ------------------------------------------------------------------------------
+# Examples:
+# ------------------------------------------------------------------------------
+# Override or set a default username across all hosts:
+# Host *
+#   User myuser
+#   ConnectTimeout 5
+#
+# Custom work bastion / jump host:
+# Host internal-*
+#   ProxyJump jumpuser@bastion.example.com
+#
+
