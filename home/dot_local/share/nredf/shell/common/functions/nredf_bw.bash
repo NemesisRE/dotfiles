@@ -70,10 +70,10 @@ _nredf_bw_kwallet_open() {
   local res
   res="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
     --method org.kde.KWallet.open "${wallet}" 0 "nredf" 2>/dev/null)" || return 1
-  # Extract numeric handle (guard against converting negative -1 into 1)
+  # Extract numeric handle (gdbus returns '(975485171,)' or '(int32 975485171,)')
   local handle
-  handle="$(printf "%s" "${res}" | grep -oE -- '-?[0-9]+' | head -n1)"
-  if [[ -n "${handle}" && "${handle}" -ge 0 ]]; then
+  handle="$(printf "%s" "${res}" | sed -E 's/.*\(([a-zA-Z0-9]+[[:space:]]+)?(-?[0-9]+).*/\2/')"
+  if [[ -n "${handle}" && "${handle}" =~ ^[0-9]+$ && "${handle}" -ge 0 ]]; then
     printf "%s" "${handle}"
     return 0
   fi
@@ -126,45 +126,41 @@ _nredf_bw_keychain_get() {
         local service handle raw
         if service="$(_nredf_bw_kwallet_service)"; then
           local mod="/modules/${service##*.}"
-          local wallets=()
+          local wallets=("kdewallet")
           local def_w
           for m in networkWallet localWallet; do
             def_w="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
               --method "org.kde.KWallet.${m}" 2>/dev/null)" || true
-            if [[ "${def_w}" == \(\'* ]]; then
-              def_w="${def_w#*(\'}"
-              def_w="${def_w%\',)}"
+            if [[ "${def_w}" == *\'*\'* ]]; then
+              def_w="${def_w#*\'}"
+              def_w="${def_w%\'*}"
               if [[ -n "${def_w}" && " ${wallets[*]} " != *" ${def_w} "* ]]; then
                 wallets+=("${def_w}")
               fi
             fi
           done
-          if [[ " ${wallets[*]} " != *" kdewallet "* ]]; then
-            wallets+=("kdewallet")
-          fi
 
           for w in "${wallets[@]}"; do
             if handle="$(_nredf_bw_kwallet_open "${service}" "${w}")"; then
-              local folders=()
+              local folders=("Passwords" "nredf")
               local f_raw
               f_raw="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
-                --method org.kde.KWallet.folderList "${handle}" "nredf" 2>/dev/null)" || true
-              if [[ "${f_raw}" == \(\[* ]]; then
-                while IFS= read -r f_item; do
-                  [[ -n "${f_item}" ]] && folders+=("${f_item}")
-                done < <(printf "%s" "${f_raw}" | tr -d "[],()'" | tr ' ' '\n')
+                --method org.kde.KWallet.folderList "${handle}" 2>/dev/null)" || true
+              if [[ -n "${f_raw}" ]]; then
+                for f_item in $(printf "%s" "${f_raw}" | tr -d "[],()'"); do
+                  if [[ -n "${f_item}" && " ${folders[*]} " != *" ${f_item} "* ]]; then
+                    folders+=("${f_item}")
+                  fi
+                done
               fi
-              for std_f in "Passwords" "nredf"; do
-                [[ " ${folders[*]} " != *" ${std_f} "* ]] && folders+=("${std_f}")
-              done
 
               for folder in "${folders[@]}"; do
                 for key in "${_NREDF_BW_SERVICE}" "bw_session" "BW_SESSION" "bitwarden" "Bitwarden" "bw"; do
                   raw="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
                     --method org.kde.KWallet.readPassword "${handle}" "${folder}" "${key}" "nredf" 2>/dev/null)" || true
-                  if [[ "${raw}" == \(\'* ]]; then
-                    token="${raw#*(\'}"
-                    token="${token%\',)}"
+                  if [[ "${raw}" == *\'*\'* ]]; then
+                    token="${raw#*\'}"
+                    token="${token%\'*}"
                     if [[ -n "${token}" ]]; then
                       break 3
                     fi
@@ -359,13 +355,13 @@ _nredf_bw_secret_configured() {
     "${HOME}/.chezmoi.toml" \
     "${HOME}/.chezmoi.yaml"; do
     if [[ -f "${c}" ]]; then
-      if grep -Eq '^[[:blank:]]*\[bitwarden\]' "${c}" 2>/dev/null; then
+      if grep -Eq '^[[:blank:]]*\[(data\.)?bitwarden\]' "${c}" 2>/dev/null; then
         return 0
       fi
-      if grep -Eq '["'\'' ](bitwarden|bw):' "${c}" 2>/dev/null; then
+      if grep -Eq '["'\''[:blank:]](bitwarden|bw):' "${c}" 2>/dev/null; then
         return 0
       fi
-      if grep -Eq 'bitwarden' "${c}" 2>/dev/null; then
+      if grep -Eq '\{\{[[:blank:]]*(\([[:blank:]]*)?bitwarden[[:blank:]]' "${c}" 2>/dev/null; then
         return 0
       fi
     fi
@@ -374,12 +370,12 @@ _nredf_bw_secret_configured() {
   # 2. Check repo-level chezmoidata if present
   local src_dir="${NREDF_DOT_PATH:-${HOME}/.local/share/chezmoi}"
   if [[ -d "${src_dir}/home/.chezmoidata" ]]; then
-    if grep -rEq '["'\'' ](bitwarden|bw):' "${src_dir}/home/.chezmoidata" 2>/dev/null; then
+    if grep -rEq '["'\''[:blank:]](bitwarden|bw):' "${src_dir}/home/.chezmoidata" 2>/dev/null; then
       return 0
     fi
   fi
   if [[ -f "${src_dir}/home/.chezmoidata.yaml" ]]; then
-    if grep -Eq '["'\'' ](bitwarden|bw):' "${src_dir}/home/.chezmoidata.yaml" 2>/dev/null; then
+    if grep -Eq '["'\''[:blank:]](bitwarden|bw):' "${src_dir}/home/.chezmoidata.yaml" 2>/dev/null; then
       return 0
     fi
   fi
@@ -481,12 +477,28 @@ function _nredf_bw_ensure_session() {
 # Ensures the vault is unlocked and BW_SESSION is exported.
 # ---------------------------------------------------------------------------
 function bwu() {
+  # 1. If BW_SESSION is already set and valid in current shell, sync and return
   if [[ -n "${BW_SESSION:-}" ]] && bw unlock --check &>/dev/null; then
     _nredf_bw_keychain_set "${BW_SESSION}"
     printf "\033[1;32m✔ Bitwarden vault already unlocked (keychain synchronized)\033[0m\n"
     return 0
   fi
 
+  # 2. Check keychain first — if valid, restore without prompting
+  local cached_session
+  if cached_session="$(_nredf_bw_keychain_get 2>/dev/null)" && [[ -n "${cached_session}" ]]; then
+    BW_SESSION="${cached_session}"
+    export BW_SESSION
+    if bw unlock --check &>/dev/null; then
+      _nredf_bw_keychain_set "${BW_SESSION}"
+      printf "\033[1;32m✔ Bitwarden vault unlocked from keychain\033[0m\n"
+      return 0
+    fi
+    unset BW_SESSION
+    _nredf_bw_keychain_del
+  fi
+
+  # 3. Vault is locked — prompt for unlock and persist
   if _nredf_bw_ensure_session --force; then
     printf "\033[1;32m✔ Bitwarden vault unlocked\033[0m\n"
     return 0

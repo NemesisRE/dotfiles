@@ -67,35 +67,34 @@ function NREDF_BwKeychainGet {
     if ($service) {
       $mod = "/modules/$($service -replace '^.*\.','')"
       $wallets = [System.Collections.Generic.List[string]]::new()
+      $wallets.Add('kdewallet')
       foreach ($m in @('networkWallet', 'localWallet')) {
         $wRes = & gdbus call --session --dest $service --object-path $mod --method "org.kde.KWallet.$m" 2>$null
-        if ($wRes -match "\('([^']*)',\)" -and -not [string]::IsNullOrEmpty($Matches[1])) {
+        if ($wRes -match "'([^']+)'" -and -not [string]::IsNullOrEmpty($Matches[1])) {
           if (-not $wallets.Contains($Matches[1])) { $wallets.Add($Matches[1]) }
         }
       }
-      if (-not $wallets.Contains('kdewallet')) { $wallets.Add('kdewallet') }
 
       foreach ($w in $wallets) {
         $openRes = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.open $w 0 'nredf' 2>$null
-        if ($openRes -match '\((-?\d+),\)') {
+        if ($openRes -match '\((?:[a-zA-Z0-9]+\s+)?(-?\d+)') {
           $handle = [int64]$Matches[1]
           if ($handle -ge 0) {
             $folders = [System.Collections.Generic.List[string]]::new()
-            $fRes = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.folderList $handle 'nredf' 2>$null
-            if ($fRes -match "\(\[([^\]]*)\],\)") {
+            $folders.Add('Passwords')
+            $folders.Add('nredf')
+            $fRes = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.folderList $handle 2>$null
+            if ($fRes -match "\[([^\]]*)\]") {
               $Matches[1] -split ',' | ForEach-Object {
                 $f = $_.Trim(" '`"")
                 if (-not [string]::IsNullOrEmpty($f) -and -not $folders.Contains($f)) { $folders.Add($f) }
               }
             }
-            foreach ($stdF in @('Passwords', 'nredf')) {
-              if (-not $folders.Contains($stdF)) { $folders.Add($stdF) }
-            }
 
             foreach ($folder in $folders) {
               foreach ($key in @($script:_NREDF_BW_SERVICE, 'bw_session', 'BW_SESSION', 'bitwarden', 'Bitwarden', 'bw')) {
                 $raw = & gdbus call --session --dest $service --object-path $mod --method org.kde.KWallet.readPassword $handle $folder $key 'nredf' 2>$null
-                if ($raw -match "\('([^']*)',\)") {
+                if ($raw -match "'([^']+)'") {
                   $token = $Matches[1]
                   if (-not [string]::IsNullOrEmpty($token)) { return $token.Trim() }
                 }
@@ -314,9 +313,9 @@ function NREDF_BwSecretConfigured {
   foreach ($path in $candidatePaths) {
     if (Test-Path $path) {
       $content = Get-Content $path -Raw
-      if ($content -match '(?m)^\s*\[bitwarden\]') { return $true }
-      if ($content -match '["''](?:bitwarden|bw):') { return $true }
-      if ($content -match 'bitwarden') { return $true }
+      if ($content -match '(?m)^\s*\[(data\.)?bitwarden\]') { return $true }
+      if ($content -match '["''\s](?:bitwarden|bw):') { return $true }
+      if ($content -match '\{\{\s*(\(\s*)?bitwarden\s') { return $true }
     }
   }
 
@@ -435,6 +434,7 @@ function bwu {
   .SYNOPSIS
       Unlock the Bitwarden vault and export BW_SESSION (via OS keychain / biometrics).
   #>
+  # 1. If BW_SESSION is already set and valid in current shell, sync and return
   if (-not [string]::IsNullOrEmpty($env:BW_SESSION)) {
     & bw unlock --check 2>$null | Out-Null
     if ($LASTEXITCODE -eq 0) {
@@ -446,6 +446,23 @@ function bwu {
     }
   }
 
+  # 2. Check keychain first — if valid, restore without prompting
+  $cached = NREDF_BwKeychainGet
+  if (-not [string]::IsNullOrEmpty($cached)) {
+    $env:BW_SESSION = $cached
+    & bw unlock --check 2>$null | Out-Null
+    if ($LASTEXITCODE -eq 0) {
+      NREDF_BwKeychainSet -Token $env:BW_SESSION
+      $green = if ($PSStyle) { $PSStyle.Foreground.Green } else { "`e[1;32m" }
+      $reset = if ($PSStyle) { $PSStyle.Reset } else { "`e[0m" }
+      Write-Host "${green}✔ Bitwarden vault unlocked from keychain${reset}"
+      return
+    }
+    $env:BW_SESSION = $null
+    NREDF_BwKeychainDel
+  }
+
+  # 3. Vault is locked — prompt for unlock and persist
   if (NREDF_BwEnsureSession -Force) {
     $green = if ($PSStyle) { $PSStyle.Foreground.Green } else { "`e[1;32m" }
     $reset = if ($PSStyle) { $PSStyle.Reset } else { "`e[0m" }

@@ -25,42 +25,29 @@ function _nredf_aqua_keyring_available() {
 
   # 1. Check with gdbus
   if command -v gdbus &>/dev/null; then
-    local out
-    out="$(DBUS_SESSION_BUS_ADDRESS="${bus}" gdbus call --session \
-      --dest org.freedesktop.DBus --object-path /org/freedesktop/DBus \
-      --method org.freedesktop.DBus.GetNameOwner "org.freedesktop.secrets" 2>/dev/null)" || true
-    if [[ -n "${out}" && "${out}" != *"Error"* && "${out}" != *\'\'* ]]; then
-      return 0
-    fi
-    out="$(DBUS_SESSION_BUS_ADDRESS="${bus}" gdbus call --session \
-      --dest org.freedesktop.DBus --object-path /org/freedesktop/DBus \
-      --method org.freedesktop.DBus.ListActivatableNames 2>/dev/null)" || true
-    if [[ "${out}" == *org.freedesktop.secrets* ]]; then
+    if DBUS_SESSION_BUS_ADDRESS="${bus}" gdbus call --session \
+      --dest org.freedesktop.secrets --object-path /org/freedesktop/secrets \
+      --method org.freedesktop.DBus.Peer.Ping &>/dev/null; then
       return 0
     fi
     return 1
   fi
 
-  # 2. Check with dbus-send
-  if command -v dbus-send &>/dev/null; then
-    if DBUS_SESSION_BUS_ADDRESS="${bus}" dbus-send --session --dest=org.freedesktop.DBus \
-      --type=method_call --print-reply /org/freedesktop/DBus \
-      org.freedesktop.DBus.GetNameOwner string:org.freedesktop.secrets 2>/dev/null; then
-      return 0
-    fi
-    local act
-    act="$(DBUS_SESSION_BUS_ADDRESS="${bus}" dbus-send --session --dest=org.freedesktop.DBus \
-      --type=method_call --print-reply /org/freedesktop/DBus \
-      org.freedesktop.DBus.ListActivatableNames 2>/dev/null)" || true
-    if [[ "${act}" == *org.freedesktop.secrets* ]]; then
-      return 0
-    fi
-    return 1
-  fi
-
-  # 3. Check with busctl
+  # 2. Check with busctl
   if command -v busctl &>/dev/null; then
-    if DBUS_SESSION_BUS_ADDRESS="${bus}" busctl --user status org.freedesktop.secrets &>/dev/null; then
+    if DBUS_SESSION_BUS_ADDRESS="${bus}" busctl --user call \
+      org.freedesktop.secrets /org/freedesktop/secrets \
+      org.freedesktop.DBus.Peer Ping &>/dev/null; then
+      return 0
+    fi
+    return 1
+  fi
+
+  # 3. Check with dbus-send
+  if command -v dbus-send &>/dev/null; then
+    if DBUS_SESSION_BUS_ADDRESS="${bus}" dbus-send --session --dest=org.freedesktop.secrets \
+      --type=method_call --print-reply /org/freedesktop/secrets \
+      org.freedesktop.DBus.Peer.Ping &>/dev/null; then
       return 0
     fi
     return 1
