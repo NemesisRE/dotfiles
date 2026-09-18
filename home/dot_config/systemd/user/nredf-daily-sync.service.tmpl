@@ -1,0 +1,11 @@
+[Unit]
+Description=NREDF Daily Maintenance Sync
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+Nice=10
+IOSchedulingClass=idle
+ExecStart={{ .chezmoi.homeDir }}/.local/bin/nredf-daily-sync
+

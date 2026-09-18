@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+#
+# nredf-daily-sync — Cross-platform daily maintenance for NREDF dotfiles
+# Executed by:
+#   - macOS: launchd (com.nredf.daily-sync)
+#   - Linux: systemd --user (nredf-daily-sync.service)
+#   - Manual: nredf-daily-sync
+#
+
+set -uo pipefail
+
+# Set priority to background/idle
+renice -n 10 $$ >/dev/null 2>&1 || true
+
+# Setup paths
+{{- if eq .chezmoi.os "darwin" }}
+{{- if eq .chezmoi.arch "arm64" }}
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:${PATH}"
+{{- else }}
+export PATH="/usr/local/bin:/usr/local/sbin:${PATH}"
+{{- end }}
+{{- else if eq .chezmoi.os "linux" }}
+[[ -d /home/linuxbrew/.linuxbrew/bin ]] && export PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
+{{- end }}
+export PATH="${AQUA_ROOT_DIR:-${HOME}/.local/share/aquaproj-aqua}/bin:${HOME}/.local/bin:${PATH}"
+
+# Ensure state directory exists
+STATE_DIR="${XDG_STATE_HOME:-${HOME}/.local/state}/nredf"
+mkdir -p "${STATE_DIR}"
+LOG_FILE="${STATE_DIR}/daily-sync.log"
+
+# Rotate log file if > 5MB
+if [[ -f "${LOG_FILE}" ]] && [[ $(wc -c <"${LOG_FILE}" 2>/dev/null || echo 0) -gt 5242880 ]]; then
+  mv -f "${LOG_FILE}" "${LOG_FILE}.old"
+fi
+
+exec >>"${LOG_FILE}" 2>&1
+
+echo "========================================================"
+echo " NREDF Daily Sync Started: $(date)"
+echo "========================================================"
+
+# 1. macOS Homebrew Upgrades
+{{- if eq .chezmoi.os "darwin" }}
+if command -v brew >/dev/null 2>&1; then
+  echo "==> Upgrading Homebrew packages"
+  export HOMEBREW_NO_ANALYTICS=1
+  export HOMEBREW_NO_INSTALL_CLEANUP=1
+  export HOMEBREW_QUIET=1
+  brew update && brew upgrade && brew cleanup -s || echo "Homebrew upgrade exited with errors: $?"
+fi
+{{- end }}
+
+# 2. Chezmoi Binary Upgrade
+if command -v chezmoi >/dev/null 2>&1; then
+  echo "==> Upgrading chezmoi binary"
+  chezmoi upgrade >/dev/null 2>&1 || echo "Chezmoi binary upgrade exited with: $?"
+fi
+
+# 3. Dotfiles Remote Sync & Apply
+if command -v chezmoi >/dev/null 2>&1; then
+  CHEZMOI_SOURCE="$(chezmoi source-path 2>/dev/null || echo "")"
+  if [[ -n "${CHEZMOI_SOURCE}" && -d "${CHEZMOI_SOURCE}/.git" ]] && command -v git >/dev/null 2>&1; then
+    echo "==> Fetching dotfiles updates"
+    if git -C "${CHEZMOI_SOURCE}" fetch --quiet 2>/dev/null; then
+      LOCAL_REV="$(git -C "${CHEZMOI_SOURCE}" rev-parse '@' 2>/dev/null)"
+      REMOTE_REV="$(git -C "${CHEZMOI_SOURCE}" rev-parse '@{u}' 2>/dev/null || echo "${LOCAL_REV}")"
+      if [[ "${LOCAL_REV}" != "${REMOTE_REV}" ]]; then
+        echo "==> Fast-forwarding dotfiles"
+        git -C "${CHEZMOI_SOURCE}" pull --ff-only --quiet 2>/dev/null || true
+      fi
+    fi
+  fi
+
+  echo "==> Applying dotfiles & externals"
+  # Run non-interactively with null stdin so password safe prompts never hang
+  chezmoi apply --refresh-externals --force --no-tty </dev/null || echo "Chezmoi apply exited with warnings: $?"
+fi
+
+# 4. Aqua Tools Update, Link & Vacuum
+if command -v aqua >/dev/null 2>&1; then
+  echo "==> Updating aqua and tools"
+  aqua update-aqua || true
+  aqua install -a -l || true
+  aqua vacuum -d 30 || true
+fi
+
+# 5. Sheldon Plugin Lock Update (if installed)
+if command -v sheldon >/dev/null 2>&1; then
+  echo "==> Updating sheldon plugins lock"
+  sheldon lock --update || true
+fi
+
+echo "========================================================"
+echo " NREDF Daily Sync Finished: $(date)"
+echo "========================================================"

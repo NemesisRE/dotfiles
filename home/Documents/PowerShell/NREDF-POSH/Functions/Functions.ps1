@@ -133,7 +133,9 @@ Options:
 
   if ($Full) {
     Write-Host "${bold}Starting full reload${reset}"
-    # LRCACHE is cleared above — chezmoi/aqua run automatically via normal shell init
+    if (Test-Path function:\NREDF_DailySync) {
+      NREDF_DailySync -Force
+    }
   }
 
   $hasOtherOptions = $Cache -or $Downloads -or $Full -or $LastRun -or [bool]$Shell

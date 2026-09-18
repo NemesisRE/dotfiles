@@ -204,6 +204,40 @@ When you navigate to a directory inside Yazi and quit with <kbd>q</kbd>, your sh
 
 ---
 
+## 🔄 Automated Daily Maintenance & Hot-Reloading
+
+NREDF decouples all periodic maintenance and network-heavy upgrade tasks from interactive shell startup. Interactive shells start in milliseconds without waiting on network checks, git pulls, or package managers.
+
+### 1. Native Background Schedulers
+
+Daily maintenance is scheduled natively per operating system via chezmoi:
+
+- **macOS (`launchd`)**: `com.nredf.daily-sync.plist` (managed via `home/private_Library/private_LaunchAgents/com.nredf.daily-sync.plist.tmpl`).
+- **Linux (`systemd --user`)**: `nredf-daily-sync.timer` & `nredf-daily-sync.service` in `~/.config/systemd/user/`.
+- **Windows (Task Scheduler)**: `NREDF-DailySync` registered with `StartWhenAvailable` to catch up after sleep.
+
+### 2. What Daily Maintenance Executes
+
+The unified payload (`nredf-daily-sync` on POSIX, `NREDF_DailySync` on PowerShell) runs once daily in the background with low CPU and I/O priority:
+
+1. **Package Upgrades**: Homebrew (`brew update && brew upgrade && brew cleanup -s` on macOS).
+2. **Chezmoi Upgrade**: Upgrades the chezmoi binary.
+3. **Dotfiles Remote Sync**: Fetches upstream dotfiles changes, fast-forwards Git, and runs `chezmoi apply --refresh-externals`.
+4. **Aqua Tools**: Updates Aqua (`aqua update-aqua`), ensures tool links (`aqua install -a -l`), and vacuums packages unused for >30 days (`aqua vacuum -d 30`).
+5. **Zsh Plugins**: Updates Sheldon plugin locks (`sheldon lock --update`).
+
+All runs are logged to `${XDG_STATE_HOME:-~/.local/state}/nredf/daily-sync.log` (macOS/Linux) and `$LOCALAPPDATA\nredf\daily-sync.log` (Windows).
+
+### 3. How Running Shells Pick Up Updates
+
+If you have open terminals when the background sync completes:
+
+- **New & Upgraded Binaries**: CLI tools in `/opt/homebrew/bin` or `~/.local/share/aquaproj-aqua/bin` are immediately accessible in your existing shell.
+- **Dotfiles, Aliases & Functions**: Because running shells maintain their own in-memory environment, run `reload` to hot-reload the current session in place.
+- **Manual Full Sync**: To trigger a complete maintenance cycle and reload on demand, run `reload -f`.
+
+---
+
 ## ❓ FAQ & Troubleshooting
 
 ### Q1: In Bash, why does `cd` sometimes behave differently from Zsh?

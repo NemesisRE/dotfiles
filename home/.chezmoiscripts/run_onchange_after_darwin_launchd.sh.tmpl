@@ -1,0 +1,18 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/usr/bin/env bash
+# chezmoi run_onchange_after — reloads launchd agents on macOS when plists change.
+# com.nredf.daily-sync.plist hash: {{ include "private_Library/private_LaunchAgents/com.nredf.daily-sync.plist.tmpl" | sha256sum }}
+
+set -euo pipefail
+
+[[ -n "${CI:-}" ]] && exit 0
+[[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
+
+AGENT_PLIST="${HOME}/Library/LaunchAgents/com.nredf.daily-sync.plist"
+
+if [[ -f "${AGENT_PLIST}" ]]; then
+  launchctl unload "${AGENT_PLIST}" 2>/dev/null || true
+  launchctl load -w "${AGENT_PLIST}" 2>/dev/null || true
+fi
+{{- end }}
+

@@ -1,0 +1,29 @@
+{{- if eq .chezmoi.os "windows" -}}
+# chezmoi run_onchange_after — registers NREDF daily maintenance task on Windows
+# NREDF_DailySync function hash: {{ include "Documents/PowerShell/NREDF-POSH/Functions/NREDF_DailySync.ps1" | sha256sum }}
+
+$ErrorActionPreference = 'SilentlyContinue'
+
+if ($ENV:CI -or $ENV:NREDF_NO_BOOTSTRAP) {
+  exit 0
+}
+
+$taskName = 'NREDF-DailySync'
+$pwshExe = (Get-Command pwsh -CommandType Application -ErrorAction SilentlyContinue)?.Source
+if (-not $pwshExe) {
+  $pwshExe = (Get-Command powershell -CommandType Application -ErrorAction SilentlyContinue)?.Source
+}
+
+if (-not $pwshExe) {
+  exit 0
+}
+
+$action = New-ScheduledTaskAction -Execute $pwshExe -Argument '-NoProfile -NonInteractive -WindowStyle Hidden -Command "Import-Module (Join-Path (Split-Path $PROFILE) ''NREDF-POSH\Sources.ps1'') -ErrorAction SilentlyContinue; if (Test-Path function:\NREDF_DailySync) { NREDF_DailySync -Force }"'
+$trigger = New-ScheduledTaskTrigger -Daily -At 7:00AM
+$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Hours 2)
+
+try {
+  Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -Force | Out-Null
+} catch {}
+{{- end }}
+

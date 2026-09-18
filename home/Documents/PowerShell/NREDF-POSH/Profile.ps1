@@ -74,12 +74,6 @@ if (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {
   }
 }
 
-# Daily automated sync for dotfiles and aqua tools (throttled to once per 24h)
-if (-not $ENV:CHEZMOI -and (Test-Path function:\NREDF_DailySync)) {
-  NREDF_DailySync
-  NREDF_Step "NREDF_DailySync"
-}
-
 # Optional local module importing (only runs if custom modules are defined in $PROFILE_PATH\Modules.ps1)
 if ($Env:TERM_PROGRAM -ne 'vscode' -and $MODULES -and $MODULES.Count -gt 0) {
   NREDF_InstallModules ${MODULES}

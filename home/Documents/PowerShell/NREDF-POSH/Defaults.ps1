@@ -6,7 +6,13 @@ $MaximumHistoryCount = 10000
 
 $pathSep = [System.IO.Path]::PathSeparator
 
+# Disable PowerShell release update check to avoid startup disk I/O and latency
+$ENV:POWERSHELL_UPDATECHECK = 'Off'
+
 if ($isWindows) {
+  if ([System.Environment]::GetEnvironmentVariable("POWERSHELL_UPDATECHECK", [System.EnvironmentVariableTarget]::User) -ne 'Off') {
+    [System.Environment]::SetEnvironmentVariable("POWERSHELL_UPDATECHECK", 'Off', [System.EnvironmentVariableTarget]::User)
+  }
   $ENV:NREDF_CACHE = "$ENV:LOCALAPPDATA\nredf"
   $ENV:NREDF_LRCACHE = "$ENV:NREDF_CACHE\LRCache"
   $ENV:NREDF_INITCACHE = "$ENV:NREDF_CACHE\init"

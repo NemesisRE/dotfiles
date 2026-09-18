@@ -88,7 +88,9 @@ Options:
   if ${FULL_RELOAD}; then
     printf "\033[1mStarting full reload\033[0m\n"
     rm -f "${XDG_CACHE_HOME:-${HOME}/.cache}/sheldon/sheldon.zsh"
-    # LRCACHE is cleared above — chezmoi/aqua/sheldon run automatically via normal shell init
+    if command -v nredf-daily-sync >/dev/null 2>&1; then
+      nredf-daily-sync || true
+    fi
   fi
 
 

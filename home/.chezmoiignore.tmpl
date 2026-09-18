@@ -27,6 +27,14 @@ Documents/WindowsTerminal
 .chezmoiscripts/*.ps1
 {{- end }}
 
+{{- if ne .chezmoi.os "darwin" }}
+Library
+{{- end }}
+
+{{- if ne .chezmoi.os "linux" }}
+.config/systemd
+{{- end }}
+
 {{- if and (eq .chezmoi.os "linux") (hasKey .chezmoi "kernel") (hasKey .chezmoi.kernel "osrelease") (.chezmoi.kernel.osrelease | lower | contains "microsoft") }}
 .chezmoiscripts/*kitty.sh
 {{- end }}

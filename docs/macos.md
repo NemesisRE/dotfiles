@@ -163,6 +163,26 @@ reload -p
 
 Inspect the exact startup breakdown in milliseconds across Homebrew, Oh-My-Posh, Atuin, and plugins.
 
+### 4. Automated Daily Maintenance (`launchd`)
+
+NREDF installs a native user LaunchAgent (`com.nredf.daily-sync.plist`) that runs daily at 7:00 AM (or immediately upon wake/boot if asleep) in the background (`LowPriorityIO` and `Nice: 10`):
+
+- Upgrades Homebrew formulae and casks (`brew update && brew upgrade && brew cleanup -s`).
+- Upgrades `chezmoi` and runs `chezmoi apply --refresh-externals`.
+- Updates `aqua` and vacuums packages unused for >30 days.
+- Updates Sheldon Zsh plugin locks.
+- Logs full output to `~/.local/state/nredf/daily-sync.log`.
+
+Check agent status anytime:
+
+```bash
+launchctl list | grep nredf
+```
+
+### 5. Quiet Terminal Launches (`.hushlogin`)
+
+macOS by default prints `Last login: <date> on <tty>` on every login shell, causing unnecessary I/O. NREDF installs an empty `~/.hushlogin` to suppress this banner and accelerate terminal rendering.
+
 ---
 
 ## ❓ FAQ & Troubleshooting

@@ -175,6 +175,21 @@ yy
 # Opens Yazi. Navigating to a folder and exiting with 'q' changes your terminal directory!
 ```
 
+### 5. Automated Daily Maintenance (`systemd --user`)
+
+On Linux systems running systemd, NREDF installs a user-level timer and service:
+
+- **Service**: `~/.config/systemd/user/nredf-daily-sync.service` (runs `nredf-daily-sync` with `Nice=10` and `IOSchedulingClass=idle`).
+- **Timer**: `~/.config/systemd/user/nredf-daily-sync.timer` (triggers daily at 7:00 AM with `Persistent=true` to run upon wake/boot if off).
+- **Tasks**: Upgrades `chezmoi`, syncs dotfiles, updates `aqua` tools, vacuums old tool versions, and updates Sheldon plugin locks.
+- **Logs**: `${XDG_STATE_HOME:-~/.local/state}/nredf/daily-sync.log`.
+
+Check timer status anytime:
+
+```bash
+systemctl --user list-timers nredf-daily-sync.timer
+```
+
 ---
 
 ## ❓ FAQ & Troubleshooting

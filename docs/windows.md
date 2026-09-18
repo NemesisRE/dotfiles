@@ -107,6 +107,31 @@ reload -s bash         # Switch to Git Bash / WSL Bash
 reload -s cmd          # Switch to Command Prompt
 ```
 
+### 4. Automated Daily Maintenance (Task Scheduler)
+
+Chezmoi automatically registers a scheduled task in Windows Task Scheduler:
+
+- **Task Name**: `NREDF-DailySync`
+- **Trigger**: Daily at 7:00 AM with `-StartWhenAvailable` (automatically catches up when your PC turns on or wakes from sleep).
+- **Settings**: `-AllowStartIfOnBatteries -DontStopIfGoingOnBatteries`.
+- **Payload**: Runs `NREDF_DailySync` in a hidden, non-interactive PowerShell process.
+- **Tasks**: Upgrades `chezmoi`, pulls dotfiles updates, applies external templates, updates `aqua` tools, and vacuums old packages.
+- **Log**: Written to `$env:LOCALAPPDATA\nredf\daily-sync.log`.
+
+To check the task in PowerShell:
+
+```powershell
+Get-ScheduledTask -TaskName 'NREDF-DailySync'
+```
+
+### 5. High-Performance Profile Startup
+
+To eliminate startup lag on Windows:
+
+- **Update Check Disabled**: `$ENV:POWERSHELL_UPDATECHECK = 'Off'` in `Defaults.ps1` suppresses slow remote GitHub release version polling on startup.
+- **Profile Duration Banner Hidden**: `"Microsoft.PowerShell:ShowProfileStartupDuration": false` in `powershell.config.json` disables the native PowerShell startup timing banner.
+- **Function Bundling**: All 11 NREDF PowerShell functions are bundled into a single file during `chezmoi apply`, loading in ~6 ms instead of ~100 ms.
+
 ---
 
 ## ⌨️ Windows Keyboard Shortcuts

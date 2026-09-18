@@ -55,8 +55,8 @@ function _nredf_chezmoi_upgrade() {
   if [[ -n "${NREDF_PROFILE_STARTUP:-}" || -n "${NREDF_VERBOSE:-}" ]]; then
     echo -e '\033[1mUpgrading chezmoi\033[0m'
   fi
-  # Upgrade chezmoi binary (quietly, throttled to 24h)
-  if command chezmoi upgrade --quiet 2>/dev/null; then
+  # Upgrade chezmoi binary (throttled to 24h)
+  if command chezmoi upgrade >/dev/null 2>&1; then
     # Write 24h throttle timestamp (don't re-check every shell)
     _nredf_last_run "" "true" "86400"
   fi

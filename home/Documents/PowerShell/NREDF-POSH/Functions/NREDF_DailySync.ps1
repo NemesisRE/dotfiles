@@ -36,7 +36,7 @@ function NREDF_DailySync {
     # Check for chezmoi binary upgrades
     if ($chezmoiBin) {
       try {
-        & $chezmoiBin upgrade --quiet 2>$null
+        & $chezmoiBin upgrade 2>$null
       } catch {}
     }
 
