@@ -26,11 +26,12 @@ Include ~/.ssh/config.override
 # (Can be overridden via ~/.ssh/config.override or in ~/.ssh/config.d/)
 # ------------------------------------------------------------------------------
 Host *
-  # Agent & Key Management
+  # Agent & Socket Management
   AddKeysToAgent yes
 {{- if eq .chezmoi.os "darwin" }}
   UseKeychain yes
 {{- end }}
+  StreamLocalBindUnlink yes
 
   # Connection Keep-Alive & Resilience
   ServerAliveInterval 60

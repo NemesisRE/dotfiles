@@ -27,4 +27,9 @@
 # Host internal-*
 #   ProxyJump jumpuser@bastion.example.com
 #
-
+# Hostname canonicalization (auto-expand short names with search domains):
+# CanonicalDomains accepts multiple whitespace-separated domain suffixes.
+# Host *
+#   CanonicalizeHostname yes
+#   CanonicalDomains corp.example.com lab.example.com
+#   CanonicalizeFallbackLocal yes
