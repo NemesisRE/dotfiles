@@ -104,4 +104,5 @@ jobs:
         env:
           AQUA_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           AQUA_POLICY_CONFIG: ${{ github.workspace }}/home/dot_config/aquaproj-aqua/aqua-policy.yaml
+          AQUA_DISABLE_GITHUB_ARTIFACT_ATTESTATION: "true"
         run: aqua install -a
