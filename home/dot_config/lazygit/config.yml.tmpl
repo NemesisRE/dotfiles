@@ -31,9 +31,8 @@ git:
   autoRefresh: true
   allBranchesLogCmds:
     - git log --graph --all --color=always --abbrev-commit --date=relative --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(cyan)<%an>%Creset'
-  diffRenderers:
 {{- if lookPath "delta" }}
+  diffRenderers:
     - colorArg: always
-      pager: delta --dark --paging=never
+      command: delta --dark --paging=never
 {{- end }}
-
