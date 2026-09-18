@@ -21,30 +21,20 @@ function _nredf_chezmoi_update() {
     echo -e '\033[1mUpdating dotfiles and externals via chezmoi\033[0m'
   fi
 
-  # If bw is installed, ensure the vault is unlocked before running chezmoi —
-  # templates need BW secrets. Try the keychain first (silent); if the vault is
-  # still locked, prompt the user interactively (stderr visible so the master-
-  # password prompt is not hidden). Only skip the update if unlock fails.
-  if command -v bw &>/dev/null \
-    && [[ "${NREDF_NO_BOOTSTRAP:-}" != "1" && "${CI:-}" != "true" ]]; then
-    if _nredf_bw_secret_configured; then
-      _nredf_bw_restore_session
-      if ! bw unlock --check &>/dev/null; then
-        _nredf_bw_ensure_session || { _nredf_remove_lock; return 0; }
-      fi
-    fi
-  fi
-
   local _chezmoi_err=""
-  # Use `command chezmoi` to bypass the BW wrapper — the keychain pre-load
-  # above already exported BW_SESSION when a cached session existed. Chezmoi's
-  # own `unlock = "auto"` config handles any remaining BW auth for templates.
-  if _chezmoi_err="$(command chezmoi update --refresh-externals --force 2>&1)"; then
+  # Run non-interactively (--no-tty and stdin from /dev/null) so startup
+  # dotfile sync never silently hangs if a password safe (Bitwarden,
+  # KeePassXC, 1Password) requires master password authentication.
+  if _chezmoi_err="$(command chezmoi update --refresh-externals --force --no-tty </dev/null 2>&1)"; then
     # Write 24h throttle timestamp (don't re-fetch every shell)
     _nredf_last_run "" "true" "86400"
   else
     if [[ -n "${_chezmoi_err}" ]]; then
-      printf '\033[1;33m⚠ chezmoi update failed: %s\033[0m\n' "${_chezmoi_err}" >&2
+      if [[ "${_chezmoi_err}" =~ (locked|unlock|password|session|authentication|unauthorized) ]]; then
+        printf '\033[1;33mℹ chezmoi update skipped: password safe is locked (unlock to sync dotfiles)\033[0m\n' >&2
+      else
+        printf '\033[1;33m⚠ chezmoi update failed: %s\033[0m\n' "${_chezmoi_err}" >&2
+      fi
     fi
   fi
   _nredf_remove_lock
@@ -65,8 +55,7 @@ function _nredf_chezmoi_upgrade() {
   if [[ -n "${NREDF_PROFILE_STARTUP:-}" || -n "${NREDF_VERBOSE:-}" ]]; then
     echo -e '\033[1mUpgrading chezmoi\033[0m'
   fi
-  # Use `command chezmoi` to bypass the BW wrapper — upgrade never reads
-  # Bitwarden-backed templates, so no session injection is needed.
+  # Upgrade chezmoi binary (quietly, throttled to 24h)
   if command chezmoi upgrade --quiet 2>/dev/null; then
     # Write 24h throttle timestamp (don't re-check every shell)
     _nredf_last_run "" "true" "86400"

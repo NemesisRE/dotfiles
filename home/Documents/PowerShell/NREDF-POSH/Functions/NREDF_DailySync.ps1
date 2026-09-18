@@ -26,66 +26,51 @@ function NREDF_DailySync {
   [Void] (NREDF_LastRun -CurrentFunction 'NREDF_DailySync' -Success $true -NextRun ((Get-Date).AddHours(24).ToFileTime()))
 
   $bold = if ($PSStyle) { $PSStyle.Bold } else { "$([char]27)[1m" }
+  $yellow = if ($PSStyle) { $PSStyle.Foreground.Yellow } else { "$([char]27)[1;33m" }
   $reset = if ($PSStyle) { $PSStyle.Reset } else { "$([char]27)[0m" }
 
   # ── Chezmoi Dotfiles Sync ──────────────────────────────────────────────────
   if (Get-Command chezmoi -ErrorAction SilentlyContinue) {
-    # Resolve the real chezmoi binary (bypasses the BW wrapper for subcommands
-    # that never read Bitwarden-backed templates).
     $chezmoiBin = Get-Command chezmoi -CommandType Application -ErrorAction SilentlyContinue
 
-    # If bw is installed, ensure the vault is unlocked before running chezmoi —
-    # templates need BW secrets. Try the keychain first (silent); if the vault is
-    # still locked, prompt the user interactively. Only skip if unlock fails.
-    $bwSkip = $false
-    if ((Get-Command bw -ErrorAction SilentlyContinue) -and
-        $ENV:NREDF_NO_BOOTSTRAP -ne '1' -and
-        $ENV:CI -ne 'true') {
-      if (NREDF_BwSecretConfigured) {
-        NREDF_BwRestoreSession
-        & bw unlock --check 2>$null | Out-Null
-        if ($LASTEXITCODE -ne 0) {
-          # Vault is locked — prompt interactively (stderr visible)
-          if (-not (NREDF_BwEnsureSession -Force)) {
-            $env:BW_SESSION = $null
-            $bwSkip = $true
-          }
+    # Check for chezmoi binary upgrades
+    if ($chezmoiBin) {
+      try {
+        & $chezmoiBin upgrade --quiet 2>$null
+      } catch {}
+    }
+
+    # Check for git updates in chezmoi source directory if git is available
+    $chezmoiSrc = if ($chezmoiBin) { & $chezmoiBin source-path 2>$null } else { $null }
+    if ($chezmoiSrc -and (Test-Path $chezmoiSrc) -and (Get-Command git -ErrorAction SilentlyContinue)) {
+      try {
+        git -C $chezmoiSrc fetch --quiet 2>$null
+        $local = (git -C $chezmoiSrc rev-parse '@' 2>$null)
+        $remote = (git -C $chezmoiSrc rev-parse '@{u}' 2>$null)
+        if ($remote -and ($local -ne $remote)) {
+          Write-Host "${bold}Pulling dotfiles${reset}"
+          git -C $chezmoiSrc pull --ff-only --quiet 2>$null
+        }
+      } catch {}
+    }
+
+    Write-Host "${bold}Syncing dotfiles and externals${reset}"
+    try {
+      # Run non-interactively (--no-tty) with null stdin so startup dotfile
+      # sync never hangs if a password safe (Bitwarden, KeePassXC, 1Password)
+      # requires master password authentication.
+      $syncErr = ($null | & chezmoi apply --refresh-externals --force --no-tty 2>&1 | Out-String)
+      if ($LASTEXITCODE -ne 0) {
+        if ($syncErr -match '(locked|unlock|password|session|authentication|unauthorized)') {
+          Write-Host "${yellow}ℹ chezmoi apply skipped: password safe is locked (unlock to sync dotfiles)${reset}"
+        } else {
+          Write-Warning "chezmoi apply failed: $syncErr"
         }
       }
+    } catch {
+      Write-Warning "chezmoi apply failed: $_"
     }
-
-    if (-not $bwSkip) {
-      # Check for chezmoi binary upgrades (no BW templates involved)
-      if ($chezmoiBin) {
-        try {
-          & $chezmoiBin upgrade --quiet 2>$null
-        } catch {}
-      }
-
-      # Check for git updates in chezmoi source directory if git is available
-      $chezmoiSrc = if ($chezmoiBin) { & $chezmoiBin source-path 2>$null } else { $null }
-      if ($chezmoiSrc -and (Test-Path $chezmoiSrc) -and (Get-Command git -ErrorAction SilentlyContinue)) {
-        try {
-          git -C $chezmoiSrc fetch --quiet 2>$null
-          $local = (git -C $chezmoiSrc rev-parse '@' 2>$null)
-          $remote = (git -C $chezmoiSrc rev-parse '@{u}' 2>$null)
-          if ($remote -and ($local -ne $remote)) {
-            Write-Host "${bold}Pulling dotfiles${reset}"
-            git -C $chezmoiSrc pull --ff-only --quiet 2>$null
-          }
-        } catch {}
-      }
-
-      Write-Host "${bold}Syncing dotfiles and externals${reset}"
-      try {
-        # BW_SESSION is confirmed valid above; the wrapper finds it unlocked
-        # and delegates immediately without prompting.
-        & chezmoi apply --refresh-externals --force
-      } catch {
-        Write-Warning "chezmoi apply failed: $_"
-      }
-      NREDF_Step "chezmoi dotfiles sync"
-    }
+    NREDF_Step "chezmoi dotfiles sync"
   }
 
   # ── Aqua Tools Sync ────────────────────────────────────────────────────────

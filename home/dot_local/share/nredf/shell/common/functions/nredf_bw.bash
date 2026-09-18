@@ -20,10 +20,6 @@
 # - _nredf_bw_restore_session
 #                     Restores BW_SESSION from keychain if available (silent,
 #                     non-blocking, called during shell startup).
-# - chezmoi           Wrapper: restores BW_SESSION from keychain before
-#                     delegating to the real chezmoi binary, so template
-#                     functions like {{ bitwarden "item" "..." }} never prompt
-#                     for the master password interactively.
 # - _nredf_bw_ensure_session
 #                     Low-level helper for use by other nredf functions (e.g.
 #                     nredf_ssh TOTP helper). Sets and exports BW_SESSION.
@@ -522,35 +518,3 @@ function bwlock() {
   printf "\033[1;33m⚿ Bitwarden vault locked and session cleared\033[0m\n"
 }
 
-# ---------------------------------------------------------------------------
-# Public: chezmoi wrapper
-# Pre-loads BW_SESSION from the keychain so chezmoi template functions like
-# {{ bitwarden "item" "..." }} never prompt for the master password.
-# Unlocks, exports BW_SESSION, and persists to keychain before running chezmoi.
-# ---------------------------------------------------------------------------
-function chezmoi() {
-  case "${1:-}" in
-    -h|--help|version|--version|completion)
-      command chezmoi "$@"
-      return $?
-      ;;
-  esac
-
-  if command -v bw &>/dev/null \
-    && [[ "${NREDF_NO_BOOTSTRAP:-}" != "1" && "${CI:-}" != "true" ]]; then
-    if _nredf_bw_secret_configured; then
-      _nredf_bw_ensure_session
-    else
-      _nredf_bw_restore_session
-    fi
-  fi
-
-  command chezmoi "$@"
-  local ret=$?
-
-  if [[ -n "${BW_SESSION:-}" ]] && command -v bw &>/dev/null; then
-    _nredf_bw_keychain_set "${BW_SESSION}"
-  fi
-
-  return ${ret}
-}
