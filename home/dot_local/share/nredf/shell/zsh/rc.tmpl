@@ -41,14 +41,11 @@ _nredf_compinit() {
   fi
 }
 
-# Fast path: use cached completion dump; refresh only every 24h.
-if [[ -f "${NREDF_ZCOMPDUMP}" ]] && (( ${+functions[_nredf_last_run]} )) && _nredf_last_run "_nredf_zsh_compinit_refresh"; then
+# Fast path: use cached completion dump; refresh only if missing or older than 24h.
+if [[ -s "${NREDF_ZCOMPDUMP}" && -n "${NREDF_ZCOMPDUMP}"(#qNmh-24) ]]; then
   _nredf_compinit -C -d "${NREDF_ZCOMPDUMP}"
 else
   _nredf_compinit -u -d "${NREDF_ZCOMPDUMP}"
-  if (( ${+functions[_nredf_last_run]} )); then
-    _nredf_last_run "_nredf_zsh_compinit_refresh" "true" "86400"
-  fi
   zcompile "${NREDF_ZCOMPDUMP}" >/dev/null 2>&1 || true
 fi
 

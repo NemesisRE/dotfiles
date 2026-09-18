@@ -5,15 +5,14 @@ function NREDF_LastRun {
     [Parameter(Mandatory = $false)]
     [bool] $Success = $false,
     [Parameter(Mandatory = $false)]
-    [long] $NextRun = (Get-Date).AddHours(12).ToFileTime()
+    [long] $NextRun = (Get-Date).AddHours(12).ToFileTime(),
+    [Parameter(Mandatory = $false)]
+    [int] $IntervalSeconds = 43200
   )
 
   if ([string]::IsNullOrEmpty($CurrentFunction)) {
     if (Get-Command Get-PSCallStack -ErrorAction SilentlyContinue) {
-      # Get caller function name (limited to PowerShell v5.1)
       $CurrentFunction = (Get-PSCallStack)[1].FunctionName
-    } elseif (Get-Module | Where-Object { $_.Name -eq 'PSReadLine' }) {
-      $CurrentFunction = (Get-PSReadLineHistory -Count 1).PreviousInputObject.Split(' ')[-2]
     } else {
       Write-Error "Could not get current function, will skip last run"
       return $false
@@ -24,28 +23,35 @@ function NREDF_LastRun {
     return $false
   }
 
-  # Create last run cache directory if it doesn't exist
-  if (-not (Test-Path -Path ${ENV:NREDF_LRCACHE})) {
-    New-Item -Path ${ENV:NREDF_LRCACHE} -ItemType Directory -Force
-  }
-
-  # Define last run file path
   $LastRunFile = Join-Path -Path ${ENV:NREDF_LRCACHE} -ChildPath ("last_run_${CurrentFunction}.txt")
 
-  # Get Last Run Time (default 0 if file doesn't exist)
-  [long] $LastRun = Get-Content -Path $LastRunFile -ErrorAction SilentlyContinue
-
-  if ($LastRun -eq '') {
-    $LastRun = 0
+  if ($Success) {
+    if (-not [System.IO.Directory]::Exists($ENV:NREDF_LRCACHE)) {
+      [System.IO.Directory]::CreateDirectory($ENV:NREDF_LRCACHE) | Out-Null
+    }
+    [System.IO.File]::WriteAllText($LastRunFile, [string]$NextRun)
+    return $true
   }
 
-  # Check for previous run
-  if ($LastRun -gt (Get-Date).ToFileTime()) {
-    return $true
-  } elseif ($Success) {
-    Set-Content -Path $LastRunFile -Value $NextRun
-    return $true
-  } else {
+  if (-not [System.IO.File]::Exists($LastRunFile)) {
     return $false
   }
+
+  # Fast path: check file modification time directly via .NET BCL
+  $age = [DateTime]::UtcNow - [System.IO.File]::GetLastWriteTimeUtc($LastRunFile)
+  if ($age.TotalSeconds -lt $IntervalSeconds) {
+    return $true
+  }
+
+  # Backward compatibility fallback: check stored next run filetime
+  try {
+    $content = [System.IO.File]::ReadAllText($LastRunFile).Trim()
+    if (-not [string]::IsNullOrEmpty($content) -and [long]::TryParse($content, [ref]$storedTime)) {
+      if ($storedTime -gt (Get-Date).ToFileTime()) {
+        return $true
+      }
+    }
+  } catch {}
+
+  return $false
 }

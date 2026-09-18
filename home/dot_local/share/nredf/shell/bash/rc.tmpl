@@ -4,20 +4,33 @@
 # chezmoi-managed bash-specific rc — sourced by shell/common/rc via NREDF_RC_PATH
 
 if ! shopt -oq posix; then
-  for _bc in \
-    /opt/homebrew/etc/profile.d/bash_completion.sh \
-    /usr/local/etc/profile.d/bash_completion.sh \
-    /opt/homebrew/share/bash-completion/bash_completion \
-    /usr/local/share/bash-completion/bash_completion \
-    /etc/profile.d/bash_completion.sh \
-    /etc/bash_completion; do
-    if [[ -f "${_bc}" ]]; then
-      # shellcheck disable=SC1090
-      source "${_bc}"
-      break
-    fi
-  done
-  unset _bc
+{{- if eq .chezmoi.os "darwin" }}
+{{- if eq .chezmoi.arch "arm64" }}
+  if [[ -f "/opt/homebrew/etc/profile.d/bash_completion.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "/opt/homebrew/etc/profile.d/bash_completion.sh"
+  elif [[ -f "/opt/homebrew/share/bash-completion/bash_completion" ]]; then
+    # shellcheck disable=SC1091
+    source "/opt/homebrew/share/bash-completion/bash_completion"
+  fi
+{{- else }}
+  if [[ -f "/usr/local/etc/profile.d/bash_completion.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "/usr/local/etc/profile.d/bash_completion.sh"
+  elif [[ -f "/usr/local/share/bash-completion/bash_completion" ]]; then
+    # shellcheck disable=SC1091
+    source "/usr/local/share/bash-completion/bash_completion"
+  fi
+{{- end }}
+{{- else if eq .chezmoi.os "linux" }}
+  if [[ -f "/etc/profile.d/bash_completion.sh" ]]; then
+    # shellcheck disable=SC1091
+    source "/etc/profile.d/bash_completion.sh"
+  elif [[ -f "/etc/bash_completion" ]]; then
+    # shellcheck disable=SC1091
+    source "/etc/bash_completion"
+  fi
+{{- end }}
 fi
 
 # Disable CTRL-S & CTRL-Q flow control
@@ -35,7 +48,19 @@ shopt -s checkwinsize
 PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND$'\n'}history -a"
 
 if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 4) )) && command -v oh-my-posh &>/dev/null && [[ -f "${XDG_CONFIG_HOME}/oh-my-posh/config.json" ]]; then
-  eval "$(oh-my-posh init bash --config "${XDG_CONFIG_HOME}/oh-my-posh/config.json")"
+  _nredf_omp_bash_init_file="${XDG_CACHE_HOME}/nredf/init/omp.bash.sh"
+  if [[ -z "${POSH_SESSION_ID:-}" ]]; then
+    export POSH_SESSION_ID="${RANDOM:-$$}-$$-${EPOCHSECONDS:-0}"
+  fi
+  _nredf_omp_gen_bash() {
+    oh-my-posh init bash --config "${XDG_CONFIG_HOME}/oh-my-posh/config.json" 2>/dev/null | sed -E 's/export POSH_SESSION_ID="[^"]*"; ?//'
+  }
+  _nredf_refresh_cached_shell_snippet \
+    "_nredf_omp_init_bash" \
+    "${_nredf_omp_bash_init_file}" \
+    _nredf_omp_gen_bash
+  unset -f _nredf_omp_gen_bash 2>/dev/null || true
+  unset _nredf_omp_bash_init_file
 fi
 
 

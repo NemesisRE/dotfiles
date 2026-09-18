@@ -18,6 +18,7 @@
 
 $script:_NREDF_BW_SERVICE = 'nredf.bw_session'
 $script:_NREDF_BW_ACCOUNT = $env:USERNAME ?? $env:USER ?? (& id -un 2>$null)
+$script:_NREDF_BW_MARKER = Join-Path ($env:XDG_RUNTIME_DIR ?? [System.IO.Path]::GetTempPath()) "nredf_bw_$($script:_NREDF_BW_ACCOUNT).active"
 
 # ---------------------------------------------------------------------------
 # Internal: retrieve session token from the OS keychain
@@ -142,6 +143,8 @@ function NREDF_BwKeychainGet {
 function NREDF_BwKeychainSet {
   param([string]$Token)
 
+  try { [System.IO.File]::WriteAllBytes($script:_NREDF_BW_MARKER, [byte[]]@()) } catch {}
+
   if ($IsWindows) {
     try {
       $vault = [Windows.Security.Credentials.PasswordVault, Windows.Security.Credentials, ContentType = WindowsRuntime]::new()
@@ -230,6 +233,8 @@ function NREDF_BwKeychainSet {
 # Internal: remove session token from the OS keychain
 # ---------------------------------------------------------------------------
 function NREDF_BwKeychainDel {
+  try { if ([System.IO.File]::Exists($script:_NREDF_BW_MARKER)) { [System.IO.File]::Delete($script:_NREDF_BW_MARKER) } } catch {}
+
   if ($IsWindows) {
     foreach ($key in @($script:_NREDF_BW_SERVICE, 'bw_session', 'BW_SESSION')) {
       try {
@@ -375,10 +380,13 @@ function NREDF_BwRestoreSession {
       Fast and non-blocking: never prompts, suitable for shell startup.
   #>
   if (-not [string]::IsNullOrEmpty($env:BW_SESSION)) { return }
+  if (-not [System.IO.File]::Exists($script:_NREDF_BW_MARKER)) { return }
 
   $cached = NREDF_BwKeychainGet
   if (-not [string]::IsNullOrEmpty($cached)) {
     $env:BW_SESSION = $cached
+  } else {
+    try { [System.IO.File]::Delete($script:_NREDF_BW_MARKER) } catch {}
   }
 }
 

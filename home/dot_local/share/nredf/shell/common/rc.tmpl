@@ -19,14 +19,26 @@ _nredf_refresh_cached_shell_snippet() {
   local cache_file="$2"
   shift 2
 
-  if ! _nredf_last_run "${cache_key}" || [[ ! -s "${cache_file}" ]]; then
+  local needs_refresh=1
+  if [[ -s "${cache_file}" ]]; then
+    if [[ -n "${ZSH_VERSION:-}" ]] && eval "[[ -n \"\${cache_file}\"(Nmh-24#q) ]]"; then
+      needs_refresh=0
+    elif _nredf_last_run "${cache_key}"; then
+      needs_refresh=0
+    fi
+  fi
+
+  if (( needs_refresh )); then
     mkdir -p "${cache_file%/*}"
     if "$@" >| "${cache_file}" 2>/dev/null; then
       local now="${EPOCHSECONDS:-}"
       [[ -z "${now}" ]] && now="$(date +%s)"
       _nredf_last_run "${cache_key}" "true" "$((now + NREDF_24H_INTERVAL))"
+      if [[ -n "${ZSH_VERSION:-}" ]]; then
+        zcompile "${cache_file}" >/dev/null 2>&1 || true
+      fi
     else
-      rm -f "${cache_file}"
+      rm -f "${cache_file}" "${cache_file}.zwc" 2>/dev/null || true
     fi
   fi
 

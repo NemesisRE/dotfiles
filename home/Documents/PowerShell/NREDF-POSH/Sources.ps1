@@ -12,8 +12,13 @@ if (Test-Path "$ENV:PROFILE_PATH\Modules.ps1") {
   . "$ENV:PROFILE_PATH\Modules.ps1"
 }
 NREDF_Step "Modules.ps1"
-Get-ChildItem -Path "$ENV:NREDF_PATH\Functions" -Filter '*.ps1' | ForEach-Object {
-  . $_.FullName
+$bundlePath = Join-Path $ENV:NREDF_PATH 'Functions.bundle.ps1'
+if (Test-Path -LiteralPath $bundlePath) {
+  . $bundlePath
+} else {
+  Get-ChildItem -Path "$ENV:NREDF_PATH\Functions" -Filter '*.ps1' | ForEach-Object {
+    . $_.FullName
+  }
 }
 if (Test-Path "$ENV:PROFILE_PATH\Functions") {
   Get-ChildItem -Path "$ENV:PROFILE_PATH\Functions" -Filter '*.ps1' | ForEach-Object {

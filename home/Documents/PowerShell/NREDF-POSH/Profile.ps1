@@ -22,7 +22,7 @@ if ([string]::IsNullOrEmpty($ENV:NREDF_PATH)) {
 . (Join-Path $ENV:NREDF_PATH 'Sources.ps1')
 
 # Restore Bitwarden session from keychain if available (silent, non-blocking)
-if (Get-Command NREDF_BwRestoreSession -ErrorAction SilentlyContinue) {
+if (Test-Path function:\NREDF_BwRestoreSession) {
   NREDF_BwRestoreSession
   NREDF_Step "NREDF_BwRestoreSession"
 }
@@ -43,7 +43,7 @@ if (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {
   }
 
   $ompInitFile = Join-Path $ENV:NREDF_INITCACHE 'omp.pwsh.ps1'
-  $ompSnippet = if (Get-Command NREDF_RefreshCachedShellSnippet -ErrorAction SilentlyContinue) {
+  $ompSnippet = if (Test-Path function:\NREDF_RefreshCachedShellSnippet) {
     NREDF_RefreshCachedShellSnippet -CacheKey 'omp_init_pwsh' -CacheFile $ompInitFile -Generator {
       $raw = if ($ompConfig) {
         & oh-my-posh init pwsh --config "$ompConfig" 2>$null | Out-String
@@ -75,7 +75,7 @@ if (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {
 }
 
 # Daily automated sync for dotfiles and aqua tools (throttled to once per 24h)
-if (-not $ENV:CHEZMOI -and (Get-Command NREDF_DailySync -ErrorAction SilentlyContinue)) {
+if (-not $ENV:CHEZMOI -and (Test-Path function:\NREDF_DailySync)) {
   NREDF_DailySync
   NREDF_Step "NREDF_DailySync"
 }
@@ -92,7 +92,7 @@ if ($Env:TERM_PROGRAM -ne 'vscode' -and $MODULES -and $MODULES.Count -gt 0) {
 if (Get-Command atuin -ErrorAction SilentlyContinue) {
   if (-not (Get-Module -Name Atuin -ErrorAction SilentlyContinue)) {
     $atuinInitFile = Join-Path $ENV:NREDF_INITCACHE 'atuin.pwsh.ps1'
-    $atuinSnippet = if (Get-Command NREDF_RefreshCachedShellSnippet -ErrorAction SilentlyContinue) {
+    $atuinSnippet = if (Test-Path function:\NREDF_RefreshCachedShellSnippet) {
       NREDF_RefreshCachedShellSnippet -CacheKey 'atuin_init_pwsh' -CacheFile $atuinInitFile -Generator {
         & atuin init powershell 2>$null | Out-String
       }
@@ -104,7 +104,7 @@ if (Get-Command atuin -ErrorAction SilentlyContinue) {
       (& atuin init powershell | Out-String) | Invoke-Expression
     }
   }
-  if (Get-Command Enable-AtuinSearchKeys -ErrorAction SilentlyContinue) {
+  if (Test-Path function:\Enable-AtuinSearchKeys) {
     Enable-AtuinSearchKeys -CtrlR $true -UpArrow $true
   }
   NREDF_Step "Atuin init"
@@ -116,7 +116,7 @@ if (Get-Command zoxide -ErrorAction SilentlyContinue) {
   try {
     Remove-Variable __zoxide_hooked -Scope Global -ErrorAction SilentlyContinue
     $zoxideInitFile = Join-Path $ENV:NREDF_INITCACHE 'zoxide.pwsh.ps1'
-    $zoxideSnippet = if (Get-Command NREDF_RefreshCachedShellSnippet -ErrorAction SilentlyContinue) {
+    $zoxideSnippet = if (Test-Path function:\NREDF_RefreshCachedShellSnippet) {
       NREDF_RefreshCachedShellSnippet -CacheKey 'zoxide_init_pwsh' -CacheFile $zoxideInitFile -Generator {
         & zoxide init powershell --cmd cd 2>$null | Out-String
       }
@@ -139,7 +139,7 @@ if (Get-Command zoxide -ErrorAction SilentlyContinue) {
 # Carapace multi-shell multi-command completion integration (cross-platform, cached for fast startup)
 if (Get-Command carapace -ErrorAction SilentlyContinue) {
   $carapaceInitFile = Join-Path $ENV:NREDF_INITCACHE 'carapace.pwsh.ps1'
-  $carapaceSnippet = if (Get-Command NREDF_RefreshCachedShellSnippet -ErrorAction SilentlyContinue) {
+  $carapaceSnippet = if (Test-Path function:\NREDF_RefreshCachedShellSnippet) {
     NREDF_RefreshCachedShellSnippet -CacheKey 'carapace_init_pwsh' -CacheFile $carapaceInitFile -Generator {
       & carapace _carapace powershell 2>$null | Out-String
     }

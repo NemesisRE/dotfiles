@@ -20,33 +20,39 @@ function NREDF_RefreshCachedShellSnippet {
     [string]$CacheFile,
 
     [Parameter(Mandatory = $true)]
-    [scriptblock]$Generator
+    [scriptblock]$Generator,
+
+    [Parameter(Mandatory = $false)]
+    [int]$MaxAgeHours = 24
   )
 
-  $needsRefresh = $false
-  if (-not (Test-Path -LiteralPath $CacheFile) -or ((Get-Item -LiteralPath $CacheFile).Length -eq 0)) {
-    $needsRefresh = $true
-  } elseif (-not (NREDF_LastRun -CurrentFunction $CacheKey)) {
-    $needsRefresh = $true
+  $needsRefresh = $true
+  if ([System.IO.File]::Exists($CacheFile)) {
+    $fileInfo = [System.IO.FileInfo]::new($CacheFile)
+    if ($fileInfo.Length -gt 0) {
+      $age = [DateTime]::UtcNow - $fileInfo.LastWriteTimeUtc
+      if ($age.TotalHours -lt $MaxAgeHours) {
+        $needsRefresh = $false
+      }
+    }
   }
 
   if ($needsRefresh) {
-    $cacheDir = Split-Path -Parent $CacheFile
-    if (-not (Test-Path -LiteralPath $cacheDir)) {
-      New-Item -ItemType Directory -Path $cacheDir -Force -ErrorAction SilentlyContinue | Out-Null
+    $cacheDir = [System.IO.Path]::GetDirectoryName($CacheFile)
+    if (-not [string]::IsNullOrEmpty($cacheDir) -and -not [System.IO.Directory]::Exists($cacheDir)) {
+      [System.IO.Directory]::CreateDirectory($cacheDir) | Out-Null
     }
     try {
       $content = (& $Generator | Out-String)
       if (-not [string]::IsNullOrWhiteSpace($content)) {
-        Set-Content -LiteralPath $CacheFile -Value $content -Force -ErrorAction Stop
-        [Void] (NREDF_LastRun -CurrentFunction $CacheKey -Success $true -NextRun ((Get-Date).AddHours(24).ToFileTime()))
+        [System.IO.File]::WriteAllText($CacheFile, $content)
       }
     } catch {
       Write-Warning "Failed to generate cached snippet for ${CacheKey}: $_"
     }
   }
 
-  if (Test-Path -LiteralPath $CacheFile) {
+  if ([System.IO.File]::Exists($CacheFile)) {
     return $CacheFile
   }
   return $null

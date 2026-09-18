@@ -73,7 +73,8 @@ Options:
   if ${LRCACHE}; then
     rm -rf "${NREDF_LRCACHE:?}"
     rm -rf "${XDG_CACHE_HOME:-${HOME}/.cache}/nredf/init"
-    rm -f "${XDG_CACHE_HOME:-${HOME}/.cache}/sheldon/sheldon.zsh"
+    rm -f "${XDG_CACHE_HOME:-${HOME}/.cache}/sheldon/sheldon.zsh"*
+    rm -f "${XDG_CACHE_HOME:-${HOME}/.cache}/zsh/.zcompdump"*
   fi
   if ${DOWNLOADS}; then
     local _aqua_pkgs="${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-${HOME}/.local/share}/aquaproj-aqua}/pkgs"

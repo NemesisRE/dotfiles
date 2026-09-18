@@ -32,6 +32,7 @@
 
 _NREDF_BW_SERVICE="nredf.bw_session"
 _NREDF_BW_ACCOUNT="${USER:-$(id -un 2>/dev/null)}"
+_NREDF_BW_MARKER="${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}/nredf_bw_${_NREDF_BW_ACCOUNT}.active"
 
 # ---------------------------------------------------------------------------
 # Internal: helpers for interacting with KWallet via gdbus / D-Bus
@@ -282,6 +283,7 @@ _nredf_bw_keychain_set() {
       chmod 600 "${f}"
       ;;
   esac
+  touch "${_NREDF_BW_MARKER}" 2>/dev/null || true
 }
 
 # ---------------------------------------------------------------------------
@@ -333,6 +335,7 @@ _nredf_bw_keychain_del() {
       rm -f "${XDG_RUNTIME_DIR:-/tmp}/nredf_bw_session"
       ;;
   esac
+  rm -f "${_NREDF_BW_MARKER}" 2>/dev/null || true
 }
 
 # ---------------------------------------------------------------------------
@@ -415,11 +418,14 @@ _nredf_bw_do_unlock() {
 # ---------------------------------------------------------------------------
 function _nredf_bw_restore_session() {
   [[ -n "${BW_SESSION:-}" ]] && return 0
+  [[ -f "${_NREDF_BW_MARKER}" ]] || return 0
 
   local cached
   if cached="$(_nredf_bw_keychain_get 2>/dev/null)" && [[ -n "${cached}" ]]; then
     BW_SESSION="${cached}"
     export BW_SESSION
+  else
+    rm -f "${_NREDF_BW_MARKER}" 2>/dev/null || true
   fi
 }
 
