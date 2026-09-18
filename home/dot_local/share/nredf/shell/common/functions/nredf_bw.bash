@@ -418,14 +418,12 @@ _nredf_bw_do_unlock() {
 # ---------------------------------------------------------------------------
 function _nredf_bw_restore_session() {
   [[ -n "${BW_SESSION:-}" ]] && return 0
-  [[ -f "${_NREDF_BW_MARKER}" ]] || return 0
 
   local cached
   if cached="$(_nredf_bw_keychain_get 2>/dev/null)" && [[ -n "${cached}" ]]; then
     BW_SESSION="${cached}"
     export BW_SESSION
-  else
-    rm -f "${_NREDF_BW_MARKER}" 2>/dev/null || true
+    touch "${_NREDF_BW_MARKER}" 2>/dev/null || true
   fi
 }
 

@@ -380,13 +380,11 @@ function NREDF_BwRestoreSession {
       Fast and non-blocking: never prompts, suitable for shell startup.
   #>
   if (-not [string]::IsNullOrEmpty($env:BW_SESSION)) { return }
-  if (-not [System.IO.File]::Exists($script:_NREDF_BW_MARKER)) { return }
 
   $cached = NREDF_BwKeychainGet
   if (-not [string]::IsNullOrEmpty($cached)) {
     $env:BW_SESSION = $cached
-  } else {
-    try { [System.IO.File]::Delete($script:_NREDF_BW_MARKER) } catch {}
+    try { [System.IO.File]::WriteAllBytes($script:_NREDF_BW_MARKER, [byte[]]@()) } catch {}
   }
 }
 
