@@ -1,0 +1,29 @@
+{{- if eq .chezmoi.os "windows" -}}
+# chezmoi run_onchange_after Windows hook — updates tldr pages cache at least daily.
+# aqua.yaml hash: {{ include "dot_config/aquaproj-aqua/aqua.yaml" | sha256sum }}
+# date: {{ now | date "2006-01-02" }}
+
+$ErrorActionPreference = 'Continue'
+
+if ($env:CI -or $env:NREDF_NO_BOOTSTRAP) {
+    exit 0
+}
+
+$localBin = Join-Path $HOME ".local\bin"
+$aquaBin = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA "aquaproj-aqua\bin" } else { Join-Path $HOME ".local\share\aquaproj-aqua\bin" }
+
+foreach ($p in @($localBin, $aquaBin)) {
+    if ($env:PATH -notlike "*$p*") {
+        $env:PATH = "$p;$env:PATH"
+    }
+}
+
+if (Get-Command tldr -ErrorAction SilentlyContinue) {
+    Write-Host "==> Updating tldr cache"
+    try {
+        & tldr --update
+    } catch {
+        Write-Warning "Failed to update tldr pages: $_"
+    }
+}
+{{- end }}

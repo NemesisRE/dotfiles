@@ -58,6 +58,10 @@ packages:
     tags:
       - default
       - required
+  - name: tealdeer-rs/tealdeer@v1.9.0 # renovate: depName=tealdeer-rs/tealdeer
+    tags:
+      - default
+      - required
   - name: dandavison/delta@0.19.2 # renovate: depName=dandavison/delta
     tags:
       - default
