@@ -40,5 +40,3 @@ packages:
     overrides:
       - goos: windows
         format: zip
-        asset: 'netdoc_{{trimV .Version}}_{{.OS}}_{{.Arch}}.zip'
-
