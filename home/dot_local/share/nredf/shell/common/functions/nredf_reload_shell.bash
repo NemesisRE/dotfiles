@@ -111,9 +111,12 @@ Options:
   fi
 
   local NREDF_EXEC_SHELL="${NREDF_SHELL_NAME}"
+  local NREDF_EXEC_ARGS=()
   if [[ "${NREDF_SHELL_NAME}" == "bash" && -n "${BASH:-}" ]]; then
     NREDF_EXEC_SHELL="${BASH}"
+  elif [[ "${NREDF_SHELL_NAME}" == "pwsh" || "${NREDF_SHELL_NAME}" == "powershell" ]]; then
+    NREDF_EXEC_ARGS+=("-NoLogo")
   fi
 
-  exec "${NREDF_EXEC_SHELL}"
+  exec "${NREDF_EXEC_SHELL}" "${NREDF_EXEC_ARGS[@]}"
 }
