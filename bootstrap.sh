@@ -19,6 +19,9 @@ warn()  { printf '\033[33m    WARNING: %s\033[0m\n' "$*"; }
 
 # ── Prerequisites ──────────────────────────────────────────────────────────────
 if [[ "$(uname -s)" == "Darwin" ]]; then
+  if [[ -x /opt/homebrew/bin/brew ]] && [[ ":$PATH:" != *":/opt/homebrew/bin:"* ]]; then
+    export PATH="/opt/homebrew/bin:${PATH}"
+  fi
   if ! xcode-select -p &>/dev/null; then
     step "Installing Xcode Command Line Tools"
     xcode-select --install || true
@@ -26,6 +29,9 @@ if [[ "$(uname -s)" == "Darwin" ]]; then
   if ! command -v brew &>/dev/null && [[ ! -x /opt/homebrew/bin/brew && ! -x /usr/local/bin/brew ]]; then
     step "Installing Homebrew"
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
+    if [[ -x /opt/homebrew/bin/brew ]] && [[ ":$PATH:" != *":/opt/homebrew/bin:"* ]]; then
+      export PATH="/opt/homebrew/bin:${PATH}"
+    fi
   fi
 elif command -v apt-get &>/dev/null; then
   MISSING=()
@@ -56,6 +62,11 @@ fi
 #   3. Apply all managed dotfiles to ~/
 step "Applying dotfiles (${DOTFILES_REPO})"
 chezmoi init --apply "${DOTFILES_REPO}"
+
+AQUA_BIN="${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-${HOME}/.local/share}/aquaproj-aqua}/bin"
+if [[ -d "${AQUA_BIN}" ]] && [[ ":$PATH:" != *":${AQUA_BIN}:"* ]]; then
+  export PATH="${AQUA_BIN}:${PATH}"
+fi
 
 if command -v aqua &>/dev/null; then
   step "Linking aqua-managed tools"

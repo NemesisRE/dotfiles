@@ -1,5 +1,7 @@
-{{ if and (ne .chezmoi.os "windows") (lookPath "ya") -}}
+{{ if ne .chezmoi.os "windows" -}}
 #!/usr/bin/env bash
 # package.toml hash: {{ include "dot_config/yazi/package.toml.tmpl" | sha256sum }}
-ya pkg install --discard >/dev/null 2>&1 || true
+if command -v ya >/dev/null 2>&1; then
+  ya pkg install --discard >/dev/null 2>&1 || true
+fi
 {{ end -}}

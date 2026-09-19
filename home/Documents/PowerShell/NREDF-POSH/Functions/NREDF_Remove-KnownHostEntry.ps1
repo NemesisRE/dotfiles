@@ -12,43 +12,43 @@ function Remove-KnownHostEntry {
   $knownHostsFile = Join-Path (Join-Path $userHome '.ssh') 'known_hosts'
 
   if (-not (Test-Path $knownHostsFile)) {
-    Write-Warning "Die Datei '$knownHostsFile' wurde nicht gefunden."
+    Write-Warning "The file '$knownHostsFile' was not found."
     return $false
   }
-
-  $content = Get-Content $knownHostsFile
-  $originalCount = $content.Count
-  $deleted = $false
 
   if ($PSBoundParameters.ContainsKey('Hostname')) {
-    # Löschen nach Hostname
+    if (Get-Command ssh-keygen -ErrorAction SilentlyContinue) {
+      & ssh-keygen -R $Hostname -f $knownHostsFile 2>$null
+      if ($LASTEXITCODE -eq 0) {
+        Write-Host "Entry for host '$Hostname' successfully removed from '$knownHostsFile'."
+        return $true
+      }
+    }
+
+    $content = Get-Content $knownHostsFile
     $newContent = $content | Where-Object { $_ -notlike "*$Hostname*" }
     if ($content.Count -gt $newContent.Count) {
-      $content = $newContent
-      $deletedItem = "Host '$Hostname'"
-      $deleted = $true
+      $newContent | Set-Content $knownHostsFile
+      Write-Host "Entry for host '$Hostname' successfully removed from '$knownHostsFile'."
+      return $true
     }
   } elseif ($PSBoundParameters.ContainsKey('LineNumber')) {
-    # Löschen nach Zeilennummer
+    $content = Get-Content $knownHostsFile
+    $originalCount = $content.Count
     if ($LineNumber -lt 1 -or $LineNumber -gt $originalCount) {
-      Write-Warning "Ungültige Zeilennummer '$LineNumber'. Die Zeilennummer muss zwischen 1 und $originalCount liegen."
+      Write-Warning "Invalid line number '$LineNumber'. Line number must be between 1 and $originalCount."
       return $false
     }
-    $lineNumberToDelete = $LineNumber - 1 # PowerShell verwendet 0-basierte Indizes
-    $deletedItem = "Zeile '$LineNumber': $($content[$lineNumberToDelete])"
+    $lineNumberToDelete = $LineNumber - 1
+    $deletedItem = "line '$LineNumber': $($content[$lineNumberToDelete])"
     $newContent = $content | Where-Object { $_.ReadCount -ne $LineNumber }
     if ($content.Count -gt $newContent.Count) {
-      $content = $newContent
-      $deleted = $true
+      $newContent | Set-Content $knownHostsFile
+      Write-Host "Entry for $deletedItem successfully removed from '$knownHostsFile'."
+      return $true
     }
   }
 
-  if ($deleted) {
-    $content | Set-Content $knownHostsFile
-    Write-Host "Eintrag für $deletedItem erfolgreich aus '$knownHostsFile' gelöscht."
-    return $true
-  } else {
-    Write-Warning 'Kein Eintrag für den angegebenen Host oder die Zeilennummer gefunden.'
-    return $false
-  }
+  Write-Warning 'No entry found for the specified host or line number.'
+  return $false
 }

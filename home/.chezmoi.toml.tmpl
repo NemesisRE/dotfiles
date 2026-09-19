@@ -25,10 +25,10 @@
 {{- $defaultAquaToken := "" -}}
 {{- $defaultGitSigningKey := "" -}}
 {{- if eq $profile "personal" -}}
-{{-   $defaultAquaToken = "bitwarden:GitHub - Personal" -}}
-{{-   $defaultGitSigningKey = "bitwarden:SSH - Personal" -}}
+{{-   $defaultAquaToken = "bitwarden:GitHub Token" -}}
+{{-   $defaultGitSigningKey = "bitwarden:SSH Key" -}}
 {{- else if eq $profile "work" -}}
-{{-   $defaultAquaToken = "bitwarden:GitHub - Personal" -}}
+{{-   $defaultAquaToken = "bitwarden:GitHub Token" -}}
 {{-   $defaultGitSigningKey = "keepassxc:Work/Git Signing Key" -}}
 {{- end -}}
 
@@ -44,8 +44,8 @@
 {{-   end -}}
 {{- end -}}
 
-{{- $name := promptStringOnce $git "name" "Git user name (user.name)" "Steven 'NemesisRE' Kurz" -}}
-{{- $email := promptStringOnce $git "email" "Git email address (user.email)" "nemesissre@gmail.com" -}}
+{{- $name := promptStringOnce $git "name" "Git user name (user.name)" "Your Name" -}}
+{{- $email := promptStringOnce $git "email" "Git email address (user.email)" "user@example.com" -}}
 {{- $signingkeyPrompt := "Git signing key (SSH/GPG public key or path)" -}}
 {{- if ne $gitSigningKey "" -}}
 {{-   $signingkeyPrompt = "Git signing key (leave blank to resolve from secret store)" -}}

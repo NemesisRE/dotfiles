@@ -150,6 +150,26 @@ if (Get-Command carapace -ErrorAction SilentlyContinue) {
   NREDF_Step "carapace completions"
 }
 
+# Mise runtime environment manager (cross-platform, cached for fast startup)
+if (Get-Command mise -ErrorAction SilentlyContinue) {
+  $miseInitFile = Join-Path $ENV:NREDF_INITCACHE 'mise.pwsh.ps1'
+  $miseSnippet = if (Test-Path function:\NREDF_RefreshCachedShellSnippet) {
+    NREDF_RefreshCachedShellSnippet -CacheKey 'mise_init_pwsh' -CacheFile $miseInitFile -Generator {
+      & mise activate pwsh 2>$null | Out-String
+    }
+  } else { $null }
+
+  if ($miseSnippet) {
+    . $miseSnippet
+  } else {
+    $miseInit = (& mise activate pwsh 2>$null | Out-String)
+    if (-not [string]::IsNullOrWhiteSpace($miseInit)) {
+      Invoke-Expression $miseInit
+    }
+  }
+  NREDF_Step "mise activate"
+}
+
 # End of startup profiling
 if ($ENV:NREDF_PROFILE_STARTUP -eq '1') {
   $total = $global:_nredf_sw.ElapsedMilliseconds

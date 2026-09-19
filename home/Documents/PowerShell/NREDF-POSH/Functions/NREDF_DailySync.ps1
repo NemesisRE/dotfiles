@@ -96,4 +96,12 @@ function NREDF_DailySync {
     } catch {}
     NREDF_Step "aqua tools sync"
   }
+
+  # ── TLDR Pages Sync ────────────────────────────────────────────────────────
+  if (Get-Command tldr -ErrorAction SilentlyContinue) {
+    try {
+      tldr --update 2>$null
+    } catch {}
+    NREDF_Step "tldr pages sync"
+  }
 }

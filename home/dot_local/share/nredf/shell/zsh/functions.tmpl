@@ -104,7 +104,7 @@ function _nredf_load_sheldon_plugins() {
     _nredf_init_kitty_shell_integration --force
   fi
 
-  # Restore atuin keybindings if active (oh-my-zsh lib/key-bindings.zsh clobbers ^r)
+  # Ensure atuin keybindings are bound if atuin is installed and widget exists
   if (( ${+widgets[atuin-search]} )); then
     bindkey -M emacs '^r' atuin-search
     bindkey -M viins '^r' atuin-search-viins
@@ -116,8 +116,6 @@ function _nredf_load_sheldon_plugins() {
     bindkey -M vicmd '^[OA' atuin-up-search-vicmd
     bindkey -M viins '^[OA' atuin-up-search-viins
     bindkey -M vicmd 'k' atuin-up-search-vicmd
-  elif command -v atuin &>/dev/null; then
-    eval "$(atuin init zsh)"
   fi
 
   # Ensure fzf-cd-widget is bound to ç and © on macOS (Option+c special character)

@@ -1,6 +1,6 @@
 {{- if eq .chezmoi.os "windows" -}}
-# chezmoi run_after Windows hook — ensures PowerShell profiles in redirected Documents (e.g. OneDrive or SMB) are linked/loaded.
-# Runs automatically after `chezmoi apply` or `chezmoi update`.
+# chezmoi run_onchange_after Windows hook — ensures PowerShell profiles in redirected Documents (e.g. OneDrive or SMB) are linked/loaded.
+# windows.yaml hash: {{ include ".chezmoidata/windows.yaml" | sha256sum }}
 
 $ErrorActionPreference = 'Continue'
 

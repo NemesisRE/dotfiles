@@ -31,11 +31,12 @@ if (Get-Command lazyjournal -ErrorAction SilentlyContinue) {
   Set-Alias -Name lj -Value lazyjournal -Option AllScope -Force
 }
 
-# lsd aliases (matches bash/zsh ls, ll, la)
+# lsd aliases (matches bash/zsh ls, ll, la, tree)
 if (Get-Command lsd -ErrorAction SilentlyContinue) {
   Set-Alias -Name ls -Value lsd -Option AllScope -Force
-  function ll { lsd -lFh @args }
-  function la { lsd -lAFh @args }
+  function ll { lsd -lFh --git @args }
+  function la { lsd -lAFh --git @args }
+  function tree { lsd --tree @args }
 }
 
 # grep alias (matches bash/zsh grep)

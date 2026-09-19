@@ -4,13 +4,6 @@
 
 function _nredf_get_sys_info() {
   export NREDF_OS="{{ if eq .chezmoi.os "darwin" }}macos{{ else if eq .chezmoi.os "windows" }}windows{{ else }}linux{{ end }}"
-  export NREDF_ARCH="{{ .chezmoi.arch }}"
-  export NREDF_LIBC="{{ if eq .chezmoi.os "linux" }}musl{{ else }}none{{ end }}"
-  export NREDF_PLATFORM="{{ if eq .chezmoi.os "darwin" }}apple-darwin{{ else if eq .chezmoi.os "windows" }}pc-windows-msvc{{ else if eq .chezmoi.os "freebsd" }}unknown-freebsd{{ else }}unknown-linux-musl{{ end }}"
-  export NREDF_UNAME="{{ if eq .chezmoi.os "darwin" }}Darwin{{ else if eq .chezmoi.os "windows" }}Windows{{ else if eq .chezmoi.os "freebsd" }}FreeBSD{{ else }}Linux{{ end }}"
-  export NREDF_UNAME_LOWER="{{ .chezmoi.os }}"
-  export NREDF_UNAMES="{{ .chezmoi.os }}"
-  export NREDF_UNAMEM="{{ .chezmoi.arch }}"
 }
 
 

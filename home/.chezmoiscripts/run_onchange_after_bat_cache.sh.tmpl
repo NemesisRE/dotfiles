@@ -1,5 +1,7 @@
-{{ if and (ne .chezmoi.os "windows") (lookPath "bat") -}}
+{{ if ne .chezmoi.os "windows" -}}
 #!/usr/bin/env bash
 # OneDarkPro.tmTheme hash: {{ include "dot_config/bat/themes/OneDarkPro.tmTheme" | sha256sum }}
-bat cache --build
+if command -v bat >/dev/null 2>&1; then
+  bat cache --build
+fi
 {{ end -}}

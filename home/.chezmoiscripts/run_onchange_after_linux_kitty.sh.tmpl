@@ -5,7 +5,8 @@
 {{-   $quakeKey = .kitty.quake_key -}}
 {{- end -}}
 #!/usr/bin/env bash
-# chezmoi run_after — ensures installed Kitty on Linux matches desired state (excludes WSL)
+# chezmoi run_onchange_after — ensures installed Kitty on Linux matches desired state (excludes WSL)
+# kitty.yaml hash: {{ include ".chezmoidata/kitty.yaml" | sha256sum }}
 
 set -euo pipefail
 

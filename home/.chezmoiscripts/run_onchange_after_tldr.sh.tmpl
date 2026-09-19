@@ -1,8 +1,7 @@
 {{- if ne .chezmoi.os "windows" -}}
 #!/usr/bin/env bash
-# chezmoi run_onchange_after hook — updates tldr pages cache at least daily.
+# chezmoi run_onchange_after hook — updates tldr pages cache on aqua package updates.
 # aqua.yaml hash: {{ include "dot_config/aquaproj-aqua/aqua.yaml" | sha256sum }}
-# date: {{ now | date "2006-01-02" }}
 
 set -euo pipefail
 

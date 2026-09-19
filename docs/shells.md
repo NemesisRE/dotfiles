@@ -30,8 +30,8 @@ All three shells share a unified experience designed around modern developer erg
 
 - **Dotfiles**: [`.zshenv.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_zshenv.tmpl), [`.zprofile.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_zprofile.tmpl), [`.zshrc.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_zshrc.tmpl)
 - **Plugin Management**: Managed by **Sheldon** via [`~/.config/sheldon/plugins.toml`](file:///Users/skurz/Repos/chezmoi/home/dot_config/sheldon/plugins.toml.tmpl)
-  - Loads Oh-My-Zsh core libraries (`completion.zsh`, `history.zsh`, `key-bindings.zsh`)
-  - Curated plugins: `npm`, `rvm`, `extract`, `colored-man-pages`, `colorize`, `cp`, `git-extras`, `systemadmin`, `fzf-zsh-completions`, `zsh-autopair`, `calc`, `atuin`, `zsh-autosuggestions`, `fast-syntax-highlighting`
+  - Loads Oh-My-Zsh core libraries (`completion.zsh`, `functions.zsh`, `history.zsh`, `misc.zsh`, `spectrum.zsh`, `termsupport.zsh`, `theme-and-appearance.zsh`)
+  - Curated plugins: `npm`, `rvm`, `extract`, `colored-man-pages`, `colorize`, `cp`, `git-extras`, `systemadmin`, `fzf-tab`, `fzf-zsh-completions`, `zsh-autopair`, `calc`, `zsh-autosuggestions`, `fast-syntax-highlighting`
   - **Lazy Loading**: Plugins are lazy-loaded on the first prompt display via `add-zsh-hook precmd` to guarantee sub-millisecond shell startup.
 - **Completion Engine**: Managed by **Carapace** (`carapace-bin`) cached for 24 hours via `_nredf_refresh_cached_shell_snippet`, with custom declarative specs in `~/.config/carapace/specs/`.
 
@@ -240,10 +240,9 @@ If you have open terminals when the background sync completes:
 
 ## ❓ FAQ & Troubleshooting
 
-### Q1: In Bash, why does `cd` sometimes behave differently from Zsh?
+### Q1: How are runtime versions (Node.js, Python, Ruby, Go) managed?
 
-**Cause**: If node version manager `fnm` is installed, its default `--use-on-cd` hook aliases `cd` to `__fnmcd`, which can shadow `zoxide`.
-**Resolution**: NREDF automatically detects this in `.bashrc`, unaliases `__fnmcd`, and attaches `__fnm_use_if_file_found` to `PROMPT_COMMAND` so `zoxide` handles `cd` seamlessly.
+NREDF uses **`mise`** as the polyglot runtime and tool manager across all platforms and shells. `mise activate` is automatically hooked and cached during shell startup, allowing directory-based tool switching (`.tool-versions`, `mise.toml`).
 
 ### Q2: PowerShell shows script execution error on Windows
 

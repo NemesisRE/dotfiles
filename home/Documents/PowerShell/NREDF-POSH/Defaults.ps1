@@ -10,41 +10,47 @@ $pathSep = [System.IO.Path]::PathSeparator
 $ENV:POWERSHELL_UPDATECHECK = 'Off'
 
 if ($isWindows) {
-  if ([System.Environment]::GetEnvironmentVariable("POWERSHELL_UPDATECHECK", [System.EnvironmentVariableTarget]::User) -ne 'Off') {
-    [System.Environment]::SetEnvironmentVariable("POWERSHELL_UPDATECHECK", 'Off', [System.EnvironmentVariableTarget]::User)
+  if ($ENV:POWERSHELL_UPDATECHECK -ne 'Off') {
+    $ENV:POWERSHELL_UPDATECHECK = 'Off'
+    if ([System.Environment]::GetEnvironmentVariable("POWERSHELL_UPDATECHECK", [System.EnvironmentVariableTarget]::User) -ne 'Off') {
+      [System.Environment]::SetEnvironmentVariable("POWERSHELL_UPDATECHECK", 'Off', [System.EnvironmentVariableTarget]::User)
+    }
   }
   $ENV:NREDF_CACHE = "$ENV:LOCALAPPDATA\nredf"
   $ENV:NREDF_LRCACHE = "$ENV:NREDF_CACHE\LRCache"
   $ENV:NREDF_INITCACHE = "$ENV:NREDF_CACHE\init"
   # Configure Yazi's required 'file' MIME-type detector on Windows (shipped with Git for Windows)
-  $yaziFileCandidates = @(
-    $ENV:YAZI_FILE_ONE,
-    (Join-Path $env:ProgramFiles "Git\usr\bin\file.exe"),
-    (Join-Path ${env:ProgramFiles(x86)} "Git\usr\bin\file.exe"),
-    (Join-Path $env:LOCALAPPDATA "Programs\Git\usr\bin\file.exe"),
-    "C:\Program Files\Git\usr\bin\file.exe"
-  )
-  if (Get-Command git -ErrorAction SilentlyContinue) {
-    try {
-      $gitDir = Split-Path (Split-Path (Get-Command git).Source)
-      $yaziFileCandidates += (Join-Path $gitDir "usr\bin\file.exe")
-    } catch {}
-  }
-  foreach ($candidate in $yaziFileCandidates) {
-    if ($candidate -and (Test-Path $candidate)) {
-      $ENV:YAZI_FILE_ONE = $candidate
-      if ([System.Environment]::GetEnvironmentVariable("YAZI_FILE_ONE", [System.EnvironmentVariableTarget]::User) -ne $candidate) {
-        [System.Environment]::SetEnvironmentVariable("YAZI_FILE_ONE", $candidate, [System.EnvironmentVariableTarget]::User)
+  if (-not $ENV:YAZI_FILE_ONE -or -not (Test-Path $ENV:YAZI_FILE_ONE)) {
+    $yaziFileCandidates = @(
+      (Join-Path $env:ProgramFiles "Git\usr\bin\file.exe"),
+      (Join-Path ${env:ProgramFiles(x86)} "Git\usr\bin\file.exe"),
+      (Join-Path $env:LOCALAPPDATA "Programs\Git\usr\bin\file.exe"),
+      "C:\Program Files\Git\usr\bin\file.exe"
+    )
+    if (Get-Command git -ErrorAction SilentlyContinue) {
+      try {
+        $gitDir = Split-Path (Split-Path (Get-Command git).Source)
+        $yaziFileCandidates += (Join-Path $gitDir "usr\bin\file.exe")
+      } catch {}
+    }
+    foreach ($candidate in $yaziFileCandidates) {
+      if ($candidate -and (Test-Path $candidate)) {
+        $ENV:YAZI_FILE_ONE = $candidate
+        if ([System.Environment]::GetEnvironmentVariable("YAZI_FILE_ONE", [System.EnvironmentVariableTarget]::User) -ne $candidate) {
+          [System.Environment]::SetEnvironmentVariable("YAZI_FILE_ONE", $candidate, [System.EnvironmentVariableTarget]::User)
+        }
+        break
       }
-      break
     }
   }
 
   # Configure Yazi's configuration home and AppData junction on Windows
   $yaziConfigHome = "$HOME\.config\yazi"
-  $ENV:YAZI_CONFIG_HOME = $yaziConfigHome
-  if ([System.Environment]::GetEnvironmentVariable("YAZI_CONFIG_HOME", [System.EnvironmentVariableTarget]::User) -ne $yaziConfigHome) {
-    [System.Environment]::SetEnvironmentVariable("YAZI_CONFIG_HOME", $yaziConfigHome, [System.EnvironmentVariableTarget]::User)
+  if ($ENV:YAZI_CONFIG_HOME -ne $yaziConfigHome) {
+    $ENV:YAZI_CONFIG_HOME = $yaziConfigHome
+    if ([System.Environment]::GetEnvironmentVariable("YAZI_CONFIG_HOME", [System.EnvironmentVariableTarget]::User) -ne $yaziConfigHome) {
+      [System.Environment]::SetEnvironmentVariable("YAZI_CONFIG_HOME", $yaziConfigHome, [System.EnvironmentVariableTarget]::User)
+    }
   }
   $yaziAppData = Join-Path $ENV:APPDATA "yazi"
   $yaziAppDataConfig = Join-Path $yaziAppData "config"
@@ -55,9 +61,11 @@ if ($isWindows) {
     New-Item -ItemType Junction -Path $yaziAppDataConfig -Target $yaziConfigHome -Force -ErrorAction SilentlyContinue | Out-Null
   }
 
-  if (-not $ENV:HOME) { $ENV:HOME = $HOME }
-  if ([System.Environment]::GetEnvironmentVariable("HOME", [System.EnvironmentVariableTarget]::User) -ne $HOME) {
-    [System.Environment]::SetEnvironmentVariable("HOME", $HOME, [System.EnvironmentVariableTarget]::User)
+  if (-not $ENV:HOME) {
+    $ENV:HOME = $HOME
+    if ([System.Environment]::GetEnvironmentVariable("HOME", [System.EnvironmentVariableTarget]::User) -ne $HOME) {
+      [System.Environment]::SetEnvironmentVariable("HOME", $HOME, [System.EnvironmentVariableTarget]::User)
+    }
   }
 
   if (-not $ENV:XDG_CONFIG_HOME) { $ENV:XDG_CONFIG_HOME = "$HOME\.config" }
@@ -213,6 +221,6 @@ if ($isWindows) {
 # Tool config paths (cross-platform)
 if (-not [string]::IsNullOrEmpty($ENV:XDG_CONFIG_HOME)) {
   $ENV:WGETRC = Join-Path $ENV:XDG_CONFIG_HOME 'wgetrc'
-  $ENV:RIPGREP_CONFIG_PATH = Join-Path $ENV:XDG_CONFIG_HOME 'ripgrep\config'
+  $ENV:RIPGREP_CONFIG_PATH = Join-Path $ENV:XDG_CONFIG_HOME 'ripgrep/config'
   $ENV:GH_CONFIG_DIR = Join-Path $ENV:XDG_CONFIG_HOME 'gh'
 }

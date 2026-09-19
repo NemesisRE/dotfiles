@@ -91,6 +91,12 @@ if command -v sheldon >/dev/null 2>&1; then
   sheldon lock --update || true
 fi
 
+# 6. TLDR Pages Update (if installed)
+if command -v tldr >/dev/null 2>&1; then
+  echo "==> Updating tldr cache"
+  tldr --update || true
+fi
+
 echo "========================================================"
 echo " NREDF Daily Sync Finished: $(date)"
 echo "========================================================"

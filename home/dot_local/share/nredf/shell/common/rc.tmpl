@@ -143,10 +143,10 @@ _nredf_set_krew_path
 _nredf_step "_nredf_set_aqua_env/path + _nredf_set_krew_path"
 
 if [[ "${NREDF_COMMON_RC_PROFILE}" == "login-minimal" ]]; then
-  if command -v fnm &>/dev/null; then
-    eval "$(fnm env --use-on-cd)"
+  if command -v mise &>/dev/null; then
+    eval "$(mise activate "${NREDF_SHELL_NAME}")"
   fi
-  _nredf_step "fnm env (login-minimal)"
+  _nredf_step "mise activate (login-minimal)"
   return
 fi
 
@@ -193,19 +193,14 @@ if command -v atuin &>/dev/null; then
 fi
 _nredf_step "atuin init"
 
-# FNM env — dynamic per-session multishell evaluation
-if command -v fnm &>/dev/null; then
-  eval "$(fnm env --use-on-cd)"
-  # In bash, fnm aliases cd to __fnmcd which shadows functions and bypasses zoxide.
-  # Hook into PROMPT_COMMAND instead so zoxide can provide cd.
-  if [[ -n "${BASH_VERSION:-}" ]] && type __fnm_use_if_file_found &>/dev/null; then
-    unalias cd 2>/dev/null || true
-    if [[ "${PROMPT_COMMAND:-}" != *"__fnm_use_if_file_found"* ]]; then
-      PROMPT_COMMAND="${PROMPT_COMMAND:+${PROMPT_COMMAND};}__fnm_use_if_file_found"
-    fi
-  fi
+# Mise runtime environment manager (cached snippet for 24h)
+if command -v mise &>/dev/null; then
+  _nredf_refresh_cached_shell_snippet \
+    "_nredf_mise_activate_${NREDF_SHELL_NAME}" \
+    "${XDG_CACHE_HOME}/nredf/init/mise.${NREDF_SHELL_NAME}.sh" \
+    mise activate "${NREDF_SHELL_NAME}"
 fi
-_nredf_step "fnm env"
+_nredf_step "mise activate"
 
 
 # Zoxide init — replace cd with zoxide, keep z/zi as aliases (cache snippet for 24h)

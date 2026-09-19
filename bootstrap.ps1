@@ -90,8 +90,7 @@ if (-not (Get-Command aqua -ErrorAction SilentlyContinue)) {
         Write-Info "Installing aqua via winget..."
         winget install --id aquaproj.aqua --silent --accept-source-agreements --accept-package-agreements
     } else {
-        Write-Info "Installing aqua via aqua-installer..."
-        $aquaInstallerUrl = "https://raw.githubusercontent.com/aquaproj/aqua-installer/v4.0.2/aqua-installer"
+        Write-Info "Installing aqua from GitHub releases..."
         # Download aqua release directly for windows
         $arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64' -or $env:PROCESSOR_ARCHITEW6432 -eq 'ARM64') { 'arm64' } else { 'amd64' }
         $aquaReleaseUrl = "https://github.com/aquaproj/aqua/releases/latest/download/aqua_windows_${arch}.zip"
