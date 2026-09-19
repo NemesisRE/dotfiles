@@ -1,0 +1,20 @@
+{{- if eq .chezmoi.os "windows" -}}
+# chezmoi run_onchange_after Windows hook — installs mise tools when config.toml changes.
+# config.toml.tmpl hash: {{ include "dot_config/mise/config.toml.tmpl" | sha256sum }}
+
+$ErrorActionPreference = 'Continue'
+
+if ($env:CI -or $env:NREDF_NO_BOOTSTRAP) {
+    exit 0
+}
+
+if (Get-Command mise -ErrorAction SilentlyContinue) {
+    Write-Host "==> Installing mise managed tools"
+    try {
+        & mise install --yes 2>$null
+        Write-Host "    Mise tools installed successfully."
+    } catch {
+        Write-Warning "Failed to install mise tools: $_"
+    }
+}
+{{- end }}

@@ -52,3 +52,13 @@ NREDF guarantees feature and ergonomic parity across **PowerShell (`pwsh`)**, **
   $env:NREDF_NO_BOOTSTRAP = "1"
   chezmoi apply --dry-run --force --source=.
   ```
+
+---
+
+## 4. Universal File Formatting & EOF Standards
+
+Regardless of file type (Shell, PowerShell, TOML, JSON, templates, configs, etc.):
+
+- **Strict EOF Rule**: Every file must terminate with **exactly one newline character (`\n`)**.
+- **No Trailing Blank Lines**: Never generate or leave trailing blank lines at the end of any file (`empty-lines: {max-end: 0}`). The last line of content must be immediately followed by a single newline, never `\n\n`.
+- **Template Cleanliness**: In chezmoi templates (`*.tmpl`), ensure template boundary tags (e.g. `{{- end }}`) do not emit extraneous trailing newlines into either the template source or the rendered target output.

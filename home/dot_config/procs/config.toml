@@ -149,4 +149,3 @@ path = "unix:///var/run/docker.sock"
 
 [pager]
 mode = "Auto"
-

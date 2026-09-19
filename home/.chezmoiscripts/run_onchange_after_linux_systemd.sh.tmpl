@@ -15,4 +15,3 @@ if systemctl --user is-system-running >/dev/null 2>&1 || [[ -d /run/user/$(id -u
   systemctl --user enable --now nredf-daily-sync.timer || true
 fi
 {{- end }}
-
