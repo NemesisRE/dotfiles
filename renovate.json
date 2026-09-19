@@ -10,6 +10,11 @@
   "gitIgnoredAuthors": [
     "41898282+github-actions[bot]@users.noreply.github.com"
   ],
+  "mise": {
+    "managerFilePatterns": [
+      "/^(home\\/)?dot_config\\/mise\\/config\\.toml\\.tmpl$/"
+    ]
+  },
   "packageRules": [
     {
       "matchUpdateTypes": [
@@ -24,6 +29,12 @@
         "github-actions"
       ],
       "groupName": "github-actions"
+    },
+    {
+      "matchManagers": [
+        "mise"
+      ],
+      "groupName": "mise tools"
     },
     {
       "matchDepTypes": [

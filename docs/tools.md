@@ -416,7 +416,7 @@ Configured via `$GH_CONFIG_DIR` pointing to [`home/dot_config/gh/config.yml.tmpl
 
 ### `mise`
 
-Configured in [`home/dot_config/mise/config.toml.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/mise/config.toml.tmpl) to automatically detect legacy version files (`.nvmrc`, `.python-version`, etc.) and auto-install missing tool runtimes.
+Configured in [`home/dot_config/mise/config.toml.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/mise/config.toml.tmpl) to automatically detect legacy version files (`.nvmrc`, `.python-version`, etc.) and auto-install missing tool runtimes. Also manages default global runtimes and tools (such as Node.js and Microsoft's `apm`).
 
 ---
 
