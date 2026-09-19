@@ -138,18 +138,7 @@ function _nredf_setup_inshellisense() {
     return 0
   fi
 
-  if ! (( ${+functions[__is_prompt_start]} )); then
-    __is_prompt_start() {
-      builtin printf '\e]6973;PS\a' > /dev/tty
-    }
-  fi
-
-  if ! (( ${+functions[__is_prompt_end]} )); then
-    __is_prompt_end() {
-      builtin printf '\e]6973;PE\a' > /dev/tty
-    }
-  fi
-
+  # Disable conflicting plugins during inshellisense session
   if (( ${+functions[disable-fzf-tab]} )); then
     disable-fzf-tab
   fi
@@ -158,21 +147,16 @@ function _nredf_setup_inshellisense() {
     _zsh_autosuggest_disable
   fi
 
-  if (( ${+widgets[zle-line-init]} )); then
-    if [[ "${widgets[zle-line-init]}" != "user:_nredf_is_zle_line_init" ]]; then
-      zle -A zle-line-init _nredf_orig_zle_line_init
-      _nredf_is_zle_line_init() {
-        __is_prompt_start
-        zle _nredf_orig_zle_line_init
-        __is_prompt_end
-      }
-      zle -N zle-line-init _nredf_is_zle_line_init
-    fi
-  else
-    _nredf_is_zle_line_init() {
-      __is_prompt_start
-      __is_prompt_end
-    }
-    zle -N zle-line-init _nredf_is_zle_line_init
-  fi
+  _zsh_highlight() { :; }
+
+  # Bypass Oh-My-Posh zle .recursive-edit (which blocks prompt-end signal) and emit PS + PE immediately
+  function _omp_zle-line-init() {
+    builtin printf '\e]6973;PS\a\e]6973;PE\a' > /dev/tty
+    return 0
+  }
+
+  function __is_zle_line_init() {
+    builtin printf '\e]6973;PS\a\e]6973;PE\a' > /dev/tty
+    return 0
+  }
 }
