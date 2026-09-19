@@ -46,7 +46,14 @@
 
 Personal cross-platform dotfiles managed with [chezmoi](https://chezmoi.io).
 
-On a fresh machine: installs **aqua** (declarative CLI tool manager), links managed tools (including **sheldon** on zsh), and applies unified shell configurations across **Linux**, **macOS**, and **Windows**.
+On a fresh machine, NREDF automatically provisions a complete modern terminal environment with unified shell configurations across **Linux**, **macOS**, and **Windows**.
+
+The core stack powering this setup includes:
+
+- **Dotfiles & Packages**: [chezmoi](https://chezmoi.io) (declarative state management), [aqua](https://aquaproj.github.io/) (declarative CLI tool manager), and [sheldon](https://sheldon.cli.rs/) (fast shell plugin manager)
+- **Shell & Navigation**: [Oh My Posh](https://ohmyposh.dev/) (cross-shell prompt theme), [Carapace](https://carapace.sh/) (multi-shell completion), [Atuin](https://atuin.sh/) (encrypted history sync & search), [zoxide](https://github.com/ajeetdsouza/zoxide) (smart `cd`), and [fzf](https://github.com/junegunn/fzf) (fuzzy finding)
+- **Modern CLI Replacements**: [lsd](https://github.com/lsd-rs/lsd) (enhanced `ls`), [bat](https://github.com/sharkdp/bat) (`cat` clone with syntax highlighting), [ripgrep](https://github.com/BurntSushi/ripgrep) (`rg` fast search), [fd](https://github.com/sharkdp/fd) (fast `find` alternative), and [tealdeer](https://github.com/tealdeer-rs/tealdeer) (`tldr` cheatsheets)
+- **Terminal Workspace & Editor**: [Zellij](https://zellij.dev/) (terminal multiplexer & workspace manager), [Yazi](https://yazi-rs.github.io/) (async terminal file manager), and [AstroNvim](https://astronvim.com/) (aesthetic, extensible Neovim IDE)
 
 ---
 
