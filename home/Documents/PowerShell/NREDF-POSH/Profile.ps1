@@ -170,6 +170,26 @@ if (Get-Command mise -ErrorAction SilentlyContinue) {
   NREDF_Step "mise activate"
 }
 
+# Inshellisense compatibility (re-wrap prompt and disable colliding predictions when ISTERM is set)
+if ($env:ISTERM) {
+  if (Test-Path function:Global:__IS-Escape-Value) {
+    $Global:__IsOriginalPrompt = $function:Prompt
+    function Global:Prompt() {
+      $Result = "$([char]0x1b)]6973;PS`a"
+      $OriginalPrompt = $Global:__IsOriginalPrompt.Invoke()
+      $Result += $OriginalPrompt
+      $Result += "$([char]0x1b)]6973;PE`a"
+      $Result += if ($pwd.Provider.Name -eq 'FileSystem') { "$([char]0x1b)]6973;CWD;$(Global:__IS-Escape-Value $pwd.ProviderPath)`a" }
+      return $Result
+    }
+  }
+  if (Get-Command Set-PSReadLineOption -ErrorAction SilentlyContinue) {
+    Set-PSReadLineOption -PredictionSource None -ErrorAction SilentlyContinue
+  }
+  NREDF_Step "inshellisense init"
+}
+
+
 # End of startup profiling
 if ($ENV:NREDF_PROFILE_STARTUP -eq '1') {
   $total = $global:_nredf_sw.ElapsedMilliseconds

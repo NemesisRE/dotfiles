@@ -83,6 +83,10 @@ elif command -v atuin &>/dev/null; then
   eval "$(atuin init zsh)"
 fi
 
+if (( ${+functions[_nredf_setup_inshellisense]} )); then
+  _nredf_setup_inshellisense
+fi
+
 if [[ "${NREDF_SHELDON_LAZY_LOAD}" != "1" ]] || ! command -v sheldon >/dev/null 2>&1 || [[ ! -f "${XDG_CONFIG_HOME}/sheldon/plugins.toml" ]]; then
   _nredf_profile_finish
 fi

@@ -127,4 +127,52 @@ function _nredf_load_sheldon_plugins() {
     bindkey -M viins '©' fzf-cd-widget 2>/dev/null || true
     bindkey -M vicmd '©' fzf-cd-widget 2>/dev/null || true
   fi
+
+  if (( ${+functions[_nredf_setup_inshellisense]} )); then
+    _nredf_setup_inshellisense
+  fi
+}
+
+function _nredf_setup_inshellisense() {
+  if [[ -z "${ISTERM:-}" ]]; then
+    return 0
+  fi
+
+  if ! (( ${+functions[__is_prompt_start]} )); then
+    __is_prompt_start() {
+      builtin printf '\e]6973;PS\a' > /dev/tty
+    }
+  fi
+
+  if ! (( ${+functions[__is_prompt_end]} )); then
+    __is_prompt_end() {
+      builtin printf '\e]6973;PE\a' > /dev/tty
+    }
+  fi
+
+  if (( ${+functions[disable-fzf-tab]} )); then
+    disable-fzf-tab
+  fi
+
+  if (( ${+functions[_zsh_autosuggest_disable]} )); then
+    _zsh_autosuggest_disable
+  fi
+
+  if (( ${+widgets[zle-line-init]} )); then
+    if [[ "${widgets[zle-line-init]}" != "user:_nredf_is_zle_line_init" ]]; then
+      zle -A zle-line-init _nredf_orig_zle_line_init
+      _nredf_is_zle_line_init() {
+        __is_prompt_start
+        zle _nredf_orig_zle_line_init
+        __is_prompt_end
+      }
+      zle -N zle-line-init _nredf_is_zle_line_init
+    fi
+  else
+    _nredf_is_zle_line_init() {
+      __is_prompt_start
+      __is_prompt_end
+    }
+    zle -N zle-line-init _nredf_is_zle_line_init
+  fi
 }

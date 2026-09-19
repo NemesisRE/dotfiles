@@ -81,9 +81,13 @@ if declare -F _nredf_init_kitty_shell_integration >/dev/null 2>&1; then
   _nredf_init_kitty_shell_integration
 fi
 
-if [[ -n "${BLE_VERSION-}" ]]; then
+if [[ -n "${BLE_VERSION-}" && -z "${ISTERM-}" ]]; then
   ble-attach
   _nredf_step "ble attach"
+fi
+
+if [[ -n "${ISTERM-}" ]] && declare -F __is_precmd >/dev/null 2>&1; then
+  __is_precmd
 fi
 
 _nredf_profile_finish
