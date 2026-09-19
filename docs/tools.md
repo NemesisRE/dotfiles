@@ -12,7 +12,7 @@ All core CLI tools are declared centrally in [`home/dot_config/aquaproj-aqua/aqu
 | :--- | :--- | :--- |
 | **Dotfiles & Packages** | `chezmoi`, `aqua`, `sheldon` | Declarative system state & tool management |
 | **Shell & History** | `oh-my-posh`, `atuin`, `fzf`, `zoxide`, `carapace` | Prompt, encrypted history sync, fuzzy search, smart cd, multi-shell completion |
-| **CLI Replacements** | `lsd`, `bat`, `delta`, `ripgrep`, `fd` | Modern, colored replacements for `ls`, `cat`, `diff`, `grep`, `find` |
+| **CLI Replacements** | `lsd`, `bat`, `delta`, `ripgrep`, `fd`, `procs` (`pst`) | Modern, colored replacements for `ls`, `cat`, `diff`, `grep`, `find`, `ps auxf` |
 | **Multiplexer** | `zellij` | Builtin modern terminal workspace & multiplexer |
 | **File Management** | `yazi` (`yy`) | Fast async terminal file manager with custom plugins |
 | **Git UI** | `lazygit` (`lzg` / `lg`) | Interactive terminal Git management |

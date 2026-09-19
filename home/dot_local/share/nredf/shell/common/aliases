@@ -9,6 +9,10 @@ if command -v lsd &>/dev/null; then
   alias tree="lsd --tree"
 fi
 
+if command -v procs &>/dev/null; then
+  alias pst="procs --tree"
+fi
+
 
 alias root="sudo -E \"HOME=\${HOME}\" su -m"
 alias aptall="sudo apt update && sudo apt full-upgrade -y; sudo apt autoremove --purge -y; sudo apt autoclean"

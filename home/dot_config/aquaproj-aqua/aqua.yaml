@@ -85,6 +85,10 @@ packages:
   - name: ouch-org/ouch@0.8.3 # renovate: depName=ouch-org/ouch
     tags:
       - default
+  - name: dalance/procs@v0.14.12 # renovate: depName=dalance/procs
+    tags:
+      - default
+      - required
   - name: fastfetch-cli/fastfetch@2.68.1 # renovate: depName=fastfetch-cli/fastfetch
     tags:
       - default

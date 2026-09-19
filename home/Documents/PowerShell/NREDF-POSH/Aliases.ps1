@@ -39,6 +39,11 @@ if (Get-Command lsd -ErrorAction SilentlyContinue) {
   function tree { lsd --tree @args }
 }
 
+# procs aliases (matches bash/zsh pst)
+if (Get-Command procs -ErrorAction SilentlyContinue) {
+  function pst { procs --tree @args }
+}
+
 # grep alias (matches bash/zsh grep)
 if (Get-Command grep -ErrorAction SilentlyContinue) {
   function grep { & (Get-Command -CommandType Application grep) --color=auto @args }
