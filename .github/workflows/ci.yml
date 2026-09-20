@@ -232,55 +232,7 @@ jobs:
 
       - name: Analyze
         shell: pwsh
-        run: |
-          $targets = @('bootstrap.ps1') +
-            (Get-ChildItem -Path 'home/Documents/PowerShell' -Recurse -Filter '*.ps1' | ForEach-Object FullName) |
-            Where-Object { Test-Path $_ }
-
-          # Gated rules: correctness issues that the tree is already clean of, so a
-          # regression fails the build. Ratchet this list as the advisory backlog
-          # below is cleared — PSAvoidUsingBrokenHashAlgorithms and
-          # PSUseDeclaredVarsMoreThanAssignments are the next two to earn a place.
-          $gated = @(
-            'PSAvoidAssignmentToAutomaticVariable'
-            'PSPossibleIncorrectComparisonWithNull'
-            'PSPossibleIncorrectUsageOfAssignmentOperator'
-            'PSPossibleIncorrectUsageOfRedirectionOperator'
-            'PSAvoidUsingPlainTextForPassword'
-            'PSAvoidUsingConvertToSecureStringWithPlainText'
-            'PSAvoidUsingUsernameAndPasswordParams'
-            'PSAvoidUsingComputerNameHardcoded'
-            'PSUsePSCredentialType'
-            'PSUseApprovedVerbs'
-            'PSAvoidDefaultValueSwitchParameter'
-            'PSReservedCmdletChar'
-            'PSReservedParams'
-            'PSMissingModuleManifestField'
-          )
-
-          $blocking = $targets | ForEach-Object {
-            Invoke-ScriptAnalyzer -Path $_ -IncludeRule $gated
-          }
-          $blocking += $targets | ForEach-Object {
-            Invoke-ScriptAnalyzer -Path $_ -Severity Error
-          }
-
-          $advisory = $targets | ForEach-Object {
-            Invoke-ScriptAnalyzer -Path $_ -Severity Warning -ExcludeRule $gated
-          }
-          if ($advisory) {
-            Write-Host "Advisory (not blocking) — $(@($advisory).Count) issue(s):"
-            $advisory | Group-Object RuleName | Sort-Object Count -Descending |
-              Format-Table Count, Name -AutoSize | Out-String -Width 120 | Write-Host
-          }
-
-          if ($blocking) {
-            $blocking | Format-Table RuleName, Severity, ScriptName, Line, Message -AutoSize |
-              Out-String -Width 200 | Write-Host
-            Write-Host "::error::PSScriptAnalyzer: $(@($blocking).Count) blocking issue(s)"
-            exit 1
-          }
-          Write-Host "PSScriptAnalyzer: no blocking issues across $($targets.Count) files"
+        run: ./.github/scripts/analyze-powershell.ps1
 
   # ── Pinned checksums ─────────────────────────────────────────────────────────
   # Installers here download an archive/script and run it, so each is pinned to a
@@ -313,3 +265,8 @@ jobs:
 
       - name: markdownlint-cli2
         run: npx --yes markdownlint-cli2@0.23.3 --config .markdownlint.yaml "**/*.md"
+
+      # Relative links must resolve, and absolute file:///Users/... links (dead for
+      # everyone but their author) are rejected.
+      - name: Check Markdown links
+        run: python3 .github/scripts/check-md-links.py
