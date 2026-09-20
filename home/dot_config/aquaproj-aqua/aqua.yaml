@@ -153,7 +153,7 @@ packages:
     registry: local
     tags:
       - default
-  - name: heymaikol/network-doctor@v1.17.3 # renovate: depName=heymaikol/network-doctor
+  - name: heymaikol/network-doctor@v1.17.6 # renovate: depName=heymaikol/network-doctor
     registry: local
     command_aliases:
       - command: network-doctor
@@ -163,7 +163,7 @@ packages:
   - name: sharkdp/hyperfine@v1.20.0 # renovate: depName=sharkdp/hyperfine
     tags:
       - default
-  - name: jdx/mise@v2026.9.11 # renovate: depName=jdx/mise
+  - name: jdx/mise@v2026.9.12 # renovate: depName=jdx/mise
     tags:
       - default
       - required
