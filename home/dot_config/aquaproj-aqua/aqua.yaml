@@ -109,6 +109,12 @@ packages:
   - name: github/copilot-cli@v1.0.86 # renovate: depName=github/copilot-cli
     tags:
       - default
+  - name: anthropics/claude-code@v2.1.278 # renovate: depName=anthropics/claude-code
+    tags:
+      - default
+  - name: google-antigravity/antigravity-cli@1.2.7 # renovate: depName=google-antigravity/antigravity-cli
+    tags:
+      - default
   - name: jqlang/jq@jq-1.8.1 # renovate: depName=jqlang/jq
     tags:
       - default
