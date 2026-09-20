@@ -1,7 +1,8 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    "helpers:pinGitHubActionDigests"
   ],
   "labels": [
     "dependencies"
@@ -19,16 +20,21 @@
     {
       "matchUpdateTypes": [
         "minor",
-        "patch"
+        "patch",
+        "digest",
+        "pin",
+        "pinDigest"
       ],
       "automerge": true,
-      "platformAutomerge": true
+      "description": "Automerge minor/patch and digest updates; Renovate merges only once all CI checks are green."
     },
     {
       "matchManagers": [
         "github-actions"
       ],
-      "groupName": "github-actions"
+      "groupName": "github-actions",
+      "minimumReleaseAge": "3 days",
+      "description": "Actions run third-party code in CI: wait 3 days after release before proposing, then automerge on green CI."
     },
     {
       "matchManagers": [
@@ -48,6 +54,17 @@
       ],
       "ignoreUnstable": true,
       "allowedVersions": "!/[-.](?:alpha|beta|dev|rc)[0-9A-Za-z.-]*/i"
+    },
+    {
+      "description": "Kitty and the Windows aqua bootstrap are pinned by SHA-256 as well as by version. The refresh-pins workflow recomputes the hashes on the PR branch and re-runs CI, so these automerge on green. The 3-day wait is what keeps a just-published, possibly tampered release from being hashed, pinned and merged unreviewed.",
+      "matchDepNames": [
+        "kovidgoyal/kitty",
+        "aquaproj/aqua"
+      ],
+      "prBodyNotes": [
+        "The pinned SHA-256 values are refreshed automatically by the `Refresh pinned checksums` workflow (a `chore(pins)` commit on this branch); CI re-runs after that. If it did not, run `.github/scripts/pins.py update` and push."
+      ],
+      "minimumReleaseAge": "3 days"
     }
   ],
   "customManagers": [
@@ -89,14 +106,15 @@
     },
     {
       "customType": "regex",
-      "description": "Update kitty release version in kitty.yaml",
+      "description": "Update kitty and aqua-bootstrap release versions in .chezmoidata",
       "managerFilePatterns": [
-        "/^(home\\/)?\\.chezmoidata\\/kitty\\.yaml$/"
+        "/^(home\\/)?\\.chezmoidata\\/(kitty|aqua-bootstrap)\\.yaml$/"
       ],
       "matchStrings": [
         "version:\\s*\"?(?<currentValue>v[0-9][^\\s#\"]*)\"?\\s*#\\s*renovate:\\s*depName=(?<depName>[^\\s]+)"
       ],
       "datasourceTemplate": "github-tags"
     }
-  ]
+  ],
+  "platformAutomerge": false
 }

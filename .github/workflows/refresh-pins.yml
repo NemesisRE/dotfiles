@@ -1,0 +1,52 @@
+name: Refresh pinned checksums
+
+# Renovate bumps only the `version` of kitty and of the Windows aqua bootstrap. Both
+# are also pinned by SHA-256, so a bare bump fails the "Verify pinned checksums" CI
+# job. This finishes the job on the Renovate PR branch: recompute the hashes, commit
+# them, and re-run CI on the new head commit so Renovate can automerge on green.
+# See .github/scripts/refresh-pins-on-branch.sh for why CI has to be re-run by hand.
+on:
+  pull_request:
+    paths:
+      - home/.chezmoidata/kitty.yaml
+      - home/.chezmoidata/aqua-bootstrap.yaml
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Branch to refresh (normally a Renovate PR branch)
+        required: true
+
+# Nothing at workflow scope; the job asks for exactly what it needs.
+permissions: {}
+
+concurrency:
+  group: refresh-pins-${{ github.event.pull_request.head.ref || inputs.branch }}
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    name: Refresh SHA-256 pins
+    # Only Renovate's own same-repo branches (or a person running it by hand). Never
+    # a fork: this job holds a write token and runs the branch's own scripts.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.actor == 'renovate[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # push the refreshed hashes to the PR branch
+      actions: write # re-run CI on the new head commit (workflow_dispatch)
+    env:
+      # Passed through the environment, never interpolated into a script: a branch
+      # name is attacker-controlled text.
+      BRANCH: ${{ github.event.pull_request.head.ref || inputs.branch }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.ref || inputs.branch }}
+
+      - name: Refresh pins, push, re-run CI
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/refresh-pins-on-branch.sh "${BRANCH}"

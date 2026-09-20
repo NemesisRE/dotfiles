@@ -9,6 +9,9 @@ on:
   pull_request:
     paths-ignore:
       - home/dot_config/yazi/package.toml.tmpl
+  # Lets refresh-pins.yml re-run CI on a commit it pushed with the default token
+  # (which does not trigger `pull_request` runs), so those PRs are still checked.
+  workflow_dispatch:
 
 jobs:
   # ── ShellCheck ───────────────────────────────────────────────────────────────
@@ -17,16 +20,16 @@ jobs:
     if: github.event_name != 'pull_request' || github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: ShellCheck — shell function library
-        uses: ludeeus/action-shellcheck@2.0.0
+        uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0
         with:
           scandir: home/dot_local/share/nredf/shell
           severity: warning
 
       - name: ShellCheck — bootstrap script
-        uses: ludeeus/action-shellcheck@2.0.0
+        uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0
         with:
           additional_files: bootstrap.sh
           severity: warning
@@ -37,9 +40,9 @@ jobs:
     if: github.event_name != 'pull_request' || github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: ibiqlik/action-yamllint@v3
+      - uses: ibiqlik/action-yamllint@2576378a8e339169678f9939646ee3ee325e845c # v3
         with:
           file_or_dir: .
           config_file: .yamllint.yml
@@ -54,7 +57,7 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install chezmoi (Unix)
         if: runner.os != 'Windows'
@@ -161,10 +164,10 @@ jobs:
     if: github.event_name != 'pull_request' || github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install aqua
-        uses: aquaproj/aqua-installer@v4.0.5
+        uses: aquaproj/aqua-installer@96a9bc20066c5bf5e275b41019cfc165b25f4e2e # v4.0.5
         with:
           aqua_version: v2.63.0
 
@@ -186,7 +189,7 @@ jobs:
     if: github.event_name != 'pull_request' || github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install chezmoi, shellcheck and zsh
         run: |
@@ -208,13 +211,20 @@ jobs:
           export PATH="${HOME}/.local/bin:${PATH}"
           ./.github/scripts/lint-rendered.sh "${RUNNER_TEMP}/chezmoi.toml"
 
+      # With `CI` set the secret templates skip the vault entirely, so nothing above
+      # reaches their bitwarden code paths. This drives them with a stub `bw`.
+      - name: Secret template regression tests
+        run: |
+          export PATH="${HOME}/.local/bin:${PATH}"
+          ./.github/scripts/test-secret-templates.py
+
   # ── PowerShell lint ──────────────────────────────────────────────────────────
   psscriptanalyzer:
     name: PSScriptAnalyzer
     if: github.event_name != 'pull_request' || github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install PSScriptAnalyzer
         shell: pwsh
@@ -272,6 +282,22 @@ jobs:
           }
           Write-Host "PSScriptAnalyzer: no blocking issues across $($targets.Count) files"
 
+  # ── Pinned checksums ─────────────────────────────────────────────────────────
+  # Installers here download an archive/script and run it, so each is pinned to a
+  # version AND a SHA-256. A pin only helps if it cannot silently rot: this re-downloads
+  # every pinned artifact and compares. A Renovate version bump therefore fails here
+  # until `.github/scripts/pins.py update` refreshes the hashes.
+  pins:
+    name: Verify pinned checksums
+    if: github.event_name != 'pull_request' || github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Verify
+        run: python3 .github/scripts/pins.py verify
+
   # ── Markdown lint ────────────────────────────────────────────────────────────
   # AGENTS.md makes markdownlint compliance a hard requirement; enforce it.
   markdownlint:
@@ -279,9 +305,9 @@ jobs:
     if: github.event_name != 'pull_request' || github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "22"
 
