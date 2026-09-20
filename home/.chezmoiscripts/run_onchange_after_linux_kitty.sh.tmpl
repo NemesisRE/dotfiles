@@ -39,11 +39,65 @@ if [[ -x "${KITTY_APP}/bin/kitty" ]]; then
   CURRENT_VERSION="$("${KITTY_APP}/bin/kitty" --version 2>/dev/null | awk '{print $2}' || true)"
 fi
 
+# Install the pinned release archive from GitHub, verified against the SHA-256 in
+# .chezmoidata/kitty.yaml. This replaces piping sw.kovidgoyal.net/kitty/installer.sh
+# into `sh`, which ran an unpinned, unverified script and, through it, an
+# unverified archive. The archive holds bin/ lib/ share/ at its root, which is
+# exactly the layout of ~/.local/kitty.app.
+#
+# NOTE: this is a subshell function called from an `if !` condition, where bash
+# silently disables `set -e` -- so every step below needs an explicit `|| exit 1`.
+install_kitty() (
+  arch="" expected=""
+  case "$(uname -m)" in
+    x86_64) arch="x86_64" expected="{{ .kitty.sha256.x86_64 }}" ;;
+    aarch64 | arm64) arch="arm64" expected="{{ .kitty.sha256.arm64 }}" ;;
+    *)
+      echo "==> Warning: no pinned Kitty build for $(uname -m)" >&2
+      exit 1
+      ;;
+  esac
+  url="https://github.com/kovidgoyal/kitty/releases/download/v${TARGET_VERSION}/kitty-${TARGET_VERSION}-${arch}.txz"
+
+  # Same filesystem as the destination, so the final `mv` is an atomic rename.
+  mkdir -p "${HOME}/.local" || exit 1
+  tmp="$(mktemp -d "${HOME}/.local/.kitty-install.XXXXXX")" || exit 1
+  trap 'rm -rf "${tmp}"' EXIT
+
+  curl --proto '=https' --tlsv1.2 -sSfL "${url}" -o "${tmp}/kitty.txz" || {
+    echo "==> Warning: could not download ${url}" >&2
+    exit 1
+  }
+  if command -v sha256sum >/dev/null 2>&1; then
+    actual="$(sha256sum "${tmp}/kitty.txz" | awk '{print $1}')" || exit 1
+  else
+    actual="$(shasum -a 256 "${tmp}/kitty.txz" | awk '{print $1}')" || exit 1
+  fi
+  if [[ "${actual}" != "${expected}" ]]; then
+    echo "==> Error: Kitty ${TARGET_VERSION} checksum mismatch; refusing to install." >&2
+    echo "    expected ${expected}" >&2
+    echo "    actual   ${actual}" >&2
+    exit 1
+  fi
+
+  mkdir "${tmp}/app" || exit 1
+  tar -xJf "${tmp}/kitty.txz" -C "${tmp}/app" || exit 1
+  [[ -x "${tmp}/app/bin/kitty" ]] || {
+    echo "==> Error: unexpected Kitty archive layout (no bin/kitty)" >&2
+    exit 1
+  }
+  rm -rf "${KITTY_APP}" || exit 1
+  mv "${tmp}/app" "${KITTY_APP}" || exit 1
+)
+
 if [[ "${CURRENT_VERSION}" != "${TARGET_VERSION}" ]]; then
   echo "==> Kitty version mismatch (installed: '${CURRENT_VERSION:-none}', desired: '${TARGET_VERSION}')"
-  echo "    Installing / updating Kitty to ${TARGET_VERSION} via upstream installer..."
-  # Note: installer.sh automatically appends /kitty.app to dest, so dest must be ~/.local
-  curl -sSfL https://sw.kovidgoyal.net/kitty/installer.sh | sh /dev/stdin "installer=version-${TARGET_VERSION}" launch=n "dest=${HOME}/.local"
+  echo "    Installing / updating Kitty to ${TARGET_VERSION} (checksum-verified release archive)..."
+  if ! install_kitty; then
+    echo "==> Warning: Kitty ${TARGET_VERSION} was not installed; keeping any existing install" >&2
+    # Nothing to configure below if there is no Kitty at all.
+    [[ -x "${KITTY_APP}/bin/kitty" ]] || exit 0
+  fi
 fi
 
 # Ensure symlinks in ~/.local/bin (in user PATH)

@@ -90,17 +90,32 @@ if (-not (Get-Command aqua -ErrorAction SilentlyContinue)) {
         Write-Info "Installing aqua via winget..."
         winget install --id aquaproj.aqua --silent --accept-source-agreements --accept-package-agreements
     } else {
-        Write-Info "Installing aqua from GitHub releases..."
-        # Download aqua release directly for windows
+        Write-Info "Installing aqua from GitHub releases (pinned, checksum-verified)..."
+        # Pinned release + SHA-256 instead of `releases/latest`. This file is fetched raw
+        # before chezmoi exists, so it cannot read home/.chezmoidata/aqua-bootstrap.yaml;
+        # these literals must match it (`.github/scripts/pins.py verify` enforces that).
+        $aquaVersion = "v2.63.0"
+        $aquaSha256 = @{
+            amd64 = "8133527645ead6dc07dbfb70c7760c1372acd0c9895a007d038fca6890c2861f"
+            arm64 = "b6be9228ca7a9fd4dc5df2f3df92ca21af1d704ad0defb3de447e5d0c26bc9a4"
+        }
         $arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64' -or $env:PROCESSOR_ARCHITEW6432 -eq 'ARM64') { 'arm64' } else { 'amd64' }
-        $aquaReleaseUrl = "https://github.com/aquaproj/aqua/releases/latest/download/aqua_windows_${arch}.zip"
+        $aquaReleaseUrl = "https://github.com/aquaproj/aqua/releases/download/${aquaVersion}/aqua_windows_${arch}.zip"
         $tmpZip = Join-Path ([System.IO.Path]::GetTempPath()) "aqua.zip"
-
         $tmpExtract = Join-Path ([System.IO.Path]::GetTempPath()) "aqua_extract"
-        Invoke-WebRequest -Uri $aquaReleaseUrl -OutFile $tmpZip
-        Expand-Archive -Path $tmpZip -DestinationPath $tmpExtract -Force
-        Copy-Item -Path (Join-Path $tmpExtract "aqua.exe") -Destination (Join-Path $localBin "aqua.exe") -Force
-        Remove-Item -Path $tmpZip, $tmpExtract -Recurse -Force
+        try {
+            Invoke-WebRequest -Uri $aquaReleaseUrl -OutFile $tmpZip
+            $actualSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $tmpZip).Hash
+            if ($actualSha256 -ne $aquaSha256[$arch]) {
+                throw "aqua $aquaVersion checksum mismatch (expected $($aquaSha256[$arch]), got $actualSha256); refusing to install"
+            }
+            Expand-Archive -Path $tmpZip -DestinationPath $tmpExtract -Force
+            Copy-Item -Path (Join-Path $tmpExtract "aqua.exe") -Destination (Join-Path $localBin "aqua.exe") -Force
+        } catch {
+            Write-Warn "Could not install aqua from GitHub releases: $_"
+        } finally {
+            Remove-Item -Path $tmpZip, $tmpExtract -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
 }
 

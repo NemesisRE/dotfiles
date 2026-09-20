@@ -2,7 +2,9 @@
 # chezmoi run_once_before Windows hook — installs aqua and links managed tools.
 # https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/
 
-$ErrorActionPreference = 'SilentlyContinue'
+# Was 'SilentlyContinue' for the whole installer, which hid every failure and then
+# printed "done" regardless. Commands that may legitimately fail say so explicitly.
+$ErrorActionPreference = 'Continue'
 
 if ($env:CI -or $env:NREDF_NO_BOOTSTRAP) {
     exit 0
@@ -22,15 +24,28 @@ if (-not (Get-Command aqua -ErrorAction SilentlyContinue)) {
     if (Get-Command winget -ErrorAction SilentlyContinue) {
         winget install --id aquaproj.aqua --silent --accept-source-agreements --accept-package-agreements
     } else {
+        # Fallback when winget is unavailable. This used to download `releases/latest`
+        # and execute whatever came back. Now: a pinned release whose zip must match a
+        # pinned SHA-256 (.chezmoidata/aqua-bootstrap.yaml), otherwise it is rejected.
+        $aquaVersion = "{{ .aquaBootstrap.version }}"
         $arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64' -or $env:PROCESSOR_ARCHITEW6432 -eq 'ARM64') { 'arm64' } else { 'amd64' }
-        $aquaReleaseUrl = "https://github.com/aquaproj/aqua/releases/latest/download/aqua_windows_${arch}.zip"
+        $aquaSha256 = if ($arch -eq 'arm64') { "{{ .aquaBootstrap.windows.arm64 }}" } else { "{{ .aquaBootstrap.windows.amd64 }}" }
+        $aquaReleaseUrl = "https://github.com/aquaproj/aqua/releases/download/${aquaVersion}/aqua_windows_${arch}.zip"
         $tmpZip = Join-Path ([System.IO.Path]::GetTempPath()) "aqua_bootstrap.zip"
-
         $tmpExtract = Join-Path ([System.IO.Path]::GetTempPath()) "aqua_extract"
-        Invoke-WebRequest -Uri $aquaReleaseUrl -OutFile $tmpZip
-        Expand-Archive -Path $tmpZip -DestinationPath $tmpExtract -Force
-        Copy-Item -Path (Join-Path $tmpExtract "aqua.exe") -Destination (Join-Path $localBin "aqua.exe") -Force
-        Remove-Item -Path $tmpZip, $tmpExtract -Recurse -Force
+        try {
+            Invoke-WebRequest -Uri $aquaReleaseUrl -OutFile $tmpZip -ErrorAction Stop
+            $actualSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $tmpZip -ErrorAction Stop).Hash
+            if ($actualSha256 -ne $aquaSha256) {
+                throw "aqua $aquaVersion checksum mismatch (expected $aquaSha256, got $actualSha256); refusing to install"
+            }
+            Expand-Archive -Path $tmpZip -DestinationPath $tmpExtract -Force -ErrorAction Stop
+            Copy-Item -Path (Join-Path $tmpExtract "aqua.exe") -Destination (Join-Path $localBin "aqua.exe") -Force -ErrorAction Stop
+        } catch {
+            Write-Warning "Could not install aqua from GitHub releases: $_"
+        } finally {
+            Remove-Item -Path $tmpZip, $tmpExtract -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
 }
 
@@ -57,6 +72,10 @@ if (Get-Command aqua -ErrorAction SilentlyContinue) {
         $env:AQUA_POLICY_CONFIG = $aquaPolicy
     }
     & aqua install -a -l
+}
+
+if (-not (Get-Command aqua -ErrorAction SilentlyContinue)) {
+    Write-Warning "aqua is not installed; managed tools were not linked."
 }
 
 Write-Host "==> Windows bootstrap hook done."
