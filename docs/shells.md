@@ -28,8 +28,8 @@ All three shells share a unified experience designed around modern developer erg
 
 ### 1. Zsh Architecture
 
-- **Dotfiles**: [`.zshenv.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_zshenv.tmpl), [`.zprofile.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_zprofile.tmpl), [`.zshrc.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_zshrc.tmpl)
-- **Plugin Management**: Managed by **Sheldon** via [`~/.config/sheldon/plugins.toml`](file:///Users/skurz/Repos/chezmoi/home/dot_config/sheldon/plugins.toml.tmpl)
+- **Dotfiles**: [`.zshenv.tmpl`](../home/dot_zshenv.tmpl), [`.zprofile.tmpl`](../home/dot_zprofile.tmpl), [`.zshrc.tmpl`](../home/dot_zshrc.tmpl)
+- **Plugin Management**: Managed by **Sheldon** via [`~/.config/sheldon/plugins.toml`](../home/dot_config/sheldon/plugins.toml.tmpl)
   - Loads Oh-My-Zsh core libraries (`completion.zsh`, `functions.zsh`, `history.zsh`, `misc.zsh`, `spectrum.zsh`, `termsupport.zsh`, `theme-and-appearance.zsh`)
   - Curated plugins: `npm`, `rvm`, `extract`, `colored-man-pages`, `colorize`, `cp`, `git-extras`, `systemadmin`, `fzf-tab`, `fzf-zsh-completions`, `zsh-autopair`, `calc`, `zsh-autosuggestions`, `fast-syntax-highlighting`
   - **Lazy Loading**: Plugins are lazy-loaded on the first prompt display via `add-zsh-hook precmd` to guarantee sub-millisecond shell startup.
@@ -37,7 +37,7 @@ All three shells share a unified experience designed around modern developer erg
 
 ### 2. Bash Architecture
 
-- **Dotfiles**: [`.bash_profile.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_bash_profile.tmpl), [`.bashrc.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_bashrc.tmpl), [`.blerc.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_blerc.tmpl)
+- **Dotfiles**: [`.bash_profile.tmpl`](../home/dot_bash_profile.tmpl), [`.bashrc.tmpl`](../home/dot_bashrc.tmpl), [`.blerc.tmpl`](../home/dot_blerc.tmpl)
 - **Engine**: Modern **Bash 4.4+ / 5.x** with [ble.sh](https://github.com/akinomyoga/ble.sh) (Bash Line Editor)
   - On macOS, automatically detects and invokes Homebrew Bash (`/opt/homebrew/bin/bash` or `/usr/local/bin/bash`), bypassing Apple's legacy Bash 3.2.
   - `ble.sh` sources at the top of `.bashrc` (`--attach=none`) and attaches at the very end (`ble-attach`), providing syntax highlighting, fish-like autosuggestions, vim-mode support, and menu completion in standard Bash.
@@ -45,7 +45,7 @@ All three shells share a unified experience designed around modern developer erg
 
 ### 3. PowerShell (pwsh) Architecture
 
-- **Dotfiles**: [`home/Documents/PowerShell/`](file:///Users/skurz/Repos/chezmoi/home/Documents/PowerShell/)
+- **Dotfiles**: [`home/Documents/PowerShell/`](../home/Documents/PowerShell/)
   - Target for PowerShell 7+: `Documents\PowerShell\Microsoft.PowerShell_profile.ps1`
   - Target for Windows PowerShell 5.1: `Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` (dot-sources PowerShell 7 profile)
   - Linux/macOS: `~/.config/powershell` is symlinked directly to `~/Documents/PowerShell`

@@ -24,7 +24,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/NemesisRE/chezmoi/main/boots
 
 ## 📦 Package Management Across Distributions
 
-NREDF manages native prerequisite packages automatically via [`home/.chezmoidata/packages.yaml`](file:///Users/skurz/Repos/chezmoi/home/.chezmoidata/packages.yaml) during `chezmoi apply`.
+NREDF manages native prerequisite packages automatically via [`home/.chezmoidata/packages.yaml`](../home/.chezmoidata/packages.yaml) during `chezmoi apply`.
 
 | Distribution | Package Manager | Core Prerequisites Managed |
 | :--- | :--- | :--- |
@@ -71,7 +71,7 @@ reload -s pwsh   # Switch to PowerShell
 
 On Linux desktop environments, **Kitty** is the recommended GPU-accelerated terminal emulator:
 
-- **Upstream Installation**: Managed standalone via the official installer to `~/.local/kitty.app` with binaries linked to `~/.local/bin/` (version pinned in [`.chezmoidata/kitty.yaml`](file:///Users/skurz/Repos/chezmoi/home/.chezmoidata/kitty.yaml) and kept current with Renovate). This avoids severely outdated distribution packages (like Debian/Ubuntu `apt`).
+- **Upstream Installation**: Managed standalone via the official installer to `~/.local/kitty.app` with binaries linked to `~/.local/bin/` (version pinned in [`.chezmoidata/kitty.yaml`](../home/.chezmoidata/kitty.yaml) and kept current with Renovate). This avoids severely outdated distribution packages (like Debian/Ubuntu `apt`).
 - **Desktop & Icon Integration**: Chezmoi automatically creates and patches `kitty.desktop` and icons in `~/.local/share/applications` and `~/.local/share/icons`.
 - **WSL Excluded**: Kitty installation is automatically skipped on WSL environments (where Windows Terminal on the host OS is used).
 - **Font**: Configured with `FiraMono Nerd Font Mono` (or `FiraCode Nerd Font`).
@@ -81,7 +81,7 @@ On Linux desktop environments, **Kitty** is the recommended GPU-accelerated term
 
 ### Quake-Mode (Quick Access Dropdown Terminal)
 
-NREDF includes pre-configured drop-down terminal settings in [`home/dot_config/kitty/quick-access-terminal.conf.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/kitty/quick-access-terminal.conf.tmpl) and installs a Wayland-aware wrapper script: `kitty-quake` (aliased to `kitty-quick-access`).
+NREDF includes pre-configured drop-down terminal settings in [`home/dot_config/kitty/quick-access-terminal.conf.tmpl`](../home/dot_config/kitty/quick-access-terminal.conf.tmpl) and installs a Wayland-aware wrapper script: `kitty-quake` (aliased to `kitty-quick-access`).
 
 - **Configuration Gate**: You can choose your preferred Quake toggle key (`F12`, `Pause`, or `none`) during `chezmoi init` or in `~/.config/chezmoi/chezmoi.toml`:
 
@@ -111,7 +111,7 @@ NREDF includes pre-configured drop-down terminal settings in [`home/dot_config/k
 
 ## 🔑 SSH Agent Management
 
-NREDF features an intelligent SSH Agent detection engine in [`nredf_set_ssh_agent.bash`](file:///Users/skurz/Repos/chezmoi/home/dot_local/share/nredf/shell/common/functions/nredf_set_ssh_agent.bash):
+NREDF features an intelligent SSH Agent detection engine in [`nredf_set_ssh_agent.bash`](../home/dot_local/share/nredf/shell/common/functions/nredf_set_ssh_agent.bash):
 
 ### 1. Supported Providers on Linux
 

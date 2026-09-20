@@ -180,7 +180,7 @@ Centralized dependency PRs prevent drift from chezmoi-managed files:
 
 - Renovate configuration in [renovate.json](renovate.json)
 - GitHub Actions workflow updates grouped automatically
-- aqua registry reference in [dot_config/aquaproj-aqua/aqua.yaml](dot_config/aquaproj-aqua/aqua.yaml) updated automatically via Renovate regex manager
+- aqua registry reference in [home/dot_config/aquaproj-aqua/aqua.yaml](home/dot_config/aquaproj-aqua/aqua.yaml) updated automatically via Renovate regex manager
 
 **Recommended workflow:**
 

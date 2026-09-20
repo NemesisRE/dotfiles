@@ -6,7 +6,7 @@ This document provides a comprehensive reference for the developer tools and CLI
 
 ## 🧰 Builtin Tooling Overview
 
-All core CLI tools are declared centrally in [`home/dot_config/aquaproj-aqua/aqua.yaml`](file:///Users/skurz/Repos/chezmoi/home/dot_config/aquaproj-aqua/aqua.yaml) and installed via **aqua**.
+All core CLI tools are declared centrally in [`home/dot_config/aquaproj-aqua/aqua.yaml`](../home/dot_config/aquaproj-aqua/aqua.yaml) and installed via **aqua**.
 
 | Category | Primary Tools | Role / Description |
 | :--- | :--- | :--- |
@@ -26,7 +26,7 @@ All core CLI tools are declared centrally in [`home/dot_config/aquaproj-aqua/aqu
 
 ## 🖥️ Builtin Terminal Multiplexer: Zellij
 
-**Zellij** is the default and builtin terminal workspace manager in NREDF. It is configured in [`home/dot_config/zellij/config.kdl.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/zellij/config.kdl.tmpl) with the unified **OneDark-Pro** theme.
+**Zellij** is the default and builtin terminal workspace manager in NREDF. It is configured in [`home/dot_config/zellij/config.kdl.tmpl`](../home/dot_config/zellij/config.kdl.tmpl) with the unified **OneDark-Pro** theme.
 
 ### Zellij Modal Architecture
 
@@ -190,7 +190,7 @@ Typing `ssh **` or `scp **` followed by <kbd>Tab</kbd> automatically fuzzy searc
 
 ### `ripgrep` (`rg`)
 
-Configured via `$RIPGREP_CONFIG_PATH` pointing to [`home/dot_config/ripgrep/config`](file:///Users/skurz/Repos/chezmoi/home/dot_config/ripgrep/config):
+Configured via `$RIPGREP_CONFIG_PATH` pointing to [`home/dot_config/ripgrep/config`](../home/dot_config/ripgrep/config):
 
 - **Smart Case**: Case-insensitive searches when queries are lowercase; case-sensitive when uppercase characters are typed.
 - **Hidden Files**: Automatically searches dotfiles while ignoring internal `.git` repository trees.
@@ -199,7 +199,7 @@ Configured via `$RIPGREP_CONFIG_PATH` pointing to [`home/dot_config/ripgrep/conf
 
 ### `fd`
 
-Configured with global ignore rules in [`home/dot_config/fd/ignore`](file:///Users/skurz/Repos/chezmoi/home/dot_config/fd/ignore):
+Configured with global ignore rules in [`home/dot_config/fd/ignore`](../home/dot_config/fd/ignore):
 
 - Automatically excludes noise such as `.git/`, `node_modules/`, `vendor/bundle/`, `__pycache__/`, `.venv/`, `.turbo/`, `.cache/`, `.DS_Store`, and `Thumbs.db`.
 
@@ -211,7 +211,7 @@ Both utilities follow strict **XDG Base Directory** specifications to prevent cl
 
 ### `curl`
 
-Configured in [`home/dot_config/curlrc.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/curlrc.tmpl) (`$XDG_CONFIG_HOME/curlrc`):
+Configured in [`home/dot_config/curlrc.tmpl`](../home/dot_config/curlrc.tmpl) (`$XDG_CONFIG_HOME/curlrc`):
 
 - **HTTPS Enforcement**: Defaults schemeless URLs to HTTPS (`proto-default = "https"`).
 - **Automated Redirects**: Automatically follows HTTP 3xx redirects (`location`, `max-redirs = 50`).
@@ -221,7 +221,7 @@ Configured in [`home/dot_config/curlrc.tmpl`](file:///Users/skurz/Repos/chezmoi/
 
 ### `wget`
 
-Configured via `$WGETRC` pointing to [`home/dot_config/wgetrc.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/wgetrc.tmpl) (`$XDG_CONFIG_HOME/wgetrc`):
+Configured via `$WGETRC` pointing to [`home/dot_config/wgetrc.tmpl`](../home/dot_config/wgetrc.tmpl) (`$XDG_CONFIG_HOME/wgetrc`):
 
 - **Resilient Downloads**: Resumes interrupted transfers (`continue = on`) with a 3-try limit and 30-second timeout.
 - **Timestamping**: Re-downloads files only when remote copies are newer (`timestamping = on`).
@@ -236,7 +236,7 @@ Configured via `$WGETRC` pointing to [`home/dot_config/wgetrc.tmpl`](file:///Use
 
 ### Features & Plugins Configured
 
-NREDF configures Yazi with the following plugins in [`home/dot_config/yazi/keymap.toml.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/yazi/keymap.toml.tmpl):
+NREDF configures Yazi with the following plugins in [`home/dot_config/yazi/keymap.toml.tmpl`](../home/dot_config/yazi/keymap.toml.tmpl):
 
 - **Smart Enter (`l`)**: Enters directory or opens file in Neovim automatically.
 - **Smart Paste (`p`)**: Intelligently pastes into the hovered folder or CWD.
@@ -347,19 +347,19 @@ Configured with the **OneDark-Pro** color scheme and integrates with `delta` for
 
 ### `glow`
 
-Configured in [`home/dot_config/glow/glow.yml.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/glow/glow.yml.tmpl):
+Configured in [`home/dot_config/glow/glow.yml.tmpl`](../home/dot_config/glow/glow.yml.tmpl):
 
 - Terminal Markdown reader configured with dark styling, mouse scrolling, and pager support.
 
 ### `fastfetch`
 
-Configured in [`home/dot_config/fastfetch/config.jsonc.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/fastfetch/config.jsonc.tmpl):
+Configured in [`home/dot_config/fastfetch/config.jsonc.tmpl`](../home/dot_config/fastfetch/config.jsonc.tmpl):
 
 - Clean, structured system information dashboard themed with **OneDarkPro** accent colors.
 
 ### `dust`
 
-Configured in [`home/dot_config/dust/config.toml.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/dust/config.toml.tmpl):
+Configured in [`home/dot_config/dust/config.toml.tmpl`](../home/dot_config/dust/config.toml.tmpl):
 
 - Interactive disk usage tool configured with `reverse = true` (largest directories positioned at the bottom next to the prompt) and right-aligned progress bars.
 
@@ -379,7 +379,7 @@ Declarative Kubernetes management configured across all operating systems:
 
 ### `k9s` Quick Keys & Plugins
 
-Configured in [`home/dot_config/k9s/`](file:///Users/skurz/Repos/chezmoi/home/dot_config/k9s/):
+Configured in [`home/dot_config/k9s/`](../home/dot_config/k9s/):
 
 - **Resource Jump Keys**:
   - <kbd>F1</kbd>: Pods
@@ -405,18 +405,18 @@ Configured in [`home/dot_config/k9s/`](file:///Users/skurz/Repos/chezmoi/home/do
 
 ### `gh` (GitHub CLI)
 
-Configured via `$GH_CONFIG_DIR` pointing to [`home/dot_config/gh/config.yml.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/gh/config.yml.tmpl):
+Configured via `$GH_CONFIG_DIR` pointing to [`home/dot_config/gh/config.yml.tmpl`](../home/dot_config/gh/config.yml.tmpl):
 
 - Configured to use SSH Git protocol, Neovim (`editor: nvim`), and `delta` as the default diff pager.
 
 ### `uv` & `ruff` (Python Toolchain)
 
-- **`uv`**: Configured in [`home/dot_config/uv/uv.toml.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/uv/uv.toml.tmpl) to prefer managed Python versions (`python-preference = "managed"`).
-- **`ruff`**: Configured in [`home/dot_config/ruff/ruff.toml.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/ruff/ruff.toml.tmpl) with 88-character line length, Python 3.12 target, and standard flake8/isort rule selection.
+- **`uv`**: Configured in [`home/dot_config/uv/uv.toml.tmpl`](../home/dot_config/uv/uv.toml.tmpl) to prefer managed Python versions (`python-preference = "managed"`).
+- **`ruff`**: Configured in [`home/dot_config/ruff/ruff.toml.tmpl`](../home/dot_config/ruff/ruff.toml.tmpl) with 88-character line length, Python 3.12 target, and standard flake8/isort rule selection.
 
 ### `mise`
 
-Configured in [`home/dot_config/mise/config.toml.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/mise/config.toml.tmpl) to automatically detect legacy version files (`.nvmrc`, `.python-version`, etc.) and auto-install missing tool runtimes. Also manages default global runtimes and tools (such as Node.js, Microsoft's `apm`, and Microsoft's `inshellisense` / `is` on-demand autocomplete).
+Configured in [`home/dot_config/mise/config.toml.tmpl`](../home/dot_config/mise/config.toml.tmpl) to automatically detect legacy version files (`.nvmrc`, `.python-version`, etc.) and auto-install missing tool runtimes. Also manages default global runtimes and tools (such as Node.js, Microsoft's `apm`, and Microsoft's `inshellisense` / `is` on-demand autocomplete).
 
 ---
 

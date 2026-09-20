@@ -20,8 +20,8 @@ When running `chezmoi init` (or `chezmoi init --prompt`), you are prompted to ch
 
 | Preset | Description | Default Mappings |
 | :--- | :--- | :--- |
-| **`personal`** | Recommended for personal laptops & home workstations | `aqua_github_token`: `bitwarden:GitHub - Personal`<br>`git_signing_key`: `bitwarden:SSH - Personal` |
-| **`work`** | Recommended for work / corporate environments | `aqua_github_token`: `bitwarden:GitHub - Personal`<br>`git_signing_key`: `keepassxc:Work/Git Signing Key`<br>`keepassxc_db`: `~/Documents/Work/work.kdbx` |
+| **`personal`** | Recommended for personal laptops & home workstations | `aqua_github_token`: `bitwarden:GitHub Token`<br>`git_signing_key`: `bitwarden:SSH Key`<br>`mcp_servers`: `bitwarden:mcp-servers` |
+| **`work`** | Recommended for work / corporate environments | `aqua_github_token`: `bitwarden:GitHub Token`<br>`git_signing_key`: `keepassxc:Work/Git Signing Key`<br>`mcp_servers`: `keepassxc:Work/MCP Servers`<br>`keepassxc_db`: `~/Documents/Work/work.kdbx` |
 | **`custom`** | Prompts for custom URIs or alternative stores (e.g. 1Password) | Custom paths, nested items, or direct UUIDs |
 | **`none`** | Disables external secret stores | Relies purely on static string prompts |
 
@@ -34,7 +34,7 @@ Secrets configured under `[data.secrets]` in `~/.config/chezmoi/chezmoi.toml` us
 ```toml
 [data.secrets]
     profile = "work"
-    aqua_github_token = "bitwarden:GitHub - Personal"
+    aqua_github_token = "bitwarden:GitHub Token"
     git_signing_key   = "keepassxc:Work/Git Signing Key"
 ```
 
@@ -71,13 +71,13 @@ In `~/.config/chezmoi/chezmoi.toml`:
 # 2. Map credentials to their respective stores
 [data.secrets]
     profile = "work"
-    aqua_github_token = "bitwarden:GitHub - Personal"
+    aqua_github_token = "bitwarden:GitHub Token"
     git_signing_key   = "keepassxc:Work/Git Signing Key"
 ```
 
 During `chezmoi apply`:
 
-1. Chezmoi calls `bw` to retrieve `GitHub - Personal` (prompting for unlock if locked).
+1. Chezmoi calls `bw` to retrieve `GitHub Token` (prompting for unlock if locked).
 2. Chezmoi calls `keepassxc-cli` to retrieve `Work/Git Signing Key` (prompting for KDBX password if required).
 3. Both tools receive their credentials in a single apply step.
 
@@ -120,6 +120,29 @@ During `chezmoi apply`:
 
 * When using Bitwarden or 1Password, the private key stays securely inside the password manager's desktop SSH Agent — only the public key string is rendered into `git/config`.
 
+### 3. MCP Servers (`~/.config/nredf/mcp.json` and editor configs)
+
+MCP server definitions usually carry bearer tokens and API keys, so they are kept in your vault rather than in this repo. `mcp_servers` points at a vault item whose **notes** hold the definitions as YAML (or JSON):
+
+```yaml
+servers:
+  docs:
+    url: https://mcp.example.com/mcp
+    headers:
+      Authorization: Bearer <token>
+  local-tool:
+    command: npx
+    args: ["-y", "some-mcp-server"]
+    env:
+      API_KEY: <key>
+```
+
+* **Rendered to**: `~/.config/nredf/mcp.json` (the single private copy the sync scripts read), VS Code's `mcp.json`, the Cline settings file, and `~/.gemini/config/mcp_config.json`. Every one of these is `private_` (mode `0600`); VS Code's paths are per-OS (`~/.config/Code` on Linux only, `~/Library/Application Support/Code` on macOS, `%APPDATA%\Code` on Windows).
+* **Claude Code**: `run_onchange_after_claude_mcp.sh.tmpl` (and its PowerShell twin) merges the servers into `~/.claude.json`.
+  * It **merges** into your existing `mcpServers` rather than replacing them, so servers you added with `claude mcp add` survive.
+  * If the vault is locked or the item is empty it does **nothing** instead of wiping the file. The trade-off: removing a server from the vault does not remove it from `~/.claude.json`.
+* With `mcp_servers` empty, the editor files are still rendered but with no servers, and `~/.claude.json` is left untouched.
+
 ---
 
 ## 🛠️ Step-by-Step Setup
@@ -129,10 +152,10 @@ During `chezmoi apply`:
 #### In Bitwarden
 
 1. **GitHub Item**:
-   * Create a **Login** or **Secure Note** named `GitHub - Personal`.
+   * Create a **Login** or **Secure Note** named `GitHub Token`.
    * Put your GitHub Personal Access Token (PAT with `read:packages` or public repo access) in the **Password** field (or custom field `token`).
 2. **SSH Key Item**:
-   * Create an **SSH Key** item named `SSH - Personal`.
+   * Create an **SSH Key** item named `SSH Key`.
    * Store your private and public key. (Bitwarden Desktop SSH Agent will automatically serve this key for daily Git and SSH operations).
 
 #### In KeePassXC (if using KeePassXC for work)
@@ -149,6 +172,8 @@ Run `chezmoi init`:
 ```bash
 chezmoi init
 ```
+
+> **Already initialised?** The prompts use `promptStringOnce`, which keeps the value stored in `~/.config/chezmoi/chezmoi.toml` and does not ask again. To change a preset or a vault item name, run `chezmoi init --prompt`, or edit that file directly.
 
 Choose your preset:
 

@@ -6,7 +6,7 @@ This document provides a comprehensive guide to the **Neovim** setup in the **NR
 
 ## 🏗️ Architecture & Configuration Layout
 
-Neovim configuration resides in [`home/dot_config/nvim/`](file:///Users/skurz/Repos/chezmoi/home/dot_config/nvim/) and follows the modular AstroNvim structure:
+Neovim configuration resides in [`home/dot_config/nvim/`](../home/dot_config/nvim/) and follows the modular AstroNvim structure:
 
 ```text
 ~/.config/nvim/
@@ -17,13 +17,13 @@ Neovim configuration resides in [`home/dot_config/nvim/`](file:///Users/skurz/Re
 │   ├── polish.lua             # Post-init hooks & automatic XDG state directory creation
 │   └── plugins/
 │       ├── astrocore.lua.tmpl # Core options (numbers, undofile, swap), mappings, autocommands
-│       ├── astrolsp.lua       # LSP client configuration, formatting, server overrides
 │       ├── astroui.lua        # UI theme configuration (OneDark-Pro)
+│       ├── chezmoi.lua        # chezmoi.vim: highlights and edits chezmoi-managed source files
 │       ├── heirline.lua       # Heirline statusline & winbar configuration
-│       ├── mason.lua          # Mason automatic tool & LSP installer configuration
-│       ├── treesitter.lua     # Syntax highlighting & parser definitions
-│       └── user.lua           # Custom user plugins
+│       └── mason.lua          # Mason automatic tool & LSP installer configuration
 ```
+
+Any additional `*.lua` file you add under `lua/plugins/` is picked up automatically (see [Custom User Plugins](#4-custom-user-plugins-luapluginsuserlua)).
 
 ### Key Architectural Highlights
 
@@ -170,7 +170,7 @@ Recommended language tools commonly installed via Mason:
 
 ### 3. AstroCommunity Language & Tooling Packs (`lua/community.lua`)
 
-AstroCommunity packs provide pre-configured treesitter parsers, Mason language servers (LSP), linters, formatters, and debug adapters (DAP). The following packs are enabled in [`home/dot_config/nvim/lua/community.lua`](file:///Users/skurz/Repos/chezmoi/home/dot_config/nvim/lua/community.lua):
+AstroCommunity packs provide pre-configured treesitter parsers, Mason language servers (LSP), linters, formatters, and debug adapters (DAP). The following packs are enabled in [`home/dot_config/nvim/lua/community.lua`](../home/dot_config/nvim/lua/community.lua):
 
 | Pack | Languages / Tools | Features & Included Plugins |
 | :--- | :--- | :--- |
@@ -208,7 +208,7 @@ return {
 
 ### 4. Custom User Plugins (`lua/plugins/user.lua`)
 
-To add a completely new plugin not available in AstroCommunity, declare it in [`home/dot_config/nvim/lua/plugins/user.lua`](file:///Users/skurz/Repos/chezmoi/home/dot_config/nvim/lua/plugins/user.lua) (remember to remove `if true then return {} end`):
+To add a completely new plugin not available in AstroCommunity, create `home/dot_config/nvim/lua/plugins/user.lua` (it is not shipped; any `*.lua` file in that directory is loaded by the `{ import = "plugins" }` spec in [`lazy_setup.lua`](../home/dot_config/nvim/lua/lazy_setup.lua)):
 
 ```lua
 return {
@@ -265,7 +265,7 @@ Formatting can be invoked on demand with <kbd>Space</kbd> <kbd>l</kbd> <kbd>f</k
 
 **Cause**: Treesitter requires a C compiler (`gcc`, `clang`, or `zig`) to compile language parsers.
 **Resolution**:
-In NREDF, required C/C++ compilers are now managed automatically during `chezmoi apply` via [`home/.chezmoidata/packages.yaml`](file:///Users/skurz/Repos/chezmoi/home/.chezmoidata/packages.yaml):
+In NREDF, required C/C++ compilers are now managed automatically during `chezmoi apply` via [`home/.chezmoidata/packages.yaml`](../home/.chezmoidata/packages.yaml):
 
 - **Linux**: `build-essential` (`apt`), `base-devel` (`pacman`), or `gcc`/`gcc-c++`/`make` (`dnf`).
 - **macOS**: Automatically checks and installs **Xcode Command Line Tools** (`xcode-select --install`).
@@ -300,9 +300,9 @@ aqua install
 ### Q5: Windows: Chezmoi pack "attempt to concatenate a nil value"
 
 **Cause**: The upstream `astrocommunity.pack.chezmoi` hardcodes `os.getenv "HOME" .. "/.local/share/chezmoi"`. Windows does not set `$env:HOME` by default (it uses `USERPROFILE`), causing a fatal concatenation error when evaluating lazy specs.
-**Resolution**: NREDF automatically normalizes `vim.env.HOME = vim.env.USERPROFILE` at the start of `init.lua` and `community.lua`, persists `HOME` in Windows User environment variables, and configures cross-platform source directory paths (`%LOCALAPPDATA%\chezmoi`) in [`lua/plugins/chezmoi.lua`](file:///Users/skurz/Repos/chezmoi/home/dot_config/nvim/lua/plugins/chezmoi.lua).
+**Resolution**: NREDF automatically normalizes `vim.env.HOME = vim.env.USERPROFILE` at the start of `init.lua` and `community.lua`, persists `HOME` in Windows User environment variables, and configures cross-platform source directory paths (`%LOCALAPPDATA%\chezmoi`) in [`lua/plugins/chezmoi.lua`](../home/dot_config/nvim/lua/plugins/chezmoi.lua).
 
 ### Q6: Windows: "Installation failed for ansible-lint: Platform not supported"
 
 **Cause**: The upstream Ansible project and `ansible-lint` require POSIX primitives and do not support native Windows. In Mason's package registry, `ansible-lint` is strictly flagged as `supported_platforms: [unix]`.
-**Resolution**: In [`lua/plugins/mason.lua`](file:///Users/skurz/Repos/chezmoi/home/dot_config/nvim/lua/plugins/mason.lua), NREDF automatically filters out `ansible-lint` on Windows host environments while retaining the `ansible-language-server` (LSP), YAML schemas, and `ansible-vim` syntax highlighting. On Linux, macOS, and WSL, `ansible-lint` is installed and used normally.
+**Resolution**: In [`lua/plugins/mason.lua`](../home/dot_config/nvim/lua/plugins/mason.lua), NREDF automatically filters out `ansible-lint` on Windows host environments while retaining the `ansible-language-server` (LSP), YAML schemas, and `ansible-vim` syntax highlighting. On Linux, macOS, and WSL, `ansible-lint` is installed and used normally.

@@ -29,7 +29,7 @@ aqua install -a -l
 
 ## 📋 Prerequisites & Recommended Tooling
 
-Chezmoi automatically manages and installs these core prerequisite packages on Windows via [`home/.chezmoidata/packages.yaml`](file:///Users/skurz/Repos/chezmoi/home/.chezmoidata/packages.yaml) and `winget` during `chezmoi apply`.
+Chezmoi automatically manages and installs these core prerequisite packages on Windows via [`home/.chezmoidata/packages.yaml`](../home/.chezmoidata/packages.yaml) and `winget` during `chezmoi apply`.
 
 If you prefer to install them manually upfront:
 
@@ -330,7 +330,7 @@ Add-MpPreference -ExclusionPath "$env:LOCALAPPDATA\aquaproj-aqua"
 **1. "Cannot find `file` to detect the file's MIME type"**
 
 - **Root Cause**: Yazi relies on the Unix `file` utility to detect file MIME types for previews and openers. On Windows, `file.exe` is distributed with Git for Windows (`Git\usr\bin\file.exe`).
-- **Resolution**: NREDF automatically detects Git for Windows and exports `YAZI_FILE_ONE` in [`Defaults.ps1`](file:///Users/skurz/Repos/chezmoi/home/Documents/PowerShell/NREDF-POSH/Defaults.ps1) as well as persisting it to the User environment during `chezmoi apply`. If running Yazi outside of NREDF PowerShell, ensure Git is installed (`winget install Git.Git`) and set the user variable:
+- **Resolution**: NREDF automatically detects Git for Windows and exports `YAZI_FILE_ONE` in [`Defaults.ps1`](../home/Documents/PowerShell/NREDF-POSH/Defaults.ps1) as well as persisting it to the User environment during `chezmoi apply`. If running Yazi outside of NREDF PowerShell, ensure Git is installed (`winget install Git.Git`) and set the user variable:
 
   ```powershell
   [System.Environment]::SetEnvironmentVariable("YAZI_FILE_ONE", "C:\Program Files\Git\usr\bin\file.exe", "User")
@@ -339,19 +339,19 @@ Add-MpPreference -ExclusionPath "$env:LOCALAPPDATA\aquaproj-aqua"
 **2. Yazi Opens Files with VS Code Instead of Neovim**
 
 - **Root Cause**: On Windows, Yazi looks for configuration in `%APPDATA%\yazi\config\` unless `$env:YAZI_CONFIG_HOME` is set. Without this, Yazi ran with compiled-in preset defaults which map Windows `edit` to `code %s`.
-- **Resolution**: NREDF automatically sets `YAZI_CONFIG_HOME` to `$HOME\.config\yazi`, creates a directory junction from `%APPDATA%\yazi\config` to `$HOME\.config\yazi`, and configures explicit `[open]` prepend rules in [`yazi.toml.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_config/yazi/yazi.toml.tmpl) so all dotfiles (`.*`), source code, and text files route to `nvim`.
+- **Resolution**: NREDF automatically sets `YAZI_CONFIG_HOME` to `$HOME\.config\yazi`, creates a directory junction from `%APPDATA%\yazi\config` to `$HOME\.config\yazi`, and configures explicit `[open]` prepend rules in [`yazi.toml.tmpl`](../home/dot_config/yazi/yazi.toml.tmpl) so all dotfiles (`.*`), source code, and text files route to `nvim`.
 
 ### Neovim: AstroCommunity Packs & Tool Installation on Windows
 
 **1. Chezmoi Pack: "attempt to concatenate a nil value"**
 
 - **Root Cause**: `astrocommunity.pack.chezmoi` concatenates `os.getenv "HOME" .. "/.local/share/chezmoi"`. Because Windows defaults to `USERPROFILE` rather than `HOME`, `HOME` was unset (`nil`), causing a Lua runtime failure during lazy spec loading.
-- **Resolution**: NREDF automatically normalizes `vim.env.HOME = vim.env.USERPROFILE` at the top of Neovim's `init.lua`, persists `$env:HOME = $HOME` to Windows User environment variables, and configures Windows-compatible source paths (`%LOCALAPPDATA%\chezmoi`) in [`lua/plugins/chezmoi.lua`](file:///Users/skurz/Repos/chezmoi/home/dot_config/nvim/lua/plugins/chezmoi.lua).
+- **Resolution**: NREDF automatically normalizes `vim.env.HOME = vim.env.USERPROFILE` at the top of Neovim's `init.lua`, persists `$env:HOME = $HOME` to Windows User environment variables, and configures Windows-compatible source paths (`%LOCALAPPDATA%\chezmoi`) in [`lua/plugins/chezmoi.lua`](../home/dot_config/nvim/lua/plugins/chezmoi.lua).
 
 **2. Mason: "Installation failed for ansible-lint: Platform not supported"**
 
 - **Root Cause**: `ansible-lint` is an Ansible/Python CLI tool that requires POSIX APIs and does not natively support Windows. Mason's package registry explicitly restricts it to `supported_platforms: [unix]`.
-- **Resolution**: NREDF automatically filters `ansible-lint` out of Mason's automatic installer on Windows in [`lua/plugins/mason.lua`](file:///Users/skurz/Repos/chezmoi/home/dot_config/nvim/lua/plugins/mason.lua). The Ansible Language Server (`ansible-language-server` via npm) and syntax highlighting continue to work seamlessly on Windows, while `ansible-lint` is used when running in Linux/macOS/WSL.
+- **Resolution**: NREDF automatically filters `ansible-lint` out of Mason's automatic installer on Windows in [`lua/plugins/mason.lua`](../home/dot_config/nvim/lua/plugins/mason.lua). The Ansible Language Server (`ansible-language-server` via npm) and syntax highlighting continue to work seamlessly on Windows, while `ansible-lint` is used when running in Linux/macOS/WSL.
 
 ---
 

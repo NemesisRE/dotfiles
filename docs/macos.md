@@ -33,7 +33,7 @@ NREDF automatically adapts all paths, compiler flags, and package locations base
 | **Homebrew Bash** | `/opt/homebrew/bin/bash` | `/usr/local/bin/bash` |
 | **Aqua Binaries** | `~/.local/share/aquaproj-aqua/bin` | `~/.local/share/aquaproj-aqua/bin` |
 
-Homebrew analytics and cleanup noise are disabled automatically in [`common/rc.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_local/share/nredf/shell/common/rc.tmpl):
+Homebrew analytics and cleanup noise are disabled automatically in [`common/rc.tmpl`](../home/dot_local/share/nredf/shell/common/rc.tmpl):
 
 - `HOMEBREW_NO_ANALYTICS=1`
 - `HOMEBREW_NO_INSTALL_CLEANUP=1`
@@ -43,7 +43,7 @@ Homebrew analytics and cleanup noise are disabled automatically in [`common/rc.t
 
 ## 📦 Prerequisites Managed via Homebrew
 
-Chezmoi manages native macOS packages and fonts declared in [`home/.chezmoidata/packages.yaml`](file:///Users/skurz/Repos/chezmoi/home/.chezmoidata/packages.yaml) during `chezmoi apply`:
+Chezmoi manages native macOS packages and fonts declared in [`home/.chezmoidata/packages.yaml`](../home/.chezmoidata/packages.yaml) during `chezmoi apply`:
 
 ```yaml
 packages:
@@ -72,7 +72,7 @@ packages:
 ### 2. Modern Bash (Bash 4.4+ / 5.x)
 
 - Apple ships an obsolete **Bash 3.2** (from 2007) due to GPL licensing.
-- **NREDF Solution**: When you start Bash, [`.bashrc.tmpl`](file:///Users/skurz/Repos/chezmoi/home/dot_bashrc.tmpl) automatically detects Homebrew Bash (`/opt/homebrew/bin/bash` or `/usr/local/bin/bash`) and seamlessly re-executes into it!
+- **NREDF Solution**: When you start Bash, [`.bashrc.tmpl`](../home/dot_bashrc.tmpl) automatically detects Homebrew Bash (`/opt/homebrew/bin/bash` or `/usr/local/bin/bash`) and seamlessly re-executes into it!
 - This unlocks **ble.sh** (Bash Line Editor), giving Bash real-time syntax highlighting, autosuggestions, and modern completion.
 
 ### 3. PowerShell (`pwsh`)
