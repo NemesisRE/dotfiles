@@ -1,0 +1,8 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /*
+  Merge the settings declared in .chezmoidata/antigravity.yaml into the existing
+  ~/.gemini/antigravity-cli/settings.json instead of replacing the file. The CLI
+  writes to it too (/settings, permission grants). The merge rules live in
+  merge-json-settings.tmpl.
+*/ -}}
+{{ includeTemplate "merge-json-settings.tmpl" (dict "stdin" .chezmoi.stdin "owned" .antigravity.settings "merge" .antigravity.merge "union" .antigravity.union) }}

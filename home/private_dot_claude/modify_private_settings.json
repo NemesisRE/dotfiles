@@ -3,14 +3,6 @@
   Merge the settings declared in .chezmoidata/claude.yaml into the existing
   ~/.claude/settings.json instead of replacing the file. Claude Code writes to it
   too (/config, permission prompts), so owning the whole file would clobber those.
-  A missing or empty file starts from {}. Invalid JSON aborts the apply rather
-  than being overwritten.
+  The merge rules live in merge-json-settings.tmpl.
 */ -}}
-{{- $current := dict -}}
-{{- if trim .chezmoi.stdin -}}
-{{-   $current = fromJson .chezmoi.stdin -}}
-{{- end -}}
-{{- range $key, $value := .claude.settings -}}
-{{-   $_ := set $current $key $value -}}
-{{- end -}}
-{{ toPrettyJson $current | trim }}
+{{ includeTemplate "merge-json-settings.tmpl" (dict "stdin" .chezmoi.stdin "owned" .claude.settings "merge" .claude.merge "union" .claude.union) }}

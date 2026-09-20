@@ -420,6 +420,29 @@ Configured in [`home/dot_config/mise/config.toml.tmpl`](../home/dot_config/mise/
 
 ---
 
+## 🤖 AI Coding CLIs: Claude Code & Antigravity
+
+Both are installed and version-pinned by aqua (`claude` from `anthropics/claude-code`, `agy` from `google-antigravity/antigravity-cli`), so Renovate bumps them like every other tool.
+
+Their user-level `settings.json` files are written by the tools themselves (`/config`, "always allow" grants), so chezmoi **merges** into them instead of replacing them. The defaults live in data files, and the merge rules in [`merge-json-settings.tmpl`](../home/.chezmoitemplates/merge-json-settings.tmpl):
+
+| Tool | Deployed to | Defaults |
+| :--- | :--- | :--- |
+| Claude Code | `~/.claude/settings.json` | [`claude.yaml`](../home/.chezmoidata/claude.yaml) |
+| Antigravity CLI | `~/.gemini/antigravity-cli/settings.json` | [`antigravity.yaml`](../home/.chezmoidata/antigravity.yaml) |
+
+Each data file has up to three sections:
+
+- **`settings`**: top-level keys chezmoi **owns**. They are reset on every apply, so change them in the data file, not in the tool.
+- **`merge`**: an object merged key by key. Your own keys under it survive.
+- **`union`**: list entries are added and never removed, so permission rules you approved while working are kept.
+
+Everything else in the file (allow rules, hooks, model, ...) is left alone. Invalid JSON aborts the apply instead of being overwritten.
+
+What Claude Code gets by default: background auto-update off (aqua owns the version; `claude update` still works), no survey or spinner tips, and deny rules for secrets. The deny rules cover `.env` files, `~/.ssh`, the vault-fed `~/.config/nredf/mcp.json`, and `bw get`/`list`/`export`/`unlock`, since `BW_SESSION` is present in every child process. To drop a deny rule, remove it from `claude.yaml` **and** from `~/.claude/settings.json`.
+
+---
+
 ## 🔄 Package & Tool Management: aqua
 
 NREDF uses **aqua** to declaratively install, lock, and manage CLI tools across Linux, macOS, and Windows.

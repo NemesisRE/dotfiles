@@ -1,14 +1,25 @@
 # Claude Code user-scope settings, merged into ~/.claude/settings.json by
-# private_dot_claude/modify_private_settings.json.tmpl.
+# private_dot_claude/modify_private_settings.json (rules in
+# .chezmoitemplates/merge-json-settings.tmpl).
 #
-# Every top-level key under `settings` is OWNED by chezmoi: it is replaced
-# wholesale on apply, so a nested key you add by hand under a managed key is
-# overwritten. Keys not listed here (permissions, hooks, env, ...) are left alone,
-# which matters because Claude Code also writes this file itself.
+# Claude Code also writes this file itself (/config, "always allow" prompts), so
+# the three sections below differ in how much of the file chezmoi takes over:
+#
+#   settings  every top-level key listed is OWNED: replaced wholesale on apply, so
+#             a nested key added by hand under it is overwritten.
+#   merge     the object is merged key by key; chezmoi's value wins, other keys
+#             under it survive.
+#   union     list items are added to what is already there, never removed. To drop
+#             one, delete it here and from ~/.claude/settings.json.
+#
+# Keys not mentioned anywhere (permissions.allow, hooks, model, ...) are left alone.
+# A key must appear in only one section.
 #
 # Reference: https://code.claude.com/docs/en/settings-reference
 claude:
   settings:
+    # Editor autocomplete and validation for the file.
+    "$schema": https://json.schemastore.org/claude-code-settings.json
     # Do not add a Co-Authored-By trailer to commits or attribution text to PR
     # descriptions. Empty strings hide them; `includeCoAuthoredBy` is deprecated
     # and ignored once `attribution` is set. `sessionUrl: false` also drops the
@@ -17,3 +28,33 @@ claude:
       commit: ""
       pr: ""
       sessionUrl: false
+    # Noise: no session quality survey and no rotating tips under the spinner.
+    feedbackSurveyRate: 0
+    spinnerTipsEnabled: false
+  merge:
+    env:
+      # Claude Code is installed and pinned by aqua (Renovate bumps it), so it must
+      # not replace itself in the background. `claude update` still works.
+      DISABLE_AUTOUPDATER: "1"
+  union:
+    permissions:
+      # Secrets the agent has no business reading. BW_SESSION is deliberately in
+      # every child process's environment (see AGENTS.md), so the Bash tool can run
+      # `bw` against the unlocked vault: block the commands that print secrets.
+      # `~/` is home-relative, `./` is the project root. Deny rules are checked
+      # before allow rules, so nothing granted later overrides these.
+      deny:
+        - Read(./.env)
+        - Read(./.env.*)
+        - Read(~/.ssh/**)
+        - Read(~/.gnupg/**)
+        - Read(~/.aws/**)
+        - Read(~/.config/gh/hosts.yml)
+        - Read(~/.config/nredf/mcp.json)
+        - Read(~/.config/nredf/aqua.env)
+        - Read(~/.claude.json)
+        - Read(~/.gemini/*oauth*)
+        - Bash(bw get *)
+        - Bash(bw list *)
+        - Bash(bw export *)
+        - Bash(bw unlock *)

@@ -1,0 +1,46 @@
+{{- /*
+  Merge chezmoi-managed settings into a JSON settings file that the tool also
+  writes itself (permission grants, /config changes). Used by the modify_ scripts
+  for ~/.claude/settings.json and ~/.gemini/antigravity-cli/settings.json.
+
+  Arguments (dict):
+    stdin  the current file contents (.chezmoi.stdin); empty starts from {}
+    owned  top-level keys chezmoi owns: replaced wholesale
+    merge  top-level keys whose object is merged key by key, managed value wins;
+           keys the tool or you added by hand under it survive
+    union  top-level key -> list key -> items; the items are added to the
+           existing list without duplicates and nothing is removed
+
+  Anything not named in owned, merge or union is left exactly as found. A key
+  must appear in only one of the three. Invalid JSON aborts the apply rather than
+  being overwritten.
+*/ -}}
+{{- $current := dict -}}
+{{- if trim .stdin -}}
+{{-   $current = fromJson .stdin -}}
+{{- end -}}
+{{- range $key, $value := .owned -}}
+{{-   $_ := set $current $key $value -}}
+{{- end -}}
+{{- range $key, $value := .merge -}}
+{{-   $existing := index $current $key -}}
+{{-   if not (kindIs "map" $existing) -}}
+{{-     $existing = dict -}}
+{{-   end -}}
+{{-   $_ := set $current $key (mergeOverwrite $existing $value) -}}
+{{- end -}}
+{{- range $key, $lists := .union -}}
+{{-   $existing := index $current $key -}}
+{{-   if not (kindIs "map" $existing) -}}
+{{-     $existing = dict -}}
+{{-   end -}}
+{{-   range $listKey, $items := $lists -}}
+{{-     $have := index $existing $listKey -}}
+{{-     if not (kindIs "slice" $have) -}}
+{{-       $have = list -}}
+{{-     end -}}
+{{-     $_ := set $existing $listKey (concat $have $items | uniq) -}}
+{{-   end -}}
+{{-   $_ := set $current $key $existing -}}
+{{- end -}}
+{{ toPrettyJson $current | trim }}

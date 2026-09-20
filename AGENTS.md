@@ -53,7 +53,7 @@ Each of these caused a real defect. Check your change against them.
 ### chezmoi
 
 - **Anything that can hold a secret is `private_`** (mode `0600`, and the directory too). This applies to rendered MCP configs, `~/.ssh`, `~/.claude`, and anything fed by a vault template. Nothing in the repo's source is a secret; the *rendered* file is.
-- **`modify_` scripts must not have a `.tmpl` extension.** With it, `.chezmoi.stdin` does not exist. Start the file with `{{- /* chezmoi:modify-template */ -}}`. `~/.claude/settings.json` is managed this way so keys Claude Code writes itself survive.
+- **`modify_` scripts must not have a `.tmpl` extension.** With it, `.chezmoi.stdin` does not exist. Start the file with `{{- /* chezmoi:modify-template */ -}}`. `~/.claude/settings.json` and `~/.gemini/antigravity-cli/settings.json` are managed this way (shared logic in `merge-json-settings.tmpl`) so keys the tools write themselves survive.
 - **`.chezmoiignore` matches target paths.** Gate per-OS files there (for example `.config/Code` is Linux-only), not in the file itself.
 - **A `run_onchange_` script re-runs only when its rendered text changes.** Embed the hash of each input in a comment, using `include` for plain files and `includeTemplate` for files that render with data.
 - **`before` scripts must never abort the apply.** A non-zero exit stops `chezmoi apply` before any dotfile is written, so a missing sudo, no network or a failing package install must warn and continue. Guard every hook with `[[ -n "${CI:-}" ]] && exit 0` and `NREDF_NO_BOOTSTRAP`. Only print "success" when the command succeeded.

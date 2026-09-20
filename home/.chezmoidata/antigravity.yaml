@@ -1,0 +1,18 @@
+# Antigravity CLI (`agy`) settings, merged into ~/.gemini/antigravity-cli/settings.json
+# by dot_gemini/antigravity-cli/modify_private_settings.json (rules in
+# .chezmoitemplates/merge-json-settings.tmpl).
+#
+# The CLI writes this file itself (/settings, "always allow" grants under
+# `permissions`), so only the keys listed under `settings` are OWNED and replaced
+# on apply; everything else is left alone. `merge` and `union` work as in
+# claude.yaml.
+#
+# Reference: https://antigravity.google/docs/cli/reference/
+# `permissions` is deliberately not managed: the docs do not specify its shape.
+antigravity:
+  settings:
+    # Noise: no feedback survey and no tips.
+    showFeedbackSurvey: false
+    showTips: false
+  merge: {}
+  union: {}
