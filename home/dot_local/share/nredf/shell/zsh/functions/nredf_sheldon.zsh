@@ -1,32 +1,7 @@
-#!/usr/bin/env bash
-# chezmoi-managed: sheldon plugin loader for zsh
-
-function _nredf_init_oh_my_posh() {
-  local force_init="${1:-}"
-
-  if [[ "${force_init}" != "--force" && "${NREDF_OH_MY_POSH_INIT_DONE:-0}" == "1" ]]; then
-    return 0
-  fi
-
-  local omp_config="${XDG_CONFIG_HOME:-${HOME}/.config}/oh-my-posh/config.json"
-
-  if command -v oh-my-posh >/dev/null 2>&1 && [[ -f "${omp_config}" ]]; then
-    local omp_init_file="${XDG_CACHE_HOME}/nredf/init/omp.zsh.sh"
-    if [[ -z "${POSH_SESSION_ID:-}" ]]; then
-      export POSH_SESSION_ID="${RANDOM:-$$}-$$-${EPOCHSECONDS:-0}"
-    fi
-    _nredf_omp_gen() {
-      oh-my-posh init zsh --config "${omp_config}" 2>/dev/null | sed -E 's/export POSH_SESSION_ID="[^"]*"; ?//'
-    }
-    _nredf_refresh_cached_shell_snippet \
-      "_nredf_omp_init_zsh" \
-      "${omp_init_file}" \
-      _nredf_omp_gen
-    unset -f _nredf_omp_gen 2>/dev/null || true
-    _nredf_step "oh-my-posh init"
-    NREDF_OH_MY_POSH_INIT_DONE=1
-  fi
-}
+#!/usr/bin/env zsh
+#
+# vim: ts=2 sw=2 et ff=unix ft=zsh syntax=zsh
+# chezmoi-managed: sheldon plugin management for zsh
 
 function _nredf_update_sheldon_plugins() {
   local sheldon_conf="${XDG_CONFIG_HOME:-${HOME}/.config}/sheldon/plugins.toml"
@@ -97,7 +72,6 @@ function _nredf_load_sheldon_plugins() {
     source "${sheldon_cache}"
   fi
 
-
   _nredf_init_oh_my_posh --force
 
   if (( ${+functions[_nredf_init_kitty_shell_integration]} )); then
@@ -133,30 +107,3 @@ function _nredf_load_sheldon_plugins() {
   fi
 }
 
-function _nredf_setup_inshellisense() {
-  if [[ -z "${ISTERM:-}" ]]; then
-    return 0
-  fi
-
-  # Disable conflicting plugins during inshellisense session
-  if (( ${+functions[disable-fzf-tab]} )); then
-    disable-fzf-tab
-  fi
-
-  if (( ${+functions[_zsh_autosuggest_disable]} )); then
-    _zsh_autosuggest_disable
-  fi
-
-  _zsh_highlight() { :; }
-
-  # Bypass Oh-My-Posh zle .recursive-edit (which blocks prompt-end signal) and emit PS + PE immediately
-  function _omp_zle-line-init() {
-    builtin printf '\e]6973;PS\a\e]6973;PE\a' > /dev/tty
-    return 0
-  }
-
-  function __is_zle_line_init() {
-    builtin printf '\e]6973;PS\a\e]6973;PE\a' > /dev/tty
-    return 0
-  }
-}

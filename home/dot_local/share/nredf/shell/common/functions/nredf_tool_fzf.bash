@@ -46,10 +46,6 @@ function _nredf_tool_fzf_source() {
         fi
       fi
     fi
-
-    # nredf fzf customizations (ssh completions, etc.)
-    # shellcheck disable=SC1090,SC1091
-    [[ -f "${NREDF_DOT_PATH}/shell/common/fzf" ]] && source "${NREDF_DOT_PATH}/shell/common/fzf"
   fi
 }
 
@@ -131,4 +127,3 @@ function _nredf_fzf_tab_complete() {
   READLINE_LINE="${line:0:start_pos}${insert}${suffix}"
   READLINE_POINT=$(( start_pos + ${#insert} ))
 }
-

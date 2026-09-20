@@ -58,7 +58,11 @@ _nredf_set_local () {
       done
     fi
 
-    if [[ -f "${NREDF_RC_PATH}/functions" ]]; then
+    if [[ -s "${NREDF_RC_PATH}/functions.bundle" ]]; then
+      # shellcheck disable=SC1090
+      source "${NREDF_RC_PATH}/functions.bundle"
+    elif [[ -f "${NREDF_RC_PATH}/functions" ]]; then
+      # shellcheck disable=SC1090
       source "${NREDF_RC_PATH}/functions"
     fi
 
@@ -77,4 +81,3 @@ _nredf_set_local () {
     fi
   fi
 }
-

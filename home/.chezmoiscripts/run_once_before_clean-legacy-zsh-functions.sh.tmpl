@@ -1,0 +1,8 @@
+{{- if ne .chezmoi.os "windows" -}}
+#!/usr/bin/env bash
+# Remove legacy regular file zsh/functions so that directory zsh/functions/ can be created
+if [[ -f "${HOME}/.local/share/nredf/shell/zsh/functions" && ! -d "${HOME}/.local/share/nredf/shell/zsh/functions" ]]; then
+  rm -f "${HOME}/.local/share/nredf/shell/zsh/functions"
+fi
+{{- end }}
+

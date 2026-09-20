@@ -17,15 +17,25 @@ if (( ! ${+functions[_nredf_load_sheldon_plugins]} )); then
   fi
   _nredf_init_paths
 
-  [[ -f "${NREDF_RC_PATH}/functions" ]] && source "${NREDF_RC_PATH}/functions"
+  if [[ -s "${NREDF_RC_PATH}/functions.bundle" ]]; then
+    source "${NREDF_RC_PATH}/functions.bundle"
+  elif [[ -d "${NREDF_RC_PATH}/functions" ]]; then
+    for NREDF_FUNCTIONS in "${NREDF_RC_PATH}/functions/"*; do
+      [[ -f "${NREDF_FUNCTIONS}" ]] || continue
+      source "${NREDF_FUNCTIONS}"
+    done
+  elif [[ -f "${NREDF_RC_PATH}/functions" ]]; then
+    source "${NREDF_RC_PATH}/functions"
+  fi
 fi
 _nredf_step "zsh rc: source functions"
 
-# Byte-compile common functions bundle if modified
-local _bundle="${NREDF_DOT_PATH}/shell/common/functions.bundle"
-if [[ -s "${_bundle}" && ( ! -f "${_bundle}.zwc" || "${_bundle}" -nt "${_bundle}.zwc" ) ]]; then
-  zcompile "${_bundle}" 2>/dev/null || true
-fi
+# Byte-compile functions bundles if modified
+for _bundle in "${NREDF_DOT_PATH}/shell/common/functions.bundle" "${NREDF_RC_PATH}/functions.bundle"; do
+  if [[ -s "${_bundle}" && ( ! -f "${_bundle}.zwc" || "${_bundle}" -nt "${_bundle}.zwc" ) ]]; then
+    zcompile "${_bundle}" 2>/dev/null || true
+  fi
+done
 unset _bundle
 
 export HISTFILE="${XDG_STATE_HOME}"/zsh/history
