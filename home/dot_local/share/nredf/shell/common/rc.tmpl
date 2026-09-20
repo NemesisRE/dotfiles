@@ -75,12 +75,15 @@ export NREDF_WSL="{{ if $isWSL }}true{{ else }}false{{ end }}"
 _nredf_set_ssh_agent
 _nredf_step "_nredf_set_ssh_agent"
 
-# NOTE: BW_SESSION is deliberately NOT restored at startup. It is a full vault
-# decryption key, and exporting it here leaks it into the environment of every
-# child process (npm postinstall, LSPs, build scripts) via /proc/<pid>/environ.
-# It also cost 2-4 `security` keychain round-trips on every single shell.
-# Both consumers -- `bwu` and the nredf_ssh TOTP helper -- call
-# _nredf_bw_ensure_session, which restores from the keychain on demand.
+# Restore the Bitwarden session from the keychain, if there is one (silent, never prompts).
+# This has to happen at startup: chezmoi (`unlock = "auto"` plus its `bitwarden` templates)
+# and any `bw` run by hand read BW_SESSION from the environment, so restoring it lazily
+# from `bwu` alone means every `chezmoi apply` from a new shell prompts for the master
+# password. PowerShell does the same at startup (NREDF_BwRestoreSession in Profile.ps1).
+# Trade-off, chosen deliberately: BW_SESSION is a vault key and is inherited by every
+# child process of the shell. Do not make this lazy without checking those consumers.
+_nredf_bw_restore_session
+_nredf_step "_nredf_bw_restore_session"
 
 if [[ -z "${NREDF_COMMON_DEFAULTS_DONE}" ]]; then
   _nredf_set_defaults

@@ -64,6 +64,7 @@ Each of these caused a real defect. Check your change against them.
 ### Shell
 
 - **Never prompt, block or print on startup.** A non-interactive login shell (`bash -lc`, `ssh host cmd`) must produce no stdout. Diagnostics go to stderr. Anything that reads `/dev/tty` needs a timeout, and "unanswered" must not be recorded as "no".
+- **`BW_SESSION` is restored from the keychain at startup on purpose.** chezmoi (`unlock = "auto"` with its `bitwarden` templates) and any `bw` run by hand read it from the environment, and PowerShell restores it at startup too. It is a vault key inherited by every child process; that trade-off was made deliberately. Do not make it lazy or drop it as a "security fix" without asking, because a regression there only shows up as a master-password prompt on every `chezmoi apply`.
 - **Zsh does not expand glob qualifiers inside `[[ ... ]]`.** `[[ -n "$f"(Nmh-24) ]]` is always true. Assign to an array instead: `local -a m=( "$f"(Nmh-24) ); (( ${#m} ))`. Zsh arrays are also 1-indexed.
 - **Keep `set -e` in mind.** Inside a function called from an `if`/`||` condition, bash disables it; use explicit `|| exit 1` there.
 
