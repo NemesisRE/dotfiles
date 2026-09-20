@@ -1,0 +1,32 @@
+# CI-only fixture data. Turns on every optional code path so that template
+# branches which are `false` by default in .chezmoidata/ still get rendered and
+# type-checked by the dry-run job. Not used outside CI.
+#
+# Note: the get-*.tmpl secret helpers short-circuit on env CI, so the vault
+# lookups themselves never run here — this exercises the surrounding template
+# structure and the non-vault fallback paths.
+secrets:
+  profile: "personal"
+  aqua_github_token: ""
+  git_signing_key: ""
+  mcp_servers: ""
+  keepassxc_db: ""
+
+windows:
+  microsoftTerminal:
+    sync_settings: true
+  explorer:
+    apply_tweaks: true
+  systemTweaks:
+    apply_tweaks: true
+  wsl:
+    sync_config: true
+    memory: "16GB"
+    processors: 8
+    networking_mode: "mirrored"
+  winget:
+    sync_settings: true
+
+shell:
+  multiplexer: true
+  wsl_multiplexer: true
