@@ -5,7 +5,7 @@
 function _nredf_set_ssh_agent_wsl() {
   # Get Windows username
   if ! command -v whoami.exe &>/dev/null; then
-    printf "Error: whoami.exe not found in PATH. Please ensure it is available.\n"
+    printf "Error: whoami.exe not found in PATH. Please ensure it is available.\n" >&2
     return 1
   fi
   WINDOWS_USER=$(whoami.exe | sed 's/.*\\//' | tr -d '\r\n')
@@ -23,9 +23,9 @@ function _nredf_set_ssh_agent_wsl() {
         NPIPERELAY="${NPIPERELAY_PATH:-$npiperelay_unix}"
       fi
     else
-      printf "Error: npiperelay.exe is not executable\n"
-      printf "       Please ensure that npiperelay.exe is installed and accessible e.g.:\n"
-      printf "       \e[3mwinget install albertony.npiperelay\e[23m\n"
+      printf "Error: npiperelay.exe is not executable\n" >&2
+      printf "       Please ensure that npiperelay.exe is installed and accessible e.g.:\n" >&2
+      printf "       \e[3mwinget install albertony.npiperelay\e[23m\n" >&2
       return 1
     fi
   fi
@@ -49,7 +49,7 @@ function _nredf_set_ssh_agent_wsl() {
       echo "${new_pid}" > "${SOCAT_PID_FILE}"
     fi
   else
-    printf "Warning: 'setsid' or 'socat' not found; SSH agent bridging not started.\n"
+    printf "Warning: 'setsid' or 'socat' not found; SSH agent bridging not started.\n" >&2
   fi
 }
 
@@ -273,7 +273,7 @@ function _nredf_set_ssh_agent() {
       return 0
     elif [[ ${exit_code} -eq 1 ]]; then
       if [[ -n "${NREDF_PROFILE_STARTUP:-}" ]]; then
-        printf "\033[1;33mAdd your SSH key(s) to the agent with 'ssh-add'\033[0m\n"
+        printf "\033[1;33mAdd your SSH key(s) to the agent with 'ssh-add'\033[0m\n" >&2
       fi
       return 0
     elif [[ ${exit_code} -gt 1 ]]; then

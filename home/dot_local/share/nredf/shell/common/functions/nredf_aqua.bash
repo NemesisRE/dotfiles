@@ -147,17 +147,25 @@ function _nredf_clear_aqua_auth_config() {
   unset _nredf_auth_file
 }
 
+# Returns 0 = yes, 1 = no, 2 = unanswered (no usable terminal, EOF, or timeout).
+# "Unanswered" must never be conflated with "no": callers record "no" as a
+# permanent opt-out, which is wrong when nobody was there to be asked (a restored
+# multiplexer pane, an IDE-spawned terminal). The timeout also stops such a shell
+# from blocking forever on a prompt no one will see.
 function _nredf_prompt_yes_no() {
   local _nredf_prompt="$1"
   local _nredf_reply=""
 
   if [[ ! -r /dev/tty || ! -w /dev/tty ]]; then
-    return 1
+    return 2
   fi
 
   while true; do
     printf "%s [y/N]: " "${_nredf_prompt}" > /dev/tty
-    IFS= read -r _nredf_reply < /dev/tty || return 1
+    if ! IFS= read -r -t "${NREDF_PROMPT_TIMEOUT:-30}" _nredf_reply < /dev/tty; then
+      printf "\n" > /dev/tty
+      return 2
+    fi
     case "${_nredf_reply}" in
       y|Y|yes|YES)
         return 0
@@ -278,6 +286,11 @@ function _nredf_ensure_aqua_github_token() {
     *) return 0 ;;
   esac
 
+  # Interactive, but with nothing to ask on: do nothing (and record nothing).
+  if [[ ! -r /dev/tty || ! -w /dev/tty ]]; then
+    return 0
+  fi
+
   if ! command -v aqua &>/dev/null; then
     return 0
   fi
@@ -318,28 +331,39 @@ function _nredf_ensure_aqua_github_token() {
   fi
 
   if _nredf_aqua_keyring_available; then
-    if ! _nredf_prompt_yes_no "No GitHub token configured for aqua. Store one in the system keyring now?"; then
-      nredf_aqua_token_setup --skip >/dev/null
-      printf "Run 'nredf_aqua_token_setup' later to configure aqua's GitHub token.\n" > /dev/tty
-      return 0
-    fi
+    _nredf_prompt_yes_no "No GitHub token configured for aqua. Store one in the system keyring now?"
+    case $? in
+      0) ;;
+      1)
+        nredf_aqua_token_setup --skip >/dev/null
+        printf "Run 'nredf_aqua_token_setup' later to configure aqua's GitHub token.\n" > /dev/tty
+        return 0
+        ;;
+      *) return 0 ;; # unanswered: ask again in a later shell
+    esac
 
     if ! nredf_aqua_token_setup --keyring; then
-      if _nredf_prompt_yes_no "Keyring setup failed. Store token in ${_nredf_auth_file} (mode 0600) instead?"; then
-        nredf_aqua_token_setup --env
-      else
-        nredf_aqua_token_setup --skip >/dev/null
-        printf "Skipping aqua GitHub token setup for now.\n" > /dev/tty
-      fi
+      _nredf_prompt_yes_no "Keyring setup failed. Store token in ${_nredf_auth_file} (mode 0600) instead?"
+      case $? in
+        0) nredf_aqua_token_setup --env ;;
+        1)
+          nredf_aqua_token_setup --skip >/dev/null
+          printf "Skipping aqua GitHub token setup for now.\n" > /dev/tty
+          ;;
+        *) ;; # unanswered: ask again in a later shell
+      esac
     fi
   else
     printf "\033[1;33mNo GitHub token configured for aqua (system keyring unavailable on this system).\033[0m\n" > /dev/tty
-    if _nredf_prompt_yes_no "Store token in ${_nredf_auth_file} (mode 0600) now?"; then
-      nredf_aqua_token_setup --env
-    else
-      nredf_aqua_token_setup --skip >/dev/null
-      printf "Skipping aqua GitHub token setup for now. Run 'nredf_aqua_token_setup' later to configure.\n" > /dev/tty
-    fi
+    _nredf_prompt_yes_no "Store token in ${_nredf_auth_file} (mode 0600) now?"
+    case $? in
+      0) nredf_aqua_token_setup --env ;;
+      1)
+        nredf_aqua_token_setup --skip >/dev/null
+        printf "Skipping aqua GitHub token setup for now. Run 'nredf_aqua_token_setup' later to configure.\n" > /dev/tty
+        ;;
+      *) ;; # unanswered: ask again in a later shell
+    esac
   fi
 
   return 0
