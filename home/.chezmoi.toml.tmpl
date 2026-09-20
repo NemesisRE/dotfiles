@@ -234,3 +234,14 @@ sourceDir = {{ .chezmoi.workingTree | quote }}
     command = "op"
     prompt = true
 {{- end }}
+
+{{- if eq .chezmoi.os "windows" }}
+
+# Run .ps1 scripts under PowerShell 7, not the Windows PowerShell 5.1 host that
+# chezmoi defaults to on Windows. Several scripts use PS6+ syntax (null-conditional
+# `?.`, `ConvertFrom-Json -AsHashtable`) that is a parse error under 5.1.
+# -NoProfile keeps the NREDF profile chain out of `chezmoi apply`.
+[interpreters.ps1]
+    command = "pwsh"
+    args = ["-NoLogo", "-NoProfile"]
+{{- end }}

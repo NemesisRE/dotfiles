@@ -10,15 +10,15 @@ if (Get-Command fzf -ErrorAction SilentlyContinue) {
     [Microsoft.PowerShell.PSConsoleReadLine]::GetBufferState([ref]$line, [ref]$cursor)
 
     $completion = [System.Management.Automation.CommandCompletion]::CompleteInput($line, $cursor, $null)
-    $matches = $completion.CompletionMatches
+    $completionMatches = $completion.CompletionMatches
 
-    if ($matches.Count -eq 0) {
+    if ($completionMatches.Count -eq 0) {
       [Microsoft.PowerShell.PSConsoleReadLine]::Ding()
       return
     }
 
-    if ($matches.Count -eq 1) {
-      $selectedText = $matches[0].CompletionText
+    if ($completionMatches.Count -eq 1) {
+      $selectedText = $completionMatches[0].CompletionText
       [Microsoft.PowerShell.PSConsoleReadLine]::SetCursorPosition($completion.ReplacementIndex)
       if ($completion.ReplacementLength -gt 0) {
         [Microsoft.PowerShell.PSConsoleReadLine]::Delete($completion.ReplacementIndex, $completion.ReplacementLength)
@@ -27,7 +27,7 @@ if (Get-Command fzf -ErrorAction SilentlyContinue) {
       return
     }
 
-    $lines = foreach ($m in $matches) {
+    $lines = foreach ($m in $completionMatches) {
       $display = $m.ListItemText
       $tooltip = if ($m.ToolTip) { $m.ToolTip.Trim() } else { '' }
       if ($tooltip -and $tooltip -ne $m.ListItemText.Trim() -and $m.ListItemText -notmatch [regex]::Escape($tooltip)) {

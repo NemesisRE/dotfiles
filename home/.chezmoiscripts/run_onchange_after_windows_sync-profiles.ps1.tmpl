@@ -4,6 +4,13 @@
 
 $ErrorActionPreference = 'Continue'
 
+# Every other Windows script has this guard; this one did not -- and it is the
+# one that moves Documents\PowerShell aside and raises a UAC prompt. README
+# documents NREDF_NO_BOOTSTRAP as covering exactly this.
+if ($env:CI -or $env:NREDF_NO_BOOTSTRAP) {
+    exit 0
+}
+
 $myDocs = [System.Environment]::GetFolderPath('MyDocuments')
 $homeDocs = Join-Path $HOME 'Documents'
 
@@ -192,6 +199,8 @@ foreach (`$target in `$targets) {
                         Write-Warning "Could not create symbolic link: $_"
                     }
                 }
+            } else {
+                Write-Host "    $folder is already linked to chezmoi."
             }
         }
     }
