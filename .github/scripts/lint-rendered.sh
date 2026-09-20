@@ -44,7 +44,10 @@ check_bash() {
     echo "::error file=${label}::bash syntax error"
     sed 's/^/    /' "${OUT_DIR}/err"; fail=1; return
   fi
-  if ! shellcheck --shell=bash --severity=style --exclude=SC1090,SC1091,SC2034,SC2329 "${file}" >"${OUT_DIR}/sc" 2>&1; then
+  # SC2317/SC2329 are the same false positive under two codes ("function/command
+  # never invoked"): shellcheck 0.9/0.10 reports it as SC2317, 0.11+ as SC2329.
+  # These files are sourced libraries, so their functions are called from elsewhere.
+  if ! shellcheck --shell=bash --severity=style --exclude=SC1090,SC1091,SC2034,SC2317,SC2329 "${file}" >"${OUT_DIR}/sc" 2>&1; then
     echo "::error file=${label}::shellcheck"
     sed "s|${file}|${label}|g; s/^/    /" "${OUT_DIR}/sc"; fail=1
   fi
