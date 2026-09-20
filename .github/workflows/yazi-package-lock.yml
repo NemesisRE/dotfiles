@@ -5,55 +5,58 @@ on:
     - cron: "23 2 * * *"
   workflow_dispatch:
 
-permissions:
-  contents: write
+# Nothing at workflow scope; the job below asks for exactly what it needs.
+permissions: {}
+
+concurrency:
+  group: yazi-package-lock
+  cancel-in-progress: false
 
 jobs:
   refresh-lock:
     name: Refresh Yazi plugin hashes
+    if: github.repository == 'NemesisRE/dotfiles'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write # push the review branch
+      pull-requests: write # open the PR when the repository allows Actions to
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Install Yazi CLI
+      - name: Install aqua
+        uses: aquaproj/aqua-installer@96a9bc20066c5bf5e275b41019cfc165b25f4e2e # v4.0.5
+        with:
+          aqua_version: v2.63.0
+
+      # `ya` comes from aqua at the version and registry ref already pinned in
+      # aqua.yaml -- the same way it reaches real machines -- instead of curl-ing a
+      # release zip and executing it. Yazi publishes no checksum for that zip, so
+      # there was nothing to verify a hand-rolled download against.
+      - name: Install ya via aqua
+        env:
+          AQUA_GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          version="$(sed -nE 's/^  - name: sxyazi\/yazi@(v[^[:space:]#]+).*$/\1/p' home/dot_config/aquaproj-aqua/aqua.yaml | head -n1)"
-          if [[ -z "${version}" ]]; then
-            echo "Failed to determine Yazi version from aqua.yaml" >&2
+          cfg=home/dot_config/aquaproj-aqua/aqua.yaml
+          version="$(sed -nE 's/^  - name: sxyazi\/yazi@(v[^[:space:]#]+).*$/\1/p' "${cfg}" | head -n1)"
+          ref="$(sed -nE 's/^    ref: (v[0-9][^[:space:]#]*).*$/\1/p' "${cfg}" | head -n1)"
+          if [[ -z "${version}" || -z "${ref}" ]]; then
+            echo "Could not read the yazi version / registry ref from ${cfg}" >&2
             exit 1
           fi
-
-          asset="yazi-x86_64-unknown-linux-musl.zip"
-          curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 \
-            "https://github.com/sxyazi/yazi/releases/download/${version}/${asset}" \
-            -o /tmp/yazi.zip
-          unzip -q /tmp/yazi.zip -d /tmp/yazi
-
-          mkdir -p "${HOME}/.local/bin"
-          ya_bin="$(find /tmp/yazi -type f -name ya | head -n1)"
-          yazi_bin="$(find /tmp/yazi -type f -name yazi | head -n1)"
-          if [[ -z "${ya_bin}" || -z "${yazi_bin}" ]]; then
-            echo "Failed to locate Yazi binaries in release asset" >&2
-            exit 1
-          fi
-
-          install -m 0755 "${ya_bin}" "${HOME}/.local/bin/ya"
-          install -m 0755 "${yazi_bin}" "${HOME}/.local/bin/yazi"
-          echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+          mini="${RUNNER_TEMP}/aqua-yazi.yaml"
+          printf 'registries:\n  - type: standard\n    ref: %s\npackages:\n  - name: sxyazi/yazi@%s\n' "${ref}" "${version}" > "${mini}"
+          export AQUA_GLOBAL_CONFIG="${mini}" AQUA_CONFIG="${mini}"
+          aqua install
+          dirname "$(aqua which ya)" >> "${GITHUB_PATH}"
 
       - name: Refresh Yazi package lock
         run: bash .github/scripts/refresh-yazi-package-lock.sh
 
-      - name: Commit refreshed Yazi package lock
-        run: |
-          set -euo pipefail
-          if git diff --quiet -- home/dot_config/yazi/package.toml.tmpl; then
-            exit 0
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add home/dot_config/yazi/package.toml.tmpl
-          git commit -m "chore(yazi): upgrade plugins and refresh hashes"
-          git push
+      # Never pushes to main: the lock pulls in plugin repos at HEAD, so a human
+      # reviews the rev/hash diff first. See the script for the details.
+      - name: Propose the refreshed lock for review
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/propose-yazi-lock.sh
