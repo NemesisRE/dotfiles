@@ -9,26 +9,53 @@ if ($env:CI -or $env:NREDF_NO_BOOTSTRAP) {
 }
 
 $claudePath = Join-Path $HOME ".claude.json"
-$mcpJson = @'
-{{ includeTemplate "render-mcp-config.tmpl" (dict "target" "cline" "root" .) }}
-'@
+# Read the rendered config from the private (0600) managed file rather than
+# embedding it here: the script body is world-readable in the chezmoi source
+# state, and an embedded here-string breaks on a quote in the vault content.
+$configRoot = if ($env:XDG_CONFIG_HOME) { $env:XDG_CONFIG_HOME } else { Join-Path $HOME ".config" }
+$mcpPath = Join-Path $configRoot "nredf/mcp.json"
+
+if (-not (Test-Path $mcpPath)) {
+    exit 0
+}
 
 try {
-    $mcpObj = $mcpJson | ConvertFrom-Json
-    $mcpServers = $mcpObj.mcpServers
+    $servers = (Get-Content $mcpPath -Raw | ConvertFrom-Json -AsHashtable).mcpServers
 
-    $existing = @{}
-    if (Test-Path $claudePath) {
-        try {
-            $existing = Get-Content $claudePath -Raw | ConvertFrom-Json -AsHashtable
-        } catch {
-            $existing = @{}
-        }
+    # A locked, absent or unauthenticated vault renders an empty map. Writing that
+    # out would silently delete every MCP server from ~/.claude.json, including any
+    # added by hand with `claude mcp add`.
+    if (-not $servers -or $servers.Count -eq 0) {
+        exit 0
     }
 
-    $existing["mcpServers"] = $mcpServers
-    $existing | ConvertTo-Json -Depth 10 | Set-Content $claudePath -NoNewline
-    Add-Content -Path $claudePath -Value "`n" -NoNewline
+    $data = @{}
+    if (Test-Path $claudePath) {
+        try {
+            $data = Get-Content $claudePath -Raw | ConvertFrom-Json -AsHashtable
+        } catch {
+            Write-Warning "Could not parse $claudePath; refusing to overwrite it."
+            exit 0
+        }
+    }
+    if ($data -isnot [hashtable]) { $data = @{} }
+
+    $existing = $data["mcpServers"]
+    if ($existing -isnot [hashtable]) { $existing = @{} }
+
+    # Merge rather than replace, so servers added outside chezmoi survive. The vault
+    # wins on name conflicts; removing a server from the vault does not remove it
+    # here, which is the deliberate trade for never destroying local state.
+    $merged = @{}
+    foreach ($k in $existing.Keys) { $merged[$k] = $existing[$k] }
+    foreach ($k in $servers.Keys) { $merged[$k] = $servers[$k] }
+    $data["mcpServers"] = $merged
+
+    # Temp file + atomic replace: ~/.claude.json also holds project and session
+    # state, and an interrupt during an in-place rewrite would lose all of it.
+    $tmpPath = "$claudePath.tmp"
+    ($data | ConvertTo-Json -Depth 10) + "`n" | Set-Content $tmpPath -NoNewline -Encoding utf8
+    Move-Item -Path $tmpPath -Destination $claudePath -Force
 } catch {
     Write-Warning "Failed to sync MCP configuration to .claude.json: $_"
 }

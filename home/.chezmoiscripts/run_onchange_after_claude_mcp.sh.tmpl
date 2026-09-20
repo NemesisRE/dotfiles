@@ -9,25 +9,70 @@ set -euo pipefail
 [[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
 
 CLAUDE_PATH="${HOME}/.claude.json"
-MCP_CONFIG='{{ includeTemplate "render-mcp-config.tmpl" (dict "target" "cline" "root" .) }}'
+# Read the rendered config from the private (0600) managed file rather than
+# embedding it here: the script body is world-readable in the chezmoi source
+# state, and anything passed as an argv is visible in `ps` to every local user.
+MCP_CONFIG_PATH="${XDG_CONFIG_HOME:-${HOME}/.config}/nredf/mcp.json"
 
-if command -v python3 >/dev/null 2>&1; then
-  python3 -c '
-import json, sys
+[[ -r "${MCP_CONFIG_PATH}" ]] || exit 0
+command -v python3 >/dev/null 2>&1 || exit 0
 
-path = sys.argv[1]
+python3 - "${CLAUDE_PATH}" "${MCP_CONFIG_PATH}" <<'PYEOF'
+import json
+import os
+import sys
+import tempfile
+
+claude_path, mcp_path = sys.argv[1], sys.argv[2]
+
 try:
-    with open(path, "r") as f:
+    with open(mcp_path, "r") as f:
+        servers = json.load(f).get("mcpServers") or {}
+except (OSError, ValueError):
+    sys.exit(0)
+
+# A locked, absent or unauthenticated vault renders an empty map. Writing that
+# out would silently delete every MCP server from ~/.claude.json, including any
+# added by hand with `claude mcp add`.
+if not servers:
+    sys.exit(0)
+
+try:
+    with open(claude_path, "r") as f:
         data = json.load(f)
-except Exception:
+except (OSError, ValueError):
+    data = {}
+if not isinstance(data, dict):
     data = {}
 
-mcp_input = json.loads(sys.argv[2])
-data["mcpServers"] = mcp_input.get("mcpServers", {})
+existing = data.get("mcpServers")
+if not isinstance(existing, dict):
+    existing = {}
 
-with open(path, "w") as f:
-    json.dump(data, f, indent=2)
-    f.write("\n")
-' "${CLAUDE_PATH}" "${MCP_CONFIG}"
-fi
+# Merge rather than replace, so servers added outside chezmoi survive. The vault
+# wins on name conflicts; removing a server from the vault does not remove it
+# here, which is the deliberate trade for never destroying local state.
+merged = dict(existing)
+merged.update(servers)
+if merged == existing:
+    sys.exit(0)
+data["mcpServers"] = merged
+
+# Temp file + atomic rename: ~/.claude.json also holds project and session
+# state, and an interrupt during an in-place rewrite would lose all of it.
+target_dir = os.path.dirname(claude_path) or "."
+fd, tmp_path = tempfile.mkstemp(dir=target_dir, prefix=".claude.json.")
+try:
+    with os.fdopen(fd, "w") as f:
+        json.dump(data, f, indent=2)
+        f.write("\n")
+    os.chmod(tmp_path, 0o600)
+    os.replace(tmp_path, claude_path)
+except BaseException:
+    try:
+        os.unlink(tmp_path)
+    except OSError:
+        pass
+    raise
+PYEOF
 {{- end }}
