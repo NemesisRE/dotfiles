@@ -21,7 +21,7 @@ _nredf_refresh_cached_shell_snippet() {
 
   local needs_refresh=1
   if [[ -s "${cache_file}" ]]; then
-    if [[ -n "${ZSH_VERSION:-}" ]] && eval "[[ -n \"\${cache_file}\"(Nmh-24#q) ]]"; then
+    if [[ -n "${ZSH_VERSION:-}" ]] && eval "local -a _m=( \"\${cache_file}\"(Nmh-24) ); (( \${#_m} ))"; then
       needs_refresh=0
     elif _nredf_last_run "${cache_key}"; then
       needs_refresh=0
@@ -73,9 +73,12 @@ _nredf_step "_nredf_get_sys_info"
 _nredf_set_ssh_agent
 _nredf_step "_nredf_set_ssh_agent"
 
-# Restore Bitwarden session from keychain if available (silent, non-blocking)
-_nredf_bw_restore_session
-_nredf_step "_nredf_bw_restore_session"
+# NOTE: BW_SESSION is deliberately NOT restored at startup. It is a full vault
+# decryption key, and exporting it here leaks it into the environment of every
+# child process (npm postinstall, LSPs, build scripts) via /proc/<pid>/environ.
+# It also cost 2-4 `security` keychain round-trips on every single shell.
+# Both consumers -- `bwu` and the nredf_ssh TOTP helper -- call
+# _nredf_bw_ensure_session, which restores from the keychain on demand.
 
 if [[ -z "${NREDF_COMMON_DEFAULTS_DONE}" ]]; then
   _nredf_set_defaults

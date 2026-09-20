@@ -52,7 +52,10 @@ _nredf_compinit() {
 }
 
 # Fast path: use cached completion dump; refresh only if missing or older than 24h.
-if [[ -s "${NREDF_ZCOMPDUMP}" && -n "${NREDF_ZCOMPDUMP}"(#qNmh-24) ]]; then
+# Filename generation does not happen inside [[ ... ]], so the mtime qualifier has
+# to be applied in an array assignment for the check to mean anything.
+_nredf_zcompdump_fresh=( "${NREDF_ZCOMPDUMP}"(Nmh-24) )
+if [[ -s "${NREDF_ZCOMPDUMP}" ]] && (( ${#_nredf_zcompdump_fresh} )); then
   _nredf_compinit -C -d "${NREDF_ZCOMPDUMP}"
 else
   _nredf_compinit -u -d "${NREDF_ZCOMPDUMP}"

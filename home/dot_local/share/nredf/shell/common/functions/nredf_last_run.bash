@@ -49,8 +49,10 @@ function _nredf_last_run() {
 
   [[ -f "${LAST_RUN_FILE}" ]] || return 1
 
-  # In Zsh: zero-fork mtime check using glob qualifier
-  if [[ -n "${ZSH_VERSION:-}" ]] && eval "[[ -n \"\${LAST_RUN_FILE}\"(Nms-\${INTERVAL}#q) ]]"; then
+  # In Zsh: zero-fork mtime check using glob qualifier.
+  # Note: filename generation does NOT happen inside [[ ... ]], so the qualifier
+  # must be applied in an array assignment, not a -n test.
+  if [[ -n "${ZSH_VERSION:-}" ]] && eval "local -a _m=( \"\${LAST_RUN_FILE}\"(Nms-\${INTERVAL}) ); (( \${#_m} ))"; then
     return 0
   fi
 
