@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-#
-# vim: ts=2 sw=2 et ff=unix ft=bash syntax=sh
-
-function _nredf_get_sys_info() {
-  export NREDF_OS="{{ if eq .chezmoi.os "darwin" }}macos{{ else if eq .chezmoi.os "windows" }}windows{{ else }}linux{{ end }}"
-}
-
-

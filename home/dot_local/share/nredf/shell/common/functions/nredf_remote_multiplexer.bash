@@ -25,12 +25,8 @@ function _nredf_remote_multiplexer() {
     is_ssh="true"
   fi
 
-  local is_wsl="false"
-  if [[ -n "${WSL_DISTRO_NAME:-}" || -n "${WSL_INTEROP:-}" ]]; then
-    is_wsl="true"
-  elif [[ -f /proc/version ]] && grep -qi "microsoft" /proc/version 2>/dev/null; then
-    is_wsl="true"
-  fi
+  # Rendered by chezmoi into common/rc at apply time; see NREDF_WSL there.
+  local is_wsl="${NREDF_WSL:-false}"
 
   local should_start="false"
 
