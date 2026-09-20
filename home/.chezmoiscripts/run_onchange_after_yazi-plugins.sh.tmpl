@@ -1,7 +1,14 @@
 {{ if ne .chezmoi.os "windows" -}}
 #!/usr/bin/env bash
 # package.toml hash: {{ include "dot_config/yazi/package.toml.tmpl" | sha256sum }}
+
+[[ -n "${CI:-}" ]] && exit 0
+[[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
+
 if command -v ya >/dev/null 2>&1; then
-  ya pkg install --discard >/dev/null 2>&1 || true
+  if ! out="$(ya pkg install --discard 2>&1)"; then
+    echo "==> Warning: ya pkg install failed; yazi plugins may be missing or stale:" >&2
+    echo "${out}" >&2
+  fi
 fi
 {{ end -}}

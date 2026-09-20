@@ -12,7 +12,11 @@ if (Get-Command mise -ErrorAction SilentlyContinue) {
     Write-Host "==> Installing mise managed tools"
     try {
         & mise install --yes 2>$null
-        Write-Host "    Mise tools installed successfully."
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "    Mise tools installed successfully."
+        } else {
+            Write-Warning "mise install exited with code $LASTEXITCODE; tools may be missing or stale."
+        }
     } catch {
         Write-Warning "Failed to install mise tools: $_"
     }

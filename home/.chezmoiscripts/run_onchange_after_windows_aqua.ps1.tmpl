@@ -42,16 +42,20 @@ if (Get-Command aqua -ErrorAction SilentlyContinue) {
     Write-Host "==> Linking aqua managed tools"
     try {
         & aqua install -a -l
-        Write-Host "    Aqua tools linked successfully."
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "    Aqua tools linked successfully."
+        } else {
+            Write-Warning "aqua install exited with code $LASTEXITCODE; tools may be missing or stale."
+        }
     } catch {
         Write-Warning "Failed to link aqua tools: $_"
     }
 
     if (Get-Command uv -ErrorAction SilentlyContinue) {
         Write-Host "==> Ensuring standalone Python via uv"
-        try {
-            & uv python install --default 2>$null
-        } catch {
+        # A native non-zero exit does not throw, so fall back on $LASTEXITCODE.
+        & uv python install --default 2>$null
+        if ($LASTEXITCODE -ne 0) {
             & uv python install 2>$null
         }
     }

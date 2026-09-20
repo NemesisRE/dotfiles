@@ -10,7 +10,11 @@ set -euo pipefail
 
 if command -v mise >/dev/null 2>&1; then
   echo "==> Installing mise managed tools"
-  mise install --yes >/dev/null 2>&1 || true
-  echo "    Mise tools installed successfully."
+  if out="$(mise install --yes 2>&1)"; then
+    echo "    Mise tools installed successfully."
+  else
+    echo "==> Warning: mise install failed; tools may be missing or stale:" >&2
+    echo "${out}" >&2
+  fi
 fi
 {{- end }}

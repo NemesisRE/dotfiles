@@ -1,7 +1,11 @@
 {{ if ne .chezmoi.os "windows" -}}
 #!/usr/bin/env bash
 # OneDarkPro.tmTheme hash: {{ include "dot_config/bat/themes/OneDarkPro.tmTheme" | sha256sum }}
+
+[[ -n "${CI:-}" ]] && exit 0
+[[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
+
 if command -v bat >/dev/null 2>&1; then
-  bat cache --build
+  bat cache --build || echo "==> Warning: bat cache --build failed; continuing" >&2
 fi
 {{ end -}}

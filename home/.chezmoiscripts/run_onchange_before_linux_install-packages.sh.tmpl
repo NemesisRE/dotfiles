@@ -9,8 +9,23 @@ set -euo pipefail
 [[ -n "${CI:-}" ]] && exit 0
 [[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
 
+# This is a `before` script, so a non-zero exit aborts `chezmoi apply` before a
+# single dotfile is written. A package-manager hiccup (no network, no sudo, a
+# cancelled password prompt) must therefore degrade to a warning, not an abort.
+WARNINGS=0
+warn() {
+  echo "==> Warning: $*" >&2
+  WARNINGS=$((WARNINGS + 1))
+}
+
+# Root can always install. Otherwise we need a sudo binary AND either a
+# non-interactive grant or a TTY to type a password on. The previous one-liner
+# parsed as `(sudo && sudo -n) || root || tty`, so on a host with no sudo at all
+# a TTY alone made it return true and the later `sudo ...` killed the script.
 can_sudo() {
-  command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null || [[ "$(id -u)" -eq 0 ]] || [[ -t 0 ]]
+  [[ "$(id -u)" -eq 0 ]] && return 0
+  command -v sudo >/dev/null 2>&1 || return 1
+  sudo -n true 2>/dev/null || [[ -t 0 ]]
 }
 
 if command -v apt-get >/dev/null 2>&1; then
@@ -27,10 +42,11 @@ if command -v apt-get >/dev/null 2>&1; then
       echo "==> Installing missing apt packages: ${MISSING[*]}"
       SUDO=""
       [[ "$(id -u)" -ne 0 ]] && SUDO="sudo"
-      ${SUDO} apt-get update -qq
-      ${SUDO} apt-get install -y -qq "${MISSING[@]}"
+      if ! { ${SUDO} apt-get update -qq && ${SUDO} apt-get install -y -qq "${MISSING[@]}"; }; then
+        warn "apt install failed; continuing without: ${MISSING[*]}"
+      fi
     else
-      echo "==> Warning: Sudo not available non-interactively; skipping: ${MISSING[*]}"
+      warn "sudo not usable here; skipping apt packages: ${MISSING[*]}"
     fi
   else
     echo "    All apt prerequisite packages already installed."
@@ -50,9 +66,11 @@ elif command -v pacman >/dev/null 2>&1; then
       echo "==> Installing missing pacman packages: ${MISSING[*]}"
       SUDO=""
       [[ "$(id -u)" -ne 0 ]] && SUDO="sudo"
-      ${SUDO} pacman -S --needed --noconfirm "${MISSING[@]}"
+      if ! ${SUDO} pacman -S --needed --noconfirm "${MISSING[@]}"; then
+        warn "pacman install failed; continuing without: ${MISSING[*]}"
+      fi
     else
-      echo "==> Warning: Sudo not available non-interactively; skipping: ${MISSING[*]}"
+      warn "sudo not usable here; skipping pacman packages: ${MISSING[*]}"
     fi
   else
     echo "    All pacman prerequisite packages already installed."
@@ -72,14 +90,20 @@ elif command -v dnf >/dev/null 2>&1; then
       echo "==> Installing missing dnf packages: ${MISSING[*]}"
       SUDO=""
       [[ "$(id -u)" -ne 0 ]] && SUDO="sudo"
-      ${SUDO} dnf install -y "${MISSING[@]}"
+      if ! ${SUDO} dnf install -y "${MISSING[@]}"; then
+        warn "dnf install failed; continuing without: ${MISSING[*]}"
+      fi
     else
-      echo "==> Warning: Sudo not available non-interactively; skipping: ${MISSING[*]}"
+      warn "sudo not usable here; skipping dnf packages: ${MISSING[*]}"
     fi
   else
     echo "    All dnf prerequisite packages already installed."
   fi
 fi
 
-echo "==> Linux prerequisites check done."
+if (( WARNINGS > 0 )); then
+  echo "==> Linux prerequisites check finished with ${WARNINGS} warning(s); see above."
+else
+  echo "==> Linux prerequisites check done."
+fi
 {{- end }}

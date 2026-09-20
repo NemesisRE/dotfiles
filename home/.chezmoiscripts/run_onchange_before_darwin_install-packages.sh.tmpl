@@ -9,10 +9,32 @@ set -euo pipefail
 [[ -n "${CI:-}" ]] && exit 0
 [[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
 
+# This is a `before` script, so a non-zero exit aborts `chezmoi apply` before a
+# single dotfile is written. A failing formula, an offline machine or a declined
+# installer must therefore degrade to a warning, not an abort.
+WARNINGS=0
+warn() {
+  echo "==> Warning: $*" >&2
+  WARNINGS=$((WARNINGS + 1))
+}
+
 # ── Xcode Command Line Tools (Apple Clang compiler for Tree-sitter) ───────────
 if ! xcode-select -p >/dev/null 2>&1; then
   echo "==> Installing Xcode Command Line Tools (required for C/C++ compiler and Tree-sitter)"
-  xcode-select --install || true
+  # `xcode-select --install` only opens the GUI installer and returns at once, so
+  # brew below would run with no compiler. Wait for it -- but only if the
+  # installer actually launched (it fails fast over ssh / without a GUI), and not
+  # forever if the dialog is ignored.
+  if xcode-select --install >/dev/null 2>&1; then
+    waited=0
+    until xcode-select -p >/dev/null 2>&1 || (( waited >= 900 )); do
+      sleep 5
+      waited=$((waited + 5))
+    done
+    xcode-select -p >/dev/null 2>&1 || warn "Command Line Tools not installed after 15 min; continuing"
+  else
+    warn "could not launch the Command Line Tools installer; continuing"
+  fi
 fi
 
 # ── Homebrew ──────────────────────────────────────────────────────────────────
@@ -38,7 +60,7 @@ export HOMEBREW_NO_INSTALL_CLEANUP=1
 export HOMEBREW_QUIET=1
 
 echo "==> Installing and upgrading prerequisite packages via Homebrew bundle"
-brew bundle install --force --file=- <<BREW_BUNDLE_EOF
+brew bundle install --force --file=- <<BREW_BUNDLE_EOF || warn "brew bundle reported failures; continuing"
 {{ range .packages.darwin.brews -}}
 brew {{ . | quote }}
 {{ end -}}
@@ -50,5 +72,9 @@ BREW_BUNDLE_EOF
 echo "==> Cleaning up Homebrew cache"
 brew cleanup >/dev/null 2>&1 || true
 
-echo "==> macOS prerequisites installed and updated successfully."
+if (( WARNINGS > 0 )); then
+  echo "==> macOS prerequisites finished with ${WARNINGS} warning(s); see above."
+else
+  echo "==> macOS prerequisites installed and updated successfully."
+fi
 {{- end }}

@@ -21,8 +21,12 @@ if command -v aqua >/dev/null 2>&1; then
   AQUA_POLICY="${XDG_CONFIG_HOME:-${HOME}/.config}/aquaproj-aqua/aqua-policy.yaml"
   [[ -f "${AQUA_CONFIG}" ]] && export AQUA_GLOBAL_CONFIG="${AQUA_CONFIG}" AQUA_CONFIG="${AQUA_CONFIG}"
   [[ -f "${AQUA_POLICY}" ]] && export AQUA_POLICY_CONFIG="${AQUA_POLICY}"
-  aqua install -a -l >/dev/null 2>&1 || true
-  echo "    Aqua tools linked successfully."
+  if out="$(aqua install -a -l 2>&1)"; then
+    echo "    Aqua tools linked successfully."
+  else
+    echo "==> Warning: aqua install failed (rate limit? checksum mismatch? offline?); tools may be missing or stale:" >&2
+    echo "${out}" >&2
+  fi
 fi
 
 # Ensure standalone Python via uv
