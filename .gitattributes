@@ -22,15 +22,10 @@
 *blerc*                   diff=bash
 rc.tmpl                   diff=bash
 functions.bundle.tmpl     diff=bash
-functions.tmpl            diff=bash
-server-env-setup.tmpl     diff=bash
-_*.tmpl                   diff=bash
 aliases                   diff=bash
 bindings                  diff=bash
 functions                 diff=bash
 functions.bundle          diff=bash
-layout_monitor            diff=bash
-lfrc                      diff=bash
 
 # GitHub Linguist — Template files (*.tmpl)
 *.toml.tmpl               linguist-language=TOML
@@ -61,28 +56,18 @@ lfrc                      diff=bash
 *blerc*                   linguist-language=Shell
 rc.tmpl                   linguist-language=Shell
 functions.bundle.tmpl     linguist-language=Shell
-functions.tmpl            linguist-language=Shell
-server-env-setup.tmpl     linguist-language=Shell
-_*.tmpl                   linguist-language=Shell
 aliases                   linguist-language=Shell
 bindings                  linguist-language=Shell
 functions                 linguist-language=Shell
 functions.bundle          linguist-language=Shell
-layout_monitor            linguist-language=Shell
-lfrc                      linguist-language=Shell
-tmux.conf.tmpl            linguist-language=Shell
-plugins.conf              linguist-language=Shell
 
 # GitHub Linguist — Known config formats
 *gitconfig*               linguist-language=Git-Config
 *.gitconfig.tmpl          linguist-language=Git-Config
 **/dot_config/git/config* linguist-language=Git-Config
 *editorconfig*            linguist-language=EditorConfig
-*agignore*                linguist-language=Ignore-List
 *chezmoiignore*           linguist-language=Ignore-List
 *gitkeep*                 linguist-language=Ignore-List
-*flake8*                  linguist-language=INI
-**/dot_config/terminator/config* linguist-language=INI
 **/dot_local/share/konsole/* linguist-language=INI
 
 # Exclude dev/CI tooling from `git archive` tarballs
