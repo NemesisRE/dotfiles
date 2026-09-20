@@ -1,0 +1,43 @@
+{{- $target := .target | default "vscode" -}}
+{{- $root := .root | default . -}}
+{{- $raw := includeTemplate "get-mcp-servers.tmpl" $root -}}
+{{- $parsed := $raw | fromYaml -}}
+{{- $servers := dict -}}
+{{- if and $parsed (hasKey $parsed "servers") -}}
+  {{- $servers = $parsed.servers -}}
+{{- else if and $parsed (hasKey $parsed "mcpServers") -}}
+  {{- $servers = $parsed.mcpServers -}}
+{{- else if $parsed -}}
+  {{- $servers = $parsed -}}
+{{- end -}}
+{{- $out := dict -}}
+{{- if $servers -}}
+  {{- range $name, $conf := $servers -}}
+    {{- if $conf -}}
+      {{- $s := dict -}}
+      {{- if or (hasKey $conf "url") (hasKey $conf "serverUrl") -}}
+        {{- $url := index $conf "url" | default (index $conf "serverUrl") -}}
+        {{- if eq $target "vscode" -}}
+          {{- $_ := set $s "type" "http" -}}
+          {{- $_ := set $s "url" $url -}}
+        {{- else if eq $target "antigravity" -}}
+          {{- $_ := set $s "serverUrl" $url -}}
+        {{- else -}}
+          {{- $_ := set $s "url" $url -}}
+        {{- end -}}
+        {{- if hasKey $conf "headers" }}{{- $_ := set $s "headers" $conf.headers }}{{- end -}}
+      {{- else if hasKey $conf "command" -}}
+        {{- $_ := set $s "command" $conf.command -}}
+        {{- if hasKey $conf "args" }}{{- $_ := set $s "args" $conf.args }}{{- end -}}
+        {{- if hasKey $conf "env" }}{{- $_ := set $s "env" $conf.env }}{{- end -}}
+      {{- end -}}
+      {{- $_ := set $out $name $s -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- $rootKey := "mcpServers" -}}
+{{- if eq $target "vscode" -}}
+  {{- $rootKey = "servers" -}}
+{{- end -}}
+{{- $result := (dict $rootKey $out) | toPrettyJson "  " -}}
+{{ $result | trim }}

@@ -1,0 +1,33 @@
+{{- if ne .chezmoi.os "windows" -}}
+#!/usr/bin/env bash
+# chezmoi run_onchange_after hook — syncs MCP servers into ~/.claude.json
+# mcp config hash: {{ includeTemplate "render-mcp-config.tmpl" (dict "target" "cline" "root" .) | sha256sum }}
+
+set -euo pipefail
+
+[[ -n "${CI:-}" ]] && exit 0
+[[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
+
+CLAUDE_PATH="${HOME}/.claude.json"
+MCP_CONFIG='{{ includeTemplate "render-mcp-config.tmpl" (dict "target" "cline" "root" .) }}'
+
+if command -v python3 >/dev/null 2>&1; then
+  python3 -c '
+import json, sys
+
+path = sys.argv[1]
+try:
+    with open(path, "r") as f:
+        data = json.load(f)
+except Exception:
+    data = {}
+
+mcp_input = json.loads(sys.argv[2])
+data["mcpServers"] = mcp_input.get("mcpServers", {})
+
+with open(path, "w") as f:
+    json.dump(data, f, indent=2)
+    f.write("\n")
+' "${CLAUDE_PATH}" "${MCP_CONFIG}"
+fi
+{{- end }}

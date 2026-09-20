@@ -1,0 +1,35 @@
+{{- if eq .chezmoi.os "windows" -}}
+# chezmoi run_onchange_after Windows hook — syncs MCP servers into ~/.claude.json
+# mcp config hash: {{ includeTemplate "render-mcp-config.tmpl" (dict "target" "cline" "root" .) | sha256sum }}
+
+$ErrorActionPreference = 'Stop'
+
+if ($env:CI -or $env:NREDF_NO_BOOTSTRAP) {
+    exit 0
+}
+
+$claudePath = Join-Path $HOME ".claude.json"
+$mcpJson = @'
+{{ includeTemplate "render-mcp-config.tmpl" (dict "target" "cline" "root" .) }}
+'@
+
+try {
+    $mcpObj = $mcpJson | ConvertFrom-Json
+    $mcpServers = $mcpObj.mcpServers
+
+    $existing = @{}
+    if (Test-Path $claudePath) {
+        try {
+            $existing = Get-Content $claudePath -Raw | ConvertFrom-Json -AsHashtable
+        } catch {
+            $existing = @{}
+        }
+    }
+
+    $existing["mcpServers"] = $mcpServers
+    $existing | ConvertTo-Json -Depth 10 | Set-Content $claudePath -NoNewline
+    Add-Content -Path $claudePath -Value "`n" -NoNewline
+} catch {
+    Write-Warning "Failed to sync MCP configuration to .claude.json: $_"
+}
+{{- end }}

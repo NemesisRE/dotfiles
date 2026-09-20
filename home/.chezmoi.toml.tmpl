@@ -24,22 +24,27 @@
 
 {{- $defaultAquaToken := "" -}}
 {{- $defaultGitSigningKey := "" -}}
+{{- $defaultMcpServers := "" -}}
 {{- if eq $profile "personal" -}}
 {{-   $defaultAquaToken = "bitwarden:GitHub Token" -}}
 {{-   $defaultGitSigningKey = "bitwarden:SSH Key" -}}
+{{-   $defaultMcpServers = "bitwarden:mcp-servers" -}}
 {{- else if eq $profile "work" -}}
 {{-   $defaultAquaToken = "bitwarden:GitHub Token" -}}
 {{-   $defaultGitSigningKey = "keepassxc:Work/Git Signing Key" -}}
+{{-   $defaultMcpServers = "keepassxc:Work/MCP Servers" -}}
 {{- end -}}
 
 {{- $aquaToken := "" -}}
 {{- $gitSigningKey := "" -}}
+{{- $mcpServers := "" -}}
 {{- $keepassDb := index $secrets "keepassxc_db" | default "" -}}
 
 {{- if ne $profile "none" -}}
 {{-   $aquaToken = promptStringOnce $secrets "aqua_github_token" "Aqua GitHub token URI or value" $defaultAquaToken -}}
 {{-   $gitSigningKey = promptStringOnce $secrets "git_signing_key" "Git signing key URI or value" $defaultGitSigningKey -}}
-{{-   if or (eq $profile "work") (hasPrefix "keepassxc:" $aquaToken) (hasPrefix "keepassxc:" $gitSigningKey) -}}
+{{-   $mcpServers = promptStringOnce $secrets "mcp_servers" "MCP servers secret URI or value (e.g. bitwarden:mcp-servers)" $defaultMcpServers -}}
+{{-   if or (eq $profile "work") (hasPrefix "keepassxc:" $aquaToken) (hasPrefix "keepassxc:" $gitSigningKey) (hasPrefix "keepassxc:" $mcpServers) -}}
 {{-     $keepassDb = promptStringOnce $secrets "keepassxc_db" "KeePassXC database path (e.g. ~/Documents/Work/work.kdbx)" "~/Documents/Work/work.kdbx" -}}
 {{-   end -}}
 {{- end -}}
@@ -203,18 +208,19 @@ sourceDir = {{ .chezmoi.workingTree | quote }}
     profile = {{ $profile | quote }}
     aqua_github_token = {{ $aquaToken | quote }}
     git_signing_key = {{ $gitSigningKey | quote }}
+    mcp_servers = {{ $mcpServers | quote }}
 {{- if ne $keepassDb "" }}
     keepassxc_db = {{ $keepassDb | quote }}
 {{- end }}
 
-{{- $needBitwarden := or (hasPrefix "bitwarden:" $aquaToken) (hasPrefix "bw:" $aquaToken) (hasPrefix "bitwarden:" $gitSigningKey) (hasPrefix "bw:" $gitSigningKey) (eq $profile "personal") }}
+{{- $needBitwarden := or (hasPrefix "bitwarden:" $aquaToken) (hasPrefix "bw:" $aquaToken) (hasPrefix "bitwarden:" $gitSigningKey) (hasPrefix "bw:" $gitSigningKey) (hasPrefix "bitwarden:" $mcpServers) (hasPrefix "bw:" $mcpServers) (eq $profile "personal") }}
 {{- if $needBitwarden }}
 [bitwarden]
     command = "bw"
     unlock = "auto"
 {{- end }}
 
-{{- $needKeepassxc := and (ne $keepassDb "") (or (hasPrefix "keepassxc:" $aquaToken) (hasPrefix "keepassxc:" $gitSigningKey) (eq $profile "work")) }}
+{{- $needKeepassxc := and (ne $keepassDb "") (or (hasPrefix "keepassxc:" $aquaToken) (hasPrefix "keepassxc:" $gitSigningKey) (hasPrefix "keepassxc:" $mcpServers) (eq $profile "work")) }}
 {{- if $needKeepassxc }}
 [keepassxc]
     command = "keepassxc-cli"
@@ -222,7 +228,7 @@ sourceDir = {{ .chezmoi.workingTree | quote }}
     prompt = true
 {{- end }}
 
-{{- $needOnepassword := or (hasPrefix "onepassword:" $aquaToken) (hasPrefix "op:" $aquaToken) (hasPrefix "onepassword:" $gitSigningKey) (hasPrefix "op:" $gitSigningKey) }}
+{{- $needOnepassword := or (hasPrefix "onepassword:" $aquaToken) (hasPrefix "op:" $aquaToken) (hasPrefix "onepassword:" $gitSigningKey) (hasPrefix "op:" $gitSigningKey) (hasPrefix "onepassword:" $mcpServers) (hasPrefix "op:" $mcpServers) }}
 {{- if $needOnepassword }}
 [onepassword]
     command = "op"
