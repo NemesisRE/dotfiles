@@ -13,12 +13,13 @@ if command -v procs &>/dev/null; then
   alias pst="procs --tree"
 fi
 
-
 alias root="sudo -E \"HOME=\${HOME}\" su -m"
 alias aptall="sudo apt update && sudo apt full-upgrade -y; sudo apt autoremove --purge -y; sudo apt autoclean"
 alias k="kubectl"
-alias kctx="kubectl ctx"
-alias kns="kubectl ns"
+alias kctx="kubectx"
+alias ctx="kubectx"
+alias kns="kubens"
+alias ns="kubens"
 alias dipls="docker ps -q | xargs docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}{{.Name}}' | sed -e 's/^\//HOST\t\//' -e 's/\//\t/g' | sort -n -t . -k 1,1 -k 2,2 -k 3,3 -k 4,4"
 alias lzg="lazygit"
 alias lg="lazygit"
@@ -27,4 +28,3 @@ alias lzj="lazyjournal"
 alias lj="lazyjournal"
 alias grep='grep --color=auto'
 alias reload="_nredf_reload_shell"
-
