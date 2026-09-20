@@ -9,13 +9,17 @@
       {{- if lookPath "bw" -}}
         {{- $itemName := $ref | trimPrefix "bitwarden:" | trimPrefix "bw:" -}}
         {{- $item := bitwarden "item" $itemName -}}
-        {{- if and (hasKey $item "sshKey") (hasKey $item.sshKey "publicKey") -}}
-          {{- $signingKey = $item.sshKey.publicKey -}}
-        {{- else if and (hasKey $item "notes") (regexMatch "^(ssh-|ecdsa-)" $item.notes) -}}
-          {{- $signingKey = $item.notes -}}
+        {{- /* nil-safe reads: see get-github-token.tmpl */ -}}
+        {{- $sshKey := index $item "sshKey" | default (dict) -}}
+        {{- $publicKey := index $sshKey "publicKey" | default "" -}}
+        {{- $notes := index $item "notes" | default "" -}}
+        {{- if ne $publicKey "" -}}
+          {{- $signingKey = $publicKey -}}
+        {{- else if regexMatch "^(ssh-|ecdsa-)" $notes -}}
+          {{- $signingKey = $notes -}}
         {{- else if hasKey $item "fields" -}}
           {{- range $item.fields -}}
-            {{- if or (eq .name "publicKey") (eq .name "public_key") (eq .name "git_signing_key") -}}
+            {{- if and (or (eq .name "publicKey") (eq .name "public_key") (eq .name "git_signing_key")) .value -}}
               {{- $signingKey = .value -}}
             {{- end -}}
           {{- end -}}

@@ -6,17 +6,14 @@
       {{- if lookPath "bw" -}}
         {{- $itemName := $ref | trimPrefix "bitwarden:" | trimPrefix "bw:" -}}
         {{- $item := bitwarden "item" $itemName -}}
-        {{- if hasKey $item "notes" -}}
-          {{- $content = $item.notes -}}
-        {{- end -}}
+        {{- /* "notes": null for a note-less item: see get-github-token.tmpl */ -}}
+        {{- $content = index $item "notes" | default "" -}}
       {{- end -}}
     {{- else if or (hasPrefix "onepassword:" $ref) (hasPrefix "op:" $ref) -}}
       {{- if lookPath "op" -}}
         {{- $itemName := $ref | trimPrefix "onepassword:" | trimPrefix "op:" -}}
         {{- $item := onepassword "item" $itemName -}}
-        {{- if hasKey $item "notes" -}}
-          {{- $content = $item.notes -}}
-        {{- end -}}
+        {{- $content = index $item "notes" | default "" -}}
       {{- end -}}
     {{- else if hasPrefix "keepassxc:" $ref -}}
       {{- if lookPath "keepassxc-cli" -}}

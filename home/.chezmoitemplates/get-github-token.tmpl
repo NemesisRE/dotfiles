@@ -6,16 +6,22 @@
       {{- if lookPath "bw" -}}
         {{- $itemName := $ref | trimPrefix "bitwarden:" | trimPrefix "bw:" -}}
         {{- $item := bitwarden "item" $itemName -}}
-        {{- if and (hasKey $item "login") (hasKey $item.login "password") (ne $item.login.password "") -}}
-          {{- $token = $item.login.password -}}
+        {{- /* `bw get item` emits explicit nulls ("notes": null, "login": null, a
+               field "value": null). hasKey is true for those and the nil then
+               reaches `trim` below and aborts the whole apply, so read every
+               value through `index | default` instead. */ -}}
+        {{- $login := index $item "login" | default (dict) -}}
+        {{- $password := index $login "password" | default "" -}}
+        {{- if ne $password "" -}}
+          {{- $token = $password -}}
         {{- else if hasKey $item "fields" -}}
           {{- range $item.fields -}}
-            {{- if or (eq .name "token") (eq .name "aqua_github_token") (eq .name "password") -}}
+            {{- if and (or (eq .name "token") (eq .name "aqua_github_token") (eq .name "password")) .value -}}
               {{- $token = .value -}}
             {{- end -}}
           {{- end -}}
         {{- else if hasKey $item "notes" -}}
-          {{- $token = $item.notes -}}
+          {{- $token = index $item "notes" | default "" -}}
         {{- end -}}
       {{- end -}}
     {{- else if hasPrefix "keepassxc:" $ref -}}
