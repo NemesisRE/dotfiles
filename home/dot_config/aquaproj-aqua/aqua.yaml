@@ -85,6 +85,7 @@ packages:
   - name: ouch-org/ouch@0.8.3 # renovate: depName=ouch-org/ouch
     tags:
       - default
+      - required
   - name: dalance/procs@v0.14.12 # renovate: depName=dalance/procs
     tags:
       - default
@@ -92,7 +93,6 @@ packages:
   - name: fastfetch-cli/fastfetch@2.68.1 # renovate: depName=fastfetch-cli/fastfetch
     tags:
       - default
-
   - name: chmln/sd@v1.1.0 # renovate: depName=chmln/sd
     tags:
       - default
@@ -100,6 +100,7 @@ packages:
     registry: local
     tags:
       - default
+      - required
 
   # ── Dev Tools ───────────────────────────────────────────────────────────────
   - name: cli/cli@v2.101.0 # renovate: depName=cli/cli
