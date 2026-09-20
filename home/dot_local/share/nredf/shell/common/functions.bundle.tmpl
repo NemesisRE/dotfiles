@@ -3,23 +3,13 @@
 # vim: ts=2 sw=2 et ff=unix ft=bash syntax=sh
 # chezmoi-generated monolithic bundle of all common nredf shell functions.
 # Generated on chezmoi apply — loaded in <1ms on shell startup.
-
-{{ include "dot_local/share/nredf/shell/common/functions/nredf_init_paths.bash" }}
-{{ include "dot_local/share/nredf/shell/common/functions/nredf_profile_startup.bash" }}
-{{ include "dot_local/share/nredf/shell/common/functions/nredf_last_run.bash" }}
-{{ include "dot_local/share/nredf/shell/common/functions/nredf_lockfile.bash" }}
-{{ includeTemplate "dot_local/share/nredf/shell/common/functions/nredf_get_sys_info.bash.tmpl" . }}
-{{ include "dot_local/share/nredf/shell/common/functions/nredf_set_defaults.bash" }}
-{{ include "dot_local/share/nredf/shell/common/functions/nredf_set_local.bash" }}
-{{ include "dot_local/share/nredf/shell/common/functions/nredf_os_specific.bash" }}
-{{ include "dot_local/share/nredf/shell/common/functions/nredf_aqua.bash" }}
-{{ include "dot_local/share/nredf/shell/common/functions/nredf_set_ssh_agent.bash" }}
-{{ include "dot_local/share/nredf/shell/common/functions/nredf_ssh.bash" }}
-{{ include "dot_local/share/nredf/shell/common/functions/nredf_bw.bash" }}
-{{ include "dot_local/share/nredf/shell/common/functions/nredf_tool_fzf.bash" }}
-{{ include "dot_local/share/nredf/shell/common/functions/nredf_init_kitty_shell_integration.bash" }}
-{{ include "dot_local/share/nredf/shell/common/functions/nredf_archive.bash" }}
-{{ include "dot_local/share/nredf/shell/common/functions/nredf_pull_all_repos.bash" }}
-{{ include "dot_local/share/nredf/shell/common/functions/nredf_remote_multiplexer.bash" }}
-{{ include "dot_local/share/nredf/shell/common/functions/nredf_reload_shell.bash" }}
-{{ include "dot_local/share/nredf/shell/common/functions/yy.bash" }}
+#
+# The file list is derived from the functions/ directory rather than hand-kept:
+# common/rc only falls back to globbing functions/* when this bundle is ABSENT,
+# so a file missing from the list here would be silently never loaded.
+# These files contain only definitions, so alphabetical order is fine.
+{{ $dir := "dot_local/share/nredf/shell/common/functions" -}}
+{{ range (glob (joinPath .chezmoi.sourceDir $dir "*")) -}}
+{{- $rel := printf "%s/%s" $dir (base .) }}
+{{ if hasSuffix ".tmpl" $rel }}{{ includeTemplate $rel $ }}{{ else }}{{ include $rel }}{{ end -}}
+{{ end -}}
