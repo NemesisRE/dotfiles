@@ -18,9 +18,7 @@ function _nredf_tool_fzf_source() {
       fi
 
       if [[ ! -s "${fzf_cache}" ]]; then
-        # shellcheck disable=SC1090
         [[ -f "${HOME}/.config/fzf/completion.${NREDF_SHELL_NAME}" ]] && source "${HOME}/.config/fzf/completion.${NREDF_SHELL_NAME}"
-        # shellcheck disable=SC1090
         [[ -f "${HOME}/.config/fzf/key-bindings.${NREDF_SHELL_NAME}" ]] && source "${HOME}/.config/fzf/key-bindings.${NREDF_SHELL_NAME}"
       fi
 

@@ -45,7 +45,6 @@ _nredf_set_local () {
     if [[ -d "${NREDF_CONFIG}/shell/common/functions" ]]; then
       for NREDF_LOCAL_FUNCTIONS in "${NREDF_CONFIG}/shell/common/functions/"*; do
         [[ -f "${NREDF_LOCAL_FUNCTIONS}" ]] || continue
-        # shellcheck disable=SC1090
         source "${NREDF_LOCAL_FUNCTIONS}"
       done
     fi
@@ -53,21 +52,17 @@ _nredf_set_local () {
     if [[ -d "${NREDF_CONFIG}/shell/${NREDF_SHELL_NAME}/functions" ]]; then
       for NREDF_LOCAL_FUNCTIONS in "${NREDF_CONFIG}/shell/${NREDF_SHELL_NAME}/functions/"*; do
         [[ -f "${NREDF_LOCAL_FUNCTIONS}" ]] || continue
-        # shellcheck disable=SC1090
         source "${NREDF_LOCAL_FUNCTIONS}"
       done
     fi
 
     if [[ -s "${NREDF_RC_PATH}/functions.bundle" ]]; then
-      # shellcheck disable=SC1090
       source "${NREDF_RC_PATH}/functions.bundle"
     elif [[ -f "${NREDF_RC_PATH}/functions" ]]; then
-      # shellcheck disable=SC1090
       source "${NREDF_RC_PATH}/functions"
     fi
 
     if [[ -f "${NREDF_CONFIG}/shell/${NREDF_SHELL_NAME}/aliases" ]]; then
-      # shellcheck disable=SC1090
       source "${NREDF_CONFIG}/shell/${NREDF_SHELL_NAME}/aliases"
     fi
 
@@ -76,7 +71,6 @@ _nredf_set_local () {
     fi
 
     if [[ -f "${NREDF_CONFIG}/shell/${NREDF_SHELL_NAME}/rc" ]]; then
-      # shellcheck disable=SC1090
       source "${NREDF_CONFIG}/shell/${NREDF_SHELL_NAME}/rc"
     fi
   fi

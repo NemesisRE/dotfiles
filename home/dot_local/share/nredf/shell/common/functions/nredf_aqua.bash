@@ -63,7 +63,6 @@ function _nredf_set_aqua_env() {
   local _nredf_aqua_auth_config="${NREDF_CONFIG:-${XDG_CONFIG_HOME:-${HOME}/.config}/nredf}/aqua.env"
 
   if [[ -f "${_nredf_aqua_auth_config}" ]]; then
-    # shellcheck disable=SC1090
     source "${_nredf_aqua_auth_config}"
   fi
 
@@ -309,7 +308,6 @@ function _nredf_ensure_aqua_github_token() {
 
   _nredf_auth_file="$(_nredf_aqua_auth_config_file)"
   if [[ -z "${_nredf_setup_state}" && -f "${_nredf_auth_file}" ]]; then
-    # shellcheck disable=SC1090
     source "${_nredf_auth_file}"
     _nredf_setup_state="${NREDF_AQUA_GITHUB_TOKEN_SETUP:-}"
   fi

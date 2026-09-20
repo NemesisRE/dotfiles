@@ -28,7 +28,6 @@ function _nredf_init_kitty_shell_integration() {
     local _nredf_kitty_bash="${_nredf_kitty_dir}/shell-integration/bash/kitty.bash"
     if [[ -f "${_nredf_kitty_bash}" ]]; then
       export KITTY_SHELL_INTEGRATION="${_nredf_kitty_mode}"
-      # shellcheck disable=SC1090
       source "${_nredf_kitty_bash}"
       NREDF_KITTY_SHELL_INTEGRATION_DONE=1
       _nredf_step "kitty integration"

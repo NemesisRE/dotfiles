@@ -22,7 +22,6 @@ function _nredf_set_defaults() {
   _nredf_set_aqua_env
   _nredf_set_krew_path
 
-  # shellcheck disable=SC1091
   [[ -f "${HOME}/.proxy.local" ]] && source "${HOME}/.proxy.local"
 
   export NREDF_COMMON_RC_LOCAL="${HOME}/.config/shell"
@@ -49,7 +48,6 @@ function _nredf_set_defaults() {
   [[ -d /snap/bin ]] && export PATH="${PATH}:/snap/bin"
   export GOPATH="${HOME}/.local"
   export RLWRAP_HOME="${XDG_CACHE_HOME}/RLWRAP"
-  # shellcheck disable=SC1091
   [[ -s "${HOME}/.rvm/scripts/rvm" ]] && source "${HOME}/.rvm/scripts/rvm"
 
   # Set default editor (nvim -> hx -> vi)

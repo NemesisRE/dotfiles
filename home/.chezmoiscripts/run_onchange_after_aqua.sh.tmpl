@@ -12,7 +12,6 @@ LOCAL_BIN="${HOME}/.local/bin"
 AQUA_BIN="${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-${HOME}/.local/share}/aquaproj-aqua}/bin"
 export PATH="${LOCAL_BIN}:${AQUA_BIN}:${PATH}"
 AQUA_ENV="${XDG_CONFIG_HOME:-${HOME}/.config}/nredf/aqua.env"
-# shellcheck disable=SC1090
 [[ -f "${AQUA_ENV}" ]] && source "${AQUA_ENV}"
 
 if command -v aqua >/dev/null 2>&1; then

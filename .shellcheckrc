@@ -2,3 +2,9 @@
 shell=bash
 # SC2148: don't require shebang in every file (we have it where needed)
 disable=SC2148
+# SC1090/SC1091: shellcheck cannot follow `source "${var}"` or files outside the
+# input set. This repo sources by computed path everywhere; the same two codes are
+# disabled in the deployed home/dot_config/shellcheckrc.tmpl, so they no longer need
+# a per-line `# shellcheck disable=` above every source.
+disable=SC1090
+disable=SC1091

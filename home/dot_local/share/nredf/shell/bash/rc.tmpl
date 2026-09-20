@@ -7,27 +7,21 @@ if ! shopt -oq posix; then
 {{- if eq .chezmoi.os "darwin" }}
 {{- if eq .chezmoi.arch "arm64" }}
   if [[ -f "/opt/homebrew/etc/profile.d/bash_completion.sh" ]]; then
-    # shellcheck disable=SC1091
     source "/opt/homebrew/etc/profile.d/bash_completion.sh"
   elif [[ -f "/opt/homebrew/share/bash-completion/bash_completion" ]]; then
-    # shellcheck disable=SC1091
     source "/opt/homebrew/share/bash-completion/bash_completion"
   fi
 {{- else }}
   if [[ -f "/usr/local/etc/profile.d/bash_completion.sh" ]]; then
-    # shellcheck disable=SC1091
     source "/usr/local/etc/profile.d/bash_completion.sh"
   elif [[ -f "/usr/local/share/bash-completion/bash_completion" ]]; then
-    # shellcheck disable=SC1091
     source "/usr/local/share/bash-completion/bash_completion"
   fi
 {{- end }}
 {{- else if eq .chezmoi.os "linux" }}
   if [[ -f "/etc/profile.d/bash_completion.sh" ]]; then
-    # shellcheck disable=SC1091
     source "/etc/profile.d/bash_completion.sh"
   elif [[ -f "/etc/bash_completion" ]]; then
-    # shellcheck disable=SC1091
     source "/etc/bash_completion"
   fi
 {{- end }}
