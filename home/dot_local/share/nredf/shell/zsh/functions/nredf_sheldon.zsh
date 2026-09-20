@@ -60,6 +60,7 @@ function _nredf_load_sheldon_plugins() {
     mkdir -p "${sheldon_cache%/*}"
     if sheldon "${sheldon_source_opts[@]}" source >| "${sheldon_cache}" 2>/dev/null; then
       zcompile "${sheldon_cache}" >/dev/null 2>&1 || true
+      # shellcheck disable=SC1090
       source "${sheldon_cache}"
     else
       rm -f "${sheldon_cache}" "${sheldon_cache}.zwc"
@@ -69,6 +70,7 @@ function _nredf_load_sheldon_plugins() {
     if [[ ! -f "${sheldon_cache}.zwc" || "${sheldon_cache}" -nt "${sheldon_cache}.zwc" ]]; then
       zcompile "${sheldon_cache}" >/dev/null 2>&1 || true
     fi
+    # shellcheck disable=SC1090
     source "${sheldon_cache}"
   fi
 
@@ -106,4 +108,3 @@ function _nredf_load_sheldon_plugins() {
     _nredf_setup_inshellisense
   fi
 }
-

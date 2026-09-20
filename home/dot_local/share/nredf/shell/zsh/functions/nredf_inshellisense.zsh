@@ -30,4 +30,3 @@ function _nredf_setup_inshellisense() {
     return 0
   }
 }
-

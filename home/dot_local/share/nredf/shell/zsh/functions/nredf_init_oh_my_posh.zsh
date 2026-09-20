@@ -29,4 +29,3 @@ function _nredf_init_oh_my_posh() {
     NREDF_OH_MY_POSH_INIT_DONE=1
   fi
 }
-
