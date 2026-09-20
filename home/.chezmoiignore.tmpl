@@ -33,6 +33,9 @@ Library
 
 {{- if ne .chezmoi.os "linux" }}
 .config/systemd
+# VS Code only reads ~/.config/Code on Linux (macOS: ~/Library/Application Support,
+# Windows: %APPDATA%). Elsewhere it is a never-read extra copy of the MCP secrets.
+.config/Code
 {{- end }}
 
 {{- if and (eq .chezmoi.os "linux") (hasKey .chezmoi "kernel") (hasKey .chezmoi.kernel "osrelease") (.chezmoi.kernel.osrelease | lower | contains "microsoft") }}
