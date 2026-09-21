@@ -6,9 +6,11 @@
 .DESCRIPTION
   Gated rules are correctness issues the tree is already clean of, so a regression
   fails the build. Everything else at Warning severity is printed as an advisory
-  backlog. Ratchet the list by moving rules from the backlog into $gated once fixed;
-  PSAvoidUsingBrokenHashAlgorithms and PSUseDeclaredVarsMoreThanAssignments are the
-  next two to earn a place.
+  backlog. Ratchet the list by moving rules from the backlog into $gated once fixed.
+  What remains in the backlog is deliberate or a judgement call: Write-Host (interactive
+  output), empty catch blocks (best-effort steps that must never break startup),
+  Invoke-Expression (cached tool-init snippets), global variables (shared profile state)
+  and BOM (bootstrap.ps1 is piped through iex, where a BOM breaks it).
 
   Run from the repository root.
 #>
@@ -37,6 +39,10 @@ $gated = @(
   'PSReservedCmdletChar'
   'PSReservedParams'
   'PSMissingModuleManifestField'
+  'PSAvoidUsingBrokenHashAlgorithms'
+  'PSUseDeclaredVarsMoreThanAssignments'
+  'PSReviewUnusedParameter'
+  'PSUseShouldProcessForStateChangingFunctions'
 )
 
 $blocking = @($targets | ForEach-Object { Invoke-ScriptAnalyzer -Path $_ -IncludeRule $gated })

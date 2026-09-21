@@ -349,7 +349,7 @@ function NREDF_BwDoUnlock {
     return $false
   }
 
-  $loginCheck = & bw login --check 2>$null
+  $null = & bw login --check 2>$null
   if ($LASTEXITCODE -ne 0) {
     Write-Host 'Bitwarden: not logged in — running bw login' -ForegroundColor Yellow
     $session = & bw login --raw

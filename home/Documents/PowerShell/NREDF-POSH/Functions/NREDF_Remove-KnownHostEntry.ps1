@@ -1,5 +1,5 @@
 function Remove-KnownHostEntry {
-  [CmdletBinding()]
+  [CmdletBinding(SupportsShouldProcess)]
   param(
     [Parameter(ParameterSetName = 'ByHostname', Mandatory = $true)]
     [string]$Hostname,
@@ -17,6 +17,7 @@ function Remove-KnownHostEntry {
   }
 
   if ($PSBoundParameters.ContainsKey('Hostname')) {
+    if (-not $PSCmdlet.ShouldProcess($knownHostsFile, "Remove entries for host '$Hostname'")) { return }
     if (Get-Command ssh-keygen -ErrorAction SilentlyContinue) {
       & ssh-keygen -R $Hostname -f $knownHostsFile 2>$null
       if ($LASTEXITCODE -eq 0) {
@@ -33,6 +34,7 @@ function Remove-KnownHostEntry {
       return $true
     }
   } elseif ($PSBoundParameters.ContainsKey('LineNumber')) {
+    if (-not $PSCmdlet.ShouldProcess($knownHostsFile, "Remove line $LineNumber")) { return }
     $content = Get-Content $knownHostsFile
     $originalCount = $content.Count
     if ($LineNumber -lt 1 -or $LineNumber -gt $originalCount) {

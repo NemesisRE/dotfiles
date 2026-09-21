@@ -196,7 +196,7 @@ Set-PSReadLineKeyHandler -Chord '"', "'" `
   -BriefDescription SmartInsertQuote `
   -LongDescription 'Insert paired quotes if not already on a quote' `
   -ScriptBlock {
-  param($key, $arg)
+  param($key)
 
   $line = $null
   $cursor = $null

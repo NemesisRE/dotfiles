@@ -1,6 +1,15 @@
 # Compute file hashes - useful for checking successful downloads
-function md5 { Get-FileHash -Algorithm MD5 $args }
-function sha1 { Get-FileHash -Algorithm SHA1 $args }
+# md5/sha1 exist to verify vendor-published legacy checksums (parity with md5sum/sha1sum), not for security.
+function md5 {
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingBrokenHashAlgorithms', '', Justification = 'Verifying published legacy checksums, not a security boundary')]
+  param()
+  Get-FileHash -Algorithm MD5 $args
+}
+function sha1 {
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingBrokenHashAlgorithms', '', Justification = 'Verifying published legacy checksums, not a security boundary')]
+  param()
+  Get-FileHash -Algorithm SHA1 $args
+}
 function sha256 { Get-FileHash -Algorithm SHA256 $args }
 
 function sudo {
@@ -43,6 +52,8 @@ function reload {
   .PARAMETER Help
       Show usage help.
   #>
+  # The ArgumentCompleter below has a fixed, positional 5-argument signature; most of it is unused.
+  [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', '', Justification = 'Fixed ArgumentCompleter signature')]
   param (
     [Alias('c')]
     [switch]$Cache,
