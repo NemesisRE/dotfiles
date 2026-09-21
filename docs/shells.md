@@ -226,7 +226,7 @@ The unified payload (`nredf-daily-sync` on POSIX, `NREDF_DailySync` on PowerShel
 4. **Aqua Tools**: Updates Aqua (`aqua update-aqua`), ensures tool links (`aqua install -a -l`), and vacuums packages unused for >30 days (`aqua vacuum -d 30`).
 5. **Zsh Plugins**: Updates Sheldon plugin locks (`sheldon lock --update`).
 
-All runs are logged to `${XDG_STATE_HOME:-~/.local/state}/nredf/daily-sync.log` (macOS/Linux) and `$LOCALAPPDATA\nredf\daily-sync.log` (Windows).
+All runs are logged to `${XDG_STATE_HOME:-~/.local/state}/nredf/daily-sync.log` (macOS/Linux) and `$LOCALAPPDATA\nredf\daily-sync.log` (Windows). `reload -f` (or `nredf-daily-sync --verbose`) also prints that output to the terminal.
 
 ### 3. How Running Shells Pick Up Updates
 
