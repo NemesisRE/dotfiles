@@ -20,7 +20,7 @@ packages:
     tags:
       - default
       - required
-  - name: atuinsh/atuin@v18.22.0 # renovate: depName=atuinsh/atuin
+  - name: atuinsh/atuin@v18.23.0 # renovate: depName=atuinsh/atuin
     tags:
       - default
       - required
@@ -106,13 +106,13 @@ packages:
   - name: cli/cli@v2.101.0 # renovate: depName=cli/cli
     tags:
       - default
-  - name: github/copilot-cli@v1.0.86 # renovate: depName=github/copilot-cli
+  - name: github/copilot-cli@v1.0.87 # renovate: depName=github/copilot-cli
     tags:
       - default
   - name: anthropics/claude-code@v2.1.278 # renovate: depName=anthropics/claude-code
     tags:
       - default
-  - name: google-antigravity/antigravity-cli@1.2.7 # renovate: depName=google-antigravity/antigravity-cli
+  - name: google-antigravity/antigravity-cli@1.2.8 # renovate: depName=google-antigravity/antigravity-cli
     tags:
       - default
   - name: jqlang/jq@jq-1.8.1 # renovate: depName=jqlang/jq
@@ -153,7 +153,7 @@ packages:
     registry: local
     tags:
       - default
-  - name: heymaikol/network-doctor@v1.17.6 # renovate: depName=heymaikol/network-doctor
+  - name: heymaikol/network-doctor@v1.17.7 # renovate: depName=heymaikol/network-doctor
     registry: local
     command_aliases:
       - command: network-doctor
@@ -191,7 +191,7 @@ packages:
   - name: derailed/k9s@v0.51.0 # renovate: depName=derailed/k9s
     tags:
       - k8s
-  - name: nklmilojevic/sofka@v0.28.3 # renovate: depName=nklmilojevic/sofka
+  - name: nklmilojevic/sofka@v0.28.4 # renovate: depName=nklmilojevic/sofka
     tags:
       - k8s
   - name: kubernetes-sigs/kustomize@kustomize/v5.8.1 # renovate: depName=kubernetes-sigs/kustomize
@@ -200,7 +200,7 @@ packages:
   - name: kubernetes-sigs/krew@v0.5.0 # renovate: depName=kubernetes-sigs/krew
     tags:
       - k8s
-  - name: velero-io/velero@v1.18.2 # renovate: depName=velero-io/velero
+  - name: velero-io/velero@v1.18.3 # renovate: depName=velero-io/velero
     tags:
       - k8s
   - name: projectcalico/calico/calicoctl@v3.32.2 # renovate: depName=projectcalico/calico
