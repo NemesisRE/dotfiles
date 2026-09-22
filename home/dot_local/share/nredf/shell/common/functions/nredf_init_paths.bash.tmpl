@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+#
+# vim: ts=2 sw=2 et ff=unix ft=bash syntax=sh
+{{- /* Generated from .chezmoidata/paths.yaml's nredf_paths — keep bash/fish/nu in sync. */}}
+
+function _nredf_init_paths() {
+{{- range .nredf_paths.xdg }}
+{{ printf "  export %s=\"${%s:-$%s/%s}\"" .var .var .base (join "/" .parts) }}
+{{- end }}
+
+  if [[ -n "${NREDF_SHELL_NAME}" ]]; then
+    export NREDF_RC_LOCAL="${HOME}/.config/${NREDF_SHELL_NAME}"
+  fi
+
+  if [[ -n "${NREDF_DOT_PATH}" && -n "${NREDF_SHELL_NAME}" ]]; then
+    export NREDF_RC_PATH="${NREDF_DOT_PATH}/shell/${NREDF_SHELL_NAME}"
+  fi
+
+  # Fast path: only ensure directory tree once per shell session
+  if [[ "${_NREDF_PATHS_INITIALIZED:-0}" == "1" && -d "${NREDF_LRCACHE}" ]]; then
+    return 0
+  fi
+  _NREDF_PATHS_INITIALIZED=1
+
+  for NREDF_PATH in {{ range $i, $d := .nredf_paths.ensure_dirs }}{{ if $i }} {{ end }}"${{ $d }}"{{ end }}; do
+    [[ -n "${NREDF_PATH}" && ! -d "${NREDF_PATH}" ]] && mkdir -p "${NREDF_PATH}"
+  done
+}

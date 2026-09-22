@@ -7,35 +7,14 @@
 # bundle (functions.bundle.tmpl) and `source`d as a single file, so plain
 # `def`/`def --env` (no `export` needed) is all that's required for every
 # command here to see every other one.
+{{- /* Generated from .chezmoidata/paths.yaml's nredf_paths — keep bash/fish/nu in sync. */}}
 
 def --env nredf-init-paths [] {
-    if ($env.XDG_CONFIG_HOME? | is-empty) {
-        $env.XDG_CONFIG_HOME = ($env.HOME | path join ".config")
+{{- range .nredf_paths.xdg }}
+    if ($env.{{ .var }}? | is-empty) {
+        $env.{{ .var }} = ($env.{{ .base }} | path join{{ range .parts }} "{{ . }}"{{ end }})
     }
-    if ($env.XDG_CACHE_HOME? | is-empty) {
-        $env.XDG_CACHE_HOME = ($env.HOME | path join ".cache")
-    }
-    if ($env.XDG_BIN_HOME? | is-empty) {
-        $env.XDG_BIN_HOME = ($env.HOME | path join ".local" "bin")
-    }
-    if ($env.XDG_DATA_HOME? | is-empty) {
-        $env.XDG_DATA_HOME = ($env.HOME | path join ".local" "share")
-    }
-    if ($env.XDG_STATE_HOME? | is-empty) {
-        $env.XDG_STATE_HOME = ($env.HOME | path join ".local" "state")
-    }
-    if ($env.NREDF_CONFIG? | is-empty) {
-        $env.NREDF_CONFIG = ($env.XDG_CONFIG_HOME | path join "nredf")
-    }
-    if ($env.NREDF_LRCACHE? | is-empty) {
-        $env.NREDF_LRCACHE = ($env.XDG_CACHE_HOME | path join "nredf" "LRCache")
-    }
-    if ($env.NREDF_LKCACHE? | is-empty) {
-        $env.NREDF_LKCACHE = ($env.XDG_CACHE_HOME | path join "nredf" "LKCache")
-    }
-    if ($env.NREDF_COMMON_RC_LOCAL? | is-empty) {
-        $env.NREDF_COMMON_RC_LOCAL = ($env.HOME | path join ".config" "shell")
-    }
+{{- end }}
 
     if not ($env.NREDF_SHELL_NAME? | default "" | is-empty) {
         $env.NREDF_RC_LOCAL = ($env.HOME | path join ".config" $env.NREDF_SHELL_NAME)
@@ -51,7 +30,7 @@ def --env nredf-init-paths [] {
     }
     $env._NREDF_PATHS_INITIALIZED = "1"
 
-    for dir in [$env.NREDF_RC_LOCAL $env.NREDF_COMMON_RC_LOCAL $env.NREDF_CONFIG $env.NREDF_LRCACHE $env.NREDF_LKCACHE] {
+    for dir in [{{ range $i, $d := .nredf_paths.ensure_dirs }}{{ if $i }} {{ end }}$env.{{ $d }}{{ end }}] {
         if (not ($dir | default "" | is-empty)) and (not ($dir | path exists)) {
             mkdir $dir
         }

@@ -1,0 +1,43 @@
+# XDG + NREDF base directories that bash/zsh (common), fish and nu all set up
+# identically at shell start: "default VAR to $BASE/parts... if unset". Each
+# shell's nredf_init_paths.*.tmpl renders this list in its own syntax — see
+# docs/shells.md. PowerShell's Defaults.ps1 is NOT generated from this file:
+# it genuinely diverges on Windows (LOCALAPPDATA-based cache paths instead of
+# XDG), so it stays hand-written.
+nredf_paths:
+  xdg:
+    - var: XDG_CONFIG_HOME
+      base: HOME
+      parts: [".config"]
+    - var: XDG_CACHE_HOME
+      base: HOME
+      parts: [".cache"]
+    - var: XDG_BIN_HOME
+      base: HOME
+      parts: [".local", "bin"]
+    - var: XDG_DATA_HOME
+      base: HOME
+      parts: [".local", "share"]
+    - var: XDG_STATE_HOME
+      base: HOME
+      parts: [".local", "state"]
+    - var: NREDF_CONFIG
+      base: XDG_CONFIG_HOME
+      parts: ["nredf"]
+    - var: NREDF_LRCACHE
+      base: XDG_CACHE_HOME
+      parts: ["nredf", "LRCache"]
+    - var: NREDF_LKCACHE
+      base: XDG_CACHE_HOME
+      parts: ["nredf", "LKCache"]
+    - var: NREDF_COMMON_RC_LOCAL
+      base: HOME
+      parts: [".config", "shell"]
+  # Subset of the vars above that get mkdir -p'd once per shell session. The
+  # fast-path skip check keys off the first one that's also in xdg (NREDF_LRCACHE).
+  ensure_dirs:
+    - NREDF_RC_LOCAL
+    - NREDF_COMMON_RC_LOCAL
+    - NREDF_CONFIG
+    - NREDF_LRCACHE
+    - NREDF_LKCACHE

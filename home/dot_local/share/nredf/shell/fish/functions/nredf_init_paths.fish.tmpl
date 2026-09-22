@@ -1,0 +1,28 @@
+#!/usr/bin/env fish
+#
+# vim: ts=4 sw=4 et ft=fish
+{{- /* Generated from .chezmoidata/paths.yaml's nredf_paths — keep bash/fish/nu in sync. */}}
+
+function _nredf_init_paths --description 'Set up XDG + NREDF base directories'
+{{- range .nredf_paths.xdg }}
+{{ printf "    test -n \"$%s\"; or set -gx %s \"$%s/%s\"" .var .var .base (join "/" .parts) }}
+{{- end }}
+
+    if test -n "$NREDF_SHELL_NAME"
+        set -gx NREDF_RC_LOCAL "$HOME/.config/$NREDF_SHELL_NAME"
+    end
+
+    if test -n "$NREDF_DOT_PATH"; and test -n "$NREDF_SHELL_NAME"
+        set -gx NREDF_RC_PATH "$NREDF_DOT_PATH/shell/$NREDF_SHELL_NAME"
+    end
+
+    # Fast path: only ensure the directory tree once per shell session.
+    if test "$_NREDF_PATHS_INITIALIZED" = 1; and test -d "$NREDF_LRCACHE"
+        return 0
+    end
+    set -g _NREDF_PATHS_INITIALIZED 1
+
+    for nredf_path in {{ range $i, $d := .nredf_paths.ensure_dirs }}{{ if $i }} {{ end }}${{ $d }}{{ end }}
+        test -d "$nredf_path"; or mkdir -p "$nredf_path"
+    end
+end
