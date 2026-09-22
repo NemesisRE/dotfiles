@@ -41,6 +41,12 @@ end
 
 _nredf_init_paths
 
+# Fish prints "Welcome to fish, the friendly interactive shell / Type help
+# for instructions..." on every interactive startup unless told not to —
+# bash/zsh have no equivalent noise to suppress (matches nu's
+# $env.config.show_banner = false in config.nu.tmpl).
+set -g fish_greeting ""
+
 _nredf_profile_init
 _nredf_step "source fish functions"
 
