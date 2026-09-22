@@ -173,7 +173,12 @@ render_nu_into_scratch_home() {
 }
 
 render_nu_into_scratch_home "home/dot_local/share/nredf/shell/nu/functions.bundle.tmpl" ".local/share/nredf/shell/nu/functions.bundle"
-[[ -e "home/dot_local/share/nredf/shell/nu/aliases.nu" ]] && cp "home/dot_local/share/nredf/shell/nu/aliases.nu" "${NU_HOME}/.local/share/nredf/shell/nu/aliases.nu"
+if [[ -e "home/dot_local/share/nredf/shell/nu/aliases.nu.tmpl" ]]; then
+  render_nu_into_scratch_home "home/dot_local/share/nredf/shell/nu/aliases.nu.tmpl" ".local/share/nredf/shell/nu/aliases.nu"
+  check_nu "home/dot_local/share/nredf/shell/nu/aliases.nu.tmpl" "${NU_HOME}/.local/share/nredf/shell/nu/aliases.nu"
+elif [[ -e "home/dot_local/share/nredf/shell/nu/aliases.nu" ]]; then
+  cp "home/dot_local/share/nredf/shell/nu/aliases.nu" "${NU_HOME}/.local/share/nredf/shell/nu/aliases.nu"
+fi
 render_nu_into_scratch_home "home/dot_local/share/nredf/shell/nu/env.nu.tmpl" ".local/share/nredf/shell/nu/env.nu"
 check_nu "home/dot_local/share/nredf/shell/nu/env.nu.tmpl" "${NU_HOME}/.local/share/nredf/shell/nu/env.nu"
 render_nu_into_scratch_home "home/dot_local/share/nredf/shell/nu/config.nu.tmpl" ".local/share/nredf/shell/nu/config.nu"
@@ -196,7 +201,7 @@ done < <(
 )
 
 echo "==> Syntax-checking non-template nu sources"
-for src in home/dot_local/share/nredf/shell/nu/functions/*.nu home/dot_local/share/nredf/shell/nu/aliases.nu; do
+for src in home/dot_local/share/nredf/shell/nu/functions/*.nu; do
   [[ -e "${src}" ]] || continue
   check_nu "${src}" "${src}"
 done

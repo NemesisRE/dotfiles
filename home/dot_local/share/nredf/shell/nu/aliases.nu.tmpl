@@ -15,6 +15,7 @@
 # leaves `foo` undefined afterward). So conditional tool-presence checks
 # below happen *inside* an unconditionally-defined wrapper, at call time,
 # not around the definition itself.
+{{- /* The plain-alias block below is generated from .chezmoidata/aliases.yaml's nredf_aliases (entries with `nu: true`) — keep bash/fish/nu in sync. */}}
 
 def --wrapped ls [...args] {
     if (which lsd | is-empty) {
@@ -44,25 +45,25 @@ def aptall [] {
     ^sudo apt autoremove --purge -y
     ^sudo apt autoclean
 }
-
-alias k = kubectl
-alias kctx = kubectx
-alias ctx = kubectx
-alias kns = kubens
-alias ns = kubens
+{{ range .nredf_aliases.groups }}
+{{- if not .requires }}
+{{- range .aliases }}
+{{- if .nu }}
+{{- $cmd := .command }}
+{{- range .names }}
+alias {{ . }} = {{ $cmd }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}
 
 def dipls [] {
     ^docker ps -q
-    | ^xargs docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}{{.Name}}'
+    | ^xargs docker inspect --format '{{"{{"}}range .NetworkSettings.Networks{{"}}"}}{{"{{"}}.IPAddress{{"}}"}}{{"{{"}}end{{"}}"}}{{"{{"}}.Name{{"}}"}}'
     | ^sed -e 's/^\//HOST\t\//' -e 's/\//\t/g'
     | ^sort -n -t . -k 1,1 -k 2,2 -k 3,3 -k 4,4
 }
-
-alias lzg = lazygit
-alias lg = lazygit
-alias lzd = lazydocker
-alias lzj = lazyjournal
-alias lj = lazyjournal
 
 def --wrapped grep [...args] {
     ^grep --color=auto ...$args

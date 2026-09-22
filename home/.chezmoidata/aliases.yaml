@@ -1,0 +1,61 @@
+# Cross-shell alias table for bash/zsh, fish, and (a subset of) nu.
+#
+# - bash/zsh (shell/common/aliases.tmpl) and fish (shell/fish/aliases.tmpl)
+#   render every group below, each wrapped in an existence check when
+#   `requires` is set (bash: `command -v`, fish: `type -q`).
+# - nu (shell/nu/aliases.nu.tmpl) only renders the ungated entries that don't
+#   set `nu: false`: nu's own `alias`/`def` declared inside an `if` block
+#   never escapes that block (see aliases.nu.tmpl's own comment), so the
+#   lsd/procs-gated group can't be a plain data-driven `alias` there — it
+#   stays hand-written as `def --wrapped` fallbacks. `grep` is excluded the
+#   same way: nu needs `def --wrapped` for argument forwarding, not a plain
+#   `alias`.
+# - PowerShell's Aliases.ps1 is NOT generated from this file: it gates nearly
+#   every alias on Get-Command — a real, deliberate divergence, since a
+#   dangling PowerShell alias to a missing command errors loudly, unlike
+#   bash/fish/nu — and carries PS-only entries (vim/vi, cat, which, touch)
+#   with no equivalent here. See docs/shells.md.
+#
+# root/aptall/dipls/reload/gpg_agent stay hand-written in each shell's own
+# file: they're either compound commands needing shell-specific glue
+# (`&&` vs `; and`) or reference internal function names, not a single
+# target command.
+nredf_aliases:
+  groups:
+    - requires: "lsd"
+      aliases:
+        - names: ["ls"]
+          command: "lsd"
+        - names: ["ll"]
+          command: "lsd -lFh --git"
+        - names: ["la"]
+          command: "lsd -lAFh --git"
+        - names: ["tree"]
+          command: "lsd --tree"
+    - requires: "procs"
+      aliases:
+        - names: ["pst"]
+          command: "procs --tree"
+    - requires: ""
+      aliases:
+        - names: ["k"]
+          command: "kubectl"
+          nu: true
+        - names: ["kctx", "ctx"]
+          command: "kubectx"
+          nu: true
+        - names: ["kns", "ns"]
+          command: "kubens"
+          nu: true
+        - names: ["lzg", "lg"]
+          command: "lazygit"
+          nu: true
+        - names: ["lzd"]
+          command: "lazydocker"
+          nu: true
+        - names: ["lzj", "lj"]
+          command: "lazyjournal"
+          nu: true
+        - names: ["grep"]
+          command: "grep --color=auto"
+          nu: false
