@@ -6,6 +6,15 @@
 function _nredf_tool_fzf_source
     type -q fzf; or return 0
 
+    # Atuin owns Ctrl+R when installed (matching bash/zsh, which explicitly
+    # rebind it to atuin after sourcing fzf) — fzf's own fish integration
+    # binds \cr to its own history widget unless FZF_CTRL_R_COMMAND is
+    # explicitly set (even to empty), so suppress it here rather than
+    # fighting over the binding after the fact.
+    if type -q atuin
+        set -gx FZF_CTRL_R_COMMAND ""
+    end
+
     set -l fzf_cache "$XDG_CACHE_HOME/nredf/init/fzf.fish.sh"
     if type -q _nredf_refresh_cached_shell_snippet
         _nredf_refresh_cached_shell_snippet _nredf_fzf_init_fish "$fzf_cache" fzf --fish
