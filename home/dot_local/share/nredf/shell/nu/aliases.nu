@@ -7,17 +7,31 @@
 # variable re-read on each invocation is a `def` instead. Public command
 # names are kept identical to bash/fish/PowerShell for muscle memory; only
 # internal helpers use nu's own kebab-case convention — see docs/shells.md.
+#
+# `def`/`alias` are also block-scoped in nu, same as `let`/`mut`: one
+# declared inside `if cond { ... }` never escapes that block even when the
+# condition is true, unlike bash/zsh/fish where the equivalent guard just
+# works — confirmed empirically (a trivial `if true { alias foo = ... }`
+# leaves `foo` undefined afterward). So conditional tool-presence checks
+# below happen *inside* an unconditionally-defined wrapper, at call time,
+# not around the definition itself.
 
-if not (which lsd | is-empty) {
-    alias ls = lsd
-    alias ll = lsd -lFh --git
-    alias la = lsd -lAFh --git
-    alias tree = lsd --tree
+def --wrapped ls [...args] {
+    if (which lsd | is-empty) {
+        # lsd is a required package, so this only degrades nu's own
+        # structured `ls` builtin to plain external `ls` in the unlikely
+        # case it's actually missing — there is no way to conditionally
+        # skip this def and fall back to the shadowed builtin instead.
+        ^ls ...$args
+    } else {
+        ^lsd ...$args
+    }
 }
+def --wrapped ll [...args] { ^lsd -lFh --git ...$args }
+def --wrapped la [...args] { ^lsd -lAFh --git ...$args }
+def --wrapped tree [...args] { ^lsd --tree ...$args }
 
-if not (which procs | is-empty) {
-    alias pst = procs --tree
-}
+def --wrapped pst [...args] { ^procs --tree ...$args }
 
 def root [] {
     ^sudo -E $"HOME=($env.HOME)" su -m

@@ -3,16 +3,20 @@
 # why nu collapses bash's common+shell-specific rc split into this pair.
 #
 # nu itself already skips loading config.nu for a plain non-interactive
-# `nu -c` invocation, but a login-shell invocation still loads it non-
-# interactively (`nu --login -c ...`, e.g. some `ssh host cmd` setups), so
-# everything below is still explicitly gated on $nu.is-interactive too — see
-# AGENTS.md's "never prompt, block or print on startup" rule.
+# `nu -c` invocation. This file used to also gate everything below on
+# `$nu.is-interactive`, as defense in depth against a login-shell invocation
+# still loading it non-interactively (`nu --login -c ...`) — removed after
+# confirming empirically that it made every tool integration below (atuin,
+# carapace, oh-my-posh, mise, zoxide, fzf) silently no-op, since a
+# `--login -c` invocation reports `$nu.is-interactive` as false, and there
+# is no way here to be certain that report is only ever false in exactly the
+# cases it should be. The two operations that actually must never run non-
+# interactively (the aqua GitHub-token wizard, zellij auto-attach) already
+# have their own independent, more direct guards — see
+# nredf-ensure-aqua-github-token and nredf-remote-multiplexer — so this
+# outer check was redundant protection with a proven cost, not a needed one.
 
 source "{{ .chezmoi.homeDir }}/.local/share/nredf/shell/nu/aliases.nu"
-
-if not $nu.is-interactive {
-    return
-}
 
 # Nu prints its "Welcome to Nushell" ASCII banner (version, links, uptime
 # since nu's first commit, ...) on every interactive startup unless told
@@ -27,13 +31,22 @@ if ($env.SUDO_COMMAND? | default "" | is-empty) {
     nredf-step "nredf-ensure-aqua-github-token"
 }
 
-# oh-my-posh prompt (cached snippet for 24h).
+# oh-my-posh prompt. Unlike every other tool integration below, oh-my-posh's
+# nu support doesn't print an init script for us to cache and `source` at
+# all — confirmed empirically (its stdout and stderr are both genuinely
+# empty on success) — it writes directly into nu's own vendor-autoload
+# directory (~/.local/share/nushell/vendor/autoload/, one of
+# $nu.vendor-autoload-dirs), which nu sources automatically on every
+# startup with no `source` call needed from here. So this only has to
+# periodically re-run the generator (same 24h cadence as the cached-snippet
+# tools); the same one-restart lag documented for those applies here too,
+# since nu only re-scans vendor-autoload at its own next startup.
 if (not (which oh-my-posh | is-empty)) and (($env.XDG_CONFIG_HOME | path join "oh-my-posh" "config.json") | path exists) {
-    nredf-cache-refresh "nredf_omp_init_nu" "{{ .chezmoi.homeDir }}/.cache/nredf/init/omp.nu" {
-        ^oh-my-posh init nu --config ($env.XDG_CONFIG_HOME | path join "oh-my-posh" "config.json")
+    if not (nredf-last-run "nredf_omp_init_nu") {
+        ^oh-my-posh init nu --config ($env.XDG_CONFIG_HOME | path join "oh-my-posh" "config.json") | ignore
+        nredf-last-run "nredf_omp_init_nu" --success --next $env.NREDF_24H_INTERVAL
     }
 }
-source "{{ .chezmoi.homeDir }}/.cache/nredf/init/omp.nu"
 nredf-step "oh-my-posh init"
 
 # Atuin init — cache shell integration for 24h. Reedline resolves two
