@@ -55,7 +55,7 @@ All five shells share a unified experience designed around modern developer ergo
 
 ### 4. Nushell Architecture
 
-- **Dotfiles**: three thin per-OS stubs that just `source` one canonical tree — `~/.config/nushell/{env,config}.nu` (Linux), `~/Library/Application Support/nushell/{env,config}.nu` (macOS), `~/AppData/Roaming/nushell/{env,config}.nu` (Windows). Nu's own config directory is platform-specific and is resolved from the real process environment *before* nu reads any of its own files, so this repo's usual "export `XDG_CONFIG_HOME` lazily in shell startup code" trick never reaches nu — each stub has to live at nu's real, native path per OS.
+- **Dotfiles**: thin stubs that just `source` one canonical tree, deployed to every path nu might actually read — `~/.config/nushell/{env,config}.nu` (deployed on **every OS**, not just Linux) plus the OS-native fallback: `~/Library/Application Support/nushell/{env,config}.nu` (macOS) or `~/AppData/Roaming/nushell/{env,config}.nu` (Windows; Linux has no separate native path, XDG *is* its native path). Nu resolves its config directory from the real process environment *before* it reads any of its own files, and — confirmed live — **prioritizes `$XDG_CONFIG_HOME/nushell` over its OS-native default the instant `XDG_CONFIG_HOME` is set**, on every OS, not only Linux. Since every other shell in this repo already exports `XDG_CONFIG_HOME`, launching nu from (or with an environment inherited from) any of them makes nu read `~/.config/nushell` even on macOS/Windows; launching nu with no such prior shell in the chain falls back to the OS-native path instead. Both locations get the same stub content so either path works.
 - **Framework**: [`home/dot_local/share/nredf/shell/nu/`](../home/dot_local/share/nredf/shell/nu/) — `env.nu.tmpl` (env vars only, safe for non-interactive `nu -l`) and `config.nu.tmpl` (interactive-only setup), mirroring nu's own env.nu/config.nu convention instead of bash's single common rc.
 - **Completion Engine**: Managed by **Carapace** (`carapace-bin`), which also stands in for the fzf-powered Ctrl+Space widget nu can't have (see "Known Parity Exceptions" below).
 - **Local overrides**: exactly two files, `env.local.nu` and `config.local.nu`, seeded empty by chezmoi and never overwritten again — see "Known Parity Exceptions" below for why nu can't get bash's fuller cascade.
@@ -275,7 +275,7 @@ The unified payload (`nredf-daily-sync` on POSIX, `NREDF_DailySync` on PowerShel
 
 1. **Package Upgrades**: Homebrew (`brew update && brew upgrade && brew cleanup -s` on macOS).
 2. **Chezmoi Upgrade**: Upgrades the chezmoi binary.
-3. **Dotfiles Remote Sync**: Fetches upstream dotfiles changes, fast-forwards Git, and runs `chezmoi apply --refresh-externals`.
+3. **Dotfiles Remote Sync**: Fetches upstream dotfiles changes, fast-forwards Git, and runs `chezmoi apply --refresh-externals` (skipping secret templates when the password safe is locked).
 4. **Aqua Tools**: Updates Aqua (`aqua update-aqua`), ensures tool links (`aqua install -a -l`), and vacuums packages unused for >30 days (`aqua vacuum -d 30`).
 5. **Zsh Plugins**: Updates Sheldon plugin locks (`sheldon lock --update`).
 

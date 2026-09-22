@@ -36,10 +36,19 @@ Library
 # VS Code only reads ~/.config/Code on Linux (macOS: ~/Library/Application Support,
 # Windows: %APPDATA%). Elsewhere it is a never-read extra copy of the MCP secrets.
 .config/Code
-# nu likewise only reads ~/.config/nushell on Linux (macOS: ~/Library/Application
-# Support/nushell, Windows: %APPDATA%\nushell) — see docs/shells.md.
-.config/nushell
 {{- end }}
+
+{{- /*
+Nu's OS-native config dir differs per OS (~/Library/Application Support/nushell
+on macOS, %APPDATA%\nushell on Windows), but nu prioritizes $XDG_CONFIG_HOME/nushell
+over that native path the instant XDG_CONFIG_HOME is set in the environment —
+confirmed live: launching nu from a shell this framework already configured (every
+other shell here exports XDG_CONFIG_HOME) makes nu read ~/.config/nushell instead of
+the OS-native stub, bootstrapping its own vanilla default config there if nothing of
+ours exists at that path. So ~/.config/nushell/{env,config}.nu is deployed
+unconditionally on every OS — not gated to Linux — as a second copy of the same thin
+stub, to cover whichever path nu actually picks. See docs/shells.md.
+*/ -}}
 
 {{- if and (eq .chezmoi.os "linux") (hasKey .chezmoi "kernel") (hasKey .chezmoi.kernel "osrelease") (.chezmoi.kernel.osrelease | lower | contains "microsoft") }}
 .chezmoiscripts/*kitty.sh
