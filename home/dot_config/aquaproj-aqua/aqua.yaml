@@ -20,6 +20,12 @@ packages:
     tags:
       - default
       - required
+  - name: fish-shell/fish-shell@4.9.3 # renovate: depName=fish-shell/fish-shell
+    tags:
+      - default
+  - name: nushell/nushell@0.115.1 # renovate: depName=nushell/nushell
+    tags:
+      - default
   - name: atuinsh/atuin@v18.22.0 # renovate: depName=atuinsh/atuin
     tags:
       - default

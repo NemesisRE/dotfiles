@@ -51,6 +51,10 @@ Library
 .config/tilda
 .config/screen
 .config/powershell
+# fish has no Windows build at all (not even via WSL-less native Windows), so
+# unlike PowerShell's cross-platform tree, deploying its config there is pure
+# dead weight with no runtime-branch payoff.
+.config/fish
 {{-   if not $syncTerminalSettings }}
 AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe
 {{-   end }}

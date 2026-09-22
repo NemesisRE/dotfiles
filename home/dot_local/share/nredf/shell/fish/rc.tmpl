@@ -1,0 +1,202 @@
+{{- /* WSL is a fact about the machine, so decide it once at apply time (the same test .chezmoiignore.tmpl uses) instead of probing /proc/version in every shell. */ -}}
+{{- $isWSL := and (eq .chezmoi.os "linux") (hasKey .chezmoi "kernel") (hasKey .chezmoi.kernel "osrelease") (.chezmoi.kernel.osrelease | lower | contains "microsoft") -}}
+#
+# vim: ts=4 sw=4 et ft=fish
+#
+# chezmoi-managed fish entry point — sourced by ~/.config/fish/config.fish.
+#
+# Fish has no sibling shell to share a bash-syntax "common" rc with (see
+# AGENTS.md), so unlike bash/zsh this single file plays the combined role of
+# shell/common/rc.tmpl + shell/bash/rc.tmpl + the fish-relevant parts of
+# ~/.bashrc (fzf source, kitty integration, profiling finish).
+
+# Standard 24h throttle interval for all daily operations.
+set -g NREDF_24H_INTERVAL 86400
+
+# Load all fish function files first (fast path: use the pre-compiled/bundled
+# file if available — see AGENTS.md's "function bundles are generated" rule).
+# This has to happen before the interactive check below, since even the
+# non-interactive minimal path calls into these functions.
+if test -s "$NREDF_DOT_PATH/shell/fish/functions.bundle"
+    source "$NREDF_DOT_PATH/shell/fish/functions.bundle"
+else if test -d "$NREDF_DOT_PATH/shell/fish/functions"
+    for nredf_function in "$NREDF_DOT_PATH/shell/fish/functions/"*
+        test -f "$nredf_function"; or continue
+        source "$nredf_function"
+    end
+end
+
+# fish reads config.fish for EVERY invocation, interactive or not (unlike
+# bash's `[ -z "$PS1" ] && return`), so gate everything below on that
+# explicitly — see AGENTS.md's "never prompt, block or print on startup" rule.
+if not status is-interactive
+    _nredf_init_paths
+    _nredf_set_aqua_path
+    _nredf_set_aqua_env
+    if status is-login; and type -q mise
+        mise activate fish | source
+    end
+    exit 0
+end
+
+_nredf_init_paths
+
+_nredf_profile_init
+_nredf_step "source fish functions"
+
+# OS and WSL are fixed for a machine, so chezmoi renders them here at apply
+# time rather than every shell probing for them on startup. Fish has no
+# Windows build, so NREDF_OS is only ever macos or linux here.
+set -gx NREDF_OS "{{ if eq .chezmoi.os "darwin" }}macos{{ else }}linux{{ end }}"
+set -gx NREDF_WSL "{{ if $isWSL }}true{{ else }}false{{ end }}"
+
+# Run on each shell init so child/login shells always inherit a valid SSH_AUTH_SOCK.
+_nredf_set_ssh_agent
+_nredf_step "_nredf_set_ssh_agent"
+
+# Restore the Bitwarden session from the keychain, if there is one (silent,
+# never prompts) — see AGENTS.md's BW_SESSION rule.
+_nredf_bw_restore_session
+_nredf_step "_nredf_bw_restore_session"
+
+if test -z "$NREDF_COMMON_DEFAULTS_DONE"
+    _nredf_set_defaults
+    _nredf_step "_nredf_set_defaults"
+    {{- if eq .chezmoi.os "darwin" }}
+    set -gx HOMEBREW_NO_ANALYTICS 1
+    set -gx HOMEBREW_NO_INSTALL_CLEANUP 1
+    set -gx HOMEBREW_QUIET 1
+    {{- if eq .chezmoi.arch "arm64" }}
+    if test -d /opt/homebrew
+        set -gx HOMEBREW_PREFIX /opt/homebrew
+        set -gx HOMEBREW_CELLAR /opt/homebrew/Cellar
+        set -gx HOMEBREW_REPOSITORY /opt/homebrew
+        if not contains -- /opt/homebrew/bin $PATH
+            set -gx PATH /opt/homebrew/bin /opt/homebrew/sbin $PATH
+        end
+        test -z "$MANPATH"; or set -gx MANPATH ":$MANPATH"
+        set -gx INFOPATH "/opt/homebrew/share/info" $INFOPATH
+    end
+    {{- else }}
+    if test -d /usr/local/Homebrew; or test -x /usr/local/bin/brew
+        set -gx HOMEBREW_PREFIX /usr/local
+        set -gx HOMEBREW_CELLAR /usr/local/Cellar
+        set -gx HOMEBREW_REPOSITORY /usr/local/Homebrew
+        if not contains -- /usr/local/bin $PATH
+            set -gx PATH /usr/local/bin /usr/local/sbin $PATH
+        end
+        test -z "$MANPATH"; or set -gx MANPATH ":$MANPATH"
+        set -gx INFOPATH "/usr/local/share/info" $INFOPATH
+    end
+    {{- end }}
+    {{- else if eq .chezmoi.os "linux" }}
+    # Linuxbrew support.
+    if test -d /home/linuxbrew/.linuxbrew
+        set -gx HOMEBREW_PREFIX /home/linuxbrew/.linuxbrew
+        set -gx HOMEBREW_CELLAR /home/linuxbrew/.linuxbrew/Cellar
+        set -gx HOMEBREW_REPOSITORY /home/linuxbrew/.linuxbrew/Homebrew
+        if not contains -- /home/linuxbrew/.linuxbrew/bin $PATH
+            set -gx PATH /home/linuxbrew/.linuxbrew/bin /home/linuxbrew/.linuxbrew/sbin $PATH
+        end
+        test -z "$MANPATH"; or set -gx MANPATH ":$MANPATH"
+        set -gx INFOPATH "/home/linuxbrew/.linuxbrew/share/info" $INFOPATH
+    end
+    {{- end }}
+    {{- if $isWSL }}
+
+    # WSL: open links in the Windows default browser (see common/rc.tmpl for
+    # the bash/zsh copy of this same logic).
+    if type -q wslview
+        set -gx BROWSER wslview
+    else
+        set -gx BROWSER "cmd.exe /c start"
+    end
+    {{- end }}
+
+    # config.fish is deployed by chezmoi from .chezmoidata/nredf.yaml, mirroring
+    # config.bash for bash/zsh — source it directly if present.
+    if test -e "$NREDF_CONFIG/config.fish"
+        source "$NREDF_CONFIG/config.fish"
+    end
+    _nredf_step "source config.fish"
+    _nredf_set_local
+    _nredf_step "_nredf_set_local"
+    set -g NREDF_COMMON_DEFAULTS_DONE true
+end
+
+# Ensure aqua config env is always present, even if defaults were already marked done.
+_nredf_set_aqua_env
+_nredf_set_aqua_path
+_nredf_set_krew_path
+_nredf_step "_nredf_set_aqua_env/path + _nredf_set_krew_path"
+
+if test -z "$SUDO_COMMAND"
+    _nredf_ensure_aqua_github_token
+    _nredf_step "_nredf_ensure_aqua_github_token"
+end
+
+_nredf_set_local true
+_nredf_step "_nredf_set_local aliases"
+
+# Disable Ctrl-S/Ctrl-Q flow control, matching bash/zsh's `stty` call.
+stty stop '' start '' -ixon -ixoff 2>/dev/null
+
+# oh-my-posh prompt (cached snippet for 24h).
+if type -q oh-my-posh; and test -f "$XDG_CONFIG_HOME/oh-my-posh/config.json"
+    _nredf_refresh_cached_shell_snippet _nredf_omp_init_fish \
+        "$XDG_CACHE_HOME/nredf/init/omp.fish.sh" \
+        oh-my-posh init fish --config "$XDG_CONFIG_HOME/oh-my-posh/config.json"
+end
+_nredf_step "oh-my-posh init"
+
+# Atuin init — cache shell completion evaluation for 24h.
+if type -q atuin
+    _nredf_refresh_cached_shell_snippet _nredf_atuin_init_fish \
+        "$XDG_CACHE_HOME/nredf/init/atuin.fish.sh" \
+        atuin init fish
+end
+_nredf_step "atuin init"
+
+# Mise runtime environment manager (cached snippet for 24h).
+if type -q mise
+    _nredf_refresh_cached_shell_snippet _nredf_mise_activate_fish \
+        "$XDG_CACHE_HOME/nredf/init/mise.fish.sh" \
+        mise activate fish
+end
+_nredf_step "mise activate"
+
+# Zoxide init — replace cd with zoxide, keep z/zi as aliases (cache snippet for 24h).
+# NOTE: `zoxide init fish --cmd cd` may not work on every fish/zoxide release —
+# verify at install time; if it doesn't, drop `--cmd cd` and keep the z/zi
+# aliases only (see docs/shells.md's parity-exceptions section).
+if type -q zoxide
+    _nredf_refresh_cached_shell_snippet _nredf_zoxide_init_cd_fish \
+        "$XDG_CACHE_HOME/nredf/init/zoxide.fish.sh" \
+        zoxide init fish --cmd cd
+    alias z cd
+    alias zi cdi
+end
+_nredf_step "zoxide init"
+
+# Carapace completions — multi-shell multi-command completion generator (cache snippet for 24h).
+if type -q carapace
+    _nredf_refresh_cached_shell_snippet _nredf_carapace_init_fish \
+        "$XDG_CACHE_HOME/nredf/init/carapace.fish.sh" \
+        carapace _carapace fish
+end
+_nredf_step "carapace completions"
+
+_nredf_tool_fzf_source
+_nredf_step "fzf source"
+if type -q fzf
+    bind \co _nredf_fzf_tab_complete 2>/dev/null
+    bind -M insert \co _nredf_fzf_tab_complete 2>/dev/null
+end
+
+_nredf_init_kitty_shell_integration
+_nredf_step "kitty integration"
+
+_nredf_remote_multiplexer
+_nredf_step "_nredf_remote_multiplexer"
+
+_nredf_profile_finish
