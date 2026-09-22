@@ -216,6 +216,18 @@ jobs:
         # the `ci-lint` tag's comment in aqua.yaml.
         run: aqua install -t ci-lint
 
+      - name: Persist aqua config for later steps
+        # `nu` (installed above) is an aqua-proxy symlink, not a plain
+        # binary: invoking it from a directory that isn't aqua.yaml's own
+        # (or a parent of it) leaves the proxy unable to find its config, so
+        # it fails with "command is not found" — reproduced locally by
+        # running `nu` without AQUA_CONFIG set from outside this directory.
+        # The later "Render and lint" step runs from the repo root, so this
+        # has to be exported once, persistently, via $GITHUB_ENV.
+        run: |
+          echo "AQUA_CONFIG=${GITHUB_WORKSPACE}/home/dot_config/aquaproj-aqua/aqua.yaml" >>"${GITHUB_ENV}"
+          echo "AQUA_POLICY_CONFIG=${GITHUB_WORKSPACE}/home/dot_config/aquaproj-aqua/aqua-policy.yaml" >>"${GITHUB_ENV}"
+
       - name: Generate config
         run: |
           export PATH="${HOME}/.local/bin:${PATH}"
