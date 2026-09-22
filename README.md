@@ -39,6 +39,8 @@
   <img alt="Windows" src="https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white"/>
   <img alt="Zsh" src="https://img.shields.io/badge/Zsh-89b4fa?style=for-the-badge&logo=gnu-bash&logoColor=white"/>
   <img alt="Bash" src="https://img.shields.io/badge/Bash-4EAA25?style=for-the-badge&logo=gnu-bash&logoColor=white"/>
+  <img alt="Fish" src="https://img.shields.io/badge/Fish-94e2d5?style=for-the-badge&logo=fishshell&logoColor=white"/>
+  <img alt="Nushell" src="https://img.shields.io/badge/Nushell-f5c2e7?style=for-the-badge&logo=nushell&logoColor=white"/>
   <img alt="PowerShell" src="https://img.shields.io/badge/PowerShell-5391FE?style=for-the-badge&logo=powershell&logoColor=white"/>
 </div>
 
