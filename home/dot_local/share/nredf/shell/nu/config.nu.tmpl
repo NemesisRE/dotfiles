@@ -36,9 +36,19 @@ if (not (which oh-my-posh | is-empty)) and (($env.XDG_CONFIG_HOME | path join "o
 source "{{ .chezmoi.homeDir }}/.cache/nredf/init/omp.nu"
 nredf-step "oh-my-posh init"
 
-# Atuin init — cache shell integration for 24h.
+# Atuin init — cache shell integration for 24h. Reedline resolves two
+# keybindings mapped to the same key by last-one-wins (confirmed:
+# nushell/nushell#9867), so atuin's "atuin" entry — appended after nu's own
+# shipped "history_menu" default for Ctrl+R — already takes over that key
+# with no extra work needed here.
 if not (which atuin | is-empty) {
     nredf-cache-refresh "nredf_atuin_init_nu" "{{ .chezmoi.homeDir }}/.cache/nredf/init/atuin.nu" { ^atuin init nu }
+    # But fzf's own nu integration (sourced further below) *also* binds
+    # Ctrl+R unless FZF_CTRL_R_COMMAND is explicitly set (even to empty),
+    # and it runs after atuin — so left alone, fzf's later entry would win
+    # instead. Suppress it so atuin keeps Ctrl+R, matching bash/zsh/fish
+    # (see nredf_tool_fzf.fish for the same reasoning there).
+    $env.FZF_CTRL_R_COMMAND = ""
 }
 source "{{ .chezmoi.homeDir }}/.cache/nredf/init/atuin.nu"
 nredf-step "atuin init"
