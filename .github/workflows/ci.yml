@@ -191,11 +191,30 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Install chezmoi, shellcheck and zsh
+      - name: Install chezmoi, shellcheck, zsh and fish
         run: |
           sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "${HOME}/.local/bin"
           sudo apt-get update -qq
-          sudo apt-get install -y -qq shellcheck zsh
+          sudo apt-get install -y -qq shellcheck zsh fish
+
+      # Installed via the same pinned aqua-installer/version as the
+      # aqua-validate job, so this is provably the same nu build that job
+      # already validates against aqua.yaml's pin — not a second,
+      # independently-versioned install path.
+      - name: Install aqua and nu
+        uses: aquaproj/aqua-installer@96a9bc20066c5bf5e275b41019cfc165b25f4e2e # v4.0.5
+        with:
+          aqua_version: v2.63.0
+
+      - name: Install nu (via aqua)
+        working-directory: home/dot_config/aquaproj-aqua
+        env:
+          AQUA_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          AQUA_POLICY_CONFIG: ${{ github.workspace }}/home/dot_config/aquaproj-aqua/aqua-policy.yaml
+          AQUA_DISABLE_GITHUB_ARTIFACT_ATTESTATION: "true"
+        # aqua has no package-name filter, only tag-based filtering — see
+        # the `ci-lint` tag's comment in aqua.yaml.
+        run: aqua install -t ci-lint
 
       - name: Generate config
         run: |
