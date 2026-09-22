@@ -39,6 +39,8 @@
   <img alt="Windows" src="https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white"/>
   <img alt="Zsh" src="https://img.shields.io/badge/Zsh-89b4fa?style=for-the-badge&logo=gnu-bash&logoColor=white"/>
   <img alt="Bash" src="https://img.shields.io/badge/Bash-4EAA25?style=for-the-badge&logo=gnu-bash&logoColor=white"/>
+  <img alt="Fish" src="https://img.shields.io/badge/Fish-94e2d5?style=for-the-badge&logo=fishshell&logoColor=white"/>
+  <img alt="Nushell" src="https://img.shields.io/badge/Nushell-f5c2e7?style=for-the-badge&logo=nushell&logoColor=white"/>
   <img alt="PowerShell" src="https://img.shields.io/badge/PowerShell-5391FE?style=for-the-badge&logo=powershell&logoColor=white"/>
 </div>
 
@@ -148,7 +150,7 @@ Comprehensive, platform-specific and tool-specific guides:
 | [🐧 Linux Guide](docs/linux.md) | Distro packages (`apt`, `pacman`, `dnf`), Linuxbrew, WSL with `npiperelay`, Kitty, shortcuts, tips, and troubleshooting |
 | [🍏 macOS Guide](docs/macos.md) | Apple Silicon & Intel Homebrew, modern Bash 5.x migration, Option-as-Alt fixes, Bitwarden SSH, Kitty, shortcuts, and troubleshooting |
 | [🪟 Windows Guide](docs/windows.md) | Windows Terminal, PowerShell 7+ & 5.1, Developer Mode, Win32 Long Paths, UTC RTC dual-boot fix, OneDrive junctions, Defender exclusions |
-| [🐚 Unified Shells Guide](docs/shells.md) | Feature parity matrix across **Zsh**, **Bash**, and **PowerShell (pwsh)**, keybindings, PSReadLine, `ble.sh`, unified aliases, and `reload` |
+| [🐚 Unified Shells Guide](docs/shells.md) | Feature parity matrix across **Zsh**, **Bash**, **Fish**, **Nushell**, and **PowerShell (pwsh)**, keybindings, PSReadLine, `ble.sh`, unified aliases, and `reload` |
 | [🧰 Core Tools Reference](docs/tools.md) | Declarative CLI tools (`aqua`, `chezmoi`), history sync (`atuin`), fuzzy find (`fzf`), smart jump (`zoxide`), `lsd`, `bat`, `lazygit` (`lzg`), `lazydocker` (`lzd`), `lazyjournal` (`lzj`), `lnav`, `yazi` (`yy`), `btop`, `k9s`, and builtin multiplexer **`zellij`** |
 | [🔐 Secrets & Multi-Store Guide](docs/secrets.md) | Pluggable secret store management (Bitwarden, KeePassXC, 1Password), URI routing, zero-duplication SSH keys, and automated `aqua` token sync |
 | [⚡ Neovim Guide](docs/neovim.md) | Dedicated **AstroNvim v6** documentation: OneDark-Pro theme, full keyboard shortcuts cheat sheet, LSP, Mason, Lazy, plugins, tips, and troubleshooting |

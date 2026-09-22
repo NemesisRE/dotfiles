@@ -143,8 +143,8 @@ Configured with custom **OneDark-Pro** theme colors and preview commands:
 
 | Keybinding | Shells | Preview | Action |
 | :--- | :--- | :--- | :--- |
-| <kbd>Ctrl</kbd> + <kbd>t</kbd> | Zsh, Bash, pwsh | `bat` syntax highlighted preview | Fuzzy search files in workspace |
-| <kbd>Alt</kbd> + <kbd>c</kbd> / <kbd>Option</kbd>+<kbd>c</kbd> | Zsh, Bash, pwsh | `lsd --tree` preview | Fuzzy search directories and `cd` |
+| <kbd>Ctrl</kbd> + <kbd>t</kbd> | Zsh, Bash, Fish, Nushell, pwsh | `bat` syntax highlighted preview | Fuzzy search files in workspace |
+| <kbd>Alt</kbd> + <kbd>c</kbd> / <kbd>Option</kbd>+<kbd>c</kbd> | Zsh, Bash, Fish, Nushell, pwsh | `lsd --tree` preview | Fuzzy search directories and `cd` |
 | <kbd>Ctrl</kbd> + <kbd>/</kbd> | Any fzf window | &mdash; | Toggle preview window (hidden/bottom/right) |
 | <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> | Any fzf window | &mdash; | Multi-select items / move cursor |
 

@@ -1,0 +1,38 @@
+#!/usr/bin/env fish
+#
+# vim: ts=4 sw=4 et ft=fish
+#
+# Fish has no sibling shell to share a literal alias file with — this is
+# fish's own copy of what bash/zsh get from shell/common/aliases plus
+# shell/bash/aliases. Keep all three in sync (AGENTS.md's five-shell parity
+# rule): fish has no `&&`/`||`, so those become `; and`/`; or` below.
+
+if type -q lsd
+    alias ls "lsd"
+    alias ll "lsd -lFh --git"
+    alias la "lsd -lAFh --git"
+    alias tree "lsd --tree"
+end
+
+if type -q procs
+    alias pst "procs --tree"
+end
+
+alias root "sudo -E \"HOME=\$HOME\" su -m"
+alias aptall "sudo apt update; and sudo apt full-upgrade -y; sudo apt autoremove --purge -y; sudo apt autoclean"
+alias k "kubectl"
+alias kctx "kubectx"
+alias ctx "kubectx"
+alias kns "kubens"
+alias ns "kubens"
+alias dipls "docker ps -q | xargs docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}{{.Name}}' | sed -e 's/^\//HOST\t\//' -e 's/\//\t/g' | sort -n -t . -k 1,1 -k 2,2 -k 3,3 -k 4,4"
+alias lzg "lazygit"
+alias lg "lazygit"
+alias lzd "lazydocker"
+alias lzj "lazyjournal"
+alias lj "lazyjournal"
+alias grep "grep --color=auto"
+alias reload "_nredf_reload_shell"
+
+# From shell/bash/aliases.
+alias gpg_agent "gpgconf --kill gpg-agent; and gpgconf --launch gpg-agent"

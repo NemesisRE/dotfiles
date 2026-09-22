@@ -98,8 +98,10 @@ During `chezmoi apply`:
 
 * Automatically sourced by:
   * Bash / Zsh (`dot_local/share/nredf/shell/common/rc.tmpl`)
+  * Fish (`dot_local/share/nredf/shell/fish/functions/nredf_aqua.fish`)
   * PowerShell (`Documents/PowerShell/NREDF-POSH/Defaults.ps1`)
   * Post-apply aqua run-onchange hooks on Linux, macOS, and Windows.
+  * Nushell reads it too (`dot_local/share/nredf/shell/nu/functions/nredf_aqua.nu`), but — like PowerShell — *parses* it as plain `KEY=value` data rather than sourcing/evaluating it as code, since it's POSIX-shell syntax and neither nu nor PowerShell can execute that directly.
 
 ### 2. Git Commit Signing Key (`~/.config/git/config`)
 

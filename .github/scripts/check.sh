@@ -115,7 +115,7 @@ if have markdownlint-cli2 || have bunx || have npx; then run "markdownlint" mark
 run "markdown links" python3 .github/scripts/check-md-links.py
 if have shellcheck; then
   run "shellcheck (plain scripts)" shellcheck_plain
-  run "shellcheck + zsh -n (rendered templates)" ./.github/scripts/lint-rendered.sh "${TMP}/chezmoi.toml"
+  run "shellcheck/zsh/fish/nu (rendered templates)" ./.github/scripts/lint-rendered.sh "${TMP}/chezmoi.toml"
 else
   skip "shellcheck" "not installed"
 fi

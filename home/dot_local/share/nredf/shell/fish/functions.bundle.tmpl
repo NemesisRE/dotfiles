@@ -1,0 +1,15 @@
+#!/usr/bin/env fish
+#
+# vim: ts=4 sw=4 et ft=fish
+# chezmoi-generated monolithic bundle of all fish nredf shell functions.
+# Generated on chezmoi apply — loaded in <1ms on shell startup.
+#
+# The file list is derived from the functions/ directory rather than hand-kept:
+# fish/rc.tmpl only falls back to globbing functions/* when this bundle is
+# ABSENT, so a file missing from the list here would be silently never loaded.
+# These files contain only definitions, so alphabetical order is fine.
+{{ $dir := "dot_local/share/nredf/shell/fish/functions" -}}
+{{ range (glob (joinPath .chezmoi.sourceDir $dir "*")) -}}
+{{- $rel := printf "%s/%s" $dir (base .) }}
+{{ if hasSuffix ".tmpl" $rel }}{{ includeTemplate $rel $ }}{{ else }}{{ include $rel }}{{ end -}}
+{{ end -}}

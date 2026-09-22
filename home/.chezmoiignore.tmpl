@@ -36,6 +36,9 @@ Library
 # VS Code only reads ~/.config/Code on Linux (macOS: ~/Library/Application Support,
 # Windows: %APPDATA%). Elsewhere it is a never-read extra copy of the MCP secrets.
 .config/Code
+# nu likewise only reads ~/.config/nushell on Linux (macOS: ~/Library/Application
+# Support/nushell, Windows: %APPDATA%\nushell) — see docs/shells.md.
+.config/nushell
 {{- end }}
 
 {{- if and (eq .chezmoi.os "linux") (hasKey .chezmoi "kernel") (hasKey .chezmoi.kernel "osrelease") (.chezmoi.kernel.osrelease | lower | contains "microsoft") }}
@@ -51,6 +54,10 @@ Library
 .config/tilda
 .config/screen
 .config/powershell
+# fish has no Windows build at all (not even via WSL-less native Windows), so
+# unlike PowerShell's cross-platform tree, deploying its config there is pure
+# dead weight with no runtime-branch payoff.
+.config/fish
 {{-   if not $syncTerminalSettings }}
 AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe
 {{-   end }}

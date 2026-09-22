@@ -10,6 +10,8 @@
 
 set -euo pipefail
 
+have() { command -v "$1" >/dev/null 2>&1; }
+
 REPO_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${REPO_ROOT}"
 
@@ -64,6 +66,33 @@ check_zsh() {
   fi
 }
 
+check_fish() {
+  # check_fish <label> <file>
+  local label="$1" file="$2"
+  have fish || return 0
+  [[ -s "${file}" ]] || return 0   # OS-gated to empty on this platform
+  rendered=$((rendered + 1))
+  if ! fish --no-execute "${file}" 2>"${OUT_DIR}/err"; then
+    echo "::error file=${label}::fish syntax error"
+    sed 's/^/    /' "${OUT_DIR}/err"; fail=1
+  fi
+}
+
+check_nu() {
+  # check_nu <label> <file> — `nu-check` alone always exits 0 and just
+  # prints true/false; `--debug` is what actually gives a real 0/1 exit
+  # code (verified empirically), which `run()`/this function's exit-code
+  # check both depend on.
+  local label="$1" file="$2"
+  have nu || return 0
+  [[ -s "${file}" ]] || return 0   # OS-gated to empty on this platform
+  rendered=$((rendered + 1))
+  if ! nu -c "nu-check --debug '${file}'" >"${OUT_DIR}/err" 2>&1; then
+    echo "::error file=${label}::nu syntax error"
+    sed 's/^/    /' "${OUT_DIR}/err"; fail=1
+  fi
+}
+
 echo "==> Rendering and linting bash templates"
 while IFS= read -r src; do
   out="${OUT_DIR}/$(echo "${src}" | tr '/' '_' | sed 's/\.tmpl$//')"
@@ -91,6 +120,85 @@ echo "==> Syntax-checking non-template zsh sources"
 for src in home/dot_local/share/nredf/shell/zsh/functions/*.zsh; do
   [[ -e "${src}" ]] || continue
   check_zsh "${src}" "${src}"
+done
+
+echo "==> Rendering and linting fish templates"
+while IFS= read -r src; do
+  out="${OUT_DIR}/$(echo "${src}" | tr '/' '_' | sed 's/\.tmpl$//')"
+  render "${src}" "${out}" && check_fish "${src}" "${out}"
+done < <(
+  printf '%s\n' \
+    "home/dot_config/fish/config.fish.tmpl" \
+    "home/dot_local/share/nredf/shell/fish/rc.tmpl" \
+    "home/dot_local/share/nredf/shell/fish/functions.bundle.tmpl"
+)
+
+echo "==> Syntax-checking non-template fish sources"
+for src in home/dot_local/share/nredf/shell/fish/functions/*.fish home/dot_local/share/nredf/shell/fish/aliases; do
+  [[ -e "${src}" ]] || continue
+  check_fish "${src}" "${src}"
+done
+
+echo "==> Rendering and linting nu templates"
+# nu's env.nu.tmpl/config.nu.tmpl and the three per-OS stub pairs all
+# `source` each other (and the cache/local-override placeholders) by a
+# literal path baked in at chezmoi-render time via .chezmoi.homeDir — and
+# .chezmoi.homeDir always resolves to the *real* home directory regardless
+# of any --destination override (verified: it is not a "safe to redirect"
+# field the way apply's destination is). nu's `source` needs that path to
+# exist on disk before the file is even parsed, so none of these can be
+# nu-checked as rendered — a fresh checkout's real home won't have
+# ~/.local/share/nredf/shell/nu/env.nu yet. Work around it the same way this
+# was validated by hand during development: render the real homeDir's path,
+# then rewrite that prefix to a scratch "home" this script populates with
+# the same tree a real `chezmoi apply` would produce, and check that instead.
+REAL_HOME="$(chezmoi execute-template --source=. "${CONFIG_ARGS[@]}" '{{ .chezmoi.homeDir }}' </dev/null)"
+NU_HOME="${OUT_DIR}/nu_home"
+mkdir -p \
+  "${NU_HOME}/.local/share/nredf/shell/nu" \
+  "${NU_HOME}/.cache/nredf/init" \
+  "${NU_HOME}/.config/nredf/shell/nu"
+for f in atuin zoxide mise omp carapace fzf; do
+  : >"${NU_HOME}/.cache/nredf/init/${f}.nu"
+done
+: >"${NU_HOME}/.config/nredf/shell/nu/env.local.nu"
+: >"${NU_HOME}/.config/nredf/shell/nu/config.local.nu"
+
+render_nu_into_scratch_home() {
+  # render_nu_into_scratch_home <source-template> <scratch-relative-target>
+  local raw
+  raw="${OUT_DIR}/raw_$(basename "$2")"
+  render "$1" "${raw}" || return 1
+  sed "s#${REAL_HOME}#${NU_HOME}#g" "${raw}" >"${NU_HOME}/$2"
+}
+
+render_nu_into_scratch_home "home/dot_local/share/nredf/shell/nu/functions.bundle.tmpl" ".local/share/nredf/shell/nu/functions.bundle"
+[[ -e "home/dot_local/share/nredf/shell/nu/aliases.nu" ]] && cp "home/dot_local/share/nredf/shell/nu/aliases.nu" "${NU_HOME}/.local/share/nredf/shell/nu/aliases.nu"
+render_nu_into_scratch_home "home/dot_local/share/nredf/shell/nu/env.nu.tmpl" ".local/share/nredf/shell/nu/env.nu"
+check_nu "home/dot_local/share/nredf/shell/nu/env.nu.tmpl" "${NU_HOME}/.local/share/nredf/shell/nu/env.nu"
+render_nu_into_scratch_home "home/dot_local/share/nredf/shell/nu/config.nu.tmpl" ".local/share/nredf/shell/nu/config.nu"
+check_nu "home/dot_local/share/nredf/shell/nu/config.nu.tmpl" "${NU_HOME}/.local/share/nredf/shell/nu/config.nu"
+
+while IFS= read -r src; do
+  out="${OUT_DIR}/raw_$(echo "${src}" | tr '/' '_' | sed 's/\.tmpl$//')"
+  render "${src}" "${out}" || continue
+  subst="${OUT_DIR}/$(basename "${out}")"
+  sed "s#${REAL_HOME}#${NU_HOME}#g" "${out}" >"${subst}"
+  check_nu "${src}" "${subst}"
+done < <(
+  printf '%s\n' \
+    "home/dot_config/nushell/env.nu.tmpl" \
+    "home/dot_config/nushell/config.nu.tmpl" \
+    "home/private_Library/private_Application Support/nushell/env.nu.tmpl" \
+    "home/private_Library/private_Application Support/nushell/config.nu.tmpl" \
+    "home/AppData/Roaming/nushell/env.nu.tmpl" \
+    "home/AppData/Roaming/nushell/config.nu.tmpl"
+)
+
+echo "==> Syntax-checking non-template nu sources"
+for src in home/dot_local/share/nredf/shell/nu/functions/*.nu home/dot_local/share/nredf/shell/nu/aliases.nu; do
+  [[ -e "${src}" ]] || continue
+  check_nu "${src}" "${src}"
 done
 
 echo "==> Shellcheck on plain (non-template) shell scripts"
