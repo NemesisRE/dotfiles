@@ -119,7 +119,7 @@ packages:
   - name: github/copilot-cli@v1.0.87 # renovate: depName=github/copilot-cli
     tags:
       - default
-  - name: anthropics/claude-code@v2.1.278 # renovate: depName=anthropics/claude-code
+  - name: anthropics/claude-code@v2.1.280 # renovate: depName=anthropics/claude-code
     tags:
       - default
   - name: google-antigravity/antigravity-cli@1.2.8 # renovate: depName=google-antigravity/antigravity-cli
