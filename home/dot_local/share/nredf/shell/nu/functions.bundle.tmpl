@@ -1,0 +1,12 @@
+# chezmoi-generated monolithic bundle of all nu nredf shell functions.
+# Generated on chezmoi apply — loaded in <1ms on shell startup.
+#
+# The file list is derived from the functions/ directory rather than hand-kept:
+# env.nu only falls back to globbing functions/* when this bundle is ABSENT,
+# so a file missing from the list here would be silently never loaded.
+# These files contain only definitions, so alphabetical order is fine.
+{{ $dir := "dot_local/share/nredf/shell/nu/functions" -}}
+{{ range (glob (joinPath .chezmoi.sourceDir $dir "*")) -}}
+{{- $rel := printf "%s/%s" $dir (base .) }}
+{{ if hasSuffix ".tmpl" $rel }}{{ includeTemplate $rel $ }}{{ else }}{{ include $rel }}{{ end -}}
+{{ end -}}

@@ -1,0 +1,91 @@
+# chezmoi-managed nu config.nu — interactive half of the nu entry point.
+# Sourced by one of the thin per-OS stubs, after env.nu. See env.nu.tmpl for
+# why nu collapses bash's common+shell-specific rc split into this pair.
+#
+# nu itself already skips loading config.nu for a plain non-interactive
+# `nu -c` invocation, but a login-shell invocation still loads it non-
+# interactively (`nu --login -c ...`, e.g. some `ssh host cmd` setups), so
+# everything below is still explicitly gated on $nu.is-interactive too — see
+# AGENTS.md's "never prompt, block or print on startup" rule.
+
+source "{{ .chezmoi.homeDir }}/.local/share/nredf/shell/nu/aliases.nu"
+
+if not $nu.is-interactive {
+    return
+}
+
+nredf-profile-init
+nredf-step "config.nu start"
+
+if ($env.SUDO_COMMAND? | default "" | is-empty) {
+    nredf-ensure-aqua-github-token
+    nredf-step "nredf-ensure-aqua-github-token"
+}
+
+# oh-my-posh prompt (cached snippet for 24h).
+if (not (which oh-my-posh | is-empty)) and (($env.XDG_CONFIG_HOME | path join "oh-my-posh" "config.json") | path exists) {
+    nredf-cache-refresh "nredf_omp_init_nu" "{{ .chezmoi.homeDir }}/.cache/nredf/init/omp.nu" {
+        ^oh-my-posh init nu --config ($env.XDG_CONFIG_HOME | path join "oh-my-posh" "config.json")
+    }
+}
+source "{{ .chezmoi.homeDir }}/.cache/nredf/init/omp.nu"
+nredf-step "oh-my-posh init"
+
+# Atuin init — cache shell integration for 24h.
+if not (which atuin | is-empty) {
+    nredf-cache-refresh "nredf_atuin_init_nu" "{{ .chezmoi.homeDir }}/.cache/nredf/init/atuin.nu" { ^atuin init nu }
+}
+source "{{ .chezmoi.homeDir }}/.cache/nredf/init/atuin.nu"
+nredf-step "atuin init"
+
+# Mise runtime environment manager (cached snippet for 24h).
+if not (which mise | is-empty) {
+    nredf-cache-refresh "nredf_mise_activate_nu" "{{ .chezmoi.homeDir }}/.cache/nredf/init/mise.nu" { ^mise activate nu }
+}
+source "{{ .chezmoi.homeDir }}/.cache/nredf/init/mise.nu"
+nredf-step "mise activate"
+
+# Zoxide init (`z`/`zi`). NOTE: zoxide does not support replacing `cd` on
+# nushell at all (upstream limitation, not this repo's — see
+# docs/shells.md's parity-exceptions section), so unlike bash/zsh/fish there
+# is no `--cmd cd` here and no `cd` alias to it.
+if not (which zoxide | is-empty) {
+    nredf-cache-refresh "nredf_zoxide_init_nu" "{{ .chezmoi.homeDir }}/.cache/nredf/init/zoxide.nu" { ^zoxide init nushell }
+}
+source "{{ .chezmoi.homeDir }}/.cache/nredf/init/zoxide.nu"
+nredf-step "zoxide init"
+
+# Carapace completions — multi-shell multi-command completion generator
+# (cache snippet for 24h). This is also nu's *only* fuzzy-completion story:
+# the Ctrl+Space fzf-tab widget bash/zsh/fish get is not achievable in nu —
+# Reedline has no primitive to replace the edit buffer with an external
+# filter's output — so carapace's native Tab-completion menu is what nu gets
+# instead. See docs/shells.md's parity-exceptions section.
+if not (which carapace | is-empty) {
+    nredf-cache-refresh "nredf_carapace_init_nu" "{{ .chezmoi.homeDir }}/.cache/nredf/init/carapace.nu" { ^carapace _carapace nushell }
+}
+source "{{ .chezmoi.homeDir }}/.cache/nredf/init/carapace.nu"
+nredf-step "carapace completions"
+
+# fzf Ctrl+T / Alt+C / Ctrl+R keybindings (not the Ctrl+Space tab-complete
+# widget, which nu cannot have — see above). fzf ships real nu integration
+# for these (`fzf --nushell`).
+if not (which fzf | is-empty) {
+    nredf-cache-refresh "nredf_fzf_init_nu" "{{ .chezmoi.homeDir }}/.cache/nredf/init/fzf.nu" { ^fzf --nushell }
+}
+source "{{ .chezmoi.homeDir }}/.cache/nredf/init/fzf.nu"
+nredf-step "fzf keybindings"
+
+# kitty has no nushell shell-integration upstream at all (fish and zsh/bash
+# do) — documented upstream gap, not something this repo can fix; see
+# docs/shells.md's parity-exceptions section.
+
+nredf-remote-multiplexer
+nredf-step "nredf-remote-multiplexer"
+
+# nu-specific local interactive-config override, seeded empty by chezmoi
+# (create_) — see env.nu.tmpl's comment on env.local.nu for why nu needs a
+# pre-seeded placeholder here instead of bash's fuller rc.local cascade.
+source "{{ .chezmoi.homeDir }}/.config/nredf/shell/nu/config.local.nu"
+
+nredf-profile-finish
