@@ -368,6 +368,6 @@ reload                                                                 # Reload 
 
 ## 📖 Further Documentation
 
-- [Unified Shells Guide (Zsh, Bash, pwsh)](shells.md)
+- [Unified Shells Guide (Zsh, Bash, Fish, Nushell, pwsh)](shells.md) — note: Fish has no Windows build; Nushell does
 - [Core Features & Tools Guide](tools.md)
 - [Dedicated Neovim Guide](neovim.md)
