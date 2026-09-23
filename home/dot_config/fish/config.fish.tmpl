@@ -2,7 +2,7 @@
 # vim: ts=4 sw=4 et ft=fish
 #
 # chezmoi-managed config.fish — sets required env and sources the nredf fish rc.
-# No homesick/homeshick references. All paths are relative to $HOME.
+# All paths are relative to $HOME.
 
 set -gx XDG_CONFIG_HOME (test -n "$XDG_CONFIG_HOME"; and echo "$XDG_CONFIG_HOME"; or echo "$HOME/.config")
 set -gx XDG_DATA_HOME (test -n "$XDG_DATA_HOME"; and echo "$XDG_DATA_HOME"; or echo "$HOME/.local/share")
