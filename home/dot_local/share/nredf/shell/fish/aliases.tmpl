@@ -32,3 +32,13 @@ alias {{ . }} "{{ $cmd }}"
 alias {{ . }} "{{ $cmd }}"
 {{- end }}
 {{- end }}
+{{- /* User-local additions: ~/.config/nredf/local.yaml, not chezmoi-managed — see docs/shells.md. */}}
+{{- $localFile := joinPath .chezmoi.homeDir ".config" "nredf" "local.yaml" }}
+{{- $local := dict }}
+{{- if stat $localFile }}{{ $local = output "cat" $localFile | fromYaml }}{{ end }}
+{{- range (dig "nredf_aliases_local" (list) $local) }}
+{{- $cmd := .command }}
+{{- range .names }}
+alias {{ . }} "{{ $cmd }}"
+{{- end }}
+{{- end }}

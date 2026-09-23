@@ -21,6 +21,16 @@
 #   when kubectx/kubens were missing; dropped as dead code (kubectx/kubens are
 #   aqua-managed on every OS) so PS now matches bash/fish/nu exactly, and
 #   gained the `ctx`/`ns` short names it was missing.
+#
+# Every one of those same four templates also merges in a `nredf_aliases_local`
+# list (`names`/`command` only, no `requires` or `nu`/`ps` flags — always
+# defined, ungated) read from the user's own ~/.config/nredf/local.yaml at
+# apply time, if that file exists — it is not chezmoi-managed and never
+# committed here. See docs/shells.md's "Local, Machine-Specific Overrides"
+# section. For anything conditional or needing a real pipeline/control flow,
+# each shell's own native local-override files (~/.config/<shell>/aliases,
+# rc, functions/) are still the tool for the job — local.yaml only covers
+# the simple case.
 nredf_aliases:
   groups:
     - requires: "lsd"

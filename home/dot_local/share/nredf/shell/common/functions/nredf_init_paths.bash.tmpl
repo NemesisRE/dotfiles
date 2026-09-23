@@ -3,8 +3,16 @@
 # vim: ts=2 sw=2 et ff=unix ft=bash syntax=sh
 {{- /* Generated from .chezmoidata/paths.yaml's nredf_paths — keep bash/fish/nu in sync. */}}
 
+{{- /* User-local additions: ~/.config/nredf/local.yaml, not chezmoi-managed — see docs/shells.md. */}}
+{{- $localFile := joinPath .chezmoi.homeDir ".config" "nredf" "local.yaml" }}
+{{- $local := dict }}
+{{- if stat $localFile }}{{ $local = output "cat" $localFile | fromYaml }}{{ end }}
+
 function _nredf_init_paths() {
 {{- range .nredf_paths.xdg }}
+{{ printf "  export %s=\"${%s:-$%s/%s}\"" .var .var .base (join "/" .parts) }}
+{{- end }}
+{{- range (dig "nredf_paths_local" (list) $local) }}
 {{ printf "  export %s=\"${%s:-$%s/%s}\"" .var .var .base (join "/" .parts) }}
 {{- end }}
 

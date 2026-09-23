@@ -1,0 +1,18 @@
+# Copy this file to local.yaml (same directory) and edit — local.yaml itself
+# is never chezmoi-managed, so nothing here ever overwrites or deletes it.
+# Both lists are optional and additive: they never replace the built-in
+# entries in .chezmoidata/paths.yaml / aliases.yaml, and every shell picks
+# this up automatically the next time `chezmoi apply` runs. See
+# docs/shells.md's "Local, Machine-Specific Overrides" section for the full
+# picture (including what this format deliberately can't express — a
+# requires/existence gate on an alias, or anything needing a pipe or real
+# control flow — and where those still belong instead).
+
+nredf_paths_local:
+  - var: MY_TOOL_HOME # exported as $MY_TOOL_HOME if not already set
+    base: HOME # $HOME, or any other var already set by then (e.g. XDG_CONFIG_HOME)
+    parts: [".local", "my-tool"] # joined onto base with "/"
+
+nredf_aliases_local:
+  - names: ["myalias", "ma"] # one or more names for the same command
+    command: "echo hello world" # a single target command; no pipes/flow control

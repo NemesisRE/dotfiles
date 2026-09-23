@@ -8,9 +8,18 @@
 # `def`/`def --env` (no `export` needed) is all that's required for every
 # command here to see every other one.
 {{- /* Generated from .chezmoidata/paths.yaml's nredf_paths — keep bash/fish/nu in sync. */}}
+{{- /* User-local additions: ~/.config/nredf/local.yaml, not chezmoi-managed — see docs/shells.md. */}}
+{{- $localFile := joinPath .chezmoi.homeDir ".config" "nredf" "local.yaml" }}
+{{- $local := dict }}
+{{- if stat $localFile }}{{ $local = output "cat" $localFile | fromYaml }}{{ end }}
 
 def --env nredf-init-paths [] {
 {{- range .nredf_paths.xdg }}
+    if ($env.{{ .var }}? | is-empty) {
+        $env.{{ .var }} = ($env.{{ .base }} | path join{{ range .parts }} "{{ . }}"{{ end }})
+    }
+{{- end }}
+{{- range (dig "nredf_paths_local" (list) $local) }}
     if ($env.{{ .var }}? | is-empty) {
         $env.{{ .var }} = ($env.{{ .base }} | path join{{ range .parts }} "{{ . }}"{{ end }})
     }

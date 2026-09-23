@@ -4,6 +4,12 @@
 # docs/shells.md. PowerShell's Defaults.ps1 is NOT generated from this file:
 # it genuinely diverges on Windows (LOCALAPPDATA-based cache paths instead of
 # XDG), so it stays hand-written.
+#
+# Each of those same templates also merges in a `nredf_paths_local` list (same
+# `var`/`base`/`parts` shape, no `ensure_dirs`) read from the user's own
+# ~/.config/nredf/local.yaml at apply time, if that file exists — it is not
+# chezmoi-managed and never committed here. See docs/shells.md's "Local,
+# Machine-Specific Overrides" section.
 nredf_paths:
   xdg:
     - var: XDG_CONFIG_HOME
