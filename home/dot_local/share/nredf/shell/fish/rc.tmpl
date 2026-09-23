@@ -119,12 +119,12 @@ if test -z "$NREDF_COMMON_DEFAULTS_DONE"
     end
     {{- end }}
 
-    # config.fish is deployed by chezmoi from .chezmoidata/nredf.yaml, mirroring
-    # config.bash for bash/zsh — source it directly if present.
-    if test -e "$NREDF_CONFIG/config.fish"
-        source "$NREDF_CONFIG/config.fish"
-    end
-    _nredf_step "source config.fish"
+    # Shell-behavior toggles from .chezmoidata/shell.yaml, fixed at chezmoi-apply
+    # time (same pattern nu's env.nu.tmpl uses for NREDF_OS/NREDF_WSL).
+    set -g NREDF_SHELL_MULTIPLEXER "{{ .shell.multiplexer }}"
+    set -g NREDF_SHELL_WSL_MULTIPLEXER "{{ if hasKey .shell "wsl_multiplexer" }}{{ .shell.wsl_multiplexer }}{{ else }}false{{ end }}"
+    set -g NREDF_SHELL_SSH_AGENT "{{ .shell.ssh.agent }}"
+    _nredf_step "shell.yaml toggles"
     _nredf_set_local
     _nredf_step "_nredf_set_local"
     set -g NREDF_COMMON_DEFAULTS_DONE true
