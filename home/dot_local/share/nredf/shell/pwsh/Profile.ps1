@@ -15,8 +15,7 @@ if ($ENV:NREDF_PROFILE_STARTUP -eq '1') {
 }
 
 if ([string]::IsNullOrEmpty($ENV:NREDF_PATH)) {
-  $ENV:PROFILE_PATH = (Get-Item $PROFILE).Directory
-  $ENV:NREDF_PATH = Join-Path $ENV:PROFILE_PATH 'NREDF-POSH'
+  $ENV:NREDF_PATH = if ($PSScriptRoot) { $PSScriptRoot } else { Join-Path $HOME '.local/share/nredf/shell/pwsh' }
 }
 
 . (Join-Path $ENV:NREDF_PATH 'Sources.ps1')

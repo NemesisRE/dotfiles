@@ -21,7 +21,7 @@ if (-not (Get-Module -ListAvailable PSScriptAnalyzer)) {
 }
 
 $targets = @('bootstrap.ps1') +
-  (Get-ChildItem -Path 'home/Documents/PowerShell' -Recurse -Filter '*.ps1' | ForEach-Object FullName) |
+  (Get-ChildItem -Path 'home/Documents/PowerShell', 'home/dot_local/share/nredf/shell/pwsh' -Recurse -Filter '*.ps1' | ForEach-Object FullName) |
   Where-Object { Test-Path $_ }
 
 $gated = @(

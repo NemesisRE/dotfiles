@@ -55,7 +55,7 @@ All developer CLI tools (such as `neovim`, `zellij`, `atuin`, `fzf`, `zoxide`, `
 
 - Install via Microsoft package repository or `snap install powershell --classic`.
 - Symlinks `~/.config/powershell` to `~/Documents/PowerShell`.
-- Uses `NREDF-POSH` modular configuration with `PSFzf`, `Terminal-Icons`, `posh-git`, and `Atuin`.
+- Uses modular configuration located at `~/.local/share/nredf/shell/pwsh/` with `PSFzf`, `Terminal-Icons`, `posh-git`, and `Atuin`.
 
 To switch active shells anytime without re-opening your terminal:
 

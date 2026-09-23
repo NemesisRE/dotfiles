@@ -29,7 +29,11 @@ $bundlePath = Join-Path $ENV:NREDF_PATH 'Functions.bundle.ps1'
 if (Test-Path -LiteralPath $bundlePath) {
   . $bundlePath
 } else {
-  Get-ChildItem -Path "$ENV:NREDF_PATH\Functions" -Filter '*.ps1' | ForEach-Object {
+  $functionsDir = Join-Path $ENV:NREDF_PATH 'Functions'
+  if (-not (Test-Path $functionsDir)) {
+    $functionsDir = Join-Path $ENV:NREDF_PATH 'functions'
+  }
+  Get-ChildItem -Path $functionsDir -Filter '*.ps1' | ForEach-Object {
     . $_.FullName
   }
 }

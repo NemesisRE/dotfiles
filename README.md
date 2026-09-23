@@ -106,7 +106,7 @@ aqua install -a -l
 2. The dotfiles repository is cloned to `~/.local/share/chezmoi`
 3. **aqua** is installed and declarative CLI tools are linked
 4. All dotfiles and profiles are applied to `~/`
-5. On Unix, shell libraries are deployed to `~/.local/share/nredf/`; PowerShell dotfiles are maintained in `Documents/PowerShell` (with `~/.config/powershell` symlinked on Linux/macOS)
+5. Shell libraries for all shells (Bash, Zsh, Fish, Nu, and PowerShell) are deployed to `~/.local/share/nredf/shell/`; PowerShell entry-point profiles are maintained in `Documents/PowerShell` (with `~/.config/powershell` symlinked on Linux/macOS)
 
 ---
 

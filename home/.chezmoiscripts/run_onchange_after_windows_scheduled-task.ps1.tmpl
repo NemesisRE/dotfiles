@@ -1,6 +1,6 @@
 {{- if eq .chezmoi.os "windows" -}}
 # chezmoi run_onchange_after — registers NREDF daily maintenance task on Windows
-# NREDF_DailySync function hash: {{ include "Documents/PowerShell/NREDF-POSH/Functions/NREDF_DailySync.ps1" | sha256sum }}
+# NREDF_DailySync function hash: {{ include "dot_local/share/nredf/shell/pwsh/Functions/NREDF_DailySync.ps1" | sha256sum }}
 
 $ErrorActionPreference = 'SilentlyContinue'
 
@@ -20,15 +20,24 @@ if (-not $pwshExe) {
 
 $scriptBlock = @'
 $ErrorActionPreference = 'SilentlyContinue'
-$profileDir = Split-Path $PROFILE
-$env:PROFILE_PATH = $profileDir
-$env:NREDF_PATH = Join-Path $profileDir 'NREDF-POSH'
+$nredfShellPwsh = Join-Path $HOME '.local/share/nredf/shell/pwsh'
+if (Test-Path $nredfShellPwsh) {
+  $env:NREDF_PATH = $nredfShellPwsh
+} else {
+  $profileDir = Split-Path $PROFILE
+  $env:PROFILE_PATH = $profileDir
+  $env:NREDF_PATH = Join-Path $profileDir 'NREDF-POSH'
+}
 function global:NREDF_Step ([string]$label) {}
 $bundlePath = Join-Path $env:NREDF_PATH 'Functions.bundle.ps1'
 if (Test-Path -LiteralPath $bundlePath) {
   . $bundlePath
 } else {
-  Get-ChildItem -Path (Join-Path $env:NREDF_PATH 'Functions') -Filter '*.ps1' | ForEach-Object { . $_.FullName }
+  $functionsDir = Join-Path $env:NREDF_PATH 'Functions'
+  if (-not (Test-Path $functionsDir)) {
+    $functionsDir = Join-Path $env:NREDF_PATH 'functions'
+  }
+  Get-ChildItem -Path $functionsDir -Filter '*.ps1' | ForEach-Object { . $_.FullName }
 }
 if (Test-Path function:\NREDF_DailySync) {
   NREDF_DailySync -Force

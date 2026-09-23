@@ -63,11 +63,14 @@ All five shells share a unified experience designed around modern developer ergo
 
 ### 5. PowerShell (pwsh) Architecture
 
-- **Dotfiles**: [`home/Documents/PowerShell/`](../home/Documents/PowerShell/)
-  - Target for PowerShell 7+: `Documents\PowerShell\Microsoft.PowerShell_profile.ps1`
-  - Target for Windows PowerShell 5.1: `Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` (dot-sources PowerShell 7 profile)
-  - Linux/macOS: `~/.config/powershell` is symlinked directly to `~/Documents/PowerShell`
-- **Module Architecture (`NREDF-POSH`)**:
+- **Dotfiles**:
+  - Entry points: [`home/Documents/PowerShell/`](../home/Documents/PowerShell/)
+    - Target for PowerShell 7+: `Documents\PowerShell\Microsoft.PowerShell_profile.ps1`
+    - Target for Windows PowerShell 5.1: `Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` (dot-sources PowerShell 7 profile)
+    - Linux/macOS: `~/.config/powershell` is symlinked directly to `~/Documents/PowerShell`
+  - Framework: [`home/dot_local/share/nredf/shell/pwsh/`](../home/dot_local/share/nredf/shell/pwsh/)
+    - Deployed to `~/.local/share/nredf/shell/pwsh/` on all platforms, matching the location of all other shells.
+- **Module Architecture**:
   - `Defaults.ps1`: XDG paths, Aqua paths, Python paths, UTF-8 output encoding, default formatting.
   - `Modules.ps1`: Zero external PowerShell modules required; hooks local overrides if configured.
   - `Aliases.ps1`: Cross-platform command parity with Bash/Zsh.

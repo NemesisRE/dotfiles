@@ -102,7 +102,7 @@ parse_rendered_powershell() {
   done
   # Cross-platform PowerShell profile templates (pwsh runs on macOS/Linux too) —
   # no OS gate to force.
-  for f in home/Documents/PowerShell/NREDF-POSH/*.ps1.tmpl; do
+  for f in home/dot_local/share/nredf/shell/pwsh/*.ps1.tmpl; do
     [[ -e "${f}" ]] || continue
     parse_ps1_tmpl "${f}" || return 1
     n=$((n + 1))
