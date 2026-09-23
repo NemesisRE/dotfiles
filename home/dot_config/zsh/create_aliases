@@ -1,0 +1,12 @@
+# nredf: your machine-local zsh aliases.
+#
+# Sourced whenever zsh loads aliases (interactive shells). chezmoi seeded
+# this file once, empty, and will never overwrite it again (the `create_`
+# attribute) — edit it freely. Bash has its own separate copy at
+# ~/.config/bash/aliases; this one is zsh-only.
+#
+# Example:
+#   alias ll="ls -la"
+#
+# For a simple alias shared across every shell, ~/.config/nredf/local.yaml
+# is usually less to write — see ~/.config/nredf/README.md.

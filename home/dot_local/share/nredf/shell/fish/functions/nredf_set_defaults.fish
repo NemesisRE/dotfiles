@@ -22,7 +22,6 @@ function _nredf_set_defaults
 
     test -f "$HOME/.proxy.local"; and source "$HOME/.proxy.local"
 
-    set -gx NREDF_COMMON_RC_LOCAL "$HOME/.config/shell"
     set -gx NREDF_RC_PATH "$NREDF_DOT_PATH/shell/$NREDF_SHELL_NAME"
     set -gx NREDF_RC_LOCAL "$HOME/.config/$NREDF_SHELL_NAME"
 

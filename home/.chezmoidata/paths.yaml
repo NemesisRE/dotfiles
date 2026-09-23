@@ -36,14 +36,10 @@ nredf_paths:
     - var: NREDF_LKCACHE
       base: XDG_CACHE_HOME
       parts: ["nredf", "LKCache"]
-    - var: NREDF_COMMON_RC_LOCAL
-      base: HOME
-      parts: [".config", "shell"]
   # Subset of the vars above that get mkdir -p'd once per shell session. The
   # fast-path skip check keys off the first one that's also in xdg (NREDF_LRCACHE).
   ensure_dirs:
     - NREDF_RC_LOCAL
-    - NREDF_COMMON_RC_LOCAL
     - NREDF_CONFIG
     - NREDF_LRCACHE
     - NREDF_LKCACHE

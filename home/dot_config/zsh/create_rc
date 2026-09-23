@@ -1,0 +1,9 @@
+# nredf: your machine-local zsh startup code.
+#
+# Sourced at the end of zsh's non-alias startup pass (after functions are
+# loaded). chezmoi seeded this file once, empty, and will never overwrite it
+# again (the `create_` attribute) — edit it freely. Bash has its own
+# separate copy at ~/.config/bash/rc; this one is zsh-only.
+#
+# Example:
+#   export MY_TOOL_TOKEN="..."

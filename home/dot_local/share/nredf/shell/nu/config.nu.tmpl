@@ -111,9 +111,10 @@ nredf-step "fzf keybindings"
 nredf-remote-multiplexer
 nredf-step "nredf-remote-multiplexer"
 
-# nu-specific local interactive-config override, seeded empty by chezmoi
-# (create_) — see env.nu.tmpl's comment on env.local.nu for why nu needs a
-# pre-seeded placeholder here instead of bash's fuller rc.local cascade.
-source "{{ .chezmoi.homeDir }}/.config/nredf/shell/nu/config.local.nu"
+# nu-specific local interactive-config override, at ~/.config/nu/ like
+# env.local.nu — seeded empty by chezmoi (create_); see env.nu.tmpl's
+# comment for why nu needs a pre-seeded placeholder here instead of the
+# other shells' fuller local-override files.
+source "{{ .chezmoi.homeDir }}/.config/nu/config.local.nu"
 
 nredf-profile-finish

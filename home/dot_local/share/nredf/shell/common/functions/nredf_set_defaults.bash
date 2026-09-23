@@ -24,7 +24,6 @@ function _nredf_set_defaults() {
 
   [[ -f "${HOME}/.proxy.local" ]] && source "${HOME}/.proxy.local"
 
-  export NREDF_COMMON_RC_LOCAL="${HOME}/.config/shell"
   export NREDF_RC_PATH="${NREDF_DOT_PATH}/shell/${NREDF_SHELL_NAME}"
   export NREDF_RC_LOCAL="${HOME}/.config/${NREDF_SHELL_NAME}"
 

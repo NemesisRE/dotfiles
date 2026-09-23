@@ -1,0 +1,8 @@
+# nredf: your machine-local fish startup code.
+#
+# Sourced at the end of fish's non-alias startup pass (after functions are
+# loaded). chezmoi seeded this file once, empty, and will never overwrite it
+# again (the `create_` attribute) — edit it freely.
+#
+# Example:
+#   set -gx MY_TOOL_TOKEN "..."

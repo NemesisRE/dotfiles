@@ -9,4 +9,5 @@
 # unlike bash/zsh/fish this file (and config.local.nu, its config.nu
 # counterpart) is nu's only supported local-override point — see
 # docs/shells.md's parity-exceptions section for why the fuller
-# functions.local/rc.local cascade those shells get isn't possible here.
+# aliases/rc/functions-directory cascade those shells get isn't possible
+# here.

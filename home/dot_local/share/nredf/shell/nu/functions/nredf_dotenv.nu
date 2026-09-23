@@ -1,12 +1,13 @@
 # chezmoi-managed nu function file.
 #
-# Several files this repo reads (~/.config/nredf/aqua.env, GITHUB.AUTH,
-# ~/.proxy.local) are shared with bash/zsh (which `source` them directly)
-# and, for aqua.env, PowerShell (whose Defaults.ps1 already parses rather
-# than evals it). They are plain `[export] KEY="value"` dotenv files, not nu
-# syntax, so nu parses them as data too instead of trying to `source` them
-# as code — this only supports that simple shape, not arbitrary shell logic,
-# which is the assumption those files' own simple contents already make.
+# Several files this repo reads (~/.config/nredf/aqua-vault.env, aqua.env,
+# GITHUB.AUTH, ~/.proxy.local) are shared with bash/zsh (which `source` them
+# directly) and, for the aqua ones, PowerShell (whose Defaults.ps1 already
+# parses rather than evals them). They are plain `[export] KEY="value"`
+# dotenv files, not nu syntax, so nu parses them as data too instead of
+# trying to `source` them as code — this only supports that simple shape,
+# not arbitrary shell logic, which is the assumption those files' own simple
+# contents already make.
 
 def --env nredf-read-dotenv [file: string] {
     if not ($file | path exists) {

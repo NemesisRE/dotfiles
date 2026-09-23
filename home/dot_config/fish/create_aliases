@@ -1,0 +1,11 @@
+# nredf: your machine-local fish aliases.
+#
+# Sourced whenever fish loads aliases (interactive shells). chezmoi seeded
+# this file once, empty, and will never overwrite it again (the `create_`
+# attribute) — edit it freely.
+#
+# Example:
+#   alias ll "ls -la"
+#
+# For a simple alias shared across every shell, ~/.config/nredf/local.yaml
+# is usually less to write — see ~/.config/nredf/README.md.

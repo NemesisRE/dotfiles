@@ -10,10 +10,6 @@ _nredf_set_local () {
 
   local ALIAS=${1:-false}
   if ${ALIAS}; then
-    if [[ -f "${NREDF_CONFIG}/shell/common/aliases" ]]; then
-      source "${NREDF_CONFIG}/shell/common/aliases"
-    fi
-
     if [[ -f "${NREDF_DOT_PATH}/shell/common/aliases" ]]; then
       source "${NREDF_DOT_PATH}/shell/common/aliases"
     fi
@@ -22,36 +18,18 @@ _nredf_set_local () {
       source "${NREDF_RC_PATH}/aliases"
     fi
 
-    if [[ -f "${NREDF_RC_LOCAL}/aliases.local" ]]; then
-      source "${NREDF_RC_LOCAL}/aliases.local"
+    if [[ -f "${NREDF_RC_LOCAL}/aliases" ]]; then
+      source "${NREDF_RC_LOCAL}/aliases"
     fi
   else
     if [[ ! -d "${NREDF_RC_LOCAL}" ]]; then
       mkdir -p "${NREDF_RC_LOCAL}"
     fi
 
-    if [[ -f "${NREDF_RC_LOCAL}/functions.local" ]]; then
-      source "${NREDF_RC_LOCAL}/functions.local"
-    fi
-
-    if [[ -f "${NREDF_COMMON_RC_LOCAL}/rc.local" ]]; then
-      source "${NREDF_COMMON_RC_LOCAL}/rc.local"
-    fi
-
-    if [[ -f "${NREDF_RC_LOCAL}/rc.local" ]]; then
-      source "${NREDF_RC_LOCAL}/rc.local"
-    fi
-
-    if [[ -d "${NREDF_CONFIG}/shell/common/functions" ]]; then
-      for NREDF_LOCAL_FUNCTIONS in "${NREDF_CONFIG}/shell/common/functions/"*; do
+    if [[ -d "${NREDF_RC_LOCAL}/functions" ]]; then
+      for NREDF_LOCAL_FUNCTIONS in "${NREDF_RC_LOCAL}/functions/"*; do
         [[ -f "${NREDF_LOCAL_FUNCTIONS}" ]] || continue
-        source "${NREDF_LOCAL_FUNCTIONS}"
-      done
-    fi
-
-    if [[ -d "${NREDF_CONFIG}/shell/${NREDF_SHELL_NAME}/functions" ]]; then
-      for NREDF_LOCAL_FUNCTIONS in "${NREDF_CONFIG}/shell/${NREDF_SHELL_NAME}/functions/"*; do
-        [[ -f "${NREDF_LOCAL_FUNCTIONS}" ]] || continue
+        [[ "${NREDF_LOCAL_FUNCTIONS}" == *.md ]] && continue
         source "${NREDF_LOCAL_FUNCTIONS}"
       done
     fi
@@ -62,16 +40,8 @@ _nredf_set_local () {
       source "${NREDF_RC_PATH}/functions"
     fi
 
-    if [[ -f "${NREDF_CONFIG}/shell/${NREDF_SHELL_NAME}/aliases" ]]; then
-      source "${NREDF_CONFIG}/shell/${NREDF_SHELL_NAME}/aliases"
-    fi
-
-    if [[ -f "${NREDF_CONFIG}/shell/common/rc" ]]; then
-      source "${NREDF_CONFIG}/shell/common/rc"
-    fi
-
-    if [[ -f "${NREDF_CONFIG}/shell/${NREDF_SHELL_NAME}/rc" ]]; then
-      source "${NREDF_CONFIG}/shell/${NREDF_SHELL_NAME}/rc"
+    if [[ -f "${NREDF_RC_LOCAL}/rc" ]]; then
+      source "${NREDF_RC_LOCAL}/rc"
     fi
   fi
 }

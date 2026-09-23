@@ -22,7 +22,6 @@ def --env nredf-set-defaults [] {
         nredf-read-dotenv $proxy_local
     }
 
-    $env.NREDF_COMMON_RC_LOCAL = ($env.HOME | path join ".config" "shell")
     $env.NREDF_RC_PATH = ($env.NREDF_DOT_PATH | path join "shell" $env.NREDF_SHELL_NAME)
     $env.NREDF_RC_LOCAL = ($env.HOME | path join ".config" $env.NREDF_SHELL_NAME)
 

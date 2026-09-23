@@ -157,12 +157,12 @@ NU_HOME="${OUT_DIR}/nu_home"
 mkdir -p \
   "${NU_HOME}/.local/share/nredf/shell/nu" \
   "${NU_HOME}/.cache/nredf/init" \
-  "${NU_HOME}/.config/nredf/shell/nu"
+  "${NU_HOME}/.config/nu"
 for f in atuin zoxide mise omp carapace fzf; do
   : >"${NU_HOME}/.cache/nredf/init/${f}.nu"
 done
-: >"${NU_HOME}/.config/nredf/shell/nu/env.local.nu"
-: >"${NU_HOME}/.config/nredf/shell/nu/config.local.nu"
+: >"${NU_HOME}/.config/nu/env.local.nu"
+: >"${NU_HOME}/.config/nu/config.local.nu"
 
 render_nu_into_scratch_home() {
   # render_nu_into_scratch_home <source-template> <scratch-relative-target>

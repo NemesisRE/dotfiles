@@ -134,11 +134,11 @@ In WSL 1/2, NREDF can bridge your Windows SSH Agent (e.g. Bitwarden Desktop or W
   ```
 
   In WSL, NREDF automatically detects `npiperelay.exe` and establishes the relay socket.
-- **Opening links in your Windows browser**: on WSL, `BROWSER` is set for you, which `gh`, `git web--browse` and anything else that honours it will use. It is `wslview` (from [wslu](https://github.com/wslutilities/wslu)) when that is installed, because it quotes URLs so `&` survives and converts Linux paths; otherwise it falls back to `cmd.exe /c start`. On Ubuntu, `sudo apt install wslu`. A `BROWSER` you set in `~/.bashrc.local` or `~/.zshrc.local` takes precedence.
+- **Opening links in your Windows browser**: on WSL, `BROWSER` is set for you, which `gh`, `git web--browse` and anything else that honours it will use. It is `wslview` (from [wslu](https://github.com/wslutilities/wslu)) when that is installed, because it quotes URLs so `&` survives and converts Linux paths; otherwise it falls back to `cmd.exe /c start`. On Ubuntu, `sudo apt install wslu`. A `BROWSER` you set in `~/.config/bash/rc` or `~/.config/zsh/rc` takes precedence.
   - wslview 4.1 probes a URL with `curl` first and treats it as a file path if that fails, so a link to a host that is not reachable yet can misbehave. If you hit that, add `export WSLVIEW_SKIP_VALIDATION_CHECK=0` to the same file.
 - **Terminal Multiplexer (Zellij)**: Automatic Zellij startup is disabled by default on WSL so terminal tabs open directly into your shell. To have Zellij auto-attach on WSL:
   - Run `chezmoi init --prompt && chezmoi apply` and answer `yes` to the WSL multiplexer prompt (or set `wsl_multiplexer = true` in `~/.config/chezmoi/chezmoi.toml` under `[data.shell]`).
-  - Alternatively, set `export NREDF_SHELL_WSL_MULTIPLEXER=true` in `~/.bashrc.local` or `~/.zshrc.local`.
+  - Alternatively, set `export NREDF_SHELL_WSL_MULTIPLEXER=true` in `~/.config/bash/rc` or `~/.config/zsh/rc`.
 
 ---
 

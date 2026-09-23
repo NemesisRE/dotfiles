@@ -23,7 +23,7 @@ All five shells share a unified experience designed around modern developer ergo
 | **Plugin Manager** | [Sheldon](https://sheldon.cli.rs) | Git-cloned `ble.sh` | None required | None required | None required (100% native CLI tooling) |
 | **Environment Sync** | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) |
 | **Startup Profiling** | `reload -p` / `NREDF_PROFILE_STARTUP=1` | `reload -p` / `NREDF_PROFILE_STARTUP=1` | `reload -p` / `NREDF_PROFILE_STARTUP=1` | `reload -p` / `NREDF_PROFILE_STARTUP=1` | `reload -p` / `NREDF_PROFILE_STARTUP=1` |
-| **Local overrides** | `functions.local`/`rc.local`/`aliases.local` cascade | same cascade | same cascade | **Two files only**: `env.local.nu`, `config.local.nu` (see exceptions) | Per-file local overrides |
+| **Local overrides** | `~/.config/zsh/{aliases,rc,functions/}` | `~/.config/bash/{aliases,rc,functions/}` | `~/.config/fish/{aliases,rc}` + fish's own native `functions/` autoload | `~/.config/nu/`: **two files only**, `env.local.nu`, `config.local.nu` (see exceptions) | `~/.config/pwsh/{aliases.ps1,modules.ps1,functions/}` |
 
 ---
 
@@ -51,7 +51,7 @@ All five shells share a unified experience designed around modern developer ergo
 - **Dotfiles**: [`home/dot_config/fish/config.fish.tmpl`](../home/dot_config/fish/config.fish.tmpl)
 - **Framework**: [`home/dot_local/share/nredf/shell/fish/`](../home/dot_local/share/nredf/shell/fish/) — `rc.tmpl` is a single, self-contained entry point (fish has no sibling shell to share a "common" rc with the way bash/zsh do), ported 1:1 from the bash function files since fish is dynamically scoped the same way bash is.
 - **Completion Engine**: Managed by **Carapace** (`carapace-bin`) cached for 24 hours via `_nredf_refresh_cached_shell_snippet`, with the same declarative specs in `~/.config/carapace/specs/`.
-- **Local overrides**: `~/.config/fish/aliases.local`, `functions.local`, `rc.local` — the same cascade bash/zsh get.
+- **Local overrides**: `~/.config/fish/aliases`, `~/.config/fish/rc`, plus fish's own native `~/.config/fish/functions/*.fish` autoload (nothing this framework implements).
 
 ### 4. Nushell Architecture
 
@@ -196,6 +196,59 @@ NREDF guarantees that common development commands behave identically regardless 
 
 ---
 
+## 🏠 Local, Machine-Specific Overrides
+
+None of the following files are chezmoi-managed or committed to this repo — they live only on your machine, are yours to create, and `chezmoi apply` never touches or overwrites them. [`~/.config/nredf/README.md`](../home/dot_config/nredf/README.md) is a shorter, on-disk version of this same section.
+
+### `~/.config/nredf/local.yaml` — paths and simple aliases
+
+The same declarative format `.chezmoidata/paths.yaml` and `.chezmoidata/aliases.yaml` use internally. If this file exists, every shell reads and merges it in at `chezmoi apply` time (it is re-read on every apply, so editing it and re-applying picks up changes immediately). chezmoi deploys a copy-and-edit starting point at [`~/.config/nredf/local.yaml.example`](../home/dot_config/nredf/local.yaml.example) — copy it to `local.yaml` in the same directory:
+
+```yaml
+# ~/.config/nredf/local.yaml
+nredf_paths_local:
+  - var: MY_TOOL_HOME # exported as $MY_TOOL_HOME if not already set
+    base: HOME # $HOME, or any other var already set by then (e.g. XDG_CONFIG_HOME)
+    parts: [".local", "my-tool"] # joined onto base with "/"
+
+nredf_aliases_local:
+  - names: ["myalias", "ma"] # one or more names for the same command
+    command: "echo hello world" # a single target command; no pipes/flow control
+```
+
+Both lists are optional and additive — they never replace the built-in entries. Two things this format deliberately can't express, by design:
+
+- **A `requires`/existence gate** on a local alias. Bash/zsh/fish/PowerShell would happily support one, but Nushell's `alias`/`def` can't be conditionally defined inside an `if` block (see below), so gating isn't offered here at all, to keep one file behaving the same on every shell. Everything in `nredf_aliases_local` is defined unconditionally.
+- **A pipeline, condition, or anything needing real control flow.** `command` is a single command line, substituted as-is (bash/fish: `alias`; nu: `alias`; PowerShell: `Set-Alias` or a one-line wrapper function).
+
+For either of those, use the per-shell cascade below instead. A malformed `local.yaml` fails `chezmoi apply` loudly with a YAML parse error pointing at the bad line, rather than silently dropping your entries.
+
+### Per-shell aliases, rc and local-functions directory
+
+For anything `local.yaml` can't express — conditional aliases, real functions, arbitrary startup code — every shell loads its own files from **its own `~/.config/<shell>/` directory**, not from `~/.config/nredf/` at all. This is consistent across every shell including PowerShell (via `XDG_CONFIG_HOME`, set on Windows too — deliberately not `$PROFILE`'s directory, which is `Documents\PowerShell\` on Windows but `~/.config/powershell/` on Linux/macOS). There is deliberately no shared "all shells" or "bash+zsh" tier: a function's syntax is never portable across shells anyway, and `local.yaml` above already covers the one thing that genuinely was shareable (simple aliases/paths).
+
+| Shell | Aliases | Startup code | Functions directory |
+| :--- | :--- | :--- | :--- |
+| Bash | `~/.config/bash/aliases` | `~/.config/bash/rc` | `~/.config/bash/functions/*.bash` |
+| Zsh | `~/.config/zsh/aliases` | `~/.config/zsh/rc` | `~/.config/zsh/functions/*` |
+| Fish | `~/.config/fish/aliases` | `~/.config/fish/rc` | `~/.config/fish/functions/*.fish` — fish's own native autoload, nothing this framework implements |
+| Nushell | not supported | `~/.config/nu/env.local.nu`, `~/.config/nu/config.local.nu` | not supported |
+| PowerShell | `~/.config/pwsh/aliases.ps1` | `~/.config/pwsh/modules.ps1` (module imports) | `~/.config/pwsh/functions/*.ps1` |
+
+`~/.config/<shell>/` is deliberately where each shell's local files live: it's already where you'd look for shell-specific config, and fish in particular already autoloads its `functions/` directory as a native feature — putting a second, framework-specific mechanism anywhere else would only duplicate or collide with what the shell already does itself.
+
+Every file in the table above except the functions directories is pre-seeded by chezmoi (`create_`: written once, empty except for a header comment and a commented-out example, never overwritten again) — there's nothing to create, just open and edit. Each `functions/` directory instead has its own `README.md` with a matching example, since anything real dropped there gets sourced (or, for fish, autoloaded) on every shell startup.
+
+### `~/.config/aquaproj-aqua/machine.yaml` — local aqua packages
+
+aqua already supports a second, machine-local config file layered on top of the repo's `aqua.yaml`: if `~/.config/aquaproj-aqua/machine.yaml` exists, every shell's startup appends it to `AQUA_GLOBAL_CONFIG` automatically (see `nredf_aqua.bash`/`.fish`/`.nu`/`Defaults.ps1`). Same `packages:` format as `home/dot_config/aquaproj-aqua/aqua.yaml` — add your own tools there without touching this repo.
+
+### `~/.config/mise/config.local.toml` — local mise tools
+
+mise natively loads `config.local.toml` alongside `config.toml` in the same directory (confirmed: `mise config ls` lists both). Add your own `[tools]` there; it's merged with `home/dot_config/mise/config.toml.tmpl`'s pinned versions with no chezmoi involvement at all.
+
+---
+
 ## 🔄 The Unified `reload` Command
 
 Each of the five shells provides a high-performance `reload` function with identical arguments (in Nushell, its typed named flags are generated from the same option set, so `reload --help` documents itself):
@@ -299,7 +352,7 @@ If you have open terminals when the background sync completes:
 | `zoxide --cmd cd` (replacing `cd` itself) | Nushell | zoxide itself has no nushell `cd` integration — an upstream gap, not this repo's. | `z`/`zi` aliases only; `cd` is never overridden in nu. |
 | Same-session cached tool-init refresh (atuin/zoxide/mise/carapace/fzf) | Nushell | nu's `source` requires the target file to exist on disk *before the file that sources it is even parsed* — true even inside a runtime `if path exists` guard. A cache regenerated this session can only be `source`d starting the *next* shell start. | Chezmoi seeds an empty placeholder (`create_`/`empty_`) for each cache file so a cold `source` never fails outright; a stale-but-present cache is used for the rest of the current session and refreshes for the next one. |
 | oh-my-posh's nu integration doesn't use the cached-snippet mechanism at all | Nushell | Unlike every other tool here, `oh-my-posh init nu` prints nothing (confirmed: empty stdout *and* stderr on success) — it writes directly into nu's own vendor-autoload directory (`~/.local/share/nushell/vendor/autoload/`, one of `$nu.vendor-autoload-dirs`), which nu sources automatically on its own next startup. | config.nu just re-runs the generator on the same 24h throttle, with no cache file or `source` line of its own — the same one-restart lag applies, but because nu only rescans vendor-autoload at its own next startup, not because of the `source` restriction above. |
-| Fuller local-override cascade (`functions.local`, `rc.local`, per-directory function globs) | Nushell | Same `source`-needs-the-file-to-already-exist restriction rules out conditionally sourcing a maybe-missing file at all. | Exactly two chezmoi-seeded files, `env.local.nu` and `config.local.nu` (seeded empty, never overwritten again) — one for env vars, one for interactive config, matching nu's own env.nu/config.nu split. |
+| Fuller local-override files (`aliases`, `rc`, a local-functions directory) | Nushell | Same `source`-needs-the-file-to-already-exist restriction rules out conditionally sourcing a maybe-missing file at all. | Exactly two chezmoi-seeded files, `env.local.nu` and `config.local.nu` (seeded empty, never overwritten again) — one for env vars, one for interactive config, matching nu's own env.nu/config.nu split. |
 | Directory-glob fallback when the function bundle is absent | Nushell | The fallback loop would itself need to `source` a runtime-determined file list — same restriction again. | The generated bundle is nu's only load path, not a fast path with a fallback the way bash/zsh/fish have. |
 | Caller-name auto-detection for the throttle gate and mkdir-based lock (`_nredf_last_run`, `_nredf_create_lock`) | Fish, Nushell | Neither has an equivalent of bash's `FUNCNAME`/zsh's `funcstack`. | Both take an explicit `key` argument at every call site instead of inferring one. |
 | Kitty terminal shell-integration | Nushell | Kitty ships integration scripts for bash/zsh/fish only — no nushell target exists upstream. | Not implemented; not something this repo can fix. |
