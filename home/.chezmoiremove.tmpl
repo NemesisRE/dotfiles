@@ -30,6 +30,13 @@
 # Legacy PowerShell framework directory moved to ~/.local/share/nredf/shell/pwsh
 Documents/PowerShell/NREDF-POSH
 
+# Legacy shell local override directory moved to per-shell config dirs (b95d80b)
+.config/nredf/shell
+
+# Legacy Nushell directories consolidated to nushell (f0fe6ca)
+.config/nu
+.local/share/nredf/shell/nu
+
 {{- if eq .chezmoi.os "windows" }}
 # Windows-only files removed (aac56b9)
 Documents/PowerShell/.editorconfig
