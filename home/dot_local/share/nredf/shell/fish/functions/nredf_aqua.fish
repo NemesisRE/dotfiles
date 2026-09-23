@@ -51,11 +51,11 @@ function _nredf_aqua_keyring_available
     return 1
 end
 
-# ~/.config/nredf/aqua.env is shared with bash/zsh/PowerShell and is a plain
-# `[export] KEY="value"` dotenv file, not fish syntax — bash/zsh `source` it
-# as code, but fish (like PowerShell's Defaults.ps1 already does for this
-# same file) parses it as data instead, so it never breaks on a value another
-# shell wrote.
+# ~/.config/nredf/aqua-vault.env and aqua.env are shared with bash/zsh/
+# PowerShell and are plain `[export] KEY="value"` dotenv files, not fish
+# syntax — bash/zsh `source` them as code, but fish (like PowerShell's
+# Defaults.ps1 already does for these same files) parses them as data
+# instead, so it never breaks on a value another shell wrote.
 function _nredf_read_dotenv --argument-names file
     test -f "$file"; or return 0
     for line in (string split \n -- (cat "$file"))
@@ -80,11 +80,16 @@ function _nredf_set_aqua_env
     set -l aqua_base_config "$XDG_CONFIG_HOME/aquaproj-aqua/aqua.yaml"
     set -l aqua_machine_config "$XDG_CONFIG_HOME/aquaproj-aqua/machine.yaml"
     set -l aqua_policy_config "$XDG_CONFIG_HOME/aquaproj-aqua/aqua-policy.yaml"
-    set -l aqua_auth_config "$NREDF_CONFIG"
-    test -n "$aqua_auth_config"; or set aqua_auth_config "$XDG_CONFIG_HOME/nredf"
-    set aqua_auth_config "$aqua_auth_config/aqua.env"
+    set -l aqua_config_dir "$NREDF_CONFIG"
+    test -n "$aqua_config_dir"; or set aqua_config_dir "$XDG_CONFIG_HOME/nredf"
 
-    _nredf_read_dotenv "$aqua_auth_config"
+    # Vault-derived (chezmoi-managed) first, then the runtime-local one
+    # (nredf_aqua_token_setup's --env mode) so it can override — two different
+    # owners of two different files on purpose: chezmoi would otherwise delete
+    # a manually-configured token on every apply whenever the vault lookup
+    # comes back empty (confirmed empirically).
+    _nredf_read_dotenv "$aqua_config_dir/aqua-vault.env"
+    _nredf_read_dotenv "$aqua_config_dir/aqua.env"
 
     # If the keyring is configured but unavailable on this system (e.g.
     # headless/WSL), deactivate AQUA_KEYRING_ENABLED to prevent aqua CLI errors.

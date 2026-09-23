@@ -16,17 +16,25 @@ foreach ($p in @($localBin, $aquaBin)) {
         $env:PATH = "$p;$env:PATH"
     }
 }
-$aquaEnv = Join-Path $HOME ".config\nredf\aqua.env"
-if (Test-Path $aquaEnv) {
-    Get-Content $aquaEnv | ForEach-Object {
+function NREDF_ReadDotenv {
+    param([string]$Path)
+    if (-not (Test-Path $Path)) { return }
+    Get-Content $Path | ForEach-Object {
         $line = $_.Trim()
-        if ($line -and -not $line.StartsWith('#') -and $line -match '^([^=]+)=(.*)$') {
+        if (-not $line -or $line.StartsWith('#')) { return }
+        $line = $line -replace '^export\s+', ''
+        if ($line -match '^([^=]+)=(.*)$') {
             $varName = $matches[1].Trim()
             $varVal = $matches[2].Trim().Trim('"').Trim("'")
             [System.Environment]::SetEnvironmentVariable($varName, $varVal, [System.EnvironmentVariableTarget]::Process)
         }
     }
 }
+# Vault-derived (chezmoi-managed) first, then the runtime-local one
+# (nredf_aqua_token_setup's --env mode) so it can override.
+$nredfConfigDir = Join-Path $HOME ".config\nredf"
+NREDF_ReadDotenv (Join-Path $nredfConfigDir "aqua-vault.env")
+NREDF_ReadDotenv (Join-Path $nredfConfigDir "aqua.env")
 
 if (Get-Command aqua -ErrorAction SilentlyContinue) {
     $aquaConfig = Join-Path $HOME ".config\aquaproj-aqua\aqua.yaml"

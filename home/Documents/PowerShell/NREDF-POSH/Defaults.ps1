@@ -173,17 +173,27 @@ if (-not [string]::IsNullOrEmpty($ENV:XDG_CONFIG_HOME)) {
   }
 
   $nredfConfigDir = if ($ENV:NREDF_CONFIG) { $ENV:NREDF_CONFIG } else { Join-Path $ENV:XDG_CONFIG_HOME 'nredf' }
-  $aquaAuthConfig = Join-Path $nredfConfigDir 'aqua.env'
-  if (Test-Path $aquaAuthConfig) {
-    Get-Content $aquaAuthConfig | ForEach-Object {
+  function NREDF_ReadDotenv {
+    param([string]$Path)
+    if (-not (Test-Path $Path)) { return }
+    Get-Content $Path | ForEach-Object {
       $line = $_.Trim()
-      if ($line -and -not $line.StartsWith('#') -and $line -match '^([^=]+)=(.*)$') {
+      if (-not $line -or $line.StartsWith('#')) { return }
+      $line = $line -replace '^export\s+', ''
+      if ($line -match '^([^=]+)=(.*)$') {
         $varName = $matches[1].Trim()
         $varVal = $matches[2].Trim().Trim('"').Trim("'")
         [System.Environment]::SetEnvironmentVariable($varName, $varVal, [System.EnvironmentVariableTarget]::Process)
       }
     }
   }
+  # Vault-derived (chezmoi-managed, aqua-vault.env) first, then the runtime-local
+  # one (nredf_aqua_token_setup's --env mode, aqua.env) so it can override —
+  # these are two different owners of two different files on purpose: chezmoi
+  # would otherwise delete a manually-configured token on every apply whenever
+  # the vault lookup comes back empty (confirmed empirically).
+  NREDF_ReadDotenv (Join-Path $nredfConfigDir 'aqua-vault.env')
+  NREDF_ReadDotenv (Join-Path $nredfConfigDir 'aqua.env')
 }
 
 

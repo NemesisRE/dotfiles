@@ -85,23 +85,24 @@ During `chezmoi apply`:
 
 ## ⚙️ Managed Secrets & Output Files
 
-### 1. Aqua GitHub Token (`~/.config/nredf/aqua.env`)
+### 1. Aqua GitHub Token (`~/.config/nredf/aqua-vault.env`)
 
-* **Template**: `home/dot_config/nredf/private_aqua.env.tmpl`
-* **Target**: `~/.config/nredf/aqua.env` (permissions `0600`)
+* **Template**: `home/dot_config/nredf/private_aqua-vault.env.tmpl`
+* **Target**: `~/.config/nredf/aqua-vault.env` (permissions `0600`)
 * **Variables Exported**:
 
   ```bash
-  AQUA_GITHUB_TOKEN="ghp_xxxxxxxxxxxx"
-  GITHUB_TOKEN="ghp_xxxxxxxxxxxx"
+  export AQUA_GITHUB_TOKEN="ghp_xxxxxxxxxxxx"
+  export GITHUB_TOKEN="ghp_xxxxxxxxxxxx"
   ```
 
 * Automatically sourced by:
-  * Bash / Zsh (`dot_local/share/nredf/shell/common/rc.tmpl`)
+  * Bash / Zsh (`dot_local/share/nredf/shell/common/functions/nredf_aqua.bash`)
   * Fish (`dot_local/share/nredf/shell/fish/functions/nredf_aqua.fish`)
   * PowerShell (`Documents/PowerShell/NREDF-POSH/Defaults.ps1`)
   * Post-apply aqua run-onchange hooks on Linux, macOS, and Windows.
-  * Nushell reads it too (`dot_local/share/nredf/shell/nu/functions/nredf_aqua.nu`), but — like PowerShell — *parses* it as plain `KEY=value` data rather than sourcing/evaluating it as code, since it's POSIX-shell syntax and neither nu nor PowerShell can execute that directly.
+  * Nushell reads it too (`dot_local/share/nredf/shell/nu/functions/nredf_aqua.nu`), but — like PowerShell — *parses* it as plain `[export] KEY=value` data rather than sourcing/evaluating it as code, since it's POSIX-shell syntax and neither nu nor PowerShell can execute that directly.
+* **Not the same file as `~/.config/nredf/aqua.env`**: that one is written at runtime by `nredf_aqua_token_setup --env` (the fallback for machines without a vault configured), never by chezmoi. The two are deliberately separate files — chezmoi would otherwise delete a manually-configured token on every `apply` whenever this vault lookup comes back empty. Every consumer above sources `aqua-vault.env` first, then `aqua.env`, so the runtime one can override.
 
 ### 2. Git Commit Signing Key (`~/.config/git/config`)
 
@@ -215,13 +216,15 @@ chezmoi execute-template '{{ includeTemplate "get-github-token.tmpl" . }}'
 chezmoi apply --dry-run
 ```
 
-### Checking `aqua.env`
+### Checking `aqua-vault.env` / `aqua.env`
 
 ```bash
 # On Unix:
-cat ~/.config/nredf/aqua.env
+cat ~/.config/nredf/aqua-vault.env  # chezmoi/vault-derived
+cat ~/.config/nredf/aqua.env        # runtime-local (nredf_aqua_token_setup --env)
 
 # On Windows (PowerShell):
+Get-Content "$HOME\.config\nredf\aqua-vault.env"
 Get-Content "$HOME\.config\nredf\aqua.env"
 ```
 

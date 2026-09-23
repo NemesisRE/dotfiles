@@ -45,9 +45,15 @@ def --env nredf-set-aqua-env [] {
     let aqua_base_config = ($env.XDG_CONFIG_HOME | path join "aquaproj-aqua" "aqua.yaml")
     let aqua_machine_config = ($env.XDG_CONFIG_HOME | path join "aquaproj-aqua" "machine.yaml")
     let aqua_policy_config = ($env.XDG_CONFIG_HOME | path join "aquaproj-aqua" "aqua-policy.yaml")
-    let aqua_auth_config = (($env.NREDF_CONFIG? | default ($env.XDG_CONFIG_HOME | path join "nredf")) | path join "aqua.env")
+    let aqua_config_dir = ($env.NREDF_CONFIG? | default ($env.XDG_CONFIG_HOME | path join "nredf"))
 
-    nredf-read-dotenv $aqua_auth_config
+    # Vault-derived (chezmoi-managed) first, then the runtime-local one
+    # (nredf-aqua-token-setup's --env mode) so it can override — two different
+    # owners of two different files on purpose: chezmoi would otherwise delete
+    # a manually-configured token on every apply whenever the vault lookup
+    # comes back empty (confirmed empirically).
+    nredf-read-dotenv ($aqua_config_dir | path join "aqua-vault.env")
+    nredf-read-dotenv ($aqua_config_dir | path join "aqua.env")
 
     # If the keyring is configured but unavailable on this system (e.g.
     # headless/WSL), deactivate AQUA_KEYRING_ENABLED to prevent aqua CLI errors.

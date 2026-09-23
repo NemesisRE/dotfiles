@@ -51,6 +51,7 @@ claude:
         - Read(~/.aws/**)
         - Read(~/.config/gh/hosts.yml)
         - Read(~/.config/nredf/mcp.json)
+        - Read(~/.config/nredf/aqua-vault.env)
         - Read(~/.config/nredf/aqua.env)
         - Read(~/.claude.json)
         - Read(~/.gemini/*oauth*)

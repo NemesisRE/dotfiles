@@ -60,8 +60,18 @@ function _nredf_set_aqua_env() {
   local _nredf_aqua_base_config="${XDG_CONFIG_HOME}/aquaproj-aqua/aqua.yaml"
   local _nredf_aqua_machine_config="${XDG_CONFIG_HOME}/aquaproj-aqua/machine.yaml"
   local _nredf_aqua_policy_config="${XDG_CONFIG_HOME}/aquaproj-aqua/aqua-policy.yaml"
-  local _nredf_aqua_auth_config="${NREDF_CONFIG:-${XDG_CONFIG_HOME:-${HOME}/.config}/nredf}/aqua.env"
+  local _nredf_aqua_config_dir="${NREDF_CONFIG:-${XDG_CONFIG_HOME:-${HOME}/.config}/nredf}"
+  local _nredf_aqua_vault_config="${_nredf_aqua_config_dir}/aqua-vault.env"
+  local _nredf_aqua_auth_config="${_nredf_aqua_config_dir}/aqua.env"
 
+  # Vault-derived (chezmoi-managed) first, then the runtime-local one
+  # (nredf_aqua_token_setup's --env mode) so it can override — two different
+  # owners of two different files on purpose: chezmoi would otherwise delete
+  # a manually-configured token on every apply whenever the vault lookup
+  # comes back empty (confirmed empirically).
+  if [[ -f "${_nredf_aqua_vault_config}" ]]; then
+    source "${_nredf_aqua_vault_config}"
+  fi
   if [[ -f "${_nredf_aqua_auth_config}" ]]; then
     source "${_nredf_aqua_auth_config}"
   fi
@@ -84,7 +94,7 @@ function _nredf_set_aqua_env() {
     export AQUA_POLICY_CONFIG="${_nredf_aqua_policy_config}"
   fi
 
-  unset _nredf_aqua_base_config _nredf_aqua_machine_config _nredf_aqua_policy_config _nredf_aqua_auth_config
+  unset _nredf_aqua_base_config _nredf_aqua_machine_config _nredf_aqua_policy_config _nredf_aqua_config_dir _nredf_aqua_vault_config _nredf_aqua_auth_config
 }
 
 function _nredf_set_aqua_path() {

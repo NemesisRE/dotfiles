@@ -11,8 +11,11 @@ set -euo pipefail
 LOCAL_BIN="${HOME}/.local/bin"
 AQUA_BIN="${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-${HOME}/.local/share}/aquaproj-aqua}/bin"
 export PATH="${LOCAL_BIN}:${AQUA_BIN}:${PATH}"
-AQUA_ENV="${XDG_CONFIG_HOME:-${HOME}/.config}/nredf/aqua.env"
-[[ -f "${AQUA_ENV}" ]] && source "${AQUA_ENV}"
+# Vault-derived (chezmoi-managed) first, then the runtime-local one
+# (nredf_aqua_token_setup's --env mode) so it can override.
+AQUA_CONFIG_DIR="${XDG_CONFIG_HOME:-${HOME}/.config}/nredf"
+[[ -f "${AQUA_CONFIG_DIR}/aqua-vault.env" ]] && source "${AQUA_CONFIG_DIR}/aqua-vault.env"
+[[ -f "${AQUA_CONFIG_DIR}/aqua.env" ]] && source "${AQUA_CONFIG_DIR}/aqua.env"
 
 if command -v aqua >/dev/null 2>&1; then
   echo "==> Linking aqua managed tools"
