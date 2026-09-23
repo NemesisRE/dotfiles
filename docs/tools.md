@@ -375,7 +375,6 @@ Declarative Kubernetes management configured across all operating systems:
 | `kctx` / `ctx` | Shorthand for `kubectx` (interactive context selection) |
 | `kns` / `ns` | Shorthand for `kubens` (interactive namespace selection) |
 | `k9s` | Rich full-screen terminal UI for Kubernetes clusters |
-| `dipls` | Custom function/alias to list all Docker containers with IP addresses and hostnames |
 
 ### `k9s` Quick Keys & Plugins
 

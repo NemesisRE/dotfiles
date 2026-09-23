@@ -1,1 +1,0 @@
-alias gpg_agent="gpgconf --kill gpg-agent && gpgconf --launch gpg-agent"

@@ -162,22 +162,14 @@ root
 # Runs: sudo -E "HOME=${HOME}" su -m
 ```
 
-### 3. Inspect Running Docker Container IPs (`dipls`)
-
-Instantly view a sorted table of all running Docker container IP addresses and names:
-
-```bash
-dipls
-```
-
-### 4. Interactive File Manager with Directory Change (`yy`)
+### 3. Interactive File Manager with Directory Change (`yy`)
 
 ```bash
 yy
 # Opens Yazi. Navigating to a folder and exiting with 'q' changes your terminal directory!
 ```
 
-### 5. Automated Daily Maintenance (`systemd --user`)
+### 4. Automated Daily Maintenance (`systemd --user`)
 
 On Linux systems running systemd, NREDF installs a user-level timer and service:
 

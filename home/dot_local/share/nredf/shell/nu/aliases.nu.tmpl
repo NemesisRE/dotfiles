@@ -15,7 +15,7 @@
 # leaves `foo` undefined afterward). So conditional tool-presence checks
 # below happen *inside* an unconditionally-defined wrapper, at call time,
 # not around the definition itself.
-{{- /* The plain-alias block below is generated from .chezmoidata/aliases.yaml's nredf_aliases (entries with `nu: true`) — keep bash/fish/nu in sync. */}}
+{{- /* The plain-alias block below is generated from .chezmoidata/aliases.yaml's nredf_aliases (entries with `nu: true`); the `def`s after it from that file's nredf_commands (`nu_def` field) — keep bash/fish/nu in sync. */}}
 
 def --wrapped ls [...args] {
     if (which lsd | is-empty) {
@@ -33,18 +33,6 @@ def --wrapped la [...args] { ^lsd -lAFh --git ...$args }
 def --wrapped tree [...args] { ^lsd --tree ...$args }
 
 def --wrapped pst [...args] { ^procs --tree ...$args }
-
-def root [] {
-    ^sudo -E $"HOME=($env.HOME)" su -m
-}
-
-def aptall [] {
-    if (^sudo apt update | complete | get exit_code) == 0 {
-        ^sudo apt full-upgrade -y
-    }
-    ^sudo apt autoremove --purge -y
-    ^sudo apt autoclean
-}
 {{ range .nredf_aliases.groups }}
 {{- if not .requires }}
 {{- range .aliases }}
@@ -57,21 +45,9 @@ alias {{ . }} = {{ $cmd }}
 {{- end }}
 {{- end }}
 {{- end }}
+{{- range .nredf_commands }}
 
-def dipls [] {
-    ^docker ps -q
-    | ^xargs docker inspect --format '{{"{{"}}range .NetworkSettings.Networks{{"}}"}}{{"{{"}}.IPAddress{{"}}"}}{{"{{"}}end{{"}}"}}{{"{{"}}.Name{{"}}"}}'
-    | ^sed -e 's/^\//HOST\t\//' -e 's/\//\t/g'
-    | ^sort -n -t . -k 1,1 -k 2,2 -k 3,3 -k 4,4
+def {{ index .names 0 }} [] {
+{{ .nu_def | trimSuffix "\n" | indent 4 }}
 }
-
-def --wrapped grep [...args] {
-    ^grep --color=auto ...$args
-}
-
-# From shell/bash/aliases.
-def gpg_agent [] {
-    if (^gpgconf --kill gpg-agent | complete | get exit_code) == 0 {
-        ^gpgconf --launch gpg-agent
-    }
-}
+{{- end }}

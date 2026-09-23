@@ -78,25 +78,36 @@ dry_run() { # dry_run [extra chezmoi args...]
   CI=1 NREDF_NO_BOOTSTRAP=1 chezmoi apply --dry-run --force --source="${ROOT}" \
     --config "${TMP}/chezmoi.toml" --destination "${TMP}/home" "$@"
 }
-parse_windows_scripts() {
+parse_ps1_tmpl() { # parse_ps1_tmpl <source.ps1.tmpl>
   # --dry-run renders scripts but never parses them, so a PowerShell syntax error
-  # would ship. Render each Windows script (forcing the OS test, so this works on any
-  # host) with every optional toggle on, then parse it.
+  # would ship. Render, then parse.
+  chezmoi execute-template --source="${ROOT}" --config "${TMP}/chezmoi.toml" \
+    --override-data-file .github/fixtures/ci-data-full.yaml -f "$1" \
+    </dev/null >"${TMP}/w.ps1" || { echo "render failed: $1"; return 1; }
+  [[ -s "${TMP}/w.ps1" ]] || return 0
+  # shellcheck disable=SC2016 # `$e` etc. is PowerShell, not bash
+  PS_FILE="${TMP}/w.ps1" pwsh -NoProfile -Command '
+    $e = $null
+    [System.Management.Automation.Language.Parser]::ParseFile($env:PS_FILE, [ref]$null, [ref]$e) | Out-Null
+    if ($e) { $e | ForEach-Object { Write-Host $_ }; exit 1 }' || { echo "parse error: $1"; return 1; }
+}
+parse_rendered_powershell() {
   local f n=0
+  # Windows-only scripts are gated on `.chezmoi.os "windows"`; force that branch
+  # so this works on any host.
   for f in home/.chezmoiscripts/*.ps1.tmpl; do
     sed 's/\.chezmoi\.os "windows"/"windows" "windows"/' "${f}" >"${TMP}/w.tmpl"
-    chezmoi execute-template --source="${ROOT}" --config "${TMP}/chezmoi.toml" \
-      --override-data-file .github/fixtures/ci-data-full.yaml -f "${TMP}/w.tmpl" \
-      </dev/null >"${TMP}/w.ps1" || { echo "render failed: ${f}"; return 1; }
-    [[ -s "${TMP}/w.ps1" ]] || continue
-    # shellcheck disable=SC2016 # `$e` etc. is PowerShell, not bash
-    PS_FILE="${TMP}/w.ps1" pwsh -NoProfile -Command '
-      $e = $null
-      [System.Management.Automation.Language.Parser]::ParseFile($env:PS_FILE, [ref]$null, [ref]$e) | Out-Null
-      if ($e) { $e | ForEach-Object { Write-Host $_ }; exit 1 }' || { echo "parse error: ${f}"; return 1; }
+    parse_ps1_tmpl "${TMP}/w.tmpl" || return 1
     n=$((n + 1))
   done
-  echo "parsed ${n} rendered Windows scripts"
+  # Cross-platform PowerShell profile templates (pwsh runs on macOS/Linux too) —
+  # no OS gate to force.
+  for f in home/Documents/PowerShell/NREDF-POSH/*.ps1.tmpl; do
+    [[ -e "${f}" ]] || continue
+    parse_ps1_tmpl "${f}" || return 1
+    n=$((n + 1))
+  done
+  echo "parsed ${n} rendered PowerShell templates"
 }
 
 echo "==> Setup"
@@ -128,7 +139,7 @@ run "chezmoi apply --dry-run (every optional path on)" dry_run --override-data-f
 
 echo "==> PowerShell"
 if have pwsh; then
-  run "rendered Windows scripts parse" parse_windows_scripts
+  run "rendered PowerShell templates parse" parse_rendered_powershell
   # shellcheck disable=SC2016 # `$e` etc. is PowerShell, not bash
   run "bootstrap.ps1 parses" pwsh -NoProfile -Command '
     $e = $null

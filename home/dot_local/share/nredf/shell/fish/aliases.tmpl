@@ -2,11 +2,11 @@
 #
 # vim: ts=4 sw=4 et ft=fish
 #
-# Fish has no sibling shell to share a literal alias file with — this is
-# fish's own copy of what bash/zsh get from shell/common/aliases plus
-# shell/bash/aliases. Keep all three in sync (AGENTS.md's five-shell parity
-# rule): fish has no `&&`/`||`, so those become `; and`/`; or` below.
-{{- /* The data-driven block below is generated from .chezmoidata/aliases.yaml's nredf_aliases — keep bash/fish/nu in sync. */}}
+# Fish has no sibling shell to share a literal alias file with — this whole
+# file is generated from .chezmoidata/aliases.yaml (keep bash/fish/nu in
+# sync there, not here): `nredf_aliases.groups` below, then
+# `nredf_commands` (fish has no `&&`/`||`, so those become `; and`/`; or`
+# in that data's `fish` field).
 {{ range .nredf_aliases.groups }}
 {{- if .requires }}
 if type -q {{ .requires }}
@@ -26,10 +26,9 @@ alias {{ . }} "{{ $cmd }}"
 {{- end }}
 {{ end -}}
 {{- end }}
-alias root "sudo -E \"HOME=\$HOME\" su -m"
-alias aptall "sudo apt update; and sudo apt full-upgrade -y; sudo apt autoremove --purge -y; sudo apt autoclean"
-alias dipls "docker ps -q | xargs docker inspect --format '{{"{{"}}range .NetworkSettings.Networks{{"}}"}}{{"{{"}}.IPAddress{{"}}"}}{{"{{"}}end{{"}}"}}{{"{{"}}.Name{{"}}"}}' | sed -e 's/^\//HOST\t\//' -e 's/\//\t/g' | sort -n -t . -k 1,1 -k 2,2 -k 3,3 -k 4,4"
-alias reload "_nredf_reload_shell"
-
-# From shell/bash/aliases.
-alias gpg_agent "gpgconf --kill gpg-agent; and gpgconf --launch gpg-agent"
+{{- range .nredf_commands }}
+{{- $cmd := .fish }}
+{{- range .names }}
+alias {{ . }} "{{ $cmd }}"
+{{- end }}
+{{- end }}

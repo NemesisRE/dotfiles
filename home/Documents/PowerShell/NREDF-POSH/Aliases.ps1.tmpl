@@ -1,0 +1,60 @@
+{{- /* Generated from .chezmoidata/aliases.yaml's nredf_aliases — keep bash/fish/nu/PS in sync. */}}
+{{ range .nredf_aliases.groups -}}
+{{- $requires := .requires }}
+{{- if $requires }}
+if (Get-Command {{ $requires }} -ErrorAction SilentlyContinue) {
+{{- range .aliases }}
+{{- $cmd := .command }}
+{{- range .names }}
+{{- if contains " " $cmd }}
+  function {{ . }} { {{ $cmd }} @args }
+{{- else }}
+  Set-Alias -Name {{ . }} -Value {{ $cmd }} -Option AllScope -Force
+{{- end }}
+{{- end }}
+{{- end }}
+}
+{{ else -}}
+{{- range .aliases }}
+{{- if .ps }}
+{{- $cmd := .command }}
+if (Get-Command {{ first (splitList " " $cmd) }} -ErrorAction SilentlyContinue) {
+{{- range .names }}
+{{- if contains " " $cmd }}
+  function {{ . }} { {{ $cmd }} @args }
+{{- else }}
+  Set-Alias -Name {{ . }} -Value {{ $cmd }} -Option AllScope -Force
+{{- end }}
+{{- end }}
+}
+{{ end -}}
+{{- end -}}
+{{ end -}}
+{{- end }}
+# Neovim aliases
+if (Get-Command nvim -ErrorAction SilentlyContinue) {
+  Set-Alias -Name vim -Value nvim -Option AllScope -Force
+  Set-Alias -Name vi -Value nvim -Option AllScope -Force
+}
+
+# bat alias (syntax-highlighted cat)
+if (Get-Command bat -ErrorAction SilentlyContinue) {
+  function cat { bat --paging=never @args }
+}
+
+# Utility command parity (which, touch)
+if (-not (Get-Command which -ErrorAction SilentlyContinue)) {
+  function which { Get-Command @args }
+}
+if (-not (Get-Command touch -ErrorAction SilentlyContinue)) {
+  function touch {
+    foreach ($file in $args) {
+      if (Test-Path $file) {
+        (Get-Item $file).LastWriteTime = Get-Date
+      } else {
+        New-Item -ItemType File -Path $file -Force | Out-Null
+      }
+    }
+  }
+}
+

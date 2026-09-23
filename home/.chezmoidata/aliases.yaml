@@ -1,4 +1,4 @@
-# Cross-shell alias table for bash/zsh, fish, and (a subset of) nu.
+# Cross-shell alias table for bash/zsh, fish, nu (a subset) and PowerShell.
 #
 # - bash/zsh (shell/common/aliases.tmpl) and fish (shell/fish/aliases.tmpl)
 #   render every group below, each wrapped in an existence check when
@@ -7,19 +7,20 @@
 #   set `nu: false`: nu's own `alias`/`def` declared inside an `if` block
 #   never escapes that block (see aliases.nu.tmpl's own comment), so the
 #   lsd/procs-gated group can't be a plain data-driven `alias` there — it
-#   stays hand-written as `def --wrapped` fallbacks. `grep` is excluded the
-#   same way: nu needs `def --wrapped` for argument forwarding, not a plain
-#   `alias`.
-# - PowerShell's Aliases.ps1 is NOT generated from this file: it gates nearly
-#   every alias on Get-Command — a real, deliberate divergence, since a
-#   dangling PowerShell alias to a missing command errors loudly, unlike
-#   bash/fish/nu — and carries PS-only entries (vim/vi, cat, which, touch)
-#   with no equivalent here. See docs/shells.md.
-#
-# root/aptall/dipls/reload/gpg_agent stay hand-written in each shell's own
-# file: they're either compound commands needing shell-specific glue
-# (`&&` vs `; and`) or reference internal function names, not a single
-# target command.
+#   stays hand-written as `def --wrapped` fallbacks.
+# - PowerShell (Aliases.ps1.tmpl) renders every group too, gated on
+#   Get-Command: `requires` when set, otherwise the alias's own command word
+#   (all aqua-managed tools here install on every OS, Windows included, so
+#   this is the same "protect against the pre-bootstrap window" gate as
+#   bash/fish's `requires`, just applied unconditionally since PS treats a
+#   dangling alias as an error). A multi-word `command` (baked-in flags)
+#   becomes a `function NAME { command @args }`; a bare command name becomes
+#   `Set-Alias`. Set `ps: false` to opt an ungated entry out (`reload`: PS
+#   already has its own `reload` function, not a short alias to an internal
+#   name). PS previously had kctx/kns fall back to `kubectl ctx`/`kubectl ns`
+#   when kubectx/kubens were missing; dropped as dead code (kubectx/kubens are
+#   aqua-managed on every OS) so PS now matches bash/fish/nu exactly, and
+#   gained the `ctx`/`ns` short names it was missing.
 nredf_aliases:
   groups:
     - requires: "lsd"
@@ -41,21 +42,60 @@ nredf_aliases:
         - names: ["k"]
           command: "kubectl"
           nu: true
+          ps: true
         - names: ["kctx", "ctx"]
           command: "kubectx"
           nu: true
+          ps: true
         - names: ["kns", "ns"]
           command: "kubens"
           nu: true
+          ps: true
         - names: ["lzg", "lg"]
           command: "lazygit"
           nu: true
+          ps: true
         - names: ["lzd"]
           command: "lazydocker"
           nu: true
+          ps: true
         - names: ["lzj", "lj"]
           command: "lazyjournal"
           nu: true
-        - names: ["grep"]
-          command: "grep --color=auto"
+          ps: true
+        - names: ["reload"]
+          command: "_nredf_reload_shell"
+          # Neither nu nor PS needs this: nu's own `reload` is a full
+          # `def --env` (functions/nredf_reload_shell.nu), and PS's is a
+          # full function (Functions/Functions.ps1) — both named `reload`
+          # directly at the definition site, not a short alias to an
+          # internal underscore-prefixed name the way bash/fish need.
           nu: false
+          ps: false
+
+# Commands whose value genuinely differs per shell (HOME interpolation,
+# `&&` vs `; and`, or nu needing real control flow) rather than being one
+# target command — so each shell field is spelled out instead of derived.
+# nu needs `nu_def` (a literal `def NAME [] { ... }` body) for both: nu's
+# `alias` is pure text substitution resolved at *definition* time (verified:
+# it cannot hold `$env.HOME` re-evaluated per call, nor a pipeline/`if`),
+# unlike bash/fish where an `alias` string is re-expanded on every invocation.
+nredf_commands:
+  - names: ["root"]
+    # Each alias value below is embedded verbatim inside its shell's own
+    # outer double quotes (`alias root="..."` / `alias root "..."`), so the
+    # inner `"` and `$` are pre-escaped here exactly as bash/fish need them —
+    # this is the one field pair that can't be a plain unescaped string.
+    bash: 'sudo -E \"HOME=\${HOME}\" su -m'
+    fish: 'sudo -E \"HOME=\$HOME\" su -m'
+    nu_def: |
+      ^sudo -E $"HOME=($env.HOME)" su -m
+  - names: ["aptall"]
+    bash: "sudo apt update && sudo apt full-upgrade -y; sudo apt autoremove --purge -y; sudo apt autoclean"
+    fish: "sudo apt update; and sudo apt full-upgrade -y; sudo apt autoremove --purge -y; sudo apt autoclean"
+    nu_def: |
+      if (^sudo apt update | complete | get exit_code) == 0 {
+          ^sudo apt full-upgrade -y
+      }
+      ^sudo apt autoremove --purge -y
+      ^sudo apt autoclean

@@ -180,14 +180,12 @@ NREDF guarantees that common development commands behave identically regardless 
 | `la` | `lsd -lAFh --git` | Detailed listing including hidden files and Git status |
 | `tree` | `lsd --tree` | Recursive tree view with icons |
 | `cat` | `bat` | Syntax-highlighted output with OneDark-Pro theme |
-| `grep` | `rg` / `grep --color=auto` | Fast recursive ripgrep search |
 | `lzg` / `lg` | `lazygit` | Terminal UI for Git |
 | `lzd` | `lazydocker` | Terminal UI for Docker and Docker Compose |
 | `lzj` / `lj` | `lazyjournal` | Terminal UI for multi-source log viewing & filtering |
 | `k` | `kubectl` | Kubernetes CLI shorthand |
 | `kctx` / `ctx` | `kubectx` | Fast Kubernetes context switcher |
 | `kns` / `ns` | `kubens` | Fast Kubernetes namespace switcher |
-| `dipls` | Custom Function | Output table of running Docker containers with IP addresses and names |
 | `yy` | Custom Function | Open **Yazi** file manager; changes terminal working directory on exit |
 | `cd <path>` | `zoxide` | Smart jump (falls back to standard `cd` if path exists) — **not in Nushell**, see below |
 | `z <query>` | `zoxide query` | Jump directly to highest ranked directory matching query |
