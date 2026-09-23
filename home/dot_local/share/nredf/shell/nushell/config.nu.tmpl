@@ -16,7 +16,7 @@
 # nredf-ensure-aqua-github-token and nredf-remote-multiplexer — so this
 # outer check was redundant protection with a proven cost, not a needed one.
 
-source "{{ .chezmoi.homeDir }}/.local/share/nredf/shell/nu/aliases.nu"
+source "{{ .chezmoi.homeDir }}/.local/share/nredf/shell/nushell/aliases.nu"
 
 # Nu prints its "Welcome to Nushell" ASCII banner (version, links, uptime
 # since nu's first commit, ...) on every interactive startup unless told
@@ -111,10 +111,10 @@ nredf-step "fzf keybindings"
 nredf-remote-multiplexer
 nredf-step "nredf-remote-multiplexer"
 
-# nu-specific local interactive-config override, at ~/.config/nu/ like
+# nu-specific local interactive-config override, at ~/.config/nushell/ like
 # env.local.nu — seeded empty by chezmoi (create_); see env.nu.tmpl's
 # comment for why nu needs a pre-seeded placeholder here instead of the
 # other shells' fuller local-override files.
-source "{{ .chezmoi.homeDir }}/.config/nu/config.local.nu"
+source "{{ .chezmoi.homeDir }}/.config/nushell/config.local.nu"
 
 nredf-profile-finish

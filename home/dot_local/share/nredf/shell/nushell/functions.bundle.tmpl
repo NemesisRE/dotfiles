@@ -5,7 +5,7 @@
 # env.nu only falls back to globbing functions/* when this bundle is ABSENT,
 # so a file missing from the list here would be silently never loaded.
 # These files contain only definitions, so alphabetical order is fine.
-{{ $dir := "dot_local/share/nredf/shell/nu/functions" -}}
+{{ $dir := "dot_local/share/nredf/shell/nushell/functions" -}}
 {{ range (glob (joinPath .chezmoi.sourceDir $dir "*")) -}}
 {{- $rel := printf "%s/%s" $dir (base .) }}
 {{ if hasSuffix ".tmpl" $rel }}{{ includeTemplate $rel $ }}{{ else }}{{ include $rel }}{{ end -}}

@@ -25,7 +25,7 @@ functions, arbitrary startup code — every shell loads its own files from
 | Bash | `~/.config/bash/aliases` | `~/.config/bash/rc` | `~/.config/bash/functions/*.bash` |
 | Zsh | `~/.config/zsh/aliases` | `~/.config/zsh/rc` | `~/.config/zsh/functions/*` |
 | Fish | `~/.config/fish/aliases` | `~/.config/fish/rc` | `~/.config/fish/functions/*.fish` — fish's **own native autoload**, not this framework's doing |
-| Nushell | not supported | `~/.config/nu/env.local.nu`, `~/.config/nu/config.local.nu` | not supported |
+| Nushell | not supported | `~/.config/nushell/env.local.nu`, `~/.config/nushell/config.local.nu` | not supported |
 | PowerShell | `~/.config/pwsh/aliases.ps1` | `~/.config/pwsh/modules.ps1` (module imports) | `~/.config/pwsh/functions/*.ps1` |
 
 That's deliberate: `~/.config/<shell>/` is where you'd already look for

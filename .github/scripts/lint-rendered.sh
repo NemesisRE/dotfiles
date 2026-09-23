@@ -148,21 +148,21 @@ echo "==> Rendering and linting nu templates"
 # field the way apply's destination is). nu's `source` needs that path to
 # exist on disk before the file is even parsed, so none of these can be
 # nu-checked as rendered — a fresh checkout's real home won't have
-# ~/.local/share/nredf/shell/nu/env.nu yet. Work around it the same way this
+# ~/.local/share/nredf/shell/nushell/env.nu yet. Work around it the same way this
 # was validated by hand during development: render the real homeDir's path,
 # then rewrite that prefix to a scratch "home" this script populates with
 # the same tree a real `chezmoi apply` would produce, and check that instead.
 REAL_HOME="$(chezmoi execute-template --source=. "${CONFIG_ARGS[@]}" '{{ .chezmoi.homeDir }}' </dev/null)"
 NU_HOME="${OUT_DIR}/nu_home"
 mkdir -p \
-  "${NU_HOME}/.local/share/nredf/shell/nu" \
+  "${NU_HOME}/.local/share/nredf/shell/nushell" \
   "${NU_HOME}/.cache/nredf/init" \
-  "${NU_HOME}/.config/nu"
+  "${NU_HOME}/.config/nushell"
 for f in atuin zoxide mise omp carapace fzf; do
   : >"${NU_HOME}/.cache/nredf/init/${f}.nu"
 done
-: >"${NU_HOME}/.config/nu/env.local.nu"
-: >"${NU_HOME}/.config/nu/config.local.nu"
+: >"${NU_HOME}/.config/nushell/env.local.nu"
+: >"${NU_HOME}/.config/nushell/config.local.nu"
 
 render_nu_into_scratch_home() {
   # render_nu_into_scratch_home <source-template> <scratch-relative-target>
@@ -172,17 +172,17 @@ render_nu_into_scratch_home() {
   sed "s#${REAL_HOME}#${NU_HOME}#g" "${raw}" >"${NU_HOME}/$2"
 }
 
-render_nu_into_scratch_home "home/dot_local/share/nredf/shell/nu/functions.bundle.tmpl" ".local/share/nredf/shell/nu/functions.bundle"
-if [[ -e "home/dot_local/share/nredf/shell/nu/aliases.nu.tmpl" ]]; then
-  render_nu_into_scratch_home "home/dot_local/share/nredf/shell/nu/aliases.nu.tmpl" ".local/share/nredf/shell/nu/aliases.nu"
-  check_nu "home/dot_local/share/nredf/shell/nu/aliases.nu.tmpl" "${NU_HOME}/.local/share/nredf/shell/nu/aliases.nu"
-elif [[ -e "home/dot_local/share/nredf/shell/nu/aliases.nu" ]]; then
-  cp "home/dot_local/share/nredf/shell/nu/aliases.nu" "${NU_HOME}/.local/share/nredf/shell/nu/aliases.nu"
+render_nu_into_scratch_home "home/dot_local/share/nredf/shell/nushell/functions.bundle.tmpl" ".local/share/nredf/shell/nushell/functions.bundle"
+if [[ -e "home/dot_local/share/nredf/shell/nushell/aliases.nu.tmpl" ]]; then
+  render_nu_into_scratch_home "home/dot_local/share/nredf/shell/nushell/aliases.nu.tmpl" ".local/share/nredf/shell/nushell/aliases.nu"
+  check_nu "home/dot_local/share/nredf/shell/nushell/aliases.nu.tmpl" "${NU_HOME}/.local/share/nredf/shell/nushell/aliases.nu"
+elif [[ -e "home/dot_local/share/nredf/shell/nushell/aliases.nu" ]]; then
+  cp "home/dot_local/share/nredf/shell/nushell/aliases.nu" "${NU_HOME}/.local/share/nredf/shell/nushell/aliases.nu"
 fi
-render_nu_into_scratch_home "home/dot_local/share/nredf/shell/nu/env.nu.tmpl" ".local/share/nredf/shell/nu/env.nu"
-check_nu "home/dot_local/share/nredf/shell/nu/env.nu.tmpl" "${NU_HOME}/.local/share/nredf/shell/nu/env.nu"
-render_nu_into_scratch_home "home/dot_local/share/nredf/shell/nu/config.nu.tmpl" ".local/share/nredf/shell/nu/config.nu"
-check_nu "home/dot_local/share/nredf/shell/nu/config.nu.tmpl" "${NU_HOME}/.local/share/nredf/shell/nu/config.nu"
+render_nu_into_scratch_home "home/dot_local/share/nredf/shell/nushell/env.nu.tmpl" ".local/share/nredf/shell/nushell/env.nu"
+check_nu "home/dot_local/share/nredf/shell/nushell/env.nu.tmpl" "${NU_HOME}/.local/share/nredf/shell/nushell/env.nu"
+render_nu_into_scratch_home "home/dot_local/share/nredf/shell/nushell/config.nu.tmpl" ".local/share/nredf/shell/nushell/config.nu"
+check_nu "home/dot_local/share/nredf/shell/nushell/config.nu.tmpl" "${NU_HOME}/.local/share/nredf/shell/nushell/config.nu"
 
 while IFS= read -r src; do
   out="${OUT_DIR}/raw_$(echo "${src}" | tr '/' '_' | sed 's/\.tmpl$//')"
@@ -201,7 +201,7 @@ done < <(
 )
 
 echo "==> Syntax-checking non-template nu sources"
-for src in home/dot_local/share/nredf/shell/nu/functions/*.nu; do
+for src in home/dot_local/share/nredf/shell/nushell/functions/*.nu; do
   [[ -e "${src}" ]] || continue
   check_nu "${src}" "${src}"
 done

@@ -3,7 +3,7 @@
 # - bash/zsh (shell/common/aliases.tmpl) and fish (shell/fish/aliases.tmpl)
 #   render every group below, each wrapped in an existence check when
 #   `requires` is set (bash: `command -v`, fish: `type -q`).
-# - nu (shell/nu/aliases.nu.tmpl) only renders the ungated entries that don't
+# - nu (shell/nushell/aliases.nu.tmpl) only renders the ungated entries that don't
 #   set `nu: false`: nu's own `alias`/`def` declared inside an `if` block
 #   never escapes that block (see aliases.nu.tmpl's own comment), so the
 #   lsd/procs-gated group can't be a plain data-driven `alias` there — it

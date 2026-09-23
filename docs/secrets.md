@@ -101,7 +101,7 @@ During `chezmoi apply`:
   * Fish (`dot_local/share/nredf/shell/fish/functions/nredf_aqua.fish`)
   * PowerShell (`dot_local/share/nredf/shell/pwsh/Defaults.ps1`)
   * Post-apply aqua run-onchange hooks on Linux, macOS, and Windows.
-  * Nushell reads it too (`dot_local/share/nredf/shell/nu/functions/nredf_aqua.nu`), but — like PowerShell — *parses* it as plain `[export] KEY=value` data rather than sourcing/evaluating it as code, since it's POSIX-shell syntax and neither nu nor PowerShell can execute that directly.
+  * Nushell reads it too (`dot_local/share/nredf/shell/nushell/functions/nredf_aqua.nu`), but — like PowerShell — *parses* it as plain `[export] KEY=value` data rather than sourcing/evaluating it as code, since it's POSIX-shell syntax and neither nu nor PowerShell can execute that directly.
 * **Not the same file as `~/.config/nredf/aqua.env`**: that one is written at runtime by `nredf_aqua_token_setup --env` (the fallback for machines without a vault configured), never by chezmoi. The two are deliberately separate files — chezmoi would otherwise delete a manually-configured token on every `apply` whenever this vault lookup comes back empty. Every consumer above sources `aqua-vault.env` first, then `aqua.env`, so the runtime one can override.
 
 ### 2. Git Commit Signing Key (`~/.config/git/config`)

@@ -23,7 +23,7 @@ All five shells share a unified experience designed around modern developer ergo
 | **Plugin Manager** | [Sheldon](https://sheldon.cli.rs) | Git-cloned `ble.sh` | None required | None required | None required (100% native CLI tooling) |
 | **Environment Sync** | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) |
 | **Startup Profiling** | `reload -p` / `NREDF_PROFILE_STARTUP=1` | `reload -p` / `NREDF_PROFILE_STARTUP=1` | `reload -p` / `NREDF_PROFILE_STARTUP=1` | `reload -p` / `NREDF_PROFILE_STARTUP=1` | `reload -p` / `NREDF_PROFILE_STARTUP=1` |
-| **Local overrides** | `~/.config/zsh/{aliases,rc,functions/}` | `~/.config/bash/{aliases,rc,functions/}` | `~/.config/fish/{aliases,rc}` + fish's own native `functions/` autoload | `~/.config/nu/`: **two files only**, `env.local.nu`, `config.local.nu` (see exceptions) | `~/.config/pwsh/{aliases.ps1,modules.ps1,functions/}` |
+| **Local overrides** | `~/.config/zsh/{aliases,rc,functions/}` | `~/.config/bash/{aliases,rc,functions/}` | `~/.config/fish/{aliases,rc}` + fish's own native `functions/` autoload | `~/.config/nushell/`: **two files only**, `env.local.nu`, `config.local.nu` (see exceptions) | `~/.config/pwsh/{aliases.ps1,modules.ps1,functions/}` |
 
 ---
 
@@ -56,7 +56,7 @@ All five shells share a unified experience designed around modern developer ergo
 ### 4. Nushell Architecture
 
 - **Dotfiles**: thin stubs that just `source` one canonical tree, deployed to every path nu might actually read — `~/.config/nushell/{env,config}.nu` (deployed on **every OS**, not just Linux) plus the OS-native fallback: `~/Library/Application Support/nushell/{env,config}.nu` (macOS) or `~/AppData/Roaming/nushell/{env,config}.nu` (Windows; Linux has no separate native path, XDG *is* its native path). Nu resolves its config directory from the real process environment *before* it reads any of its own files, and — confirmed live — **prioritizes `$XDG_CONFIG_HOME/nushell` over its OS-native default the instant `XDG_CONFIG_HOME` is set**, on every OS, not only Linux. Since every other shell in this repo already exports `XDG_CONFIG_HOME`, launching nu from (or with an environment inherited from) any of them makes nu read `~/.config/nushell` even on macOS/Windows; launching nu with no such prior shell in the chain falls back to the OS-native path instead. Both locations get the same stub content so either path works.
-- **Framework**: [`home/dot_local/share/nredf/shell/nu/`](../home/dot_local/share/nredf/shell/nu/) — `env.nu.tmpl` (env vars only, safe for non-interactive `nu -l`) and `config.nu.tmpl` (interactive-only setup), mirroring nu's own env.nu/config.nu convention instead of bash's single common rc.
+- **Framework**: [`home/dot_local/share/nredf/shell/nushell/`](../home/dot_local/share/nredf/shell/nushell/) — `env.nu.tmpl` (env vars only, safe for non-interactive `nu -l`) and `config.nu.tmpl` (interactive-only setup), mirroring nu's own env.nu/config.nu convention instead of bash's single common rc.
 - **Completion Engine**: Managed by **Carapace** (`carapace-bin`), which also stands in for the fzf-powered Ctrl+Space widget nu can't have (see "Known Parity Exceptions" below).
 - **Local overrides**: exactly two files, `env.local.nu` and `config.local.nu`, seeded empty by chezmoi and never overwritten again — see "Known Parity Exceptions" below for why nu can't get bash's fuller cascade.
 - **Environment model**: nu's `def` is not dynamically scoped — a function only mutates the caller's `$env` if declared `def --env`, and every function in a chain that needs to reach top-level `$env` must be `--env`, all the way up. Every state-mutating command in the nu port follows a "compute in a plain `def`, assign in a thin `--env` wrapper" shape for this reason.
@@ -235,7 +235,7 @@ For anything `local.yaml` can't express — conditional aliases, real functions,
 | Bash | `~/.config/bash/aliases` | `~/.config/bash/rc` | `~/.config/bash/functions/*.bash` |
 | Zsh | `~/.config/zsh/aliases` | `~/.config/zsh/rc` | `~/.config/zsh/functions/*` |
 | Fish | `~/.config/fish/aliases` | `~/.config/fish/rc` | `~/.config/fish/functions/*.fish` — fish's own native autoload, nothing this framework implements |
-| Nushell | not supported | `~/.config/nu/env.local.nu`, `~/.config/nu/config.local.nu` | not supported |
+| Nushell | not supported | `~/.config/nushell/env.local.nu`, `~/.config/nushell/config.local.nu` | not supported |
 | PowerShell | `~/.config/pwsh/aliases.ps1` | `~/.config/pwsh/modules.ps1` (module imports) | `~/.config/pwsh/functions/*.ps1` |
 
 `~/.config/<shell>/` is deliberately where each shell's local files live: it's already where you'd look for shell-specific config, and fish in particular already autoloads its `functions/` directory as a native feature — putting a second, framework-specific mechanism anywhere else would only duplicate or collide with what the shell already does itself.
