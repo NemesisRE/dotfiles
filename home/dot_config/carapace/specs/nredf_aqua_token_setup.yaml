@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+# nredf_aqua_token_setup (bash/zsh/fish; shell/*/functions/nredf_aqua.*).
+# It takes exactly one action; with none it behaves like --set. Nu's
+# nredf-aqua-token-setup is a plain `def`, which nu completes from its own
+# signature rather than through carapace, so it has no spec here.
+name: nredf_aqua_token_setup
+description: Configure how aqua gets its GitHub token
+flags:
+  --set: use the system keyring if available, else a local aqua.env
+  --keyring: store the token in the system keyring
+  --env: store the token in a local aqua.env (mode 0600)
+  --skip: skip token setup and stop asking
+  --reset: forget the stored preference
+  --status: show the current token setup
+exclusiveflags:
+  - [set, keyring, env, skip, reset, status]

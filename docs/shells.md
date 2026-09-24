@@ -78,6 +78,13 @@ All five shells share a unified experience designed around modern developer ergo
   - `Functions.ps1`: Utility functions (`reload`, `sudo`, `md5`, `sha256`, `NREDF_DailySync`).
   - `Profile.ps1`: High-performance startup orchestration with snippet caching (`NREDF_RefreshCachedShellSnippet`) for Oh-My-Posh, Atuin, Zoxide, and **Carapace** completions (including custom specs in `~/.config/carapace/specs/`).
 
+### 6. Custom Completions (Carapace)
+
+- **Specs**: [`home/dot_config/carapace/specs/`](../home/dot_config/carapace/specs/) holds one YAML spec per command carapace-bin doesn't know: the NREDF functions (`reload`, `yy`, `nredf_ssh`, `nredf_aqua_token_setup`, `nredf-daily-sync`) and aqua tools without a completer (`kubectx`, `kubens`, `lsd`, `lazydocker`, `lazyjournal`).
+- **Aliases**: bash can't complete an alias through its target, so every alias in `home/.chezmoidata/aliases.yaml` whose target needs it (`k`, `kctx`/`ctx`, `kns`/`ns`, `lzg`/`lg`, `lzd`, `lzj`/`lj`, `ll`/`la`/`tree`, `pst`) has its own thin spec that bridges to the target with `$carapace.bridge.CarapaceBin([target])`. A spec's `aliases:` field does not help here: it only names subcommand aliases and never registers a top-level command.
+- **Cobra bridges**: [`home/dot_config/carapace/choices/`](../home/dot_config/carapace/choices/) makes carapace ask `flux`, `oras`, `stern`, `velero` and `yq` for their own completions (the same files `carapace --choice flux/cobra@bridge` writes).
+- **Cache lag**: bash, zsh, fish and PowerShell only complete command names that were listed in carapace's init snippet, which is cached for 24 hours. A **new** spec or choice therefore appears only after `reload -c` (or the next daily refresh); edits to an existing spec apply immediately. Nushell's snippet is a generic external completer, so it picks up new specs at once.
+
 ---
 
 ## ⌨️ Shell Keyboard Shortcuts

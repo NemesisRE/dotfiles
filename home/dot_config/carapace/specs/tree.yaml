@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+# Alias for lsd --tree (home/.chezmoidata/aliases.yaml): hands the whole
+# command line to lsd's completer. This shadows carapace-bin's own `tree`
+# completer on purpose: lsd is aqua-managed on every OS, so `tree` is lsd on
+# any bootstrapped machine. The trade-off is that before aqua has installed
+# lsd (or with NREDF_NO_BOOTSTRAP), the real `tree` gets lsd's flags offered.
+name: tree
+description: Alias for lsd --tree
+parsing: disabled
+completion:
+  positionalany: ["$carapace.bridge.CarapaceBin([lsd])"]
