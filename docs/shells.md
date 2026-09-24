@@ -269,6 +269,8 @@ Options:
   -h, --help        Show usage help
 ```
 
+`-l` removes only the last-run stamps and keeps the cached init snippets, the sheldon cache and the zsh completion dump. `-c` and `-f` clear those as well; use one of them to pick up a tool upgrade immediately. Nushell's `*.nu` snippets are truncated rather than deleted, because nu's `source` needs each file to exist when `config.nu` is parsed.
+
 ### Examples
 
 - **Fast shell refresh**:
