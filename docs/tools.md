@@ -440,6 +440,17 @@ Everything else in the file (allow rules, hooks, model, ...) is left alone. Inva
 
 What Claude Code gets by default: background auto-update off (aqua owns the version; `claude update` still works), no survey or spinner tips, and deny rules for secrets. The deny rules cover `.env` files, `~/.ssh`, the vault-fed `~/.config/nredf/mcp.json`, and `bw get`/`list`/`export`/`unlock`, since `BW_SESSION` is present in every child process. To drop a deny rule, remove it from `claude.yaml` **and** from `~/.claude/settings.json`.
 
+### `zclaude`: Persistent Claude Supervisor with Keep-Alive & Auto-Retry
+
+`zclaude` is a cross-platform supervisor for Claude Code that integrates natively with Zellij, keeping sessions active across system idle sleep and automatically resuming long-running tasks when rate limits reset:
+
+- **Multiplexer Integration**: Uses Zellij's native CLI (`dump-screen`, `write-chars`, `send-keys`) instead of `tmux`, working identically on Linux, macOS, and Windows.
+- **System Keep-Alive**: Prevents system and idle sleep while Claude is active and while waiting out limits (`caffeinate` on macOS, Win32 `SetThreadExecutionState` on Windows, and `systemd-inhibit` on Linux).
+- **Auto-Resumption**: Accurately parses limit reset times (e.g. `resets 3:15 PM` or relative duration) from viewport dumps and transcripts, safely dismisses any interactive `/rate-limit-options` dialog with `Esc`, and injects `continue` once the reset time (+ safety margin) arrives. Handles transient 529/503 overloads with progressive backoff.
+- **Dual Execution Modes**:
+  - **Integrated run**: `zclaude [args...]` wraps Claude directly in the current Zellij pane (or starts a Zellij session if run outside).
+  - **Watcher mode**: `zclaude --watch [pane_id]` monitors an existing Claude pane in Zellij as a sidecar or companion pane.
+
 ---
 
 ## 🔄 Package & Tool Management: aqua

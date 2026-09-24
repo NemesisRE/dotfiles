@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+name: zclaude
+description: Zellij-native supervisor for Claude Code with auto-retry and keep-alive
+flags:
+  -v, --verbose: Enable verbose debug logging
+  -w, --watch=: Watch an existing Zellij pane (pane_id optional)
+  -s, --session=: "Zellij session name (default: zclaude)"
+  --no-keep-alive: Disable system sleep prevention
+  --margin=: "Safety margin in seconds after reset (default: 30)"
+  --message=: "Resumption message to send (default: continue)"
+  --cmd=: "Claude executable command (default: claude)"
+  --version: Show program version number and exit
+
