@@ -40,9 +40,9 @@ Secrets configured under `[data.secrets]` in `~/.config/chezmoi/chezmoi.toml` us
 
 | Prefix | Secret Provider | Extraction Details |
 | :--- | :--- | :--- |
-| `bitwarden:<item>` or `bw:<item>` | Bitwarden CLI (`bw`) | **SSH Key**: `.sshKey.publicKey` (native SSH item), `.notes`, or field `publicKey`.<br>**Token**: `.login.password`, field `token`, `aqua_github_token`, or `notes`. |
+| `bitwarden:<item>` or `bw:<item>` | Bitwarden CLI (`bw`) | **SSH Key**: `.sshKey.publicKey` (native SSH item), `.notes`, or field `publicKey`.<br>**Token**: `.login.password`, field `token`, `aqua_github_token` or `password`, falling back to `notes`. |
 | `keepassxc:<item>` | KeePassXC CLI (`keepassxc-cli`) | **SSH Key**: attribute `public_key` or entry `Notes`.<br>**Token**: entry `Password` or `Notes`. |
-| `onepassword:<item>` or `op:<item>` | 1Password CLI (`op`) | **SSH Key**: field `public_key` or notes.<br>**Token**: item password or field `token`. |
+| `onepassword:<item>` or `op:<item>` | 1Password CLI (`op`) | **SSH Key**: field `public_key` or notes.<br>**Token**: field `password` or `token`, falling back to notes. |
 | *(no prefix)* | Raw string fallback | Treated as a static string literal (e.g. `ssh-ed25519 AAA...`). |
 
 ---
@@ -87,7 +87,7 @@ During `chezmoi apply`:
 
 ### 1. Aqua GitHub Token (`~/.config/nredf/aqua-vault.env`)
 
-* **Template**: `home/dot_config/nredf/private_aqua-vault.env.tmpl`
+* **Template**: `home/dot_config/private_nredf/private_aqua-vault.env.tmpl`
 * **Target**: `~/.config/nredf/aqua-vault.env` (permissions `0600`)
 * **Variables Exported**:
 
@@ -230,4 +230,4 @@ Get-Content "$HOME\.config\nredf\aqua.env"
 
 ### CI / Headless Mode
 
-When running in automated CI environments (`CI=true`) or when `NREDF_NO_BOOTSTRAP=1` is set, all secret lookups safely return empty strings, preventing interactive CLI prompts or failed builds.
+When running in automated CI environments (`CI=true`) or when `NREDF_NO_BOOTSTRAP` is set to any non-empty value, all secret lookups safely return empty strings, preventing interactive CLI prompts or failed builds.

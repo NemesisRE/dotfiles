@@ -201,11 +201,11 @@ NREDF guarantees that common development commands behave identically regardless 
 
 ## 🏠 Local, Machine-Specific Overrides
 
-None of the following files are chezmoi-managed or committed to this repo — they live only on your machine, are yours to create, and `chezmoi apply` never touches or overwrites them. [`~/.config/nredf/README.md`](../home/dot_config/nredf/README.md) is a shorter, on-disk version of this same section.
+None of the following files are chezmoi-managed or committed to this repo — they live only on your machine, are yours to create, and `chezmoi apply` never touches or overwrites them. [`~/.config/nredf/README.md`](../home/dot_config/private_nredf/README.md) is a shorter, on-disk version of this same section.
 
 ### `~/.config/nredf/local.yaml` — paths and simple aliases
 
-The same declarative format `.chezmoidata/paths.yaml` and `.chezmoidata/aliases.yaml` use internally. If this file exists, every shell reads and merges it in at `chezmoi apply` time (it is re-read on every apply, so editing it and re-applying picks up changes immediately). chezmoi deploys a copy-and-edit starting point at [`~/.config/nredf/local.yaml.example`](../home/dot_config/nredf/local.yaml.example) — copy it to `local.yaml` in the same directory:
+The same declarative format `.chezmoidata/paths.yaml` and `.chezmoidata/aliases.yaml` use internally. If this file exists, every shell reads and merges it in at `chezmoi apply` time (it is re-read on every apply, so editing it and re-applying picks up changes immediately). chezmoi deploys a copy-and-edit starting point at [`~/.config/nredf/local.yaml.example`](../home/dot_config/private_nredf/local.yaml.example) — copy it to `local.yaml` in the same directory:
 
 ```yaml
 # ~/.config/nredf/local.yaml
