@@ -1,0 +1,167 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+name: claude
+description: Claude Code - agentic coding assistant CLI
+flags:
+  --add-dir*: Additional directories to allow tool access to
+  --agent=: "Agent for current session (overrides 'agent' setting)"
+  --agents=: JSON object defining custom agents
+  --allow-dangerously-skip-permissions: Enable bypassing all permission checks without enabling by default
+  --allowed-tools=: Comma or space-separated list of tool names to allow
+  --allowedTools=: Comma or space-separated list of tool names to allow
+  --append-system-prompt=: Append a system prompt to default system prompt
+  --autocompact=: "Auto-compact window size (auto, or 100k-1M tokens)"
+  --ax-screen-reader: Render screen-reader friendly output (flat text)
+  --bare: "Minimal mode: skip hooks, LSP, auto-memory, and plugin sync"
+  --betas*: Beta headers to include in API requests
+  --bg: Start session in background and return immediately
+  --background: Start session in background and return immediately
+  --brief: Enable SendUserMessage tool for agent-to-user communication
+  --chrome: Enable Claude in Chrome integration
+  --cloud?: "Create cloud session with description, or attach by session ID or URL"
+  -c, --continue: Continue most recent conversation in current directory
+  --dangerously-skip-permissions: Bypass all permission checks (for sandboxes/unattended runs)
+  -d, --debug?: "Enable debug mode with optional category filtering (e.g. api,hooks)"
+  --debug-file=: Write debug logs to a specific file path
+  --disable-slash-commands: Disable all skills
+  --disallowed-tools=: Comma or space-separated list of tool names to deny
+  --disallowedTools=: Comma or space-separated list of tool names to deny
+  --effort=: "Effort level for current session (low, medium, high, xhigh, max)"
+  --environment=: Create new cloud session on given self-hosted environment
+  --exclude-dynamic-system-prompt-sections: Move machine sections from system prompt into first user message
+  --fallback-model=: Comma-separated list of fallback models when default is overloaded
+  --file*: "File resources to download at startup (file_id:relative_path)"
+  --fork-session: When resuming, create a new session ID instead of reusing original
+  --forward-subagent-text: Forward subagent text and thinking blocks in stream-json
+  --from-pr?: "Resume session linked to PR by PR number/URL, or open picker"
+  -h, --help: Display help for command
+  --ide: Automatically connect to IDE on startup
+  --include-hook-events: Include all hook lifecycle events in output stream
+  --include-partial-messages: Include partial message chunks as they arrive
+  --input-format=: "Input format with --print (text, stream-json)"
+  --json-schema=: JSON Schema for structured output validation
+  --max-budget-usd=: Maximum dollar amount to spend on API calls
+  --mcp-config*: Load MCP servers from JSON files or strings
+  -m, --model=: "Model for current session (e.g. sonnet, opus, haiku, fable)"
+  -n, --name=: Set display name for this session
+  --no-chrome: Disable Claude in Chrome integration
+  --no-session-persistence: Disable session persistence (only with --print)
+  --output-format=: "Output format with --print (text, json, stream-json)"
+  --permission-mode=: "Permission mode (acceptEdits, auto, bypassPermissions, manual, dontAsk, plan)"
+  --permission-prompts=: "Who answers permission prompts with --print (host, none)"
+  --plugin-dir*: Load a plugin from directory or zip for this session only
+  --plugin-url*: Fetch a plugin zip from URL for this session only
+  -p, --print: Print response and exit (useful for pipes)
+  --prompt-suggestions?: Enable prompt suggestions with predicted next user prompt
+  --remote-control?: Start an interactive session with Remote Control enabled
+  --remote-control-session-name-prefix=: Prefix for auto-generated Remote Control session names
+  --replay-user-messages: Re-emit user messages from stdin back on stdout
+  --restricted: Restricted mode (removes command-running tools and WebFetch)
+  -r, --resume?: Resume conversation by session ID or open interactive picker
+  --safe-mode: Start with all customizations and plugins disabled
+  --session-id=: Use a specific session ID (must be a valid UUID)
+  --setting-sources=: Comma-separated list of setting sources to load (user, project, local)
+  --settings=: Path to settings JSON file or JSON string
+  --strict-mcp-config: Only use MCP servers from --mcp-config, ignoring all others
+  --system-prompt=: System prompt to use for the session
+  --system-prompt-snapshot=: "Record system prompt once per conversation (on, off)"
+  --teleport?: Resume a teleport session, optionally specify session ID
+  --tmux: Create a tmux session for the worktree (requires --worktree)
+  --tools*: Specify list of available tools ("" to disable, "default", or names)
+  -v, --version: Output the version number
+  -w, --worktree?: Create a new git worktree for this session
+commands:
+  - name: agents
+    description: Manage background agents
+  - name: attach
+    description: Open a background session in this terminal
+  - name: auth
+    description: Manage authentication
+  - name: auto-mode
+    description: Inspect or reset auto mode classifier configuration
+  - name: doctor
+    description: Check the health of your Claude Code installation
+  - name: gateway
+    description: Run the enterprise auth/telemetry gateway
+  - name: import
+    description: Import config from another AI coding agent into Claude Code
+  - name: install
+    description: Install Claude Code native build
+  - name: logs
+    description: Print a background session's recent terminal output
+  - name: mcp
+    description: Configure and manage MCP servers
+  - name: plugin
+    aliases: ["plugins"]
+    description: Manage Claude Code plugins
+  - name: project
+    description: Manage Claude Code project state
+  - name: respawn
+    description: Restart a background session
+  - name: rm
+    description: Delete a background session
+  - name: setup-token
+    description: Set up a long-lived authentication token
+  - name: stop
+    aliases: ["kill"]
+    description: Stop a background session
+  - name: ultrareview
+    description: Run a cloud-hosted multi-agent code review
+  - name: update
+    aliases: ["upgrade"]
+    description: Check for updates and install if available
+completion:
+  flag:
+    effort:
+      - "low\tefficient and fast"
+      - "medium\tbalanced"
+      - "high\tthorough thinking"
+      - "xhigh\textra high reasoning depth"
+      - "max\tmaximum reasoning depth"
+    permission-mode:
+      - "acceptEdits\tauto-accept file edits, prompt on commands"
+      - "auto\tstandard auto mode"
+      - "bypassPermissions\tbypass all permission checks"
+      - "manual\tprompt for all actions"
+      - "dontAsk\tnever prompt, deny anything requiring permission"
+      - "plan\tread-only planning mode"
+    permission-prompts:
+      - "host\tsend prompts to SDK host or tool"
+      - "none\tauto-deny anything requiring confirmation"
+    model:
+      - "sonnet\tClaude Sonnet (default)"
+      - "opus\tClaude Opus"
+      - "haiku\tClaude Haiku"
+      - "fable\tClaude Fable preview"
+    fallback-model:
+      - "sonnet\tClaude Sonnet"
+      - "opus\tClaude Opus"
+      - "haiku\tClaude Haiku"
+    input-format:
+      - "text\tplain text input"
+      - "stream-json\trealtime streaming JSON input"
+    output-format:
+      - "text\tplain text output"
+      - "json\tsingle JSON result object"
+      - "stream-json\trealtime streaming JSON events"
+    system-prompt-snapshot:
+      - "on\treuse rendered system prompt across resumes"
+      - "off\tre-render system prompt fresh on every request"
+    autocompact:
+      - "auto\tautomatic compaction threshold"
+    prompt-suggestions:
+      - "true\tenable suggestions"
+      - "false\tdisable suggestions"
+      - "on\tenable suggestions"
+      - "off\tdisable suggestions"
+    setting-sources:
+      - "user\tuser-level settings (~/.claude/settings.json)"
+      - "project\tproject-level settings (.claude/settings.json)"
+      - "local\tlocal directory settings"
+    tools:
+      - "default\tuse all default tools"
+      - "Bash\trun shell commands"
+      - "Edit\tedit files"
+      - "Read\tread file contents"
+      - "WebFetch\tfetch web pages"
+      - "Glob\tsearch files by pattern"
+      - "Grep\tsearch file contents"

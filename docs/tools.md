@@ -445,11 +445,20 @@ What Claude Code gets by default: background auto-update off (aqua owns the vers
 `zclaude` is a cross-platform supervisor for Claude Code that integrates natively with Zellij, keeping sessions active across system idle sleep and automatically resuming long-running tasks when rate limits reset:
 
 - **Multiplexer Integration**: Uses Zellij's native CLI (`dump-screen`, `write-chars`, `send-keys`) instead of `tmux`, working identically on Linux, macOS, and Windows.
+- **Dedicated AI Layout (`zclaude`)**: Features a 72% primary Claude pane flanked by a command terminal and suspended `lazygit`, secondary tabs for code editing and `btop` monitoring, and dynamic swap layouts.
 - **System Keep-Alive**: Prevents system and idle sleep while Claude is active and while waiting out limits (`caffeinate` on macOS, Win32 `SetThreadExecutionState` on Windows, and `systemd-inhibit` on Linux).
 - **Auto-Resumption**: Accurately parses limit reset times (e.g. `resets 3:15 PM` or relative duration) from viewport dumps and transcripts, safely dismisses any interactive `/rate-limit-options` dialog with `Esc`, and injects `continue` once the reset time (+ safety margin) arrives. Handles transient 529/503 overloads with progressive backoff.
+- **Claude CLI Option Parity**: Forwards common Claude Code flags seamlessly:
+  - `-r, --resume [ID]`: Resume an existing session or open the interactive picker.
+  - `-c, --continue`: Continue the latest session in the directory.
+  - `-p, --print`: Run non-interactively and stream response.
+  - `-m, --model <MODEL>`: Switch model (`sonnet`, `opus`, `haiku`).
+  - `--dangerously-skip-permissions`: Bypass permission prompts for unattended execution.
+  - `--effort <low|medium|high|max>`: Control reasoning effort depth.
+  - `-w, --worktree [NAME]`: Branch off into an isolated git worktree.
 - **Dual Execution Modes**:
   - **Integrated run**: `zclaude [args...]` wraps Claude directly in the current Zellij pane (or starts a Zellij session if run outside).
-  - **Watcher mode**: `zclaude --watch [pane_id]` monitors an existing Claude pane in Zellij as a sidecar or companion pane.
+  - **Watcher mode**: `zclaude -W/--watch [pane_id]` monitors an existing Claude pane in Zellij as a sidecar or companion pane.
 
 ---
 

@@ -134,10 +134,22 @@ class ZellijController:
         self.session_name = session_name or os.environ.get("ZELLIJ_SESSION_NAME", "zclaude")
 
     def _cmd(self, *action_args: str) -> list[str]:
-        # If outside session or targeting specific session, prepend --session
-        if "ZELLIJ" not in os.environ or (self.session_name and os.environ.get("ZELLIJ_SESSION_NAME") != self.session_name):
-            return ["zellij", "--session", self.session_name, "action", *action_args]
-        return ["zellij", "action", *action_args]
+        # If inside a Zellij session, 'zellij action' automatically targets the current session
+        if "ZELLIJ" in os.environ:
+            return ["zellij", "action", *action_args]
+        return ["zellij", "--session", self.session_name, "action", *action_args]
+
+    def has_session(self, session_name: str) -> bool:
+        try:
+            res = subprocess.run(["zellij", "list-sessions"], capture_output=True, text=True, check=False)
+            if res.returncode == 0:
+                for line in res.stdout.splitlines():
+                    parts = line.strip().split()
+                    if parts and parts[0] == session_name:
+                        return True
+        except Exception:
+            pass
+        return False
 
     def is_available(self) -> bool:
         return shutil.which("zellij") is not None
@@ -582,25 +594,147 @@ class Supervisor(threading.Thread):
 # CLI Entry Point
 # =============================================================================
 
+def find_layout(layout_name: str) -> str:
+    """Resolve Zellij layout name or file path."""
+    if os.path.isfile(layout_name):
+        return os.path.abspath(layout_name)
+
+    user_layout = os.path.expanduser(f"~/.config/zellij/layouts/{layout_name}.kdl")
+    if os.path.isfile(user_layout):
+        return layout_name
+
+    source_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(source_dir, "..", "..", "dot_config", "zellij", "layouts", f"{layout_name}.kdl.tmpl"),
+        os.path.join(source_dir, "..", "..", "dot_config", "zellij", "layouts", f"{layout_name}.kdl"),
+    ]
+    for c in candidates:
+        if os.path.isfile(c):
+            return os.path.normpath(c)
+
+    return layout_name
+
+
 def parse_args() -> tuple[argparse.Namespace, list[str]]:
     parser = argparse.ArgumentParser(
         prog="zclaude",
         description="Zellij-native supervisor for Claude Code with automatic limit resumption & keep-alive.",
     )
+    # zclaude supervisor options
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose debug logging")
-    parser.add_argument("-w", "--watch", nargs="?", const="", help="Watch an existing Zellij pane (pane_id optional)")
+    parser.add_argument("-W", "--watch", nargs="?", const="", help="Watch an existing Zellij pane (pane_id optional)")
     parser.add_argument("-s", "--session", default="zclaude", help="Zellij session name (default: zclaude)")
+    parser.add_argument("-l", "--layout", default="zclaude", help="Zellij layout to use (default: zclaude)")
     parser.add_argument("--no-keep-alive", action="store_true", help="Disable system sleep prevention")
     parser.add_argument("--margin", type=int, default=30, help="Safety margin in seconds after reset (default: 30)")
     parser.add_argument("--message", default="continue", help="Resumption message to send (default: continue)")
     parser.add_argument("--cmd", default="claude", help="Claude executable command (default: claude)")
     parser.add_argument("--inside", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+
+    # Claude Code passthrough options
+    claude_group = parser.add_argument_group("Claude Code options (forwarded directly to claude)")
+    claude_group.add_argument("-r", "--resume", nargs="?", const="", default=None,
+                              help="Resume a conversation by session ID or open interactive picker")
+    claude_group.add_argument("-c", "--continue", dest="continue_session", action="store_true",
+                              help="Continue the most recent conversation in the current directory")
+    claude_group.add_argument("-p", "--print", dest="print_mode", action="store_true",
+                              help="Run non-interactively and print response")
+    claude_group.add_argument("-m", "--model", default=None,
+                              help="Model for current session (e.g. opus, sonnet, fable, haiku)")
+                              help="Model for current session (e.g. sonnet, opus, haiku, fable)")
+    claude_group.add_argument("--effort", choices=["low", "medium", "high", "xhigh", "max"], default=None,
+                              help="Effort level for the current session (low, medium, high, xhigh, max)")
+    claude_group.add_argument("--permission-mode", choices=["acceptEdits", "auto", "bypassPermissions", "manual", "dontAsk", "plan"], default=None,
+                              help="Permission mode for the session")
+    claude_group.add_argument("--dangerously-skip-permissions", action="store_true",
+                              help="Bypass all permission checks (for unattended/sandbox runs)")
+    claude_group.add_argument("--allow-dangerously-skip-permissions", action="store_true",
+                              help="Enable bypassing all permission checks without enabling by default")
+    claude_group.add_argument("--effort", choices=["low", "medium", "high", "xhigh", "max"], default=None,
+                              help="Effort level for the current session (low, medium, high, xhigh, max)")
+    claude_group.add_argument("-n", "--name", default=None,
+                              help="Set display name for this session")
+    claude_group.add_argument("-w", "--worktree", nargs="?", const="", default=None,
+                              help="Create a new git worktree for this session")
+    claude_group.add_argument("--fork-session", action="store_true",
+                              help="When resuming, create a new session ID instead of reusing original")
+    claude_group.add_argument("--bare", action="store_true",
+                              help="Minimal mode: skip hooks, LSP, auto-memory, and plugin sync")
+    claude_group.add_argument("--ide", action="store_true",
+                              help="Automatically connect to IDE on startup")
+    claude_group.add_argument("--bare", action="store_true",
+                              help="Minimal mode: skip hooks, LSP, auto-memory, and plugin sync")
+    claude_group.add_argument("--safe-mode", action="store_true",
+                              help="Start with all customizations and plugins disabled")
+    claude_group.add_argument("--teleport", nargs="?", const="", default=None,
+                              help="Resume a teleport session, optionally specify session ID")
+    claude_group.add_argument("--from-pr", nargs="?", const="", default=None,
+                              help="Resume a session linked to a PR by PR number/URL, or open interactive picker")
+    claude_group.add_argument("--cloud", nargs="?", const="", default=None,
+                              help="Create a cloud session with description, or attach by session ID/URL")
+
     return parser.parse_known_args()
 
 
 def main() -> int:
     args, claude_args = parse_args()
+
+    # Reconstruct forwarded Claude Code options
+    forwarded_claude_args = list(claude_args)
+    if args.resume is not None:
+        if args.resume:
+            forwarded_claude_args.extend(["--resume", args.resume])
+        else:
+            forwarded_claude_args.append("--resume")
+    if args.continue_session:
+        forwarded_claude_args.append("--continue")
+    if args.print_mode:
+        forwarded_claude_args.append("--print")
+    if args.model:
+        forwarded_claude_args.extend(["--model", args.model])
+    if args.effort:
+        forwarded_claude_args.extend(["--effort", args.effort])
+    if args.permission_mode:
+        forwarded_claude_args.extend(["--permission-mode", args.permission_mode])
+    if args.dangerously_skip_permissions:
+        forwarded_claude_args.append("--dangerously-skip-permissions")
+    if args.allow_dangerously_skip_permissions:
+        forwarded_claude_args.append("--allow-dangerously-skip-permissions")
+    if args.effort:
+        forwarded_claude_args.extend(["--effort", args.effort])
+    if args.name:
+        forwarded_claude_args.extend(["--name", args.name])
+    if args.worktree is not None:
+        if args.worktree:
+            forwarded_claude_args.extend(["--worktree", args.worktree])
+        else:
+            forwarded_claude_args.append("--worktree")
+    if args.fork_session:
+        forwarded_claude_args.append("--fork-session")
+    if args.bare:
+        forwarded_claude_args.append("--bare")
+    if args.ide:
+        forwarded_claude_args.append("--ide")
+    if args.bare:
+        forwarded_claude_args.append("--bare")
+    if args.safe_mode:
+        forwarded_claude_args.append("--safe-mode")
+    if args.teleport is not None:
+        if args.teleport:
+            forwarded_claude_args.extend(["--teleport", args.teleport])
+        else:
+            forwarded_claude_args.append("--teleport")
+    if args.from_pr is not None:
+        if args.from_pr:
+            forwarded_claude_args.extend(["--from-pr", args.from_pr])
+        else:
+            forwarded_claude_args.append("--from-pr")
+    if args.cloud is not None:
+        if args.cloud:
+            forwarded_claude_args.extend(["--cloud", args.cloud])
+        else:
+            forwarded_claude_args.append("--cloud")
 
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
@@ -666,11 +800,9 @@ def main() -> int:
     # Case 2: Outside Zellij -> Launch / Attach Session
     # -------------------------------------------------------------------------
     if "ZELLIJ" not in os.environ and not args.inside:
-        print(f"\033[1;36m[zclaude]\033[0m Starting Zellij workspace session '{args.session}'...")
-
-        # Build command to run inside Zellij
         zclaude_bin = os.path.abspath(sys.argv[0])
-        inner_cmd = [zclaude_bin, "--inside", "--session", args.session]
+        # Always invoke via sys.executable so extensionless script works across Windows, Linux, and macOS
+        inner_cmd = [sys.executable, zclaude_bin, "--inside", "--session", args.session]
         if args.no_keep_alive:
             inner_cmd.append("--no-keep-alive")
         if args.margin != 30:
@@ -681,31 +813,30 @@ def main() -> int:
             inner_cmd.extend(["--cmd", args.cmd])
         if args.verbose:
             inner_cmd.append("--verbose")
-        inner_cmd.extend(claude_args)
+        inner_cmd.extend(forwarded_claude_args)
 
-        # Inline layout starting zclaude
-        kdl_args = " ".join(f'"{a}"' for a in inner_cmd[1:])
-        layout_kdl = (
-            "layout {\n"
-            "    default_tab_template {\n"
-            "        children\n"
-            '        pane size=1 borderless=true { plugin location="zellij:tab-bar"; }\n'
-            "    }\n"
-            f'    tab name="zclaude" focus=true {{\n'
-            f'        pane command="{zclaude_bin}" {{\n'
-            f"            args {kdl_args}\n"
-            "        }\n"
-            "    }\n"
-            "}\n"
-        )
-
-        try:
-            res = subprocess.call(["zellij", "--session", args.session, "--layout-string", layout_kdl])
-            return res
-        except KeyboardInterrupt:
-            return 0
-        finally:
-            sleep_inhibitor.stop()
+        if zellij.has_session(args.session):
+            print(f"\033[1;36m[zclaude]\033[0m Attaching to active Zellij session '{args.session}'...")
+            try:
+                if forwarded_claude_args:
+                    subprocess.run(["zellij", "--session", args.session, "run", "--", *inner_cmd], check=False)
+                res = subprocess.call(["zellij", "attach", args.session])
+                return res
+            except KeyboardInterrupt:
+                return 0
+            finally:
+                sleep_inhibitor.stop()
+        else:
+            layout_target = find_layout(args.layout)
+            print(f"\033[1;36m[zclaude]\033[0m Starting Zellij workspace session '{args.session}' (layout: {args.layout})...")
+            launch_args = ["zellij", "--layout", layout_target, "attach", "-c", args.session, "--", *inner_cmd]
+            try:
+                res = subprocess.call(launch_args)
+                return res
+            except KeyboardInterrupt:
+                return 0
+            finally:
+                sleep_inhibitor.stop()
 
     # -------------------------------------------------------------------------
     # Case 3: Inside Zellij -> Wrap Claude in Foreground + Background Supervisor
@@ -720,7 +851,7 @@ def main() -> int:
     )
     supervisor.start()
 
-    claude_cmd = [args.cmd] + claude_args
+    claude_cmd = [args.cmd] + forwarded_claude_args
     logger.debug("Executing Claude command: %s", claude_cmd)
 
     try:
@@ -740,4 +871,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

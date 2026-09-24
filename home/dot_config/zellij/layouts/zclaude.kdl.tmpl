@@ -1,0 +1,56 @@
+layout {
+  default_tab_template {
+    pane size=1 borderless=true {
+      plugin location="zellij:tab-bar"
+    }
+    children
+    pane size=2 borderless=true {
+      plugin location="zellij:status-bar"
+    }
+  }
+
+  tab name="Claude" focus=true split_direction="vertical" {
+    pane name="Claude Code" focus=true size="72%"
+    pane split_direction="horizontal" size="28%" {
+      pane name="Terminal"
+      pane name="Git" command="lazygit" {
+        start_suspended true
+      }
+    }
+  }
+
+  tab name="Dev" split_direction="horizontal" {
+    pane name="Editor" focus=true
+    pane name="Terminal" size="30%"
+  }
+
+  tab name="Monitor" {
+    pane command="btop" borderless=true
+  }
+
+  swap_tiled_layout name="vertical-split" {
+    tab max_panes=3 {
+      pane focus=true size="72%"
+      pane split_direction="horizontal" size="28%" {
+        pane
+        pane
+      }
+    }
+  }
+
+  swap_tiled_layout name="horizontal-split" {
+    tab max_panes=3 {
+      pane focus=true size="70%"
+      pane split_direction="vertical" size="30%" {
+        pane
+        pane
+      }
+    }
+  }
+
+  swap_tiled_layout name="fullscreen" {
+    tab max_panes=1 {
+      pane focus=true
+    }
+  }
+}
