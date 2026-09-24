@@ -1,0 +1,14 @@
+{{- /* Terraform CLI config. Terraform reads ~/.terraformrc on Linux/macOS and
+       %APPDATA%\terraform.rc on Windows, which includes this file. Forward
+       slashes keep Windows paths valid in an HCL string. */ -}}
+{{- $cacheDir := joinPath .chezmoi.homeDir ".cache" "terraform" "plugin-cache" | replace "\\" "/" -}}
+# Terraform CLI configuration, managed by chezmoi.
+
+# Share downloaded providers between working directories instead of
+# fetching a fresh copy into every .terraform/. Terraform never creates this
+# directory itself; chezmoi creates it (home/dot_cache/terraform/plugin-cache).
+plugin_cache_dir = {{ $cacheDir | quote }}
+
+# Don't phone home to HashiCorp's checkpoint service for update and security
+# bulletin checks on every run.
+disable_checkpoint = true

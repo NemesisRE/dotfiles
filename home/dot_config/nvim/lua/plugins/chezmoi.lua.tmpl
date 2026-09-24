@@ -1,0 +1,44 @@
+{{- /* Forward slashes work on every OS in Vim paths and autocmd patterns, and
+       keep Windows backslashes out of the Lua string literal entirely. */ -}}
+{{- $sourceDir := .chezmoi.sourceDir | replace "\\" "/" | trimSuffix "/" -}}
+-- Point the chezmoi plugins at this machine's real source directory. The
+-- astrocommunity chezmoi pack hard-codes ~/.local/share/chezmoi, which is
+-- wrong whenever chezmoi.toml sets sourceDir (e.g. a checkout in ~/Repos).
+-- chezmoi renders this from .chezmoi.sourceDir, which already includes the
+-- .chezmoiroot subdirectory (home/), so only managed files match.
+local source_dir = {{ $sourceDir | quote }}
+
+---@type LazySpec
+return {
+  {
+    "alker0/chezmoi.vim",
+    specs = {
+      {
+        "AstroNvim/astrocore",
+        opts = function(_, opts)
+          opts.options = opts.options or {}
+          opts.options.g = opts.options.g or {}
+          opts.options.g["chezmoi#source_dir_path"] = source_dir
+        end,
+      },
+    },
+  },
+  {
+    "xvzc/chezmoi.nvim",
+    specs = {
+      {
+        "AstroNvim/astrocore",
+        ---@type AstroCoreOpts
+        opts = function(_, opts)
+          if opts.autocmds and opts.autocmds.chezmoi then
+            for _, autocmd in ipairs(opts.autocmds.chezmoi) do
+              if autocmd.pattern then
+                autocmd.pattern = { source_dir .. "/*" }
+              end
+            end
+          end
+        end,
+      },
+    },
+  },
+}

@@ -1,0 +1,30 @@
+# kubectl user preferences (kuberc). kubectl reads ~/.kube/kuberc by default;
+# KUBECTL_KUBERC=false or --kuberc=off disables it for one run.
+#
+# Deliberately aliases only: a `defaults` entry changes what a plain
+# `kubectl <cmd>` does, including inside scripts and CI, so none are set here.
+# An alias cannot shadow a built-in command. This file is managed by chezmoi,
+# so add entries here instead of with `kubectl kuberc set`.
+apiVersion: kubectl.config.k8s.io/v1beta1
+kind: Preference
+aliases:
+  # kubectl getw pods  ->  kubectl get pods -o wide
+  - name: getw
+    command: get
+    options:
+      - name: output
+        default: wide
+  # kubectl gety deploy foo  ->  kubectl get deploy foo -o yaml
+  - name: gety
+    command: get
+    options:
+      - name: output
+        default: yaml
+  # kubectl getn  ->  kubectl get nodes -o wide
+  - name: getn
+    command: get
+    prependArgs:
+      - nodes
+    options:
+      - name: output
+        default: wide

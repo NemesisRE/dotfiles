@@ -1,15 +1,7 @@
--- Customize Mason plugins
+-- Customize Mason plugins: drop tools that have no Windows build
 
 ---@type LazySpec
 return {
-  -- use mason-lspconfig to configure LSP installations
-  {
-    "williamboman/mason-lspconfig.nvim",
-    opts = function(_, opts)
-      opts.ensure_installed = opts.ensure_installed or {}
-    end,
-  },
-
   -- Filter out platform-incompatible tools on Windows (e.g. ansible-lint requires Unix)
   {
     "WhoIsSethDaniel/mason-tool-installer.nvim",
@@ -55,5 +47,3 @@ return {
     end,
   },
 }
-
-
