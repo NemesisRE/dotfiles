@@ -9,6 +9,20 @@
 # Output always goes to the log file. With --verbose (used by `reload -f`) it is
 # shown on the terminal as well.
 #
+{{- /* Which password managers `chezmoi apply` will actually call. Only the
+       get-*.tmpl helpers read a vault, and only for a `<manager>:` reference in
+       these three secrets (see .chezmoi.toml.tmpl), so mirror their prefixes. */}}
+{{- $useBitwarden := false }}
+{{- $useKeepassxc := false }}
+{{- $useOnepassword := false }}
+{{- if hasKey . "secrets" }}
+{{-   range $key := list "aqua_github_token" "git_signing_key" "mcp_servers" }}
+{{-     $ref := index $.secrets $key | default "" | toString }}
+{{-     if or (hasPrefix "bitwarden:" $ref) (hasPrefix "bw:" $ref) }}{{ $useBitwarden = true }}{{ end }}
+{{-     if hasPrefix "keepassxc:" $ref }}{{ $useKeepassxc = true }}{{ end }}
+{{-     if or (hasPrefix "onepassword:" $ref) (hasPrefix "op:" $ref) }}{{ $useOnepassword = true }}{{ end }}
+{{-   end }}
+{{- end }}
 
 set -uo pipefail
 
@@ -52,6 +66,47 @@ if [[ -z "${NREDF_SYNC_TEE:-}" ]]; then
   exec >>"${LOG_FILE}" 2>&1
 fi
 
+# Returns 0 when every password manager the secret templates will call can be
+# read without a prompt. Otherwise logs why and returns 1.
+_nredf_sync_vaults_ready() {
+{{- if $useBitwarden }}
+  if command -v bw >/dev/null 2>&1; then
+    # Restore BW_SESSION from the keychain the same way interactive shells do at
+    # startup, so a session unlocked earlier with `bwu` is honoured here too.
+    local bw_helper="${HOME}/.local/share/nredf/shell/common/functions/nredf_bw.bash"
+    if [[ -z "${BW_SESSION:-}" && -r "${bw_helper}" ]]; then
+      set +u
+      # shellcheck source=/dev/null
+      source "${bw_helper}" && _nredf_bw_restore_session
+      set -u
+    fi
+    local bw_status
+    bw_status="$(bw status </dev/null 2>/dev/null || true)"
+    if [[ ! "${bw_status}" =~ \"status\":[[:space:]]*\"unlocked\" ]]; then
+      echo "Bitwarden vault locked: skipping chezmoi apply (run bwu, then reload -f)"
+      return 1
+    fi
+  fi
+{{- end }}
+{{- if $useKeepassxc }}
+  if command -v keepassxc-cli >/dev/null 2>&1; then
+    # keepassxc-cli keeps no unlocked state to probe: chezmoi (prompt = true)
+    # always asks for the database password, which a scheduled run cannot answer.
+    echo "KeePassXC database needs its password: skipping chezmoi apply (run chezmoi apply by hand)"
+    return 1
+  fi
+{{- end }}
+{{- if $useOnepassword }}
+  if command -v op >/dev/null 2>&1; then
+    if ! op whoami </dev/null >/dev/null 2>&1; then
+      echo "1Password is signed out or locked: skipping chezmoi apply (unlock 1Password, then reload -f)"
+      return 1
+    fi
+  fi
+{{- end }}
+  return 0
+}
+
 echo "========================================================"
 echo " NREDF Daily Sync Started: $(date)"
 echo "========================================================"
@@ -91,9 +146,14 @@ if command -v chezmoi >/dev/null 2>&1; then
     fi
   fi
 
-  echo "==> Applying dotfiles & externals"
-  # Run non-interactively with null stdin so password safe prompts never hang
-  chezmoi apply --refresh-externals --force --no-tty </dev/null || echo "Chezmoi apply exited with warnings: $?"
+  # A scheduled run has no terminal, so a locked vault cannot be unlocked here:
+  # chezmoi's secret template call would error and abort the apply half-way.
+  # Check first and skip the apply instead; the remaining steps still run.
+  if _nredf_sync_vaults_ready; then
+    echo "==> Applying dotfiles & externals"
+    # Run non-interactively with null stdin so password safe prompts never hang
+    chezmoi apply --refresh-externals --force --no-tty </dev/null || echo "Chezmoi apply exited with warnings: $?"
+  fi
 fi
 
 # 4. Aqua Tools Update, Link & Vacuum
@@ -114,6 +174,15 @@ fi
 if command -v tldr >/dev/null 2>&1; then
   echo "==> Updating tldr cache"
   tldr --update || true
+fi
+
+# 7. Prune stale oh-my-posh session caches: every shell mints a new
+#    POSH_SESSION_ID, so <shell>.<id>.omp.cache files pile up forever. The shared
+#    omp.cache and the init.* scripts do not match this pattern and are kept.
+OMP_CACHE_DIR="${XDG_CACHE_HOME:-${HOME}/.cache}/oh-my-posh"
+if [[ -d "${OMP_CACHE_DIR}" ]]; then
+  echo "==> Pruning oh-my-posh session caches older than 7 days"
+  find "${OMP_CACHE_DIR}" -maxdepth 1 -type f -name '*.omp.cache' -mtime +7 -delete 2>/dev/null || true
 fi
 
 echo "========================================================"
