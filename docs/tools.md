@@ -275,6 +275,17 @@ Configured with the **OneDark-Pro** color scheme and integrates with `delta` for
 
 ---
 
+## 🔧 Git & SSH Configuration
+
+Git reads [`home/dot_config/git/config.tmpl`](../home/dot_config/git/config.tmpl) from `~/.config/git/config`. It sets `delta` as the pager, `zdiff3` conflicts, histogram diffs, `rerere`, `fetch.prune`, `push.autoSetupRemote`, rebase-on-pull and a set of short aliases (`git st`, `git lg`, `git gone`, ...).
+
+- **Local overrides**: chezmoi rewrites `~/.config/git/config` on every apply, so a `git config --global` edit does not last. Put machine-local settings in `~/.config/git/config.local` (for example `git config --file ~/.config/git/config.local user.email work@example.com`). It is included last, so it overrides everything, and git skips it if it does not exist.
+- **Commit & tag signing**: with a signing key configured (see the [Secrets Guide](secrets.md)), commits are signed. Tags are signed only on request (`git tag -s`), so a scripted `git tag <name>` still makes a lightweight tag instead of opening an editor. For `gpg.format = ssh`, `~/.config/git/allowed_signers` is rendered from your email and public key so `git log --show-signature` and `git verify-commit` can verify your own signatures.
+- **Global ignore**: [`~/.config/git/ignore`](../home/dot_config/git/ignore) ignores OS and editor junk (`.DS_Store`, `Thumbs.db`, `*.swp`, `.idea/`, `.direnv/`, ...) in every repository.
+- **SSH**: [`~/.ssh/config`](../home/private_dot_ssh/private_config.tmpl) loads `~/.ssh/config.d/*` first, then `~/.ssh/config.override` (created once, never overwritten), then the `Host *` defaults (agent, keep-alive, connection multiplexing). OpenSSH uses the first value it finds for each option, so the earlier files win.
+
+---
+
 ## 🐳 Container Management: lazydocker (`lzd`)
 
 [lazydocker](https://github.com/jesseduffield/lazydocker) is an interactive terminal UI for both Docker and Docker Compose environments, aliased to `lzd`:
