@@ -1,10 +1,14 @@
 {{ if ne .chezmoi.os "windows" -}}
 #!/usr/bin/env bash
+# chezmoi run_onchange_after hook — installs yazi plugins when package.toml changes.
 # package.toml hash: {{ include "dot_config/yazi/package.toml.tmpl" | sha256sum }}
+# ya present at render time: {{ includeTemplate "hook-tool-present.tmpl" (dict "tool" "ya" "chezmoi" .chezmoi) }}
+# (re-runs this hook once ya appears; see .chezmoitemplates/hook-tool-present.tmpl)
 
 [[ -n "${CI:-}" ]] && exit 0
 [[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
 
+{{ template "hook-env.sh" . }}
 if command -v ya >/dev/null 2>&1; then
   if ! out="$(ya pkg install --discard 2>&1)"; then
     echo "==> Warning: ya pkg install failed; yazi plugins may be missing or stale:" >&2
