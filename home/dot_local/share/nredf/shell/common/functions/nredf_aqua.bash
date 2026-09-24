@@ -12,6 +12,20 @@ function _nredf_aqua_keyring_available() {
     return 0
   fi
 
+  # The D-Bus probe forks gdbus/busctl/dbus-send and can be reached several
+  # times per shell start (_nredf_set_aqua_env runs from both
+  # _nredf_set_defaults and rc, then _nredf_ensure_aqua_github_token), so
+  # remember its answer for this shell. Deliberately not exported: a child
+  # shell may run under a different session bus. nredf_aqua_token_setup
+  # clears it so an explicit command always re-probes.
+  if [[ -z "${_NREDF_AQUA_KEYRING_PROBED:-}" ]]; then
+    _nredf_aqua_keyring_probe
+    _NREDF_AQUA_KEYRING_PROBED=$?
+  fi
+  return "${_NREDF_AQUA_KEYRING_PROBED}"
+}
+
+function _nredf_aqua_keyring_probe() {
   # Linux / Unix: aqua requires D-Bus secret service (org.freedesktop.secrets)
   local bus="${DBUS_SESSION_BUS_ADDRESS:-}"
   if [[ -z "${bus}" ]]; then
@@ -56,6 +70,29 @@ function _nredf_aqua_keyring_available() {
   return 1
 }
 
+# Source a shared `[export] KEY='value'` env file (aqua-vault.env, aqua.env)
+# with every assignment exported. fish/nu write AQUA_KEYRING_ENABLED=... without
+# `export` (their readers always export), and a plain bash/zsh `source` of such
+# a line never reaches the aqua child process. `set -a` covers files written by
+# any shell without changing the shared format; a caller's own allexport
+# setting is left as it was.
+function _nredf_source_env_file() {
+  local _nredf_env_file="${1:-}"
+  local _nredf_had_allexport="false"
+
+  [[ -n "${_nredf_env_file}" && -f "${_nredf_env_file}" ]] || return 0
+
+  case "$-" in
+    *a*) _nredf_had_allexport="true" ;;
+  esac
+  set -a
+  source "${_nredf_env_file}"
+  if [[ "${_nredf_had_allexport}" != "true" ]]; then
+    set +a
+  fi
+  return 0
+}
+
 function _nredf_set_aqua_env() {
   local _nredf_aqua_base_config="${XDG_CONFIG_HOME}/aquaproj-aqua/aqua.yaml"
   local _nredf_aqua_machine_config="${XDG_CONFIG_HOME}/aquaproj-aqua/machine.yaml"
@@ -69,12 +106,8 @@ function _nredf_set_aqua_env() {
   # owners of two different files on purpose: chezmoi would otherwise delete
   # a manually-configured token on every apply whenever the vault lookup
   # comes back empty (confirmed empirically).
-  if [[ -f "${_nredf_aqua_vault_config}" ]]; then
-    source "${_nredf_aqua_vault_config}"
-  fi
-  if [[ -f "${_nredf_aqua_auth_config}" ]]; then
-    source "${_nredf_aqua_auth_config}"
-  fi
+  _nredf_source_env_file "${_nredf_aqua_vault_config}"
+  _nredf_source_env_file "${_nredf_aqua_auth_config}"
 
   # If keyring is configured but unavailable on this system (e.g. headless/WSL),
   # deactivate AQUA_KEYRING_ENABLED to prevent aqua CLI errors.
@@ -127,22 +160,37 @@ function _nredf_write_aqua_auth_config() {
 
   _nredf_auth_file="$(_nredf_aqua_auth_config_file)"
   _nredf_auth_dir="${_nredf_auth_file%/*}"
-  mkdir -p "${_nredf_auth_dir}"
-  _nredf_tmp_file="$(mktemp "${_nredf_auth_dir}/aqua.env.XXXXXX")"
+  mkdir -p "${_nredf_auth_dir}" || return 1
 
-  {
-    printf "# Local aqua GitHub auth preferences\n"
-    printf "NREDF_AQUA_GITHUB_TOKEN_SETUP=%q\n" "${_nredf_mode}"
-    if [[ "${_nredf_mode}" == "keyring" ]]; then
-      printf "AQUA_KEYRING_ENABLED=%q\n" "true"
-    elif [[ "${_nredf_mode}" == "env" && -n "${_nredf_token}" ]]; then
-      printf "export AQUA_GITHUB_TOKEN=%q\n" "${_nredf_token}"
-      printf "export GITHUB_TOKEN=%q\n" "${_nredf_token}"
-    fi
-  } > "${_nredf_tmp_file}"
+  # The file can hold a GitHub token: create it 0600 from the start (umask in
+  # a subshell, so the caller's umask is untouched) rather than chmod-ing it
+  # after the token is already on disk.
+  _nredf_tmp_file="$(umask 077; mktemp "${_nredf_auth_dir}/aqua.env.XXXXXX")" || return 1
+
+  # AQUA_KEYRING_ENABLED stays un-exported in the file, matching the fish/nu
+  # writers: the shell readers export it (bash/zsh via _nredf_source_env_file)
+  # only after _nredf_set_aqua_env has checked the keyring is reachable, while
+  # the run_onchange_after_aqua hook, which sources this file without that
+  # check, keeps not handing it to aqua on a headless apply.
+  if ! (
+    umask 077
+    {
+      printf "# Local aqua GitHub auth preferences\n"
+      printf "NREDF_AQUA_GITHUB_TOKEN_SETUP=%q\n" "${_nredf_mode}"
+      if [[ "${_nredf_mode}" == "keyring" ]]; then
+        printf "AQUA_KEYRING_ENABLED=%q\n" "true"
+      elif [[ "${_nredf_mode}" == "env" && -n "${_nredf_token}" ]]; then
+        printf "export AQUA_GITHUB_TOKEN=%q\n" "${_nredf_token}"
+        printf "export GITHUB_TOKEN=%q\n" "${_nredf_token}"
+      fi
+    } > "${_nredf_tmp_file}"
+  ); then
+    rm -f "${_nredf_tmp_file}"
+    return 1
+  fi
 
   chmod 600 "${_nredf_tmp_file}"
-  mv "${_nredf_tmp_file}" "${_nredf_auth_file}"
+  mv -f "${_nredf_tmp_file}" "${_nredf_auth_file}"
 
   unset _nredf_mode _nredf_token _nredf_auth_file _nredf_auth_dir _nredf_tmp_file
 }
@@ -191,6 +239,9 @@ function nredf_aqua_token_setup() {
   local _nredf_action="${1:---set}"
 
   _nredf_init_paths
+  # An explicit command always re-probes the keyring (it may have been started
+  # since this shell cached the startup probe).
+  unset _NREDF_AQUA_KEYRING_PROBED
 
   case "${_nredf_action}" in
     --keyring)
@@ -212,15 +263,29 @@ function nredf_aqua_token_setup() {
       echo "Stored aqua's GitHub token in the system keyring."
       ;;
     --env)
-      local _token=""
+      local _token="" _read_rc=0
+      # Timed like _nredf_prompt_yes_no: this is also reached from the startup
+      # prompt, and a pane nobody is watching must not block forever. A
+      # timeout (or EOF with nothing read) is "unanswered" — nothing is
+      # recorded, so a later shell asks again (unlike an explicit --skip).
       if [[ -r /dev/tty && -w /dev/tty ]]; then
         printf "Enter a GitHub access token: " > /dev/tty
-        IFS= read -r -s _token < /dev/tty
+        IFS= read -r -s -t "${NREDF_PROMPT_TIMEOUT:-30}" _token < /dev/tty || _read_rc=$?
         printf "\n" > /dev/tty
       else
         printf "Enter a GitHub access token: "
-        IFS= read -r -s _token
+        IFS= read -r -s -t "${NREDF_PROMPT_TIMEOUT:-30}" _token || _read_rc=$?
         printf "\n"
+      fi
+
+      # bash signals a timeout with a status > 128 and keeps any partial input
+      # — never store half a token. A status of 1 with input is a final line
+      # without a trailing newline (e.g. `printf '%s' "$TOK" | ...`): keep it.
+      # (zsh's timeout returns 1 without assigning, so it lands in the empty case.)
+      if (( _read_rc > 128 )) || { (( _read_rc != 0 )) && [[ -z "${_token}" ]]; }; then
+        _token=""
+        echo "No token entered (timed out or no input); nothing recorded." >&2
+        return 2
       fi
 
       if [[ -z "${_token}" ]]; then
@@ -318,7 +383,7 @@ function _nredf_ensure_aqua_github_token() {
 
   _nredf_auth_file="$(_nredf_aqua_auth_config_file)"
   if [[ -z "${_nredf_setup_state}" && -f "${_nredf_auth_file}" ]]; then
-    source "${_nredf_auth_file}"
+    _nredf_source_env_file "${_nredf_auth_file}"
     _nredf_setup_state="${NREDF_AQUA_GITHUB_TOKEN_SETUP:-}"
   fi
 

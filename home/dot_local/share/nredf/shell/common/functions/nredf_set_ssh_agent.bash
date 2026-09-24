@@ -3,6 +3,11 @@
 # vim: ts=2 sw=2 et ff=unix ft=bash syntax=sh
 
 function _nredf_set_ssh_agent_wsl() {
+  # All function-local (the fish/nu ports scope these too); only
+  # NPIPERELAY_PATH, a user override, is read from the environment.
+  local WINDOWS_USER NPIPERELAY_DEFAULT_PATH NPIPERELAY win_npiperelay npiperelay_unix
+  local SOCAT_PID_FILE old_pid new_pid
+
   # Get Windows username
   if ! command -v whoami.exe &>/dev/null; then
     printf "Error: whoami.exe not found in PATH. Please ensure it is available.\n" >&2
@@ -67,6 +72,7 @@ function _nredf_set_ssh_agent_1password() {
     )
   fi
 
+  local sock
   for sock in "${candidates[@]}"; do
     if [[ -S "${sock}" ]]; then
       if _nredf_ssh_agent_socket_works "${sock}"; then
@@ -86,6 +92,7 @@ function _nredf_set_ssh_agent_system() {
     "${runtime_dir}/keyring/ssh"
   )
 
+  local sock
   for sock in "${candidates[@]}"; do
     if [[ -S "${sock}" ]]; then
       if _nredf_ssh_agent_socket_works "${sock}"; then
@@ -113,6 +120,7 @@ function _nredf_set_ssh_agent_bitwarden() {
     )
   fi
 
+  local sock
   for sock in "${candidates[@]}"; do
     if [[ -S "${sock}" ]]; then
       if _nredf_ssh_agent_socket_works "${sock}"; then

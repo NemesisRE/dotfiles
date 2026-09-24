@@ -104,7 +104,11 @@ _nredf_bw_keychain_backend() {
 # Returns 0 and prints token on success, returns 1 on miss.
 # ---------------------------------------------------------------------------
 _nredf_bw_keychain_get() {
-  local backend token
+  # Every loop/temp variable is declared here, once: undeclared they leak into
+  # the interactive shell, and zsh prints `name=value` when a `local` without
+  # an assignment is re-run inside a loop.
+  local backend token key m w f_item f_raw folder def_w service handle raw mod f
+  local -a wallets folders
   backend="$(_nredf_bw_keychain_backend)"
 
   case "${backend}" in
@@ -120,11 +124,9 @@ _nredf_bw_keychain_get() {
     kwallet)
       # Primary: native D-Bus via gdbus (Plasma 6 / 5)
       if command -v gdbus &>/dev/null; then
-        local service handle raw
         if service="$(_nredf_bw_kwallet_service)"; then
-          local mod="/modules/${service##*.}"
-          local wallets=("kdewallet")
-          local def_w
+          mod="/modules/${service##*.}"
+          wallets=("kdewallet")
           for m in networkWallet localWallet; do
             def_w="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
               --method "org.kde.KWallet.${m}" 2>/dev/null)" || true
@@ -139,8 +141,7 @@ _nredf_bw_keychain_get() {
 
           for w in "${wallets[@]}"; do
             if handle="$(_nredf_bw_kwallet_open "${service}" "${w}")"; then
-              local folders=("Passwords" "nredf")
-              local f_raw
+              folders=("Passwords" "nredf")
               f_raw="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
                 --method org.kde.KWallet.folderList "${handle}" 2>/dev/null)" || true
               if [[ -n "${f_raw}" ]]; then
@@ -195,7 +196,7 @@ _nredf_bw_keychain_get() {
       done
       ;;
     fallback)
-      local f="${XDG_RUNTIME_DIR:-/tmp}/nredf_bw_session"
+      f="${XDG_RUNTIME_DIR:-/tmp}/nredf_bw_session"
       [[ -f "${f}" ]] && token="$(<"${f}")"
       ;;
   esac
@@ -212,7 +213,8 @@ _nredf_bw_keychain_get() {
 # ---------------------------------------------------------------------------
 _nredf_bw_keychain_set() {
   local token="$1"
-  local backend
+  local backend k service handle mod res has_f f
+  local saved=1
   backend="$(_nredf_bw_keychain_backend)"
 
   case "${backend}" in
@@ -229,22 +231,18 @@ _nredf_bw_keychain_set() {
       done
       ;;
     kwallet)
-      local saved=1
       # Primary: native D-Bus via gdbus (persists reliably in Plasma 6 & 5)
       if command -v gdbus &>/dev/null; then
-        local service handle
         if service="$(_nredf_bw_kwallet_service)"; then
           if handle="$(_nredf_bw_kwallet_open "${service}")"; then
-            local mod="/modules/${service##*.}"
+            mod="/modules/${service##*.}"
             # Write to Passwords folder for both nredf.bw_session and bw_session
-            local res
             for k in "${_NREDF_BW_SERVICE}" "bw_session"; do
               res="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
                 --method org.kde.KWallet.writePassword "${handle}" "Passwords" "${k}" "${token}" "nredf" 2>/dev/null)" || true
               [[ "${res}" == *\(0,\)* ]] && saved=0
             done
             if [[ "${saved}" -ne 0 ]]; then
-              local has_f
               has_f="$(gdbus call --session --dest "${service}" --object-path "${mod}" \
                 --method org.kde.KWallet.hasFolder "${handle}" "nredf" 2>/dev/null)"
               if [[ "${has_f}" != *true* ]]; then
@@ -278,9 +276,23 @@ _nredf_bw_keychain_set() {
       done
       ;;
     fallback)
-      local f="${XDG_RUNTIME_DIR:-/tmp}/nredf_bw_session"
-      printf "%s" "${token}" >"${f}"
-      chmod 600 "${f}"
+      # Plaintext vault key: create it 0600 from the start (umask 077 in a
+      # subshell, so the caller's umask is untouched) and rename it into
+      # place, instead of writing it under the caller's umask and chmod-ing
+      # afterwards. The rename also replaces, rather than follows, whatever
+      # already sits at that path.
+      f="${XDG_RUNTIME_DIR:-/tmp}/nredf_bw_session"
+      if ! (
+        umask 077
+        _nredf_bw_tmp="$(mktemp "${f}.XXXXXX")" || exit 1
+        if printf "%s" "${token}" >"${_nredf_bw_tmp}" && mv -f "${_nredf_bw_tmp}" "${f}"; then
+          exit 0
+        fi
+        rm -f "${_nredf_bw_tmp}"
+        exit 1
+      ); then
+        printf "Bitwarden: could not write session fallback file %s\n" "${f}" >&2
+      fi
       ;;
   esac
   touch "${_NREDF_BW_MARKER}" 2>/dev/null || true
@@ -290,7 +302,7 @@ _nredf_bw_keychain_set() {
 # Internal: remove session token from keychain
 # ---------------------------------------------------------------------------
 _nredf_bw_keychain_del() {
-  local backend
+  local backend key folder service handle mod
   backend="$(_nredf_bw_keychain_backend)"
 
   case "${backend}" in
@@ -303,10 +315,9 @@ _nredf_bw_keychain_del() {
       ;;
     kwallet)
       if command -v gdbus &>/dev/null; then
-        local service handle
         if service="$(_nredf_bw_kwallet_service)"; then
           if handle="$(_nredf_bw_kwallet_open "${service}")"; then
-            local mod="/modules/${service##*.}"
+            mod="/modules/${service##*.}"
             for folder in "Passwords" "nredf"; do
               for key in "${_NREDF_BW_SERVICE}" "bw_session" "BW_SESSION"; do
                 gdbus call --session --dest "${service}" --object-path "${mod}" \
@@ -366,18 +377,44 @@ _nredf_bw_secret_configured() {
     fi
   done
 
-  # 2. Check repo-level chezmoidata if present
-  local src_dir="${NREDF_DOT_PATH:-${HOME}/.local/share/chezmoi}"
-  if [[ -d "${src_dir}/home/.chezmoidata" ]]; then
-    if grep -rEq '["'\''[:blank:]](bitwarden|bw):' "${src_dir}/home/.chezmoidata" 2>/dev/null; then
-      return 0
+  # 2. Check the chezmoi source tree's .chezmoidata. NREDF_DOT_PATH is the
+  #    deployed ~/.local/share/nredf tree, never the chezmoi source, so it
+  #    can't be used here. Resolve the source dir from chezmoi.toml's
+  #    sourceDir, then `chezmoi source-path`, then chezmoi's default. Only
+  #    reached from a non-forced _nredf_bw_ensure_session, never at startup,
+  #    so forking chezmoi here is acceptable.
+  local src d
+  local -a src_dirs=()
+  if [[ -f "${config_dir}/chezmoi.toml" ]]; then
+    src="$(sed -nE 's/^[[:blank:]]*sourceDir[[:blank:]]*=[[:blank:]]*["'\'']([^"'\'']+)["'\''].*/\1/p' \
+      "${config_dir}/chezmoi.toml" 2>/dev/null | head -n1)"
+    if [[ -n "${src}" ]]; then
+      # A literal leading ~/ in the TOML value (not a shell tilde).
+      # shellcheck disable=SC2088
+      [[ "${src}" == "~/"* ]] && src="${HOME}/${src#"~/"}"
+      src_dirs+=("${src}")
     fi
   fi
-  if [[ -f "${src_dir}/home/.chezmoidata.yaml" ]]; then
-    if grep -Eq '["'\''[:blank:]](bitwarden|bw):' "${src_dir}/home/.chezmoidata.yaml" 2>/dev/null; then
-      return 0
-    fi
+  if [[ ${#src_dirs[@]} -eq 0 ]] && command -v chezmoi &>/dev/null; then
+    src="$(chezmoi source-path 2>/dev/null)" || src=""
+    [[ -n "${src}" ]] && src_dirs+=("${src}")
   fi
+  src_dirs+=("${XDG_DATA_HOME:-${HOME}/.local/share}/chezmoi")
+
+  for src in "${src_dirs[@]}"; do
+    # sourceDir is the repo root; `chezmoi source-path` already includes
+    # .chezmoiroot (home/). Check both layouts.
+    for d in "${src}" "${src}/home"; do
+      if [[ -d "${d}/.chezmoidata" ]] \
+        && grep -rEq '["'\''[:blank:]](bitwarden|bw):' "${d}/.chezmoidata" 2>/dev/null; then
+        return 0
+      fi
+      if [[ -f "${d}/.chezmoidata.yaml" ]] \
+        && grep -Eq '["'\''[:blank:]](bitwarden|bw):' "${d}/.chezmoidata.yaml" 2>/dev/null; then
+        return 0
+      fi
+    done
+  done
 
   return 1
 }
