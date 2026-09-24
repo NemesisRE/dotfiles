@@ -641,7 +641,6 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
     claude_group.add_argument("-p", "--print", dest="print_mode", action="store_true",
                               help="Run non-interactively and print response")
     claude_group.add_argument("-m", "--model", default=None,
-                              help="Model for current session (e.g. opus, sonnet, fable, haiku)")
                               help="Model for current session (e.g. sonnet, opus, haiku, fable)")
     claude_group.add_argument("--effort", choices=["low", "medium", "high", "xhigh", "max"], default=None,
                               help="Effort level for the current session (low, medium, high, xhigh, max)")
@@ -649,10 +648,6 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
                               help="Permission mode for the session")
     claude_group.add_argument("--dangerously-skip-permissions", action="store_true",
                               help="Bypass all permission checks (for unattended/sandbox runs)")
-    claude_group.add_argument("--allow-dangerously-skip-permissions", action="store_true",
-                              help="Enable bypassing all permission checks without enabling by default")
-    claude_group.add_argument("--effort", choices=["low", "medium", "high", "xhigh", "max"], default=None,
-                              help="Effort level for the current session (low, medium, high, xhigh, max)")
     claude_group.add_argument("-n", "--name", default=None,
                               help="Set display name for this session")
     claude_group.add_argument("-w", "--worktree", nargs="?", const="", default=None,
@@ -663,16 +658,6 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
                               help="Minimal mode: skip hooks, LSP, auto-memory, and plugin sync")
     claude_group.add_argument("--ide", action="store_true",
                               help="Automatically connect to IDE on startup")
-    claude_group.add_argument("--bare", action="store_true",
-                              help="Minimal mode: skip hooks, LSP, auto-memory, and plugin sync")
-    claude_group.add_argument("--safe-mode", action="store_true",
-                              help="Start with all customizations and plugins disabled")
-    claude_group.add_argument("--teleport", nargs="?", const="", default=None,
-                              help="Resume a teleport session, optionally specify session ID")
-    claude_group.add_argument("--from-pr", nargs="?", const="", default=None,
-                              help="Resume a session linked to a PR by PR number/URL, or open interactive picker")
-    claude_group.add_argument("--cloud", nargs="?", const="", default=None,
-                              help="Create a cloud session with description, or attach by session ID/URL")
 
     return parser.parse_known_args()
 
@@ -699,10 +684,6 @@ def main() -> int:
         forwarded_claude_args.extend(["--permission-mode", args.permission_mode])
     if args.dangerously_skip_permissions:
         forwarded_claude_args.append("--dangerously-skip-permissions")
-    if args.allow_dangerously_skip_permissions:
-        forwarded_claude_args.append("--allow-dangerously-skip-permissions")
-    if args.effort:
-        forwarded_claude_args.extend(["--effort", args.effort])
     if args.name:
         forwarded_claude_args.extend(["--name", args.name])
     if args.worktree is not None:
@@ -716,25 +697,6 @@ def main() -> int:
         forwarded_claude_args.append("--bare")
     if args.ide:
         forwarded_claude_args.append("--ide")
-    if args.bare:
-        forwarded_claude_args.append("--bare")
-    if args.safe_mode:
-        forwarded_claude_args.append("--safe-mode")
-    if args.teleport is not None:
-        if args.teleport:
-            forwarded_claude_args.extend(["--teleport", args.teleport])
-        else:
-            forwarded_claude_args.append("--teleport")
-    if args.from_pr is not None:
-        if args.from_pr:
-            forwarded_claude_args.extend(["--from-pr", args.from_pr])
-        else:
-            forwarded_claude_args.append("--from-pr")
-    if args.cloud is not None:
-        if args.cloud:
-            forwarded_claude_args.extend(["--cloud", args.cloud])
-        else:
-            forwarded_claude_args.append("--cloud")
 
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,
