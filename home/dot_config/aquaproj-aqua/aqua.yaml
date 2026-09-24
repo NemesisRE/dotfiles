@@ -116,13 +116,13 @@ packages:
   - name: cli/cli@v2.101.0 # renovate: depName=cli/cli
     tags:
       - default
-  - name: github/copilot-cli@v1.0.87 # renovate: depName=github/copilot-cli
+  - name: github/copilot-cli@v1.0.88 # renovate: depName=github/copilot-cli
     tags:
       - default
-  - name: anthropics/claude-code@v2.1.280 # renovate: depName=anthropics/claude-code
+  - name: anthropics/claude-code@v2.1.281 # renovate: depName=anthropics/claude-code
     tags:
       - default
-  - name: google-antigravity/antigravity-cli@1.2.8 # renovate: depName=google-antigravity/antigravity-cli
+  - name: google-antigravity/antigravity-cli@1.2.9 # renovate: depName=google-antigravity/antigravity-cli
     tags:
       - default
   - name: jqlang/jq@jq-1.8.1 # renovate: depName=jqlang/jq
@@ -159,7 +159,7 @@ packages:
   - name: smallstep/cli@v0.30.6 # renovate: depName=smallstep/cli
     tags:
       - default
-  - name: yetidevworks/drydock@v1.1.4 # renovate: depName=yetidevworks/drydock
+  - name: yetidevworks/drydock@v1.2.1 # renovate: depName=yetidevworks/drydock
     registry: local
     tags:
       - default
@@ -177,7 +177,7 @@ packages:
     tags:
       - default
       - required
-  - name: astral-sh/uv@0.12.17 # renovate: depName=astral-sh/uv
+  - name: astral-sh/uv@0.12.18 # renovate: depName=astral-sh/uv
     tags:
       - default
       - required
@@ -192,16 +192,16 @@ packages:
 
   # ── Kubernetes (uncomment to install) ───────────────────────────────────────
 
-  - name: kubernetes/kubernetes/kubectl@v1.37.0 # renovate: depName=kubernetes/kubernetes
+  - name: kubernetes/kubernetes/kubectl@v1.37.1 # renovate: depName=kubernetes/kubernetes
     tags:
       - k8s
-  - name: kubernetes/kubernetes/kubeadm@v1.37.0 # renovate: depName=kubernetes/kubernetes
+  - name: kubernetes/kubernetes/kubeadm@v1.37.1 # renovate: depName=kubernetes/kubernetes
     tags:
       - k8s
   - name: derailed/k9s@v0.51.0 # renovate: depName=derailed/k9s
     tags:
       - k8s
-  - name: nklmilojevic/sofka@v0.28.4 # renovate: depName=nklmilojevic/sofka
+  - name: nklmilojevic/sofka@v0.29.0 # renovate: depName=nklmilojevic/sofka
     tags:
       - k8s
   - name: kubernetes-sigs/kustomize@kustomize/v5.8.1 # renovate: depName=kubernetes-sigs/kustomize
@@ -258,7 +258,7 @@ packages:
   - name: bitwarden/clients@cli-v2026.8.0 # renovate: depName=bitwarden/clients
     tags:
       - optional
-  - name: hashicorp/terraform@v1.16.3 # renovate: depName=hashicorp/terraform
+  - name: hashicorp/terraform@v1.16.4 # renovate: depName=hashicorp/terraform
     tags:
       - optional
   - name: hashicorp/packer@v1.16.1 # renovate: depName=hashicorp/packer
