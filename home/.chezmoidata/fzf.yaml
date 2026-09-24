@@ -1,0 +1,15 @@
+# fzf shell-integration pin for chezmoi
+#
+# home/.chezmoiexternals/fzf.toml.tmpl unpacks shell/ from fzf's source archive
+# into ~/.config/fzf and the shells source those scripts, so the archive is pinned
+# by SHA-256 as well as by version; chezmoi rejects a download that does not match.
+#
+# `version` must equal the junegunn/fzf pin in
+# home/dot_config/aquaproj-aqua/aqua.yaml (the binary the scripts drive). Renovate
+# bumps only aqua.yaml; .github/workflows/refresh-pins.yml then runs
+# `.github/scripts/pins.py update`, which copies that version here, recomputes the
+# hash and re-runs CI. `pins.py verify` (the `pins` CI job) fails while the two
+# versions disagree or the hash does not match.
+fzf:
+  version: "v0.74.4"
+  sha256: "1046857c337f5bd05f6fa482446b5a42a011615105743efbe4efee0970b24bb7"
