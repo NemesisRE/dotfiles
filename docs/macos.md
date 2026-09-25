@@ -207,4 +207,4 @@ sudo chown -R $(whoami):admin /opt/homebrew
 **Resolution**:
 
 - Use **Kitty** (installed automatically via Homebrew cask in `.chezmoidata/packages.yaml`).
-- Or open Apple Terminal &rarr; **Settings** &rarr; **Profiles** &rarr; **Font** and select **FiraMono Nerd Font Mono**.
+- Or open Apple Terminal &rarr; **Settings** &rarr; **Profiles** &rarr; **Font** and select **FiraCode Nerd Font Mono**.

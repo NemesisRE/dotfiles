@@ -1,0 +1,21 @@
+{{- if eq .chezmoi.os "linux" -}}
+#!/usr/bin/env bash
+# chezmoi run_onchange_after — refreshes the fontconfig cache after the pinned
+# FiraCode Nerd Font external (.chezmoiexternals/fonts.toml.tmpl) changes.
+# nerd-fonts.yaml hash: {{ include ".chezmoidata/nerd-fonts.yaml" | sha256sum }}
+
+set -euo pipefail
+
+# Skip in CI or when the user explicitly opts out.
+[[ -n "${CI:-}" ]] && exit 0
+[[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
+
+# This is an `after` script; a failure here must never fail `chezmoi apply` —
+# the fonts are already on disk either way, this only speeds up their pickup.
+if command -v fc-cache >/dev/null 2>&1; then
+  fc-cache -f "${HOME}/.local/share/fonts" >/dev/null 2>&1 \
+    || echo "==> Warning: fc-cache failed to refresh the font cache; continuing" >&2
+else
+  echo "==> Warning: fc-cache not found (install fontconfig); skipping font cache refresh" >&2
+fi
+{{- end }}

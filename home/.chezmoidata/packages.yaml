@@ -1,6 +1,16 @@
 # OS prerequisite packages managed by chezmoi
 # Separated from user CLI tools managed by aqua (aqua.yaml).
 # Re-applied automatically whenever this file changes.
+#
+# Font family: the whole repo standardizes on FiraCode Nerd Font Mono (kitty,
+# Konsole, Windows Terminal). On Linux it comes from the pinned, checksummed
+# ryanoasis/nerd-fonts release archive (.chezmoiexternals/fonts.toml.tmpl), not
+# a distro package — apt/dnf only carry plain Fira Code (no Nerd glyphs), and
+# pacman's ttf-firacode-nerd would be a second, distro-versioned copy of the
+# same font. On macOS it comes from the font-fira-code-nerd-font cask below.
+# Windows has no winget package for it (DEVCOM.FiraCodeFont, previously listed
+# here, no longer exists in the winget-pkgs manifest tree as of 2026-09); until
+# one exists, Windows users install the font by hand — see docs/windows.md.
 
 packages:
   darwin:
@@ -11,15 +21,17 @@ packages:
       - curl
       - diffutils
       - util-linux
+      - btop # aqua's btop is Linux-only
+      - coreutils # gtimeout, used by the fish/nu prompt timeout wizard
+      - sshpass
     casks:
       - kitty
-      - font-fira-mono-nerd-font
+      - font-fira-code-nerd-font
   windows:
     winget:
       - Microsoft.PowerShell
       - Microsoft.WindowsTerminal
       - Git.Git
-      - DEVCOM.FiraCodeFont
       - LLVM.LLVM
       - albertony.npiperelay
   linux:
@@ -27,22 +39,37 @@ packages:
       - git
       - curl
       - zsh
-      - fonts-firacode
       - build-essential
       - socat
+      - xz-utils
+      - unzip
+      - fontconfig
+      - file
+      - ca-certificates
+      - sshpass
     pacman:
       - git
       - curl
       - zsh
-      - ttf-firacode-nerd
       - base-devel
       - socat
+      - xz
+      - unzip
+      - fontconfig
+      - file
+      - ca-certificates
+      - sshpass
     dnf:
       - git
       - curl
       - zsh
-      - fira-code-fonts
       - gcc
       - gcc-c++
       - make
       - socat
+      - xz
+      - unzip
+      - fontconfig
+      - file
+      - ca-certificates
+      - sshpass

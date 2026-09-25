@@ -257,9 +257,9 @@ Formatting can be invoked on demand with <kbd>Space</kbd> <kbd>l</kbd> <kbd>f</k
 **Cause**: Neovim uses Nerd Font glyphs for file types, git signs, and diagnostics.
 **Resolution**:
 
-- Ensure your terminal uses **FiraMono Nerd Font Mono** or **FiraCode Nerd Font**.
-- On Windows Terminal: Settings (`Ctrl+,`) &rarr; **Defaults** &rarr; **Appearance** &rarr; **Font face** &rarr; `FiraMono Nerd Font Mono`.
-- On Kitty: font is configured automatically via `font_family family="FiraMono Nerd Font Mono"`.
+- Ensure your terminal uses **FiraCode Nerd Font Mono** (the family this repo standardizes on everywhere).
+- On Windows Terminal: Settings (`Ctrl+,`) &rarr; **Defaults** &rarr; **Appearance** &rarr; **Font face** &rarr; `FiraCode Nerd Font Mono`.
+- On Kitty: font is configured automatically via `font_family family="FiraCode Nerd Font Mono"`.
 
 ### Q2: Treesitter parser compilation errors on fresh install
 
