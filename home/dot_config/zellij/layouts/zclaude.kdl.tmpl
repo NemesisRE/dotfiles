@@ -13,9 +13,11 @@ layout {
     pane name="Claude Code" focus=true size="72%"
     pane split_direction="horizontal" size="28%" {
       pane name="Terminal"
-      pane name="Git" command="lazygit" {
-        start_suspended true
-      }
+{{- if lookPath "lazygit" }}
+      pane name="Git" command="lazygit"
+{{- else }}
+      pane name="Git"
+{{- end }}
     }
   }
 

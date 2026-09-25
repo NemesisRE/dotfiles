@@ -288,7 +288,7 @@ LIMIT_PATTERNS = [
     ]
 ]
 
-# Transient capacity errors (nudge with backoff)
+# Transient capacity errors & network drops (nudge with backoff)
 STALL_PATTERNS = [
     re.compile(p, re.IGNORECASE)
     for p in [
@@ -302,6 +302,84 @@ STALL_PATTERNS = [
         r"\bhttp 529\b|\bstatus[: ]+529\b",
         r"\bhttp 503\b|\bstatus[: ]+503\b",
         r"\bservice unavailable\b",
+        r"\b(?:enotfound|econnreset|etimedout|econnrefused)\b",
+        r"\bfetch failed\b",
+        r"failed to connect to api\.anthropic\.com",
+        r"network error: (?:failed to fetch|socket hang up)",
+    ]
+]
+
+# Interactive session overview / picker
+SESSION_PICKER_PATTERNS = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"resume session \(\d+ of \d+\)",
+        r"(?:select|choose) a (?:conversation|session) to resume",
+        r"resume a (?:conversation|session)",
+        r"⌕ search…",
+        r"ctrl\+a to show all projects",
+        r"space to preview",
+        r"ctrl\+b to only show current",
+    ]
+]
+
+# Tool execution & destructive action approvals
+APPROVAL_PATTERNS = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"do you want to (?:run|execute|proceed|accept)",
+        r"allow [a-z0-9_-]+ to (?:run|execute|edit|read|write)",
+        r"accept (?:this )?edit\?",
+        r"\b(?:1\.\s*yes|2\.\s*yes,?\s*don'?t ask again|3\.\s*no)\b",
+        r"\[y/n\]|\(y/n\)",
+        r"approve (?:this )?(?:tool|command|action)\?",
+    ]
+]
+
+# Interactive user feedback / multiple choice questions
+QUESTION_PATTERNS = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"claude needs (?:your )?answer",
+        r"which option do you prefer\?",
+        r"please choose an option:",
+        r"answer with [0-9]+",
+    ]
+]
+
+# Authentication / login failures
+AUTH_PATTERNS = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"please run /login",
+        r"claude code is not logged in",
+        r"authentication failed",
+        r"invalid api key",
+        r"please log in to continue",
+        r"not authenticated",
+    ]
+]
+
+# Context window exhaustion
+CONTEXT_PATTERNS = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"context limit reached",
+        r"conversation is too long",
+        r"run /compact to summarize",
+        r"prompt exceeds maximum context length",
+    ]
+]
+
+# Hard account budget caps
+BUDGET_PATTERNS = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"spend limit reached",
+        r"monthly budget exceeded",
+        r"you have reached your budget limit",
+        r"out of credits",
+        r"prepaid balance exhausted",
     ]
 ]
 
@@ -345,8 +423,76 @@ def clean_text(text: str) -> str:
     return ANSI_ESCAPE.sub("", text)
 
 
+def is_in_session_picker(text: str) -> bool:
+    """Check if Claude Code is displaying the interactive session picker / overview."""
+    cleaned = clean_text(text)
+    matches = sum(1 for pat in SESSION_PICKER_PATTERNS if pat.search(cleaned))
+    return matches >= 2 or bool(re.search(r"resume session \(\d+ of \d+\)", cleaned, re.IGNORECASE))
+
+
+def is_waiting_for_approval(text: str) -> bool:
+    """Check if Claude is waiting for user confirmation or tool execution approval."""
+    if is_in_session_picker(text):
+        return False
+    cleaned = clean_text(text)
+    lines = [l.strip() for l in cleaned.splitlines() if l.strip()]
+    tail = "\n".join(lines[-15:])
+    for pat in APPROVAL_PATTERNS:
+        if pat.search(tail):
+            return True
+    return False
+
+
+def is_awaiting_user_question(text: str) -> bool:
+    """Check if Claude is asking the user a multiple-choice or direct feedback question."""
+    if is_in_session_picker(text) or is_waiting_for_approval(text):
+        return False
+    cleaned = clean_text(text)
+    lines = [l.strip() for l in cleaned.splitlines() if l.strip()]
+    tail = "\n".join(lines[-15:])
+    for pat in QUESTION_PATTERNS:
+        if pat.search(tail):
+            return True
+    return False
+
+
+def is_auth_required(text: str) -> bool:
+    """Check if Claude session is stopped due to expired credentials or missing login."""
+    cleaned = clean_text(text)
+    lines = [l.strip() for l in cleaned.splitlines() if l.strip()]
+    tail = "\n".join(lines[-25:])
+    for pat in AUTH_PATTERNS:
+        if pat.search(tail):
+            return True
+    return False
+
+
+def is_context_limit(text: str) -> bool:
+    """Check if conversation has exceeded context window and requires /compact."""
+    cleaned = clean_text(text)
+    lines = [l.strip() for l in cleaned.splitlines() if l.strip()]
+    tail = "\n".join(lines[-25:])
+    for pat in CONTEXT_PATTERNS:
+        if pat.search(tail):
+            return True
+    return False
+
+
+def is_budget_exceeded(text: str) -> bool:
+    """Check if hard account budget/spend cap has been reached (non-resetting)."""
+    cleaned = clean_text(text)
+    lines = [l.strip() for l in cleaned.splitlines() if l.strip()]
+    tail = "\n".join(lines[-25:])
+    for pat in BUDGET_PATTERNS:
+        if pat.search(tail):
+            return True
+    return False
+
+
 def is_at_prompt(text: str) -> bool:
     """Check if Claude is waiting at an interactive input prompt."""
+    if is_in_session_picker(text) or is_waiting_for_approval(text) or is_awaiting_user_question(text):
+        return False
     cleaned = clean_text(text)
     lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
     for line in lines[-8:]:
@@ -368,6 +514,8 @@ def get_prompt_text(text: str) -> str | None:
 
 def is_working(text: str) -> bool:
     """Check if Claude is currently mid-turn / processing (active spinner or interrupt prompt)."""
+    if is_in_session_picker(text) or is_waiting_for_approval(text) or is_awaiting_user_question(text):
+        return False
     cleaned = clean_text(text)
     lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
     # If Claude is waiting at the prompt, it cannot be actively mid-turn
@@ -383,8 +531,8 @@ def is_working(text: str) -> bool:
 
 def is_rate_limited(text: str) -> bool:
     """Check if terminal text indicates a rate limit."""
-    # Never detect rate limit while actively mid-turn
-    if is_working(text):
+    # Never detect rate limit while in picker or actively mid-turn
+    if is_in_session_picker(text) or is_working(text):
         return False
     cleaned = clean_text(text)
     lines = [l.strip() for l in cleaned.splitlines() if l.strip()]
@@ -595,6 +743,8 @@ class Supervisor(threading.Thread):
         self._running = threading.Event()
         self._running.set()
         self.stall_attempts = 0
+        self.pending_draft: str | None = None
+        self._was_working: bool = False
 
     def stop(self) -> None:
         self._running.clear()
@@ -626,7 +776,60 @@ class Supervisor(threading.Thread):
             if not screen:
                 continue
 
-            # Check 1: Rate limit (ALWAYS evaluate rate limit first!)
+            currently_working = is_working(screen)
+
+            # Turn completion check: if Claude transitioned from working -> idle at prompt,
+            # and we have a saved user draft, restore it into the prompt!
+            if self._was_working and not currently_working and is_at_prompt(screen):
+                if self.pending_draft:
+                    curr_prompt = get_prompt_text(screen)
+                    if curr_prompt == "":
+                        logger.info("Restoring saved draft into prompt: %s", repr(self.pending_draft))
+                        self.zellij.write_chars(self.pending_draft, self.pane_id)
+                        self.pending_draft = None
+
+            self._was_working = currently_working
+
+            # Check 1: Session Overview / Picker (pause auto-resumption while browsing sessions)
+            if is_in_session_picker(screen):
+                reset_dt = parse_reset_time(screen)
+                if not reset_dt:
+                    reset_dt = inspect_claude_transcripts()
+                if reset_dt and reset_dt > datetime.datetime.now():
+                    time_str = reset_dt.strftime("%H:%M:%S")
+                    wait_sec = (reset_dt - datetime.datetime.now()).total_seconds()
+                    rem_min = max(0, int(math.ceil(wait_sec / 60.0)))
+                    self._notify("In session picker; rate limit countdown active.", pane_status=f"claude [sessions | wait: {time_str} ({rem_min}m)]")
+                else:
+                    self._notify("In session picker.", pane_status="claude [sessions]")
+                continue
+
+            # Check 2: Auth / login failure
+            if is_auth_required(screen):
+                self._notify("Authentication required.", pane_status="claude [login required]")
+                continue
+
+            # Check 3: Tool / Command execution approval
+            if is_waiting_for_approval(screen):
+                self._notify("Waiting for user confirmation/approval.", pane_status="claude [needs approval]")
+                continue
+
+            # Check 4: Interactive user feedback / question
+            if is_awaiting_user_question(screen):
+                self._notify("Waiting for user answer to question.", pane_status="claude [question]")
+                continue
+
+            # Check 5: Context window exhaustion
+            if is_context_limit(screen):
+                self._notify("Context window limit reached.", pane_status="claude [needs /compact]")
+                continue
+
+            # Check 6: Hard account budget cap
+            if is_budget_exceeded(screen):
+                self._notify("Account budget limit reached.", pane_status="claude [budget exceeded]")
+                continue
+
+            # Check 7: Rate limit (ALWAYS evaluate rate limit before normal working/stalled checks)
             if is_rate_limited(screen):
                 reset_dt = parse_reset_time(screen)
                 if not reset_dt:
@@ -688,13 +891,13 @@ class Supervisor(threading.Thread):
                 time.sleep(2)
                 continue
 
-            # Check 2: Mid-turn activity
+            # Check 8: Mid-turn activity
             if is_working(screen):
                 # Claude is active and working; reset transient stall counters
                 self.stall_attempts = 0
                 continue
 
-            # Check 3: Transient server overload / capacity stall
+            # Check 9: Transient server overload / capacity stall
             if is_stalled(screen):
                 self.stall_attempts += 1
                 backoff = min(60 * (2 ** (self.stall_attempts - 1)), 600)
@@ -717,6 +920,14 @@ class Supervisor(threading.Thread):
             self._notify("Claude is already active.", pane_status="claude")
             return
 
+        if is_in_session_picker(screen):
+            self._notify("Session picker active; deferring resumption.", pane_status="claude [sessions | ready]")
+            return
+
+        if is_waiting_for_approval(screen):
+            self._notify("Waiting for user approval; deferring resumption.", pane_status="claude [needs approval]")
+            return
+
         # 1. Dismiss any open interactive dialog menu with Escape (so Enter doesn't select 'Upgrade plan')
         if has_rate_limit_menu(screen):
             self._notify("Dismissing /rate-limit-options dialog...", pane_status="claude [resuming...]")
@@ -726,6 +937,20 @@ class Supervisor(threading.Thread):
 
         # 2. Check current unsubmitted text on prompt line
         prompt_text = get_prompt_text(screen)
+
+        # Draft prompt preservation:
+        # If user typed something other than the resumption message (e.g. "continue"), save it!
+        if prompt_text and prompt_text != self.retry_msg:
+            self.pending_draft = prompt_text
+            logger.info("Saved user drafted prompt for post-resumption restoration: %s", repr(prompt_text))
+            # Clear the prompt line cleanly: jump to end, kill backwards to start
+            self.zellij.send_keys("Ctrl e", self.pane_id)
+            time.sleep(0.1)
+            self.zellij.send_keys("Ctrl u", self.pane_id)
+            time.sleep(0.2)
+            screen = self.zellij.dump_screen(self.pane_id)
+            prompt_text = get_prompt_text(screen)
+
         self._notify(f"Submitting '{self.retry_msg}' to resume Claude...", pane_status="claude [resuming...]")
 
         needs_type = True
@@ -743,7 +968,7 @@ class Supervisor(threading.Thread):
         self.zellij.send_keys("Enter", self.pane_id)
         time.sleep(0.6)
 
-        # 4. Check if the prompt text is still there unsubmitted; retry Enter if needed
+        # 4. Check if it was submitted; if not, retry Enter once more as a safety measure
         post_screen = self.zellij.dump_screen(self.pane_id)
         post_prompt = get_prompt_text(post_screen)
         if post_prompt is not None and self.retry_msg in post_prompt:
