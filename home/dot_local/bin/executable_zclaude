@@ -232,6 +232,32 @@ class ZellijController:
             logger.debug("rename_pane failed: %s", e)
             return False
 
+    def rename_tab(self, name: str, tab_id: int | str | None = None) -> bool:
+        args = ["rename-tab"]
+        if tab_id is not None:
+            args.extend(["-t", str(tab_id)])
+        args.append(name)
+        cmd = self._cmd(*args)
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            if res.returncode == 0:
+                return True
+            if tab_id is not None:
+                fb_res = subprocess.run(self._cmd("rename-tab", name), capture_output=True, text=True, check=False)
+                return fb_res.returncode == 0
+            return False
+        except Exception as e:
+            logger.debug("rename_tab failed: %s", e)
+            return False
+
+    def get_tab_info(self, pane_id: str | None = None) -> tuple[int | None, str | None]:
+        panes = self.list_panes()
+        for p in panes:
+            if not p.get("is_plugin", False):
+                if pane_id is None or str(p.get("id", "")) == str(pane_id):
+                    return p.get("tab_id"), p.get("tab_name")
+        return None, None
+
     def list_panes(self) -> list[dict]:
         cmd = self._cmd("list-panes", "--json")
         try:
@@ -770,6 +796,10 @@ class Supervisor(threading.Thread):
         self.stall_attempts = 0
         self.pending_draft: str | None = None
         self._was_working: bool = False
+        self._last_pane_title: str | None = None
+        self._last_tab_title: str | None = None
+        self.tab_id: int | None = None
+        self.base_tab_name: str = "Claude"
 
     def stop(self) -> None:
         self._running.clear()
@@ -777,12 +807,40 @@ class Supervisor(threading.Thread):
             self.zellij.rename_pane("claude", self.pane_id)
         except Exception:
             pass
+        try:
+            if self.tab_id is not None:
+                self.zellij.rename_tab(self.base_tab_name, self.tab_id)
+        except Exception:
+            pass
+
+    def _update_title(self, status: str) -> None:
+        if status != self._last_pane_title:
+            self.zellij.rename_pane(status, self.pane_id)
+            self._last_pane_title = status
+
+        if self.tab_id is None:
+            tid, tname = self.zellij.get_tab_info(self.pane_id)
+            if tid is not None:
+                self.tab_id = tid
+            if tname:
+                self.base_tab_name = re.sub(r"\s*\[.*?\]", "", tname).strip() or "Claude"
+
+        if self.tab_id is not None:
+            m = re.search(r"\[(.*?)\]", status)
+            if m:
+                tab_title = f"{self.base_tab_name} [{m.group(1)}]"
+            else:
+                tab_title = self.base_tab_name
+
+            if tab_title != self._last_tab_title:
+                self.zellij.rename_tab(tab_title, self.tab_id)
+                self._last_tab_title = tab_title
 
     def _notify(self, msg: str, pane_status: str | None = None) -> None:
         """Report status without corrupting the terminal buffer of Claude Code."""
         logger.info(msg)
         if pane_status:
-            self.zellij.rename_pane(pane_status, self.pane_id)
+            self._update_title(pane_status)
         if self.watch_mode:
             # Watcher mode has its own dedicated companion pane; stdout printing is safe
             print(f"\033[1;36m[zclaude]\033[0m {msg}", flush=True)
@@ -894,11 +952,11 @@ class Supervisor(threading.Thread):
                                 time_str = reset_dt.strftime("%H:%M:%S")
                                 logger.info("Detected updated rate limit reset time: %s", time_str)
 
-                        # Update pane title with live countdown
+                        # Update pane and tab title with live countdown
                         rem_min = max(0, int(math.ceil(remaining / 60.0)))
                         if rem_min != last_min:
                             last_min = rem_min
-                            self.zellij.rename_pane(f"claude [wait: {time_str} ({rem_min}m)]", self.pane_id)
+                            self._update_title(f"claude [wait: {time_str} ({rem_min}m)]")
 
                         time.sleep(min(remaining, 5))
 
