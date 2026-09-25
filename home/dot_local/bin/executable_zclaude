@@ -320,6 +320,12 @@ SESSION_PICKER_PATTERNS = [
         r"ctrl\+a to show all projects",
         r"space to preview",
         r"ctrl\+b to only show current",
+        r"conversation moved to the background",
+        r"enter opens it · esc returns to it",
+        r"describe a task for a new session",
+        r"enter to collapse · ctrl\+x to delete all",
+        r"\b\d+\s+awaiting input\b",
+        r"hand off a bigger task than you would chat through",
     ]
 ]
 
@@ -424,10 +430,18 @@ def clean_text(text: str) -> str:
 
 
 def is_in_session_picker(text: str) -> bool:
-    """Check if Claude Code is displaying the interactive session picker / overview."""
+    """Check if Claude Code is displaying the interactive session picker / conversation overview."""
     cleaned = clean_text(text)
+    if re.search(r"resume session \(\d+ of \d+\)", cleaned, re.IGNORECASE):
+        return True
+    if re.search(r"conversation moved to the background", cleaned, re.IGNORECASE):
+        return True
+    if re.search(r"describe a task for a new session", cleaned, re.IGNORECASE):
+        return True
+    if re.search(r"enter opens it · esc returns to it", cleaned, re.IGNORECASE):
+        return True
     matches = sum(1 for pat in SESSION_PICKER_PATTERNS if pat.search(cleaned))
-    return matches >= 2 or bool(re.search(r"resume session \(\d+ of \d+\)", cleaned, re.IGNORECASE))
+    return matches >= 2
 
 
 def is_waiting_for_approval(text: str) -> bool:
@@ -501,6 +515,14 @@ def is_at_prompt(text: str) -> bool:
     return False
 
 
+PROMPT_PLACEHOLDERS = {
+    "describe a task for a new session",
+    "ask a question, or type / to see available commands",
+    "type a message...",
+    "type a message or @ to mention...",
+}
+
+
 def get_prompt_text(text: str) -> str | None:
     """Extract current unsubmitted text from the prompt line, if any."""
     cleaned = clean_text(text)
@@ -508,7 +530,10 @@ def get_prompt_text(text: str) -> str | None:
     for line in lines[-8:]:
         m = re.match(r"^[❯>]\s*(.*)$", line)
         if m:
-            return m.group(1).strip()
+            val = m.group(1).strip()
+            if val.lower() in PROMPT_PLACEHOLDERS:
+                return ""
+            return val
     return None
 
 
@@ -792,16 +817,8 @@ class Supervisor(threading.Thread):
 
             # Check 1: Session Overview / Picker (pause auto-resumption while browsing sessions)
             if is_in_session_picker(screen):
-                reset_dt = parse_reset_time(screen)
-                if not reset_dt:
-                    reset_dt = inspect_claude_transcripts()
-                if reset_dt and reset_dt > datetime.datetime.now():
-                    time_str = reset_dt.strftime("%H:%M:%S")
-                    wait_sec = (reset_dt - datetime.datetime.now()).total_seconds()
-                    rem_min = max(0, int(math.ceil(wait_sec / 60.0)))
-                    self._notify("In session picker; rate limit countdown active.", pane_status=f"claude [sessions | wait: {time_str} ({rem_min}m)]")
-                else:
-                    self._notify("In session picker.", pane_status="claude [sessions]")
+                self.auto_resumed = False
+                self._notify("In session picker / conversation overview.", pane_status="claude [sessions]")
                 continue
 
             # Check 2: Auth / login failure
@@ -849,6 +866,7 @@ class Supervisor(threading.Thread):
                     msg = f"Rate limit active. Resets at {time_str} (~{int(wait_sec // 60)}m {int(wait_sec % 60)}s remaining)."
                     self._notify(msg, pane_status=init_title)
 
+                    interrupted_reason = None
                     while self._running.is_set() and datetime.datetime.now() < target_dt:
                         remaining = int((target_dt - datetime.datetime.now()).total_seconds())
                         if remaining <= 0:
@@ -856,8 +874,15 @@ class Supervisor(threading.Thread):
 
                         fresh_screen = self.zellij.dump_screen(self.pane_id)
                         if fresh_screen:
+                            # Early exit if user opened session overview / picker
+                            if is_in_session_picker(fresh_screen):
+                                interrupted_reason = "picker"
+                                self._notify("Switched to session overview; pausing countdown.", pane_status="claude [sessions]")
+                                break
+
                             # Early exit if user resumed and rate limit cleared
                             if not is_rate_limited(fresh_screen) and is_working(fresh_screen):
+                                interrupted_reason = "working"
                                 self._notify("Claude resumed; resuming monitor.", pane_status="claude")
                                 break
 
@@ -879,6 +904,10 @@ class Supervisor(threading.Thread):
 
                     if not self._running.is_set():
                         break
+
+                    if interrupted_reason:
+                        time.sleep(1)
+                        continue
                 else:
                     # Reset time has already arrived
                     if reset_dt == getattr(self, "_last_resumed_reset_dt", None):
@@ -921,7 +950,7 @@ class Supervisor(threading.Thread):
             return
 
         if is_in_session_picker(screen):
-            self._notify("Session picker active; deferring resumption.", pane_status="claude [sessions | ready]")
+            self._notify("Session picker active; deferring resumption.", pane_status="claude [sessions]")
             return
 
         if is_waiting_for_approval(screen):
