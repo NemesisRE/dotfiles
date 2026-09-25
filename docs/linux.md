@@ -9,13 +9,13 @@ This guide details setting up, using, and troubleshooting **NREDF dotfiles** on 
 Using chezmoi directly:
 
 ```bash
-sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin init --apply NemesisRE/chezmoi
+sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin init --apply NemesisRE/dotfiles
 ```
 
 Or using the bootstrap script:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/NemesisRE/chezmoi/main/bootstrap.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/NemesisRE/dotfiles/main/bootstrap.sh)
 ```
 
 > **Requirements:** `curl` and `git` (automatically installed if missing on Debian/Ubuntu).
@@ -71,7 +71,7 @@ reload -s pwsh   # Switch to PowerShell
 
 On Linux desktop environments, **Kitty** is the recommended GPU-accelerated terminal emulator:
 
-- **Upstream Installation**: Managed standalone via the official installer to `~/.local/kitty.app` with binaries linked to `~/.local/bin/` (version pinned in [`.chezmoidata/kitty.yaml`](../home/.chezmoidata/kitty.yaml) and kept current with Renovate). This avoids severely outdated distribution packages (like Debian/Ubuntu `apt`).
+- **Upstream Installation**: Installed standalone to `~/.local/kitty.app` with binaries linked to `~/.local/bin/`, from a pinned GitHub release archive verified against a SHA-256 checksum before extraction — not the upstream `installer.sh` piped into `sh` (version and hashes pinned in [`.chezmoidata/kitty.yaml`](../home/.chezmoidata/kitty.yaml) and kept current with Renovate). This avoids severely outdated distribution packages (like Debian/Ubuntu `apt`).
 - **Desktop & Icon Integration**: Chezmoi automatically creates and patches `kitty.desktop` and icons in `~/.local/share/applications` and `~/.local/share/icons`.
 - **WSL Excluded**: Kitty installation is automatically skipped on WSL environments (where Windows Terminal on the host OS is used).
 - **Font**: Configured with `FiraMono Nerd Font Mono` (or `FiraCode Nerd Font`).

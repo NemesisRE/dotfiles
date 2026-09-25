@@ -34,7 +34,7 @@ All five shells share a unified experience designed around modern developer ergo
 - **Dotfiles**: [`.zshenv.tmpl`](../home/dot_zshenv.tmpl), [`.zprofile.tmpl`](../home/dot_zprofile.tmpl), [`.zshrc.tmpl`](../home/dot_zshrc.tmpl)
 - **Plugin Management**: Managed by **Sheldon** via [`~/.config/sheldon/plugins.toml`](../home/dot_config/sheldon/plugins.toml.tmpl)
   - Loads Oh-My-Zsh core libraries (`completion.zsh`, `functions.zsh`, `history.zsh`, `misc.zsh`, `spectrum.zsh`, `termsupport.zsh`, `theme-and-appearance.zsh`)
-  - Curated plugins: `npm`, `rvm`, `extract`, `colored-man-pages`, `colorize`, `cp`, `git-extras`, `systemadmin`, `fzf-tab`, `fzf-zsh-completions`, `zsh-autopair`, `calc`, `zsh-autosuggestions`, `fast-syntax-highlighting`
+  - Curated plugins: `npm`, `rvm`, `extract`, `colored-man-pages`, `colorize`, `cp`, `git-extras`, `systemadmin`, `fzf-tab`, `fzf-zsh-completions`, `zsh-completions`, `zsh-autopair`, `calc`, `zsh-autosuggestions`, `fast-syntax-highlighting`
   - **Lazy Loading**: Plugins are lazy-loaded on the first prompt display via `add-zsh-hook precmd` to guarantee sub-millisecond shell startup.
 - **Completion Engine**: Managed by **Carapace** (`carapace-bin`) cached for 24 hours via `_nredf_refresh_cached_shell_snippet`, with custom declarative specs in `~/.config/carapace/specs/`.
 
@@ -75,7 +75,7 @@ All five shells share a unified experience designed around modern developer ergo
   - `Modules.ps1`: Zero external PowerShell modules required; hooks local overrides if configured.
   - `Aliases.ps1`: Cross-platform command parity with Bash/Zsh.
   - `PSReadLine.ps1`: Keybindings, prediction source (`HistoryAndPlugin`), native `fzf` integration, smart auto-pairing quotes.
-  - `Functions.ps1`: Utility functions (`reload`, `sudo`, `md5`, `sha256`, `NREDF_DailySync`).
+  - `Functions/`: one file per function (glob-bundled into `Functions.bundle.ps1.tmpl`, same mechanism as the other shells' `functions/`) — `Functions.ps1` itself holds `reload`, `sudo`, `md5`, `sha256`; `NREDF_DailySync.ps1`, `NREDF_Bw.ps1` and the rest are their own files.
   - `Profile.ps1`: High-performance startup orchestration with snippet caching (`NREDF_RefreshCachedShellSnippet`) for Oh-My-Posh, Atuin, Zoxide, and **Carapace** completions (including custom specs in `~/.config/carapace/specs/`).
 
 ---
@@ -384,16 +384,18 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 
 ### Q3: How do I test shell startup performance?
 
-Run `reload -p`. The output will display exact timing metrics for each component:
+Run `reload -p`. The output will display exact timing metrics for each component (PowerShell shown; Bash/Zsh/Fish/Nu report their own equivalent steps):
 
 ```text
-  [  +4ms] oh-my-posh init
-  [ +12ms] NREDF_DailySync
-  [ +28ms] PowerShell modules & PSFzf
-  [  +6ms] Atuin init
-  [  +4ms] zoxide init
-  [  +3ms] carapace completions
-  [ +57ms] Total profile startup time
+  [+   2ms] NREDF_BwRestoreSession
+  [+   4ms] oh-my-posh init
+  [+   8ms] PowerShell modules
+  [+   6ms] Atuin init
+  [+   4ms] zoxide init
+  [+   3ms] carapace completions
+  [+   5ms] mise activate
+  [+   3ms] inshellisense init
+  [+  35ms] Total PowerShell profile startup time
 ```
 
 Run `reload -p` a second time to turn off persistent profiling.

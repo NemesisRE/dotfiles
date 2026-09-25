@@ -9,7 +9,7 @@ This guide walks you through setting up, configuring, and optimizing your Window
 Open **PowerShell** (run as Administrator for service and package setups) and run:
 
 ```powershell
-irm https://raw.githubusercontent.com/NemesisRE/chezmoi/main/bootstrap.ps1 | iex
+irm https://raw.githubusercontent.com/NemesisRE/dotfiles/main/bootstrap.ps1 | iex
 ```
 
 Or using chezmoi directly:
@@ -19,7 +19,7 @@ Or using chezmoi directly:
 winget install twpayne.chezmoi
 
 # 2. Initialize and apply dotfiles
-chezmoi init --apply NemesisRE/chezmoi
+chezmoi init --apply NemesisRE/dotfiles
 
 # 3. Link managed CLI tools
 aqua install -a -l
@@ -283,7 +283,7 @@ In Windows environments, your `Documents` folder may be redirected away from `$H
 
 1. **OneDrive Known Folder Move** (e.g. `C:\Users\<user>\OneDrive\Documents`):
    - PowerShell resolves `$PROFILE` to the OneDrive path.
-   - `bootstrap.ps1` and chezmoi's post-apply hook (`.chezmoiscripts/run_after_windows_sync-profiles.ps1.tmpl`) automatically create NTFS directory junctions (`PowerShell` and `WindowsPowerShell`) pointing from OneDrive's Documents folder to `$HOME\Documents\PowerShell`.
+   - Chezmoi's post-apply hook (`.chezmoiscripts/run_onchange_after_windows_sync-profiles.ps1.tmpl`) automatically creates NTFS directory junctions (`PowerShell` and `WindowsPowerShell`) pointing from OneDrive's Documents folder to `$HOME\Documents\PowerShell`. `bootstrap.ps1` runs `chezmoi init --apply`, which triggers this same hook — it no longer carries its own separate copy of this logic.
    - Directory junctions are local NTFS reparse points that do not require Administrator privileges.
 
 2. **Corporate Network / SMB Shares** (e.g. `\\server\home$\<user>\Documents` or mapped drive `H:\...`):

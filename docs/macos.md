@@ -9,13 +9,13 @@ This guide covers configuring, optimizing, and troubleshooting your **macOS** wo
 Using chezmoi directly:
 
 ```bash
-sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin init --apply NemesisRE/chezmoi
+sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin init --apply NemesisRE/dotfiles
 ```
 
 Or using the bootstrap script:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/NemesisRE/chezmoi/main/bootstrap.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/NemesisRE/dotfiles/main/bootstrap.sh)
 ```
 
 > **Prerequisites:** [Homebrew](https://brew.sh) and Xcode Command Line Tools (`xcode-select --install`).

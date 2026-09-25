@@ -7,12 +7,12 @@
     and configures your PowerShell environment.
 
 .EXAMPLE
-    irm https://raw.githubusercontent.com/NemesisRE/chezmoi/main/bootstrap.ps1 | iex
+    irm https://raw.githubusercontent.com/NemesisRE/dotfiles/main/bootstrap.ps1 | iex
 #>
 
 [CmdletBinding()]
 param (
-    [string]$DotfilesRepo = $(if ($env:DOTFILES_REPO) { $env:DOTFILES_REPO } else { "NemesisRE/chezmoi" })
+    [string]$DotfilesRepo = $(if ($env:DOTFILES_REPO) { $env:DOTFILES_REPO } else { "NemesisRE/dotfiles" })
 )
 
 $ErrorActionPreference = 'Stop'
