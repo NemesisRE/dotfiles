@@ -797,19 +797,11 @@ class Supervisor(threading.Thread):
         self.pending_draft: str | None = None
         self._was_working: bool = False
         self._last_pane_title: str | None = None
-        self._last_tab_title: str | None = None
-        self.tab_id: int | None = None
-        self.base_tab_name: str = "Claude"
 
     def stop(self) -> None:
         self._running.clear()
         try:
             self.zellij.rename_pane("claude", self.pane_id)
-        except Exception:
-            pass
-        try:
-            if self.tab_id is not None:
-                self.zellij.rename_tab(self.base_tab_name, self.tab_id)
         except Exception:
             pass
         self._write_status_file("Idle")
@@ -860,24 +852,6 @@ class Supervisor(threading.Thread):
         if status != self._last_pane_title:
             self.zellij.rename_pane(status, self.pane_id)
             self._last_pane_title = status
-
-        if self.tab_id is None:
-            tid, tname = self.zellij.get_tab_info(self.pane_id)
-            if tid is not None:
-                self.tab_id = tid
-            if tname:
-                self.base_tab_name = re.sub(r"\s*\[.*?\]", "", tname).strip() or "Claude"
-
-        if self.tab_id is not None:
-            m = re.search(r"\[(.*?)\]", status)
-            if m:
-                tab_title = f"{self.base_tab_name} [{m.group(1)}]"
-            else:
-                tab_title = self.base_tab_name
-
-            if tab_title != self._last_tab_title:
-                self.zellij.rename_tab(tab_title, self.tab_id)
-                self._last_tab_title = tab_title
 
     def _notify(self, msg: str, pane_status: str | None = None) -> None:
         """Report status without corrupting the terminal buffer of Claude Code."""
