@@ -345,37 +345,73 @@ def clean_text(text: str) -> str:
     return ANSI_ESCAPE.sub("", text)
 
 
+def is_at_prompt(text: str) -> bool:
+    """Check if Claude is waiting at an interactive input prompt."""
+    cleaned = clean_text(text)
+    lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
+    for line in lines[-8:]:
+        if re.match(r"^[❯>](?:\s|$)", line):
+            return True
+    return False
+
+
+def get_prompt_text(text: str) -> str | None:
+    """Extract current unsubmitted text from the prompt line, if any."""
+    cleaned = clean_text(text)
+    lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
+    for line in lines[-8:]:
+        m = re.match(r"^[❯>]\s*(.*)$", line)
+        if m:
+            return m.group(1).strip()
+    return None
+
+
+def is_working(text: str) -> bool:
+    """Check if Claude is currently mid-turn / processing (active spinner or interrupt prompt)."""
+    cleaned = clean_text(text)
+    lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
+    # If Claude is waiting at the prompt, it cannot be actively mid-turn
+    for line in lines[-8:]:
+        if re.match(r"^[❯>](?:\s|$)", line):
+            return False
+    tail = "\n".join(lines[-8:])
+    for pat in WORKING_PATTERNS:
+        if pat.search(tail):
+            return True
+    return False
+
+
 def is_rate_limited(text: str) -> bool:
     """Check if terminal text indicates a rate limit."""
+    # Never detect rate limit while actively mid-turn
+    if is_working(text):
+        return False
     cleaned = clean_text(text)
+    lines = [l.strip() for l in cleaned.splitlines() if l.strip()]
+    tail = "\n".join(lines[-35:])
     for ign in IGNORE_PATTERNS:
-        if ign.search(cleaned):
+        if ign.search(tail):
             return False
-    if has_rate_limit_menu(cleaned):
+    if has_rate_limit_menu(tail):
         return True
     for pat in LIMIT_PATTERNS:
-        if pat.search(cleaned):
+        if pat.search(tail):
             return True
     return False
 
 
 def is_stalled(text: str) -> bool:
     """Check if terminal text indicates a transient server capacity stall."""
+    if is_working(text):
+        return False
     cleaned = clean_text(text)
+    lines = [l.strip() for l in cleaned.splitlines() if l.strip()]
+    tail = "\n".join(lines[-25:])
     for ign in IGNORE_PATTERNS:
-        if ign.search(cleaned):
+        if ign.search(tail):
             return False
     for pat in STALL_PATTERNS:
-        if pat.search(cleaned):
-            return True
-    return False
-
-
-def is_working(text: str) -> bool:
-    """Check if Claude is currently mid-turn / processing."""
-    cleaned = clean_text(text)
-    for pat in WORKING_PATTERNS:
-        if pat.search(cleaned):
+        if pat.search(tail):
             return True
     return False
 
@@ -428,6 +464,29 @@ def parse_reset_time(text: str, now: datetime.datetime | None = None) -> datetim
         target = (now + datetime.timedelta(days=1)).replace(hour=hr, minute=mn, second=0, microsecond=0)
         return target
 
+    # 2b. Day of week: 'resets friday 9am' / 'resets on monday at 10:00 am'
+    m = re.search(
+        r"resets?\s+(?:on\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)(?:[\s:]*(?:at\s+)?)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?",
+        cleaned,
+    )
+    if m:
+        day_names = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+        target_day = day_names.index(m.group(1).lower())
+        hr = int(m.group(2))
+        mn = int(m.group(3)) if m.group(3) else 0
+        ampm = m.group(4)
+        if ampm == "pm" and hr < 12:
+            hr += 12
+        elif ampm == "am" and hr == 12:
+            hr = 0
+        days_ahead = (target_day - now.weekday()) % 7
+        if days_ahead == 0:
+            target = now.replace(hour=hr, minute=mn, second=0, microsecond=0)
+            if target < now - datetime.timedelta(minutes=30):
+                days_ahead = 7
+        target = (now + datetime.timedelta(days=days_ahead)).replace(hour=hr, minute=mn, second=0, microsecond=0)
+        return target
+
     # 3. 12-hour: 'resets at 3:15 pm' / 'resets 3pm' / 'resets: 11:30am' / 'resets 4:00 pm'
     m = re.search(r"resets?[\s:]*(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)", cleaned)
     if m:
@@ -439,7 +498,7 @@ def parse_reset_time(text: str, now: datetime.datetime | None = None) -> datetim
         elif ampm == "am" and hr == 12:
             hr = 0
         target = now.replace(hour=hr, minute=mn, second=0, microsecond=0)
-        if target <= now:
+        if target < now - datetime.timedelta(minutes=30):
             target += datetime.timedelta(days=1)
         return target
 
@@ -449,7 +508,7 @@ def parse_reset_time(text: str, now: datetime.datetime | None = None) -> datetim
         hr = int(m.group(1))
         mn = int(m.group(2))
         target = now.replace(hour=hr, minute=mn, second=0, microsecond=0)
-        if target <= now:
+        if target < now - datetime.timedelta(minutes=30):
             target += datetime.timedelta(days=1)
         return target
 
@@ -572,13 +631,9 @@ class Supervisor(threading.Thread):
                 reset_dt = parse_reset_time(screen)
                 if not reset_dt:
                     reset_dt = inspect_claude_transcripts()
-                if not reset_dt or reset_dt <= datetime.datetime.now():
-                    if reset_dt and (datetime.datetime.now() - reset_dt).total_seconds() > 60:
-                        reset_dt += datetime.timedelta(hours=12)
-                    if not reset_dt or reset_dt <= datetime.datetime.now():
-                        # Fallback wait: 5 minutes if time couldn't be parsed or was in the past
-                        logger.warning("Rate limit detected but reset time is in the past or unknown; waiting 5 minutes.")
-                        reset_dt = datetime.datetime.now() + datetime.timedelta(minutes=5)
+                if not reset_dt:
+                    logger.warning("Rate limit detected but reset time is unknown; waiting 5 minutes.")
+                    reset_dt = datetime.datetime.now() + datetime.timedelta(minutes=5)
 
                 target_dt = reset_dt + datetime.timedelta(seconds=self.margin_sec)
                 wait_sec = (target_dt - datetime.datetime.now()).total_seconds()
@@ -621,9 +676,16 @@ class Supervisor(threading.Thread):
 
                     if not self._running.is_set():
                         break
+                else:
+                    # Reset time has already arrived
+                    if reset_dt == getattr(self, "_last_resumed_reset_dt", None):
+                        time.sleep(30)
+                        continue
 
                 # Limit has lifted; resume!
+                self._last_resumed_reset_dt = reset_dt
                 self._resume_session()
+                time.sleep(2)
                 continue
 
             # Check 2: Mid-turn activity
@@ -662,25 +724,29 @@ class Supervisor(threading.Thread):
             time.sleep(0.5)
             screen = self.zellij.dump_screen(self.pane_id)
 
-        # 2. Check if Claude already has "continue" pre-filled in its prompt draft
-        cleaned = clean_text(screen)
-        # Match prompt with continue, e.g. "❯ continue" or "> continue"
-        has_continue = bool(re.search(r"(?:❯|>)\s*" + re.escape(self.retry_msg) + r"\s*$", cleaned, re.MULTILINE))
-
+        # 2. Check current unsubmitted text on prompt line
+        prompt_text = get_prompt_text(screen)
         self._notify(f"Submitting '{self.retry_msg}' to resume Claude...", pane_status="claude [resuming...]")
 
-        if not has_continue:
-            # Type the message into the prompt WITHOUT trailing \n (which triggers Shift+Enter in Ink)
+        needs_type = True
+        if prompt_text is not None and self.retry_msg in prompt_text:
+            needs_type = False
+        elif prompt_text is None and self.retry_msg in clean_text(screen)[-100:]:
+            needs_type = False
+
+        if needs_type:
+            # Type the message into the prompt WITHOUT trailing newline
             self.zellij.write_chars(self.retry_msg, self.pane_id)
-            time.sleep(0.2)
+            time.sleep(0.3)
 
         # 3. Submit by sending the Enter key event (NOT a raw \n character)
         self.zellij.send_keys("Enter", self.pane_id)
-        time.sleep(0.5)
+        time.sleep(0.6)
 
-        # 4. Check if it was submitted; if not, send Enter once more as a safety measure
+        # 4. Check if the prompt text is still there unsubmitted; retry Enter if needed
         post_screen = self.zellij.dump_screen(self.pane_id)
-        if not is_working(post_screen) and self.retry_msg in clean_text(post_screen):
+        post_prompt = get_prompt_text(post_screen)
+        if post_prompt is not None and self.retry_msg in post_prompt:
             self.zellij.send_keys("Enter", self.pane_id)
 
         self._notify("Claude resumed.", pane_status="claude")
@@ -795,20 +861,30 @@ def main() -> int:
     if args.ide:
         forwarded_claude_args.append("--ide")
 
-    logging.basicConfig(
-        level=logging.DEBUG if args.verbose else logging.INFO,
-        format="[%(asctime)s] %(levelname)s: %(message)s",
-        datefmt="%H:%M:%S",
-    )
-    # Log to ~/.local/state/zclaude/zclaude.log so supervisor events can be inspected
+    # Configure logging: integrated mode logs exclusively to zclaude.log to protect Claude's TUI.
+    # Console (stderr) stream handler is only attached in dedicated --watch mode.
     log_dir = os.path.expanduser("~/.local/state/zclaude")
+    handlers: list[logging.Handler] = []
     try:
         os.makedirs(log_dir, exist_ok=True)
         fh = logging.FileHandler(os.path.join(log_dir, "zclaude.log"), encoding="utf-8")
         fh.setFormatter(logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
-        logger.addHandler(fh)
+        handlers.append(fh)
     except Exception:
         pass
+
+    if args.watch is not None:
+        sh = logging.StreamHandler(sys.stderr)
+        sh.setFormatter(logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", datefmt="%H:%M:%S"))
+        handlers.append(sh)
+
+    if not handlers:
+        handlers.append(logging.NullHandler())
+
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO,
+        handlers=handlers,
+    )
 
     zellij = ZellijController(session_name=args.session)
     if not zellij.is_available():
