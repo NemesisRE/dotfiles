@@ -6,9 +6,9 @@
 {{- $kitty := index . "kitty" | default dict -}}
 {{- $secrets := index . "secrets" | default dict -}}
 {{- $windows := index . "windows" | default dict -}}
-{{- $microsoftTerminal := index $windows "microsoftTerminal" | default (index $windows "microsoft_terminal" | default (index $windows "windowsTerminal" | default dict)) -}}
+{{- $microsoftTerminal := index $windows "microsoftTerminal" | default dict -}}
 {{- $explorer := index $windows "explorer" | default dict -}}
-{{- $systemTweaks := index $windows "systemTweaks" | default (index $windows "system_tweaks" | default dict) -}}
+{{- $systemTweaks := index $windows "systemTweaks" | default dict -}}
 {{- $wsl := index $windows "wsl" | default dict -}}
 {{- $winget := index $windows "winget" | default dict -}}
 
@@ -87,7 +87,7 @@
 {{-   $wslMultiplexer = true -}}
 {{- end -}}
 
-{{- $rawSshAgent := promptStringOnce $ssh "agent" "SSH agent provider [default, bitwarden, pipe, gpg]" "default" -}}
+{{- $rawSshAgent := promptStringOnce $ssh "agent" "SSH agent provider [default, bitwarden, pipe, gpg, 1password, system]" "default" -}}
 {{- $sshAgent := "default" -}}
 {{- if regexMatch "^(?i:b|bitwarden)$" $rawSshAgent -}}
 {{-   $sshAgent = "bitwarden" -}}
@@ -95,9 +95,24 @@
 {{-   $sshAgent = "pipe" -}}
 {{- else if regexMatch "^(?i:g|gpg|gnupg)$" $rawSshAgent -}}
 {{-   $sshAgent = "gpg" -}}
+{{- else if regexMatch "^(?i:1p|1password|onepassword|op)$" $rawSshAgent -}}
+{{-   $sshAgent = "1password" -}}
+{{- else if regexMatch "^(?i:s|system)$" $rawSshAgent -}}
+{{-   $sshAgent = "system" -}}
 {{- end -}}
 
-{{- $rawKittyQuakeKey := promptStringOnce $kitty "quake_key" "Kitty Quake mode global shortcut key [F12, Pause, none]" "F12" -}}
+{{- /* Kitty's quake mode is only wired up by run_onchange_after_linux_kitty.sh.tmpl,
+which itself never runs on WSL (kitty has no WSL integration upstream) — see
+.chezmoiignore.tmpl's ".chezmoiscripts/*kitty.sh" entry. Asking macOS/Windows/WSL
+users to pick a shortcut key that nothing will ever bind is pointless, so only
+prompt on non-WSL Linux; elsewhere just carry forward whatever is already
+stored (or the default), same as the Windows-only prompts below. */ -}}
+{{- $rawKittyQuakeKey := "F12" -}}
+{{- if or (and (eq .chezmoi.os "linux") (not $isWsl)) (hasKey $kitty "quake_key") -}}
+{{-   $rawKittyQuakeKey = promptStringOnce $kitty "quake_key" "Kitty Quake mode global shortcut key [F12, Pause, none]" "F12" -}}
+{{- else -}}
+{{-   $rawKittyQuakeKey = index $kitty "quake_key" | default "F12" -}}
+{{- end -}}
 {{- $kittyQuakeKey := $rawKittyQuakeKey -}}
 {{- if regexMatch "^(?i:p|pause)$" $rawKittyQuakeKey -}}
 {{-   $kittyQuakeKey = "Pause" -}}
@@ -199,7 +214,7 @@ sourceDir = {{ .chezmoi.workingTree | quote }}
     memory = {{ index $wsl "memory" | default "16GB" | quote }}
     processors = {{ index $wsl "processors" | default 8 }}
     networking_mode = {{ index $wsl "networking_mode" | default "mirrored" | quote }}
-    nested_virtualization = {{ if hasKey $wsl "nested_virtualization" }}{{ index $wsl "nested_virtualization" }}{{ else if hasKey $wsl "nestedVirtualization" }}{{ index $wsl "nestedVirtualization" }}{{ else }}true{{ end }}
+    nested_virtualization = {{ index $wsl "nested_virtualization" | default false }}
 
 [data.windows.winget]
     sync_settings = {{ $wingetSyncSettings }}

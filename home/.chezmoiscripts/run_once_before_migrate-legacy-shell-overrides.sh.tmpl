@@ -1,0 +1,143 @@
+{{- if ne .chezmoi.os "windows" -}}
+#!/usr/bin/env bash
+# chezmoi run_once_before — migrates a user's local shell/nu override files
+# out of the pre-refactor layouts before .chezmoiremove.tmpl deletes their
+# directories wholesale (~/.config/nredf/shell: b95d80b, ~/.config/nu:
+# f0fe6ca). Without this, a real customization made under either old layout
+# would be silently deleted by `chezmoi apply` instead of just going unread.
+#
+# Never overwrites a file already at the new location; if both exist, the
+# old one is backed up under ~/.local/state/nredf/migrated/ instead. Every
+# source file is gone after its first successful run (migrated or backed
+# up), which is what makes a second run a no-op.
+#
+# To force a re-run: chezmoi state delete-bucket --bucket=scriptState
+# and then chezmoi apply.
+
+# Skip in CI or when the user explicitly opts out. Never abort the apply:
+# every migration below is best-effort and swallows its own errors instead
+# of using `set -e`.
+[[ -n "${CI:-}" ]] && exit 0
+[[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
+
+NREDF_MIGRATED="${HOME}/.local/state/nredf/migrated"
+
+# _nredf_migrate_backup PATH — moves PATH under NREDF_MIGRATED, preserving
+# its path relative to $HOME, without clobbering an earlier backup at the
+# same spot.
+_nredf_migrate_backup() {
+  local path=$1
+  local rel=${path#"${HOME}"/}
+  local dest="${NREDF_MIGRATED}/${rel}"
+  if [[ -e "${dest}" ]]; then
+    dest="${dest}.$(date +%s)"
+  fi
+  mkdir -p "$(dirname "${dest}")" 2>/dev/null || return 0
+  mv "${path}" "${dest}" 2>/dev/null || true
+}
+
+# _nredf_migrate_one SRC DST — moves SRC to DST if DST doesn't exist yet;
+# otherwise backs SRC up instead (never overwrites). No-op if SRC doesn't
+# exist.
+_nredf_migrate_one() {
+  local src=$1 dst=$2
+  [[ -e "${src}" ]] || return 0
+  if [[ -e "${dst}" ]]; then
+    _nredf_migrate_backup "${src}"
+  else
+    mkdir -p "$(dirname "${dst}")" 2>/dev/null || return 0
+    mv "${src}" "${dst}" 2>/dev/null || true
+  fi
+}
+
+# _nredf_migrate_shared SRC DST... — copies SRC into every DST that doesn't
+# already exist (an old override that used to apply to more than one
+# shell), then always backs the now-redundant SRC up itself. Unlike
+# _nredf_migrate_one, SRC is never left claimed by only one destination.
+_nredf_migrate_shared() {
+  local src=$1
+  shift
+  [[ -e "${src}" ]] || return 0
+  local dst
+  for dst in "$@"; do
+    if [[ ! -e "${dst}" ]]; then
+      mkdir -p "$(dirname "${dst}")" 2>/dev/null || continue
+      cp -p "${src}" "${dst}" 2>/dev/null || true
+    fi
+  done
+  _nredf_migrate_backup "${src}"
+}
+
+# --- ~/.config/{bash,zsh,fish}/{aliases,rc,functions}.local — the
+# directly-preceding names for today's aliases/rc/functions files, renamed
+# in place by b95d80b. Not inside a directory .chezmoiremove deletes, so
+# nothing forces this one, but it is the same refactor's fallout and the
+# highest-precedence of the old sources below, so it is migrated first and
+# gets first claim on today's file names.
+for _nredf_shell in bash zsh fish; do
+  _nredf_migrate_one "${HOME}/.config/${_nredf_shell}/aliases.local" "${HOME}/.config/${_nredf_shell}/aliases"
+  _nredf_migrate_one "${HOME}/.config/${_nredf_shell}/rc.local" "${HOME}/.config/${_nredf_shell}/rc"
+done
+# bash/zsh source every file under functions/ regardless of name, so
+# functions.local can move straight in; fish requires one function per file
+# named after it (native autoloading), which a multi-function functions.local
+# cannot satisfy, so it is only ever backed up for the user to split by hand.
+for _nredf_shell in bash zsh; do
+  _nredf_migrate_one "${HOME}/.config/${_nredf_shell}/functions.local" "${HOME}/.config/${_nredf_shell}/functions/functions.local"
+done
+if [[ -f "${HOME}/.config/fish/functions.local" ]]; then
+  echo "nredf: ~/.config/fish/functions.local can't be auto-migrated (fish autoloads one function per file); backed up for manual review" >&2
+  _nredf_migrate_backup "${HOME}/.config/fish/functions.local"
+fi
+
+# --- ~/.config/nredf/shell/{common,bash,zsh,fish} — the pre-b95d80b local
+# override layout that .chezmoiremove.tmpl deletes (~/.config/nredf/shell,
+# whole directory).
+NREDF_OLD_SHELL="${HOME}/.config/nredf/shell"
+
+for _nredf_shell in bash zsh fish; do
+  _nredf_new="${HOME}/.config/${_nredf_shell}"
+
+  _nredf_migrate_one "${NREDF_OLD_SHELL}/${_nredf_shell}/aliases" "${_nredf_new}/aliases"
+  _nredf_migrate_one "${NREDF_OLD_SHELL}/${_nredf_shell}/rc" "${_nredf_new}/rc"
+
+  if [[ -d "${NREDF_OLD_SHELL}/${_nredf_shell}/functions" ]]; then
+    for _nredf_fn in "${NREDF_OLD_SHELL}/${_nredf_shell}/functions/"*; do
+      [[ -f "${_nredf_fn}" ]] || continue
+      _nredf_migrate_one "${_nredf_fn}" "${_nredf_new}/functions/$(basename "${_nredf_fn}")"
+    done
+  fi
+done
+
+# The old "common" tier was shared by bash+zsh only; fish never had one
+# (nredf_set_local.fish's own history: it only ever read its own
+# shell-specific override paths), so it fans out into just those two.
+_nredf_migrate_shared "${NREDF_OLD_SHELL}/common/aliases" \
+  "${HOME}/.config/bash/aliases" "${HOME}/.config/zsh/aliases"
+_nredf_migrate_shared "${NREDF_OLD_SHELL}/common/rc" \
+  "${HOME}/.config/bash/rc" "${HOME}/.config/zsh/rc"
+
+if [[ -d "${NREDF_OLD_SHELL}/common/functions" ]]; then
+  for _nredf_fn in "${NREDF_OLD_SHELL}/common/functions/"*; do
+    [[ -f "${_nredf_fn}" ]] || continue
+    _nredf_base=$(basename "${_nredf_fn}")
+    _nredf_migrate_shared "${_nredf_fn}" \
+      "${HOME}/.config/bash/functions/${_nredf_base}" "${HOME}/.config/zsh/functions/${_nredf_base}"
+  done
+fi
+
+# --- ~/.config/nu/{config,env}.local.nu — the post-b95d80b/pre-f0fe6ca nu
+# layout that .chezmoiremove.tmpl also deletes (~/.config/nu, whole
+# directory). Migrated before the older nredf/shell/nu copy below so it
+# wins if both somehow still exist.
+_nredf_migrate_one "${HOME}/.config/nu/config.local.nu" "${HOME}/.config/nushell/config.local.nu"
+_nredf_migrate_one "${HOME}/.config/nu/env.local.nu" "${HOME}/.config/nushell/env.local.nu"
+
+# --- ~/.config/nredf/shell/nu/{config,env}.local.nu — the oldest nu layout,
+# predating even ~/.config/nu (pre-b95d80b). Also under the doomed
+# ~/.config/nredf/shell tree above.
+_nredf_migrate_one "${NREDF_OLD_SHELL}/nu/config.local.nu" "${HOME}/.config/nushell/config.local.nu"
+_nredf_migrate_one "${NREDF_OLD_SHELL}/nu/env.local.nu" "${HOME}/.config/nushell/env.local.nu"
+
+exit 0
+{{- end }}

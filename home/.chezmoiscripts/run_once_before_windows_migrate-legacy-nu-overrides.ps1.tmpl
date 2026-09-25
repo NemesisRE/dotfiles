@@ -1,0 +1,75 @@
+{{- if eq .chezmoi.os "windows" -}}
+# chezmoi run_once_before Windows hook — migrates a user's local nu override
+# files out of the pre-refactor layout before .chezmoiremove.tmpl deletes
+# ~/.config/nu wholesale (f0fe6ca; ~/.config/nu itself came from b95d80b's
+# ~/.config/nredf/shell/nu). Nu resolves $XDG_CONFIG_HOME/nushell in
+# preference to its native %APPDATA%\nushell the moment XDG_CONFIG_HOME is
+# set (Defaults.ps1 sets it, like every other shell here), and
+# XDG_CONFIG_HOME is "$HOME\.config" here, so nu's config dir on Windows is
+# under ~/.config too, same as Linux/macOS — bash/zsh/fish have no Windows
+# build at all, so unlike the POSIX twin of this script, only nu needs
+# migrating here.
+#
+# Never overwrites a file already at the new location; if both exist, the
+# old one is backed up under ~/.local/state/nredf/migrated/ instead. Every
+# source file is gone after its first successful run (migrated or backed
+# up), which is what makes a second run a no-op.
+#
+# To force a re-run: chezmoi state delete-bucket --bucket=scriptState
+# and then chezmoi apply.
+
+# Never abort the apply: every migration below is best-effort.
+$ErrorActionPreference = 'Continue'
+
+if ($env:CI -or $env:NREDF_NO_BOOTSTRAP) {
+    exit 0
+}
+
+$nredfMigrated = Join-Path $HOME ".local\state\nredf\migrated"
+
+function Move-NredfBackup {
+    param([string]$Path)
+    $rel = $Path.Substring($HOME.Length).TrimStart('\', '/')
+    $dest = Join-Path $nredfMigrated $rel
+    if (Test-Path -LiteralPath $dest) {
+        $dest = "$dest.$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())"
+    }
+    $destDir = Split-Path -Parent $dest
+    try {
+        New-Item -ItemType Directory -Path $destDir -Force -ErrorAction Stop | Out-Null
+        Move-Item -LiteralPath $Path -Destination $dest -Force -ErrorAction Stop
+    } catch {
+        Write-Warning "nredf: failed to back up '$Path': $_"
+    }
+}
+
+function Move-NredfOne {
+    param([string]$Src, [string]$Dst)
+    if (-not (Test-Path -LiteralPath $Src)) {
+        return
+    }
+    if (Test-Path -LiteralPath $Dst) {
+        Move-NredfBackup -Path $Src
+    } else {
+        $dstDir = Split-Path -Parent $Dst
+        try {
+            New-Item -ItemType Directory -Path $dstDir -Force -ErrorAction Stop | Out-Null
+            Move-Item -LiteralPath $Src -Destination $Dst -Force -ErrorAction Stop
+        } catch {
+            Write-Warning "nredf: failed to migrate '$Src' to '$Dst': $_"
+        }
+    }
+}
+
+# ~/.config/nu/{config,env}.local.nu — post-b95d80b/pre-f0fe6ca layout,
+# migrated first so it wins if the older nredf/shell/nu copy also exists.
+Move-NredfOne -Src (Join-Path $HOME ".config\nu\config.local.nu") -Dst (Join-Path $HOME ".config\nushell\config.local.nu")
+Move-NredfOne -Src (Join-Path $HOME ".config\nu\env.local.nu") -Dst (Join-Path $HOME ".config\nushell\env.local.nu")
+
+# ~/.config/nredf/shell/nu/{config,env}.local.nu — the oldest nu layout,
+# predating even ~/.config/nu (pre-b95d80b).
+Move-NredfOne -Src (Join-Path $HOME ".config\nredf\shell\nu\config.local.nu") -Dst (Join-Path $HOME ".config\nushell\config.local.nu")
+Move-NredfOne -Src (Join-Path $HOME ".config\nredf\shell\nu\env.local.nu") -Dst (Join-Path $HOME ".config\nushell\env.local.nu")
+
+exit 0
+{{- end }}
