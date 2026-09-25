@@ -1,15 +1,23 @@
-{{ if eq .chezmoi.os "windows" -}}
+{{- if eq .chezmoi.os "windows" -}}
+# chezmoi run_onchange_after Windows hook — yazi environment and plugins.
 # package.toml hash: {{ include "dot_config/yazi/package.toml.tmpl" | sha256sum }}
-$yaziConfigDir = "$HOME\.config\yazi"
-$env:YAZI_CONFIG_HOME = $yaziConfigDir
-$yaziAppDataConfig = Join-Path (Join-Path $env:APPDATA "yazi") "config"
-if (-not (Test-Path $yaziAppDataConfig)) {
-    if (-not (Test-Path (Join-Path $env:APPDATA "yazi"))) {
-        New-Item -ItemType Directory -Path (Join-Path $env:APPDATA "yazi") -Force -ErrorAction SilentlyContinue | Out-Null
-    }
-    New-Item -ItemType Junction -Path $yaziAppDataConfig -Target $yaziConfigDir -Force -ErrorAction SilentlyContinue | Out-Null
+# The yazi/HOME environment setup is inlined from .chezmoitemplates/yazi-env.ps1, so
+# a change there changes this script's text and re-runs it as well.
+
+$ErrorActionPreference = 'Continue'
+
+if ($env:CI -or $env:NREDF_NO_BOOTSTRAP) {
+    exit 0
 }
+
+{{ includeTemplate "hook-env.ps1" . }}
+{{ includeTemplate "yazi-env.ps1" . }}
 if (Get-Command ya -ErrorAction SilentlyContinue) {
-    & ya pkg install --discard *>$null
+    $yaOutput = & ya pkg install --discard 2>&1 | Out-String
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "ya pkg install failed (exit code $LASTEXITCODE); yazi plugins may be missing or stale:"
+        Write-Warning $yaOutput
+    }
 }
-{{ end -}}
+exit 0
+{{- end }}
