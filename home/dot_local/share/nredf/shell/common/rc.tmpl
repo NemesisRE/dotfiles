@@ -5,7 +5,6 @@
 # vim: ts=2 sw=2 et ff=unix ft=bash syntax=sh
 #
 # chezmoi-managed common shell rc — sourced by .bashrc / .zshrc / .zprofile / .bash_profile
-# No homesick/homeshick references. All paths are relative to ${HOME}.
 
 NREDF_COMMON_RC_PROFILE="${NREDF_COMMON_RC_PROFILE:-full}"
 
@@ -32,7 +31,9 @@ _nredf_refresh_cached_shell_snippet() {
 
   if (( needs_refresh )); then
     mkdir -p "${cache_file%/*}"
-    if "$@" >| "${cache_file}" 2>/dev/null; then
+    local tmp_file="${cache_file}.$$"
+    if "$@" >| "${tmp_file}" 2>/dev/null && [[ -s "${tmp_file}" ]]; then
+      mv -f "${tmp_file}" "${cache_file}"
       local now="${EPOCHSECONDS:-}"
       [[ -z "${now}" ]] && now="$(date +%s)"
       _nredf_last_run "${cache_key}" "true" "$((now + NREDF_24H_INTERVAL))"
@@ -40,7 +41,8 @@ _nredf_refresh_cached_shell_snippet() {
         zcompile "${cache_file}" >/dev/null 2>&1 || true
       fi
     else
-      rm -f "${cache_file}" "${cache_file}.zwc" 2>/dev/null || true
+      # Leave any existing good cache in place; only the failed temp file is discarded.
+      rm -f "${tmp_file}" 2>/dev/null || true
     fi
   fi
 
@@ -151,6 +153,10 @@ if [[ -z "${NREDF_COMMON_DEFAULTS_DONE}" ]]; then
   NREDF_SHELL_SSH_AGENT="{{ .shell.ssh.agent }}"
   _nredf_step "shell.yaml toggles"
   _nredf_set_local
+  # Sourced here, not inside _nredf_set_local: that function runs under
+  # `setopt localoptions`, which would revert any `setopt`/`unsetopt` this
+  # file makes as soon as the function returned.
+  [[ -f "${NREDF_RC_LOCAL}/rc" ]] && source "${NREDF_RC_LOCAL}/rc"
   _nredf_step "_nredf_set_local"
   NREDF_COMMON_DEFAULTS_DONE="true"
 fi
@@ -163,7 +169,10 @@ _nredf_step "_nredf_set_aqua_env/path + _nredf_set_krew_path"
 
 if [[ "${NREDF_COMMON_RC_PROFILE}" == "login-minimal" ]]; then
   if command -v mise &>/dev/null; then
-    eval "$(mise activate "${NREDF_SHELL_NAME}")"
+    _nredf_refresh_cached_shell_snippet \
+      "_nredf_mise_activate_${NREDF_SHELL_NAME}" \
+      "${XDG_CACHE_HOME}/nredf/init/mise.${NREDF_SHELL_NAME}.sh" \
+      mise activate "${NREDF_SHELL_NAME}"
   fi
   _nredf_step "mise activate (login-minimal)"
   return
@@ -173,6 +182,9 @@ if [[ "${NREDF_COMMON_RC_PROFILE}" == "interactive-minimal" ]]; then
   source "${NREDF_RC_PATH}/rc"
   _nredf_step "source rc (interactive-minimal)"
   _nredf_set_local true
+  # See the comment on the "full" pass below: sourced at top level so the
+  # user's own `setopt`/`unsetopt` calls survive.
+  [[ -f "${NREDF_RC_LOCAL}/aliases" ]] && source "${NREDF_RC_LOCAL}/aliases"
   _nredf_step "_nredf_set_local aliases (interactive-minimal)"
   if command -v atuin &>/dev/null; then
     _nredf_refresh_cached_shell_snippet \
@@ -196,6 +208,10 @@ if [[ "${NREDF_SHELL_NAME}" != "zsh" ]]; then
 fi
 
 _nredf_set_local true
+# Sourced here, not inside _nredf_set_local: that function runs under
+# `setopt localoptions` (zsh), which would revert any `setopt`/`unsetopt`
+# this file makes the moment the function returned.
+[[ -f "${NREDF_RC_LOCAL}/aliases" ]] && source "${NREDF_RC_LOCAL}/aliases"
 _nredf_step "_nredf_set_local aliases"
 
 # Atuin init — cache shell completion evaluation for 24h
