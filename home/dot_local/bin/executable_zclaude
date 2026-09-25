@@ -292,9 +292,8 @@ MENU_PATTERNS = [
     re.compile(p, re.IGNORECASE)
     for p in [
         r"what do you want to do\?",
-        r"stop and wait for limit to reset",
         r"1\.\s*upgrade your plan",
-        r"/rate-limit-options",
+        r"stop and wait for limit to reset",
     ]
 ]
 
@@ -351,12 +350,19 @@ def is_working(text: str) -> bool:
 
 
 def has_rate_limit_menu(text: str) -> bool:
-    """Check if Claude's interactive /rate-limit-options menu is visible."""
+    """Check if Claude's interactive selection dialog is actually open."""
     cleaned = clean_text(text)
-    for pat in MENU_PATTERNS:
-        if pat.search(cleaned):
-            return True
-    return False
+    # Only return True if the actual interactive modal dialog is open
+    # Never match on the footer hint "/rate-limit-options" which is always present
+    has_question = bool(re.search(r"what do you want to do\?", cleaned, re.IGNORECASE))
+    has_choice = bool(
+        re.search(
+            r"(?:upgrade your plan|stop and wait for limit|don'?t continue automatically)",
+            cleaned,
+            re.IGNORECASE,
+        )
+    )
+    return has_question and has_choice
 
 
 def parse_reset_time(text: str, now: datetime.datetime | None = None) -> datetime.datetime | None:
@@ -499,6 +505,19 @@ class Supervisor(threading.Thread):
 
     def stop(self) -> None:
         self._running.clear()
+        try:
+            self.zellij.rename_pane("claude", self.pane_id)
+        except Exception:
+            pass
+
+    def _notify(self, msg: str, pane_status: str | None = None) -> None:
+        """Report status without corrupting the terminal buffer of Claude Code."""
+        logger.info(msg)
+        if pane_status:
+            self.zellij.rename_pane(pane_status, self.pane_id)
+        if self.watch_mode:
+            # Watcher mode has its own dedicated companion pane; stdout printing is safe
+            print(f"\033[1;36m[zclaude]\033[0m {msg}", flush=True)
 
     def run(self) -> None:
         logger.info(
@@ -534,18 +553,18 @@ class Supervisor(threading.Thread):
 
                 if wait_sec > 0:
                     time_str = reset_dt.strftime("%H:%M:%S")
-                    msg = f"Rate limit reached! Resets at {time_str} (~{int(wait_sec // 60)}m {int(wait_sec % 60)}s remaining)."
-                    print(f"\n\033[1;33m[zclaude]\033[0m {msg}", flush=True)
-                    self.zellij.rename_pane(f"[zclaude: wait to {time_str}]", self.pane_id)
+                    remaining_str = f"{int(wait_sec // 60)}m {int(wait_sec % 60)}s"
+                    msg = f"Rate limit active. Resets at {time_str} (~{remaining_str} remaining)."
+                    self._notify(msg, pane_status=f"claude [wait: {time_str}]")
 
                     while self._running.is_set() and datetime.datetime.now() < target_dt:
                         remaining = int((target_dt - datetime.datetime.now()).total_seconds())
                         if remaining <= 0:
                             break
-                        # Check if user already resumed or cleared limit manually
+                        # Check if Claude resumed early (user input, early reset, etc.)
                         fresh_screen = self.zellij.dump_screen(self.pane_id)
                         if is_working(fresh_screen):
-                            print("\n\033[1;32m[zclaude]\033[0m Claude resumed early; resuming monitor.", flush=True)
+                            self._notify("Claude resumed; resuming monitor.", pane_status="claude")
                             break
                         time.sleep(min(remaining, 5))
 
@@ -560,11 +579,8 @@ class Supervisor(threading.Thread):
             if is_stalled(screen):
                 self.stall_attempts += 1
                 backoff = min(60 * (2 ** (self.stall_attempts - 1)), 600)
-                print(
-                    f"\n\033[1;33m[zclaude]\033[0m Server overloaded/at capacity (attempt {self.stall_attempts}); retrying in {backoff}s...",
-                    flush=True,
-                )
-                self.zellij.rename_pane(f"[zclaude: stall retry in {backoff}s]", self.pane_id)
+                msg = f"Server overloaded/at capacity (attempt {self.stall_attempts}); retrying in {backoff}s..."
+                self._notify(msg, pane_status=f"claude [retry: {backoff}s]")
 
                 for _ in range(backoff):
                     if not self._running.is_set():
@@ -576,18 +592,42 @@ class Supervisor(threading.Thread):
                 continue
 
     def _resume_session(self) -> None:
-        """Safely dismiss any rate-limit options menu and inject the continue message."""
+        """Safely dismiss any rate-limit options dialog and inject the continue message."""
         screen = self.zellij.dump_screen(self.pane_id)
-        if has_rate_limit_menu(screen):
-            # Dismiss the /rate-limit-options selector with Escape so Enter doesn't hit "Upgrade your plan"
-            logger.info("Dismissing /rate-limit-options menu before resuming.")
-            self.zellij.send_keys("Esc", self.pane_id)
-            time.sleep(0.6)
+        if is_working(screen):
+            self._notify("Claude is already active.", pane_status="claude")
+            return
 
-        print(f"\033[1;32m[zclaude]\033[0m Sending '{self.retry_msg}' to resume Claude...", flush=True)
-        self.zellij.write_chars(f"{self.retry_msg}\n", self.pane_id)
-        self.zellij.rename_pane("claude", self.pane_id)
-        time.sleep(2)
+        # 1. Dismiss any open interactive dialog menu with Escape (so Enter doesn't select 'Upgrade plan')
+        if has_rate_limit_menu(screen):
+            self._notify("Dismissing /rate-limit-options dialog...", pane_status="claude [resuming...]")
+            self.zellij.send_keys("Esc", self.pane_id)
+            time.sleep(0.5)
+            screen = self.zellij.dump_screen(self.pane_id)
+
+        # 2. Check if Claude already has "continue" pre-filled in its prompt draft
+        cleaned = clean_text(screen)
+        # Match prompt with continue, e.g. "❯ continue" or "> continue"
+        has_continue = bool(re.search(r"(?:❯|>)\s*" + re.escape(self.retry_msg) + r"\s*$", cleaned, re.MULTILINE))
+
+        self._notify(f"Submitting '{self.retry_msg}' to resume Claude...", pane_status="claude [resuming...]")
+
+        if not has_continue:
+            # Type the message into the prompt WITHOUT trailing \n (which triggers Shift+Enter in Ink)
+            self.zellij.write_chars(self.retry_msg, self.pane_id)
+            time.sleep(0.2)
+
+        # 3. Submit by sending the Enter key event (NOT a raw \n character)
+        self.zellij.send_keys("Enter", self.pane_id)
+        time.sleep(0.5)
+
+        # 4. Check if it was submitted; if not, send Enter once more as a safety measure
+        post_screen = self.zellij.dump_screen(self.pane_id)
+        if not is_working(post_screen) and self.retry_msg in clean_text(post_screen):
+            self.zellij.send_keys("Enter", self.pane_id)
+
+        self._notify("Claude resumed.", pane_status="claude")
+        time.sleep(1)
 
 
 # =============================================================================
