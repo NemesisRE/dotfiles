@@ -100,7 +100,7 @@ packages:
     tags:
       - default
       - required
-  - name: fastfetch-cli/fastfetch@2.68.1 # renovate: depName=fastfetch-cli/fastfetch
+  - name: fastfetch-cli/fastfetch@2.69.0 # renovate: depName=fastfetch-cli/fastfetch
     tags:
       - default
   - name: chmln/sd@v1.1.0 # renovate: depName=chmln/sd
