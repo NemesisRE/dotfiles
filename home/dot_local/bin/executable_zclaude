@@ -812,8 +812,51 @@ class Supervisor(threading.Thread):
                 self.zellij.rename_tab(self.base_tab_name, self.tab_id)
         except Exception:
             pass
+        self._write_status_file("Idle")
+
+    def _write_status_file(self, status: str, detail: str | None = None) -> None:
+        try:
+            status_dir = os.path.expanduser("~/.local/state/zclaude")
+            os.makedirs(status_dir, exist_ok=True)
+            status_path = os.path.join(status_dir, "status")
+
+            msg = detail or status
+            m = re.search(r"\[(.*?)\]", msg)
+            tag = m.group(1) if m else msg
+
+            if tag.startswith("wait:"):
+                rem = tag.replace("wait:", "").strip()
+                display_msg = f"Rate limit active · Resets at {rem}"
+            elif tag == "sessions":
+                display_msg = "Session overview active"
+            elif tag == "needs approval":
+                display_msg = "Waiting for tool / command execution approval"
+            elif tag == "question":
+                display_msg = "Waiting for user answer to question"
+            elif tag == "login required":
+                display_msg = "Authentication required (run /login)"
+            elif tag == "needs /compact":
+                display_msg = "Context window full (run /compact)"
+            elif tag == "budget exceeded":
+                display_msg = "Account budget limit reached"
+            elif tag.startswith("retry:"):
+                display_msg = f"Server overloaded · Retrying in {tag.replace('retry:', '').strip()}"
+            elif tag == "resuming...":
+                display_msg = "Resuming session..."
+            elif tag.lower() in ("claude", "ready"):
+                display_msg = "Ready at prompt"
+            elif tag.lower() in ("idle", "stopped"):
+                display_msg = "Idle"
+            else:
+                display_msg = tag
+
+            with open(status_path, "w", encoding="utf-8") as f:
+                f.write(display_msg + "\n")
+        except Exception as e:
+            logger.debug("Failed to write status file: %s", e)
 
     def _update_title(self, status: str) -> None:
+        self._write_status_file(status)
         if status != self._last_pane_title:
             self.zellij.rename_pane(status, self.pane_id)
             self._last_pane_title = status
@@ -841,6 +884,8 @@ class Supervisor(threading.Thread):
         logger.info(msg)
         if pane_status:
             self._update_title(pane_status)
+        else:
+            self._write_status_file(msg)
         if self.watch_mode:
             # Watcher mode has its own dedicated companion pane; stdout printing is safe
             print(f"\033[1;36m[zclaude]\033[0m {msg}", flush=True)
