@@ -1,0 +1,15 @@
+# Top monitor pane: CPU and processes stacked vertically
+
+[flags]
+rate = "1s"
+hide_time = false
+temperature_type = "c"
+
+[[row]]
+  type = "cpu"
+  ratio = 1
+[[row]]
+  type = "proc"
+  ratio = 1
+
+{{ template "bottom-styles.tmpl" . }}

@@ -140,7 +140,7 @@ packages:
   - name: tree-sitter/tree-sitter@v0.27.0 # renovate: depName=tree-sitter/tree-sitter
     tags:
       - default
-  - name: aristocratos/btop@v1.4.7 # renovate: depName=aristocratos/btop
+  - name: ClementTsang/bottom@0.14.9 # renovate: depName=ClementTsang/bottom
     tags:
       - default
   - name: jesseduffield/lazydocker@v0.25.2 # renovate: depName=jesseduffield/lazydocker

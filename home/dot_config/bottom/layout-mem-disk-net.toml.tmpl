@@ -1,0 +1,20 @@
+# Side monitor pane: Memory and disk side-by-side, network below
+
+[flags]
+rate = "1s"
+hide_time = false
+temperature_type = "c"
+
+[[row]]
+  ratio = 1
+  [[row.child]]
+    type = "mem"
+    ratio = 1
+  [[row.child]]
+    type = "disk"
+    ratio = 1
+[[row]]
+  type = "net"
+  ratio = 1
+
+{{ template "bottom-styles.tmpl" . }}

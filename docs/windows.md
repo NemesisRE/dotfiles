@@ -197,7 +197,7 @@ Aqua manages cross-platform developer tools on Windows without needing separate 
 | **lazydocker** | Terminal Docker & Compose UI | `lazydocker` / `lzd` |
 | **lazyjournal** | Multi-source log viewer & TUI | `lazyjournal` / `lzj` / `lj` |
 | **lnav** | Advanced log file navigator & SQL analyzer | `lnav` |
-| **btop** | System resource monitor | `btop` |
+| **bottom** | System resource monitor | `btm` |
 | **zellij** | Builtin terminal workspace multiplexer | `zellij` |
 
 Aqua tools are linked to `%LOCALAPPDATA%\aquaproj-aqua\bin` which is automatically added to `PATH`.

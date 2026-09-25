@@ -24,9 +24,12 @@ layout {
     pane name="Terminal" size="30%"
   }
 
+{{- if lookPath "btm" }}
+
   tab name="Monitor" {
-    pane command="btop" borderless=true
+    pane command="btm" borderless=true
   }
+{{- end }}
 
   swap_tiled_layout name="vertical-split" {
     tab max_panes=3 {
