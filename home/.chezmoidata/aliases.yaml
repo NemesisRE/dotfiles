@@ -5,9 +5,18 @@
 #   `requires` is set (bash: `command -v`, fish: `type -q`).
 # - nu (shell/nushell/aliases.nu.tmpl) only renders the ungated entries that don't
 #   set `nu: false`: nu's own `alias`/`def` declared inside an `if` block
-#   never escapes that block (see aliases.nu.tmpl's own comment), so the
-#   lsd/procs-gated group can't be a plain data-driven `alias` there — it
-#   stays hand-written as `def --wrapped` fallbacks.
+#   never escapes that block (see aliases.nu.tmpl's own comment), so every
+#   `requires`-gated group here (lsd/procs, plus bat/nvim/dust/duf below)
+#   can't be a plain data-driven `alias` in nu — each stays hand-written as
+#   a `def --wrapped` fallback there instead. `du` is deliberately never
+#   given a nu wrapper at all: it's nu's own structured builtin (`du`
+#   returns a table consumed in pipelines), and shadowing it with dust
+#   would break that — see docs/shells.md's "Known Parity Exceptions"
+#   section. `help` isn't aliased to tldr in ANY shell here, nu included —
+#   see the `help` group's own comment below for why. Nu's `ls` *is* still
+#   shadowed by lsd below, same as
+#   every other shell here, which is its own documented exception (losing
+#   nu's structured `ls` output) rather than a gap.
 # - PowerShell (Aliases.ps1.tmpl) renders every group too, gated on
 #   Get-Command: `requires` when set, otherwise the alias's own command word
 #   (all aqua-managed tools here install on every OS, Windows included, so
@@ -47,6 +56,33 @@ nredf_aliases:
       aliases:
         - names: ["pst"]
           command: "procs --tree"
+    - requires: "bat"
+      aliases:
+        - names: ["cat"]
+          command: "bat --paging=never"
+    - requires: "nvim"
+      aliases:
+        - names: ["vim", "vi"]
+          command: "nvim"
+    # `du` has no nu wrapper at all (unlike cat/vim/df above/below): nu's own
+    # `du` is a structured builtin (returns a table, used in pipelines) and
+    # shadowing it with dust would break that — see the file-header comment
+    # and docs/shells.md's "Known Parity Exceptions" section.
+    - requires: "dust"
+      aliases:
+        - names: ["du"]
+          command: "dust"
+    - requires: "duf"
+      aliases:
+        - names: ["df"]
+          command: "duf"
+    # No `help` alias here at all (not even for bash/fish/PowerShell, unlike
+    # du/df above): unlike `du` (an external command everywhere but nu),
+    # `help` is a real, actively-used builtin/function in bash, fish *and*
+    # PowerShell too — not just nu's structured-table case — so aliasing it
+    # to tldr would shadow bash's `help` builtin, fish's doc-browser `help`,
+    # and PowerShell's Get-Help-wrapping `help` function. Run `tldr <cmd>`
+    # directly instead; see docs/shells.md's "Known Parity Exceptions".
     - requires: ""
       aliases:
         - names: ["k"]
@@ -84,12 +120,18 @@ nredf_aliases:
           ps: false
 
 # Commands whose value genuinely differs per shell (HOME interpolation,
-# `&&` vs `; and`, or nu needing real control flow) rather than being one
+# `&&` vs `; and`, or nu/PS needing real control flow) rather than being one
 # target command — so each shell field is spelled out instead of derived.
-# nu needs `nu_def` (a literal `def NAME [] { ... }` body) for both: nu's
-# `alias` is pure text substitution resolved at *definition* time (verified:
-# it cannot hold `$env.HOME` re-evaluated per call, nor a pipeline/`if`),
-# unlike bash/fish where an `alias` string is re-expanded on every invocation.
+# nu needs `nu_def` (a literal function body, always rendered as
+# `def --env NAME [] { ... }` — `--env` is harmless for entries that never
+# touch `$env`, and is required for the `cd`-based ones below): nu's `alias`
+# is pure text substitution resolved at *definition* time (verified: it
+# cannot hold `$env.HOME` re-evaluated per call, nor a pipeline/`if`),
+# unlike bash/fish where an `alias` string is re-expanded on every
+# invocation. `ps` is the equivalent PowerShell function body, rendered as
+# `function NAME { ... }`; `ps_requires` gates it behind `Get-Command` the
+# same way a group's `requires` does (omit it for a command that's always
+# safe to define, like the `cd`-based ones below).
 nredf_commands:
   - names: ["root"]
     # Each alias value below is embedded verbatim inside its shell's own
@@ -100,6 +142,12 @@ nredf_commands:
     fish: 'sudo -E \"HOME=\$HOME\" su -m'
     nu_def: |
       ^sudo -E $"HOME=($env.HOME)" su -m
+    # Gated on `su`: it's the one part of this command with no Windows
+    # equivalent at all (unlike `sudo`, which the repo's own `sudo` PS
+    # function already dispatches through gsudo/UAC), so this naturally
+    # never renders on Windows without a Windows-specific special case.
+    ps: 'sudo -E "HOME=$HOME" su -m'
+    ps_requires: "su"
   - names: ["aptall"]
     bash: "sudo apt update && sudo apt full-upgrade -y; sudo apt autoremove --purge -y; sudo apt autoclean"
     fish: "sudo apt update; and sudo apt full-upgrade -y; sudo apt autoremove --purge -y; sudo apt autoclean"
@@ -109,3 +157,30 @@ nredf_commands:
       }
       ^sudo apt autoremove --purge -y
       ^sudo apt autoclean
+    ps: |
+      sudo apt update
+      if ($LASTEXITCODE -eq 0) {
+        sudo apt full-upgrade -y
+      }
+      sudo apt autoremove --purge -y
+      sudo apt autoclean
+    ps_requires: "apt"
+  # `..`/`...`/`....` are one target command (`cd` N levels up) whose value
+  # is otherwise identical everywhere — they only live here, not in
+  # `nredf_aliases`, because nu needs real control flow (`def --env`, not a
+  # text-substitution `alias`) to make the `cd` stick after the call returns.
+  - names: [".."]
+    bash: "cd .."
+    fish: "cd .."
+    nu_def: "cd .."
+    ps: "Set-Location .."
+  - names: ["..."]
+    bash: "cd ../.."
+    fish: "cd ../.."
+    nu_def: "cd ../.."
+    ps: "Set-Location ../.."
+  - names: ["...."]
+    bash: "cd ../../.."
+    fish: "cd ../../.."
+    nu_def: "cd ../../.."
+    ps: "Set-Location ../../.."

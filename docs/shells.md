@@ -178,24 +178,34 @@ NREDF guarantees that common development commands behave identically regardless 
 
 | Command | Target Tool | Description |
 | :--- | :--- | :--- |
-| `ls` | `lsd` | Modern file listing with icons and colors |
+| `ls` | `lsd` | Modern file listing with icons and colors — **shadows Nushell's own structured `ls` builtin**, see below |
 | `ll` | `lsd -lFh --git` | Long format listing with Git status flags and human-readable sizes |
 | `la` | `lsd -lAFh --git` | Detailed listing including hidden files and Git status |
 | `tree` | `lsd --tree` | Recursive tree view with icons |
-| `cat` | `bat` | Syntax-highlighted output with OneDark-Pro theme |
+| `cat` | `bat --paging=never` | Syntax-highlighted output with OneDark-Pro theme, gated on `bat` |
+| `vim` / `vi` | `nvim` | Neovim editor, gated on `nvim` |
+| `du` | `dust` | Modern disk usage analyzer, gated on `dust` — **not aliased in Nushell**, see below |
+| `df` | `duf` | Modern disk free space viewer, gated on `duf` |
 | `lzg` / `lg` | `lazygit` | Terminal UI for Git |
 | `lzd` | `lazydocker` | Terminal UI for Docker and Docker Compose |
 | `lzj` / `lj` | `lazyjournal` | Terminal UI for multi-source log viewing & filtering |
 | `k` | `kubectl` | Kubernetes CLI shorthand |
 | `kctx` / `ctx` | `kubectx` | Fast Kubernetes context switcher |
 | `kns` / `ns` | `kubens` | Fast Kubernetes namespace switcher |
+| `..` | `cd ..` | Go up one directory |
+| `...` | `cd ../..` | Go up two directories |
+| `....` | `cd ../../..` | Go up three directories |
+| `root` | `sudo -E "HOME=$HOME" su -m` | Root shell that preserves your `$HOME` — gated on `su`, so **not on Windows** |
+| `aptall` | `apt update`/`full-upgrade`/`autoremove`/`autoclean` | One-shot Debian/Ubuntu system update — gated on `apt`, so only where it exists |
 | `yy` | Custom Function | Open **Yazi** file manager; changes terminal working directory on exit |
 | `cd <path>` | `zoxide` | Smart jump (falls back to standard `cd` if path exists) — **not in Nushell**, see below |
 | `z <query>` | `zoxide query` | Jump directly to highest ranked directory matching query |
 | `zi` | `zoxide query -i` | Interactive fuzzy search directory selection |
 
 > [!NOTE]
-> Nushell's `cd` is never replaced by zoxide (zoxide has no `nushell`-target `cd` integration upstream) — `z`/`zi` still work identically to every other shell here.
+> Nushell's `cd` is never replaced by zoxide (zoxide has no `nushell`-target `cd` integration upstream) — `z`/`zi` still work identically to every other shell here. Nushell's own `ls`/`du`/`help` are structured builtins (they return tables consumed in pipelines); `ls` is shadowed by the `lsd` alias here anyway, same as every other shell, but `du` deliberately is not — see "Known Parity Exceptions" below. `help` isn't aliased to `tldr` in *any* shell here (not just Nushell): it's a real, actively-used builtin/function in bash, fish and PowerShell too, not only nu's structured-table case, so aliasing it would shadow all three — run `tldr <command>` directly instead. `cat`/`vim`/`vi`/`df` are not nu builtins, so they get the same requires-gated behavior as every other shell (hand-written `def --wrapped` fallbacks in Nushell's case, since a `requires`-gated group can't be plain data-driven there — see `.chezmoidata/aliases.yaml`).
+>
+> PowerShell also has its own `which`/`touch` fallback functions (filling a real Windows gap: neither binary exists there) and `md5`/`sha1`/`sha256` convenience wrappers around `Get-FileHash` (`Functions/Functions.ps1`). These aren't in the table above because they're functions, not aliases to another tool, and Unix shells already have real `touch`/hashing tools natively — see "Known Parity Exceptions" below.
 
 ---
 
@@ -351,6 +361,10 @@ If you have open terminals when the background sync completes:
 
 | Item | Affected shell(s) | Why | Resolution |
 | :--- | :--- | :--- | :--- |
+| `ls` aliased to `lsd` | Nushell | Every other shell here aliases `ls` to `lsd`, and nu gets the same alias for muscle-memory parity — but nu's own `ls` is a structured builtin returning a table, and the `lsd`-backed wrapper returns plain text instead, same as the external-`ls`-based shells. | Accepted trade-off; scripts/pipelines inside nu that need structured output use `^ls` (or another structured command) explicitly instead of the shadowed `ls`. |
+| `du` not aliased to dust | Nushell | Unlike `ls`, nu's own `du` is a structured builtin actively used in pipelines (returns a directory-size table) — aliasing over it would break that, not just change formatting. | Not implemented; bash/zsh/fish/PowerShell get `du`→dust, nu users run `dust` directly. |
+| `help` never aliased to tldr | All five shells | Not just nu's case: bash's `help` builtin, fish's doc-browser `help` function, and PowerShell's Get-Help-wrapping `help` function are all real, actively-used commands, not dead weight to shadow. | Not implemented anywhere; run `tldr <command>` directly instead of `help <command>`. |
+| `which`/`touch` fallback functions, `md5`/`sha1`/`sha256` hash wrappers | Only in PowerShell | `which`/`touch` fill a genuine Windows gap (neither binary exists there); `md5`/`sha1`/`sha256` are convenience wrappers around `Get-FileHash` for verifying legacy vendor checksums. Unix shells already have real `touch` (and usually `which`) natively, and these are functions, not aliases to another CLI tool. | Not ported; out of scope for the alias table (see the "New helper functions" carve-out — these are functions, tracked separately from alias parity). |
 | Ctrl+Space fzf-tab completion widget | Nushell | Reedline (nu's line editor) has no primitive to replace the edit buffer with an external filter's output — every other shell's widget depends on exactly that. | Not implemented. Carapace's native Reedline completion menu (Tab) is nu's substitute. |
 | `zoxide --cmd cd` (replacing `cd` itself) | Nushell | zoxide itself has no nushell `cd` integration — an upstream gap, not this repo's. | `z`/`zi` aliases only; `cd` is never overridden in nu. |
 | Same-session cached tool-init refresh (atuin/zoxide/mise/carapace/fzf) | Nushell | nu's `source` requires the target file to exist on disk *before the file that sources it is even parsed* — true even inside a runtime `if path exists` guard. A cache regenerated this session can only be `source`d starting the *next* shell start. | Chezmoi seeds an empty placeholder (`create_`/`empty_`) for each cache file so a cold `source` never fails outright; a stale-but-present cache is used for the rest of the current session and refreshes for the next one. |

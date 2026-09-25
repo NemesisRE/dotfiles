@@ -15,7 +15,7 @@
 # leaves `foo` undefined afterward). So conditional tool-presence checks
 # below happen *inside* an unconditionally-defined wrapper, at call time,
 # not around the definition itself.
-{{- /* The plain-alias block below is generated from .chezmoidata/aliases.yaml's nredf_aliases (entries with `nu: true`); the `def`s after it from that file's nredf_commands (`nu_def` field) — keep bash/fish/nu in sync. */}}
+{{- /* The plain-alias block below is generated from .chezmoidata/aliases.yaml's nredf_aliases (entries with `nu: true`); the `def`s after it from that file's nredf_commands (`nu_def` field, always rendered with `--env` — see that file's own comment) — keep bash/fish/nu in sync. The hand-written `def --wrapped` block right below (ls/ll/la/tree, pst, cat, vim/vi, df) covers every `requires`-gated group in that same data file except du, which is deliberately never wrapped here at all — see aliases.yaml's header comment. There is no `help` group at all in any shell — see that group's own comment in aliases.yaml. */}}
 
 def --wrapped ls [...args] {
     if (which lsd | is-empty) {
@@ -33,6 +33,38 @@ def --wrapped la [...args] { ^lsd -lAFh --git ...$args }
 def --wrapped tree [...args] { ^lsd --tree ...$args }
 
 def --wrapped pst [...args] { ^procs --tree ...$args }
+
+def --wrapped cat [...args] {
+    if (which bat | is-empty) {
+        ^cat ...$args
+    } else {
+        ^bat --paging=never ...$args
+    }
+}
+def --wrapped vim [...args] {
+    if (which nvim | is-empty) {
+        ^vim ...$args
+    } else {
+        ^nvim ...$args
+    }
+}
+def --wrapped vi [...args] {
+    if (which nvim | is-empty) {
+        ^vi ...$args
+    } else {
+        ^nvim ...$args
+    }
+}
+# `df` (unlike `du`) isn't one of nu's own structured builtins, so it
+# gets the same requires-gated wrapper treatment as cat/vim above rather
+# than the file-header comment's documented exception.
+def --wrapped df [...args] {
+    if (which duf | is-empty) {
+        ^df ...$args
+    } else {
+        ^duf ...$args
+    }
+}
 {{ range .nredf_aliases.groups }}
 {{- if not .requires }}
 {{- range .aliases }}
@@ -47,7 +79,7 @@ alias {{ . }} = {{ $cmd }}
 {{- end }}
 {{- range .nredf_commands }}
 
-def {{ index .names 0 }} [] {
+def --env "{{ index .names 0 }}" [] {
 {{ .nu_def | trimSuffix "\n" | indent 4 }}
 }
 {{- end }}
