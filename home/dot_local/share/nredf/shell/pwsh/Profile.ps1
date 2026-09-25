@@ -188,6 +188,20 @@ if ($env:ISTERM) {
   NREDF_Step "inshellisense init"
 }
 
+# Aqua GitHub-token setup prompt and zellij auto-attach over SSH/WSL — mirror
+# _nredf_ensure_aqua_github_token / _nredf_remote_multiplexer, called at the
+# same point (end of startup) in common/rc.tmpl. Both functions gate on an
+# interactive console themselves, so this block is always safe to run,
+# including from a non-interactive/-NonInteractive or piped session.
+if (Test-Path function:\NREDF_EnsureAquaGithubToken) {
+  NREDF_EnsureAquaGithubToken
+  NREDF_Step "NREDF_EnsureAquaGithubToken"
+}
+if (Test-Path function:\NREDF_RemoteMultiplexer) {
+  NREDF_RemoteMultiplexer
+  NREDF_Step "NREDF_RemoteMultiplexer"
+}
+
 
 # End of startup profiling
 if ($ENV:NREDF_PROFILE_STARTUP -eq '1') {
