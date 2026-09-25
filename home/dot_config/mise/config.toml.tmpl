@@ -2,14 +2,13 @@
 # https://mise.jdx.dev/configuration.html
 
 [settings]
-# Automatically detect .nvmrc, .node-version, .python-version, etc.
-legacy_version_file = true
+# Read idiomatic version files (.nvmrc, .node-version, .python-version, ...)
+# for these tools. Idiomatic files are opt-in per tool since mise 2025.10;
+# the old legacy_version_file switch no longer enables them.
+idiomatic_version_file_enable_tools = ["node", "python"]
 
 # Automatically install missing tool versions on cd
 auto_install = true
-
-# Use shims
-experimental = false
 
 [tools]
 node = "26.9.0"

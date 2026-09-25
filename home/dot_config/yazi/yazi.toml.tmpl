@@ -25,6 +25,11 @@ tab_size = 2
 prepend_fetchers = [
 	{ url = "*", run = "git", group = "git" },
 	{ url = "*/", run = "git", group = "git" },
+	# mime-ext: extension-database MIME lookup instead of spawning file(1) per
+	# file (a big win on Windows, where file.exe comes from Git for Windows).
+	# init.lua enables fallback_file1 so unknown extensions still use file(1).
+	{ url = "local://*", run = "mime-ext.local", prio = "high", group = "mime" },
+	{ url = "remote://*", run = "mime-ext.remote", prio = "high", group = "mime" },
 ]
 prepend_previewers = [
 	# Archive previewer
@@ -34,5 +39,8 @@ prepend_previewers = [
 	{ mime = "application/7z-compressed",  run = "ouch" },
 	{ mime = "application/rar",            run = "ouch" },
 	{ mime = "application/xz",             run = "ouch" },
-  { mime = "text/markdown", run  = 'piper -- CLICOLOR_FORCE=1 glow -w=$w -s=dark "$1"' },
+	# glow.yml sets pager: true for interactive use, and glow 3.0 ignores
+	# --pager=false once that's on; PAGER=cat makes glow's own pager a no-op
+	# instead, so this preview still prints straight to yazi's preview pane.
+	{ mime = "text/markdown", run = 'piper -- PAGER=cat CLICOLOR_FORCE=1 glow -w=$w -s=dark "$1"' },
 ]
