@@ -13,8 +13,11 @@ temperature_type = "c"
   [[row.child]]
     type = "disk"
     ratio = 1
+
 [[row]]
-  type = "net"
   ratio = 1
+  [[row.child]]
+    type = "net"
+    ratio = 1
 
 {{ template "bottom-styles.tmpl" . }}

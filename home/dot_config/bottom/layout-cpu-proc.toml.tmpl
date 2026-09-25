@@ -6,10 +6,13 @@ hide_time = false
 temperature_type = "c"
 
 [[row]]
-  type = "cpu"
   ratio = 1
+  [[row.child]]
+    type = "cpu"
+
 [[row]]
-  type = "proc"
   ratio = 1
+  [[row.child]]
+    type = "proc"
 
 {{ template "bottom-styles.tmpl" . }}
