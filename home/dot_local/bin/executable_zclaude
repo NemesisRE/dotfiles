@@ -12,6 +12,7 @@ import argparse
 import datetime
 import json
 import logging
+import math
 import os
 import platform
 import re
@@ -163,7 +164,16 @@ class ZellijController:
         cmd = self._cmd(*args)
         try:
             res = subprocess.run(cmd, capture_output=True, text=True, check=False)
-            return res.stdout if res.returncode == 0 else ""
+            if res.returncode == 0 and res.stdout:
+                return res.stdout
+            # Fallback to focused pane if explicit pane_id failed
+            if pane_id:
+                fb_args = ["dump-screen"]
+                if full:
+                    fb_args.append("-f")
+                fb_res = subprocess.run(self._cmd(*fb_args), capture_output=True, text=True, check=False)
+                return fb_res.stdout if fb_res.returncode == 0 else ""
+            return ""
         except Exception as e:
             logger.debug("dump_screen failed: %s", e)
             return ""
@@ -176,7 +186,12 @@ class ZellijController:
         cmd = self._cmd(*args)
         try:
             res = subprocess.run(cmd, capture_output=True, text=True, check=False)
-            return res.returncode == 0
+            if res.returncode == 0:
+                return True
+            if pane_id:
+                fb_res = subprocess.run(self._cmd("write-chars", text), capture_output=True, text=True, check=False)
+                return fb_res.returncode == 0
+            return False
         except Exception as e:
             logger.warning("write_chars failed: %s", e)
             return False
@@ -189,7 +204,12 @@ class ZellijController:
         cmd = self._cmd(*args)
         try:
             res = subprocess.run(cmd, capture_output=True, text=True, check=False)
-            return res.returncode == 0
+            if res.returncode == 0:
+                return True
+            if pane_id:
+                fb_res = subprocess.run(self._cmd("send-keys", key), capture_output=True, text=True, check=False)
+                return fb_res.returncode == 0
+            return False
         except Exception as e:
             logger.warning("send_keys failed: %s", e)
             return False
@@ -202,8 +222,14 @@ class ZellijController:
         cmd = self._cmd(*args)
         try:
             res = subprocess.run(cmd, capture_output=True, text=True, check=False)
-            return res.returncode == 0
-        except Exception:
+            if res.returncode == 0:
+                return True
+            if pane_id:
+                fb_res = subprocess.run(self._cmd("rename-pane", name), capture_output=True, text=True, check=False)
+                return fb_res.returncode == 0
+            return False
+        except Exception as e:
+            logger.debug("rename_pane failed: %s", e)
             return False
 
     def list_panes(self) -> list[dict]:
@@ -245,11 +271,16 @@ LIMIT_PATTERNS = [
         r"(?:claude|claude code)?\s*usage limit reached",
         r"(?:session|weekly|daily|monthly|[0-9]+-hour) limit reached",
         r"\blimit reached\b",
+        r"\blimit exceeded\b",
+        r"\brate[- ]limit(?:ed)?\b",
+        r"\bratelimit(?:ed)?\b",
+        r"\brate_limit\b",
         r"\bquota (?:exceeded|reached)\b",
         r"you'?re out of (?:usage|credits|messages)",
         r"\brate_limit_error\b",
-        r"\bratelimit(?:ed)?\b",
-        r"\bhttp 429\b|\bstatus[: ]+429\b",
+        r"\bhttp 429\b|\bstatus[: ]+429\b|\b429 too many requests\b",
+        r"stop and wait for limit to reset",
+        r"resets?\s*(?:in|at|tomorrow|\d)",
         r"nutzungslimit erreicht",
         r"limite d'utilisation atteinte",
         r"límite de uso alcanzado",
@@ -282,8 +313,7 @@ WORKING_PATTERNS = [
         r"ctrl\+c to (?:stop|interrupt)",
         r"waiting for [0-9]+ background agents? to finish",
         r"[✢✳✶✷✸✹✺✻✽*][ ]?[a-z]{3,}…",
-        r"…\s*[0-9]+(?:h|m|s)(?:[ 0-9hms]{0,8})\s*·\s*↓",
-        r"\bworking\s*\([0-9]+[hms]",
+        r"\bthinking…",
     ]
 ]
 
@@ -304,7 +334,6 @@ IGNORE_PATTERNS = [
         r"not your usage limit",
         r"temporarily limiting requests",
         r"approaching (?:your )?.{0,16}limit",
-        r"zclaude|claude-retrier|claude-auto-retry",
     ]
 ]
 
@@ -322,6 +351,8 @@ def is_rate_limited(text: str) -> bool:
     for ign in IGNORE_PATTERNS:
         if ign.search(cleaned):
             return False
+    if has_rate_limit_menu(cleaned):
+        return True
     for pat in LIMIT_PATTERNS:
         if pat.search(cleaned):
             return True
@@ -370,10 +401,12 @@ def parse_reset_time(text: str, now: datetime.datetime | None = None) -> datetim
     if now is None:
         now = datetime.datetime.now()
     cleaned = clean_text(text).lower()
+    # Normalize bullet points, middle dots, dashes to spaces
+    cleaned = re.sub(r"[·•|\-]", " ", cleaned)
 
-    # 1. Relative: 'resets in 2 hours 15 minutes' / 'resets in 45m'
+    # 1. Relative: 'resets in 2 hours 15 minutes' / 'resets in 45m' / 'retry in 10m'
     m = re.search(
-        r"resets?\s+in\s+(?:(\d+)\s*(?:hours?|hrs?|h)\b)?(?:\s*(?:and\s*)?(\d+)\s*(?:minutes?|mins?|m)\b)?",
+        r"(?:resets?|retry|try again)\s*(?:in|after)?\s+(?:(\d+)\s*(?:hours?|hrs?|h)\b)?(?:\s*(?:and\s*)?(\d+)\s*(?:minutes?|mins?|m)\b)?",
         cleaned,
     )
     if m and (m.group(1) or m.group(2)):
@@ -382,33 +415,8 @@ def parse_reset_time(text: str, now: datetime.datetime | None = None) -> datetim
         if hrs > 0 or mins > 0:
             return now + datetime.timedelta(hours=hrs, minutes=mins)
 
-    # 2. 12-hour: 'resets at 3:15 pm' / 'resets 3pm' / 'resets at 11:30am'
-    m = re.search(r"resets?\s+(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)", cleaned)
-    if m:
-        hr = int(m.group(1))
-        mn = int(m.group(2)) if m.group(2) else 0
-        ampm = m.group(3)
-        if ampm == "pm" and hr < 12:
-            hr += 12
-        elif ampm == "am" and hr == 12:
-            hr = 0
-        target = now.replace(hour=hr, minute=mn, second=0, microsecond=0)
-        if target <= now:
-            target += datetime.timedelta(days=1)
-        return target
-
-    # 3. 24-hour: 'resets at 15:30' / 'resets 15:30'
-    m = re.search(r"resets?\s+(?:at\s+)?([01]?\d|2[0-3]):([0-5]\d)", cleaned)
-    if m:
-        hr = int(m.group(1))
-        mn = int(m.group(2))
-        target = now.replace(hour=hr, minute=mn, second=0, microsecond=0)
-        if target <= now:
-            target += datetime.timedelta(days=1)
-        return target
-
-    # 4. Tomorrow: 'resets tomorrow at 9:00 am'
-    m = re.search(r"resets?\s+tomorrow(?:\s+at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?", cleaned)
+    # 2. Tomorrow: 'resets tomorrow at 9:00 am' / 'resets tomorrow 9am'
+    m = re.search(r"resets?\s+tomorrow(?:[\s:]*(?:at\s+)?)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?", cleaned)
     if m:
         hr = int(m.group(1))
         mn = int(m.group(2)) if m.group(2) else 0
@@ -418,6 +426,31 @@ def parse_reset_time(text: str, now: datetime.datetime | None = None) -> datetim
         elif ampm == "am" and hr == 12:
             hr = 0
         target = (now + datetime.timedelta(days=1)).replace(hour=hr, minute=mn, second=0, microsecond=0)
+        return target
+
+    # 3. 12-hour: 'resets at 3:15 pm' / 'resets 3pm' / 'resets: 11:30am' / 'resets 4:00 pm'
+    m = re.search(r"resets?[\s:]*(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)", cleaned)
+    if m:
+        hr = int(m.group(1))
+        mn = int(m.group(2)) if m.group(2) else 0
+        ampm = m.group(3)
+        if ampm == "pm" and hr < 12:
+            hr += 12
+        elif ampm == "am" and hr == 12:
+            hr = 0
+        target = now.replace(hour=hr, minute=mn, second=0, microsecond=0)
+        if target <= now:
+            target += datetime.timedelta(days=1)
+        return target
+
+    # 4. 24-hour: 'resets at 15:30' / 'resets 15:30' / 'resets: 15:30'
+    m = re.search(r"resets?[\s:]*(?:at\s+)?([01]?\d|2[0-3]):([0-5]\d)", cleaned)
+    if m:
+        hr = int(m.group(1))
+        mn = int(m.group(2))
+        target = now.replace(hour=hr, minute=mn, second=0, microsecond=0)
+        if target <= now:
+            target += datetime.timedelta(days=1)
         return target
 
     # 5. ISO 8601: 2026-09-24T15:30:00
@@ -470,7 +503,8 @@ def inspect_claude_transcripts() -> datetime.datetime | None:
                         if isinstance(raw, (int, float)):
                             return datetime.datetime.fromtimestamp(raw / 1000.0)
                         elif isinstance(raw, str):
-                            return datetime.datetime.fromisoformat(raw.replace("Z", "+00:00"))
+                            dt = datetime.datetime.fromisoformat(raw.replace("Z", "+00:00"))
+                            return dt.astimezone().replace(tzinfo=None)
                 except Exception:
                     pass
     except Exception:
@@ -533,39 +567,56 @@ class Supervisor(threading.Thread):
             if not screen:
                 continue
 
-            if is_working(screen):
-                # Claude is active and working; reset transient stall counters
-                self.stall_attempts = 0
-                continue
-
-            # Check 1: Rate limit
+            # Check 1: Rate limit (ALWAYS evaluate rate limit first!)
             if is_rate_limited(screen):
                 reset_dt = parse_reset_time(screen)
                 if not reset_dt:
                     reset_dt = inspect_claude_transcripts()
-                if not reset_dt:
-                    # Fallback wait: 5 minutes if time couldn't be parsed
-                    logger.warning("Rate limit detected but reset time could not be parsed; waiting 5 minutes.")
-                    reset_dt = datetime.datetime.now() + datetime.timedelta(minutes=5)
+                if not reset_dt or reset_dt <= datetime.datetime.now():
+                    if reset_dt and (datetime.datetime.now() - reset_dt).total_seconds() > 60:
+                        reset_dt += datetime.timedelta(hours=12)
+                    if not reset_dt or reset_dt <= datetime.datetime.now():
+                        # Fallback wait: 5 minutes if time couldn't be parsed or was in the past
+                        logger.warning("Rate limit detected but reset time is in the past or unknown; waiting 5 minutes.")
+                        reset_dt = datetime.datetime.now() + datetime.timedelta(minutes=5)
 
                 target_dt = reset_dt + datetime.timedelta(seconds=self.margin_sec)
                 wait_sec = (target_dt - datetime.datetime.now()).total_seconds()
 
                 if wait_sec > 0:
                     time_str = reset_dt.strftime("%H:%M:%S")
-                    remaining_str = f"{int(wait_sec // 60)}m {int(wait_sec % 60)}s"
-                    msg = f"Rate limit active. Resets at {time_str} (~{remaining_str} remaining)."
-                    self._notify(msg, pane_status=f"claude [wait: {time_str}]")
+                    rem_min = max(0, int(math.ceil(wait_sec / 60.0)))
+                    last_min = rem_min
+                    init_title = f"claude [wait: {time_str} ({rem_min}m)]"
+                    msg = f"Rate limit active. Resets at {time_str} (~{int(wait_sec // 60)}m {int(wait_sec % 60)}s remaining)."
+                    self._notify(msg, pane_status=init_title)
 
                     while self._running.is_set() and datetime.datetime.now() < target_dt:
                         remaining = int((target_dt - datetime.datetime.now()).total_seconds())
                         if remaining <= 0:
                             break
-                        # Check if Claude resumed early (user input, early reset, etc.)
+
                         fresh_screen = self.zellij.dump_screen(self.pane_id)
-                        if is_working(fresh_screen):
-                            self._notify("Claude resumed; resuming monitor.", pane_status="claude")
-                            break
+                        if fresh_screen:
+                            # Early exit if user resumed and rate limit cleared
+                            if not is_rate_limited(fresh_screen) and is_working(fresh_screen):
+                                self._notify("Claude resumed; resuming monitor.", pane_status="claude")
+                                break
+
+                            # Check if a new or updated reset time appeared on screen
+                            updated_reset = parse_reset_time(fresh_screen)
+                            if updated_reset and abs((updated_reset - reset_dt).total_seconds()) > 30:
+                                reset_dt = updated_reset
+                                target_dt = reset_dt + datetime.timedelta(seconds=self.margin_sec)
+                                time_str = reset_dt.strftime("%H:%M:%S")
+                                logger.info("Detected updated rate limit reset time: %s", time_str)
+
+                        # Update pane title with live countdown
+                        rem_min = max(0, int(math.ceil(remaining / 60.0)))
+                        if rem_min != last_min:
+                            last_min = rem_min
+                            self.zellij.rename_pane(f"claude [wait: {time_str} ({rem_min}m)]", self.pane_id)
+
                         time.sleep(min(remaining, 5))
 
                     if not self._running.is_set():
@@ -575,7 +626,13 @@ class Supervisor(threading.Thread):
                 self._resume_session()
                 continue
 
-            # Check 2: Transient server overload / capacity stall
+            # Check 2: Mid-turn activity
+            if is_working(screen):
+                # Claude is active and working; reset transient stall counters
+                self.stall_attempts = 0
+                continue
+
+            # Check 3: Transient server overload / capacity stall
             if is_stalled(screen):
                 self.stall_attempts += 1
                 backoff = min(60 * (2 ** (self.stall_attempts - 1)), 600)
@@ -743,6 +800,15 @@ def main() -> int:
         format="[%(asctime)s] %(levelname)s: %(message)s",
         datefmt="%H:%M:%S",
     )
+    # Log to ~/.local/state/zclaude/zclaude.log so supervisor events can be inspected
+    log_dir = os.path.expanduser("~/.local/state/zclaude")
+    try:
+        os.makedirs(log_dir, exist_ok=True)
+        fh = logging.FileHandler(os.path.join(log_dir, "zclaude.log"), encoding="utf-8")
+        fh.setFormatter(logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
+        logger.addHandler(fh)
+    except Exception:
+        pass
 
     zellij = ZellijController(session_name=args.session)
     if not zellij.is_available():
