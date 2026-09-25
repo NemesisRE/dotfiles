@@ -25,7 +25,9 @@ function sudo {
     $argString = $args -join ' '
     Start-Process powershell -Verb RunAs -ArgumentList "-NoExit -Command $argString"
   } else {
-    & sudo @args
+    # Not `& sudo @args`: this function is itself named `sudo`, so an unqualified
+    # call would recurse into itself instead of the external binary.
+    & (Get-Command -CommandType Application sudo | Select-Object -First 1) @args
   }
 }
 
@@ -128,7 +130,7 @@ Options:
       $dataHome = if (-not [string]::IsNullOrEmpty($ENV:XDG_DATA_HOME)) {
         $ENV:XDG_DATA_HOME
       } else {
-        Join-Path $HOME (if ($IsWindows) { '.local\share' } else { '.local/share' })
+        Join-Path $HOME $(if ($IsWindows) { '.local\share' } else { '.local/share' })
       }
       $fallbackPkgs = Join-Path (Join-Path $dataHome 'aquaproj-aqua') 'pkgs'
       if (Test-Path $fallbackPkgs) {
