@@ -13,12 +13,12 @@ layout {
 
   tab name="Monitor" focus=true split_direction="horizontal" {
     pane command="btm" size="40%" borderless=true {
-      args "-C" "{{ .chezmoi.homeDir }}/.config/bottom/layout-cpu-proc.toml"
+      args "-C" "{{ .chezmoi.homeDir }}/.config/bottom/layout-top.toml"
     }
     pane split_direction="vertical" {
       pane name="Term" focus=true
       pane command="btm" size="25%" borderless=true {
-        args "-C" "{{ .chezmoi.homeDir }}/.config/bottom/layout-mem-disk-net.toml"
+        args "-C" "{{ .chezmoi.homeDir }}/.config/bottom/layout-side.toml"
       }
     }
   }

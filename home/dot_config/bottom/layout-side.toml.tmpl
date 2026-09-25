@@ -1,4 +1,4 @@
-# Side monitor pane: Memory and disk side-by-side, network below
+# Side monitor pane: Disk and Network stacked vertically
 
 [flags]
 rate = "1s"
@@ -8,16 +8,11 @@ temperature_type = "c"
 [[row]]
   ratio = 1
   [[row.child]]
-    type = "mem"
-    ratio = 1
-  [[row.child]]
     type = "disk"
-    ratio = 1
 
 [[row]]
   ratio = 1
   [[row.child]]
     type = "net"
-    ratio = 1
 
 {{ template "bottom-styles.tmpl" . }}
