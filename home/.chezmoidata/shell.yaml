@@ -3,4 +3,4 @@ shell:
   multiplexer: true
   wsl_multiplexer: false
   ssh:
-    agent: "default" # options: default, bitwarden, pipe, gpg
+    agent: "default" # options: default, bitwarden, pipe, gpg, 1password (or onepassword), system

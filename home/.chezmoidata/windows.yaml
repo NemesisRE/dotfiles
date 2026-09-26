@@ -11,5 +11,10 @@ windows:
     memory: "16GB"
     processors: 8
     networking_mode: "mirrored"
+    # Was true (ac13b10), but every other opt-in toggle in this file defaults
+    # to the safe/off value and only takes effect once sync_config is also
+    # true — nested virtualization enables Hyper-V-based VMs inside WSL,
+    # which isn't something to turn on for everyone by default either.
+    nested_virtualization: false
   winget:
     sync_settings: false
