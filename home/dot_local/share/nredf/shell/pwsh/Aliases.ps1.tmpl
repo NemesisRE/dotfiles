@@ -78,3 +78,10 @@ if (-not (Get-Command touch -ErrorAction SilentlyContinue)) {
   }
 }
 
+# Shell-behavior toggles from .chezmoidata/shell.yaml, fixed at chezmoi-apply
+# time — same pattern common/rc.tmpl (bash/zsh/fish) and nu's env.nu.tmpl
+# use. Profile.ps1/Sources.ps1 aren't chezmoi templates, so this is the
+# first place in the pwsh load chain that can render them; consumed by
+# NREDF_RemoteMultiplexer in Functions/NREDF_Multiplexer.ps1.
+$ENV:NREDF_SHELL_MULTIPLEXER = '{{ .shell.multiplexer }}'
+$ENV:NREDF_SHELL_WSL_MULTIPLEXER = '{{ if hasKey .shell "wsl_multiplexer" }}{{ .shell.wsl_multiplexer }}{{ else }}false{{ end }}'
