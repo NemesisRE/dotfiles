@@ -2,6 +2,8 @@
 #!/usr/bin/env bash
 # chezmoi run_onchange_before — installs prerequisite packages on Linux.
 # packages.yaml hash: {{ include ".chezmoidata/packages.yaml" | sha256sum }}
+# Named 10-* so it sorts (and runs) before install-tools.sh, which needs the curl
+# this installs: chezmoi runs the scripts of a phase in order of target name.
 
 set -euo pipefail
 

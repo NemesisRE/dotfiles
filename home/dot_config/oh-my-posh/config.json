@@ -2,8 +2,12 @@
   "$schema": "https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/schema.json",
   "version": 4,
   "final_space": false,
+  "upgrade": {
+    "notice": false,
+    "auto": false
+  },
   "console_title_template": "{{ .Shell }} in {{ .Folder }}",
-  "terminal_background": "#1e1e1e",
+  "terminal_background": "#282C34",
   "transient_prompt": {
     "type": "text",
     "style": "plain",
@@ -12,6 +16,10 @@
       "{{ if gt .Code 0 }}1{{ end }}"
     ],
     "template": "❯ "
+  },
+  "secondary_prompt": {
+    "foreground": "8",
+    "template": "  ❯ "
   },
   "blocks": [
     {
@@ -32,6 +40,22 @@
           "template": " {{ .Icon }} "
         },
         {
+          "type": "root",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "foreground": "15",
+          "background": "1",
+          "template": "  "
+        },
+        {
+          "type": "text",
+          "style": "powerline",
+          "powerline_symbol": "",
+          "foreground": "0",
+          "background": "6",
+          "template": "{{ if or .Env.SSH_CONNECTION .Env.SSH_CLIENT }}  {{ .UserName }}@{{ .HostName }} {{ end }}"
+        },
+        {
           "type": "shell",
           "style": "powerline",
           "powerline_symbol": "",
@@ -44,6 +68,7 @@
               "cmd": "",
               "fish": "󰈺",
               "nu": "󰑣",
+              "powershell": "󰨊",
               "pwsh": "󰨊",
               "sh": "",
               "shell": "",
@@ -72,12 +97,12 @@
           "background_templates": [
             "{{ if or .Working.Changed .Staging.Changed }}3{{ end }}"
           ],
-          "template": " {{ .UpstreamIcon }}{{ .HEAD }}{{ if .BranchStatus }} {{ .BranchStatus }}{{ end }}{{ if gt .StashCount 0 }} *{{ .StashCount }}{{ end }}{{ if gt .Working.Unmerged 0 }} ~{{ .Working.Unmerged }}{{ end }}{{ if gt .Staging.Added 0 }} +{{ .Staging.Added }}{{ end }}{{ if gt .Working.Modified 0 }} !{{ .Working.Modified }}{{ end }}{{ if gt .Working.Untracked 0 }} ?{{ .Working.Untracked }}{{ end }}{{ if gt .Working.Deleted 0 }} ✘{{ .Working.Deleted }}{{ end }} ",
+          "template": " {{ .UpstreamIcon }}{{ .HEAD }}{{ if .BranchStatus }} {{ .BranchStatus }}{{ end }}{{ if gt .StashCount 0 }} *{{ .StashCount }}{{ end }}{{ if gt .Working.Unmerged 0 }} ~{{ .Working.Unmerged }}{{ end }}{{ $staged := add .Staging.Added .Staging.Modified .Staging.Deleted }}{{ if gt $staged 0 }} +{{ $staged }}{{ end }}{{ $unstaged := add .Working.Added .Working.Modified }}{{ if gt $unstaged 0 }} !{{ $unstaged }}{{ end }}{{ if gt .Working.Deleted 0 }} ✘{{ .Working.Deleted }}{{ end }}{{ if gt .Working.Untracked 0 }} ?{{ .Working.Untracked }}{{ end }} ",
           "options": {
-            "fetch_status": true,
-            "fetch_upstream_icon": true,
-            "fetch_push_status": true,
-            "branch_icon": "  "
+            "branch_icon": "  ",
+            "ignore_submodules": {
+              "*": "dirty"
+            }
           }
         }
       ]
@@ -125,11 +150,7 @@
           "leading_powerline_symbol": "",
           "foreground": "0",
           "background": "2",
-          "template": "  {{ .Full }} ",
-          "options": {
-            "display_mode": "context",
-            "home_enabled": false
-          }
+          "template": "  {{ .Full }} "
         },
         {
           "type": "go",
@@ -139,9 +160,9 @@
           "foreground": "0",
           "background": "4",
           "template": "  {{ .Full }} ",
-          "options": {
-            "display_mode": "context",
-            "home_enabled": false
+          "cache": {
+            "duration": "1h",
+            "strategy": "folder"
           }
         },
         {
@@ -153,10 +174,7 @@
           "background": "4",
           "template": "  {{ if .Venv }}{{ .Venv }} {{ end }}{{ .Full }} ",
           "options": {
-            "display_mode": "context",
-            "home_enabled": false,
-            "fetch_virtual_env": true,
-            "display_default": true
+            "display_mode": "context"
           }
         },
         {
@@ -167,33 +185,9 @@
           "foreground": "0",
           "background": "208",
           "template": "  {{ .Full }} ",
-          "options": {
-            "display_mode": "context",
-            "home_enabled": false
-          }
-        },
-        {
-          "type": "java",
-          "style": "powerline",
-          "powerline_symbol": "",
-          "leading_powerline_symbol": "",
-          "foreground": "1",
-          "background": "7",
-          "options": {
-            "display_mode": "context",
-            "home_enabled": false
-          }
-        },
-        {
-          "type": "ruby",
-          "style": "powerline",
-          "powerline_symbol": "",
-          "leading_powerline_symbol": "",
-          "foreground": "0",
-          "background": "1",
-          "options": {
-            "display_mode": "context",
-            "home_enabled": false
+          "cache": {
+            "duration": "1h",
+            "strategy": "folder"
           }
         },
         {
@@ -202,31 +196,33 @@
           "powerline_symbol": "",
           "leading_powerline_symbol": "",
           "foreground": "4",
-          "background": "0"
+          "background": "0",
+          "template": " 󱁢 {{ .WorkspaceName }} "
         },
         {
-          "type": "aws",
+          "type": "helm",
           "style": "powerline",
           "powerline_symbol": "",
           "leading_powerline_symbol": "",
-          "foreground": "7",
-          "background": "1"
+          "foreground": "0",
+          "background": "4",
+          "template": " 󰠳 {{ .Version }} ",
+          "options": {
+            "display_mode": "files"
+          },
+          "cache": {
+            "duration": "1h",
+            "strategy": "folder"
+          }
         },
         {
-          "type": "az",
+          "type": "docker",
           "style": "powerline",
           "powerline_symbol": "",
           "leading_powerline_symbol": "",
-          "foreground": "7",
-          "background": "4"
-        },
-        {
-          "type": "gcp",
-          "style": "powerline",
-          "powerline_symbol": "",
-          "leading_powerline_symbol": "",
-          "foreground": "7",
-          "background": "4"
+          "foreground": "0",
+          "background": "6",
+          "template": "{{ if not (or (eq .Context \"default\") (eq .Context \"desktop-linux\") (eq .Context \"colima\") (eq .Context \"orbstack\") (eq .Context \"rootless\")) }}  {{ .Context }} {{ end }}"
         },
         {
           "type": "time",
@@ -234,10 +230,7 @@
           "powerline_symbol": "",
           "foreground": "0",
           "background": "7",
-          "template": "<background,parentBackground></> {{ .CurrentDate | date .Format }} ",
-          "options": {
-            "time_format": "15:04:05"
-          }
+          "template": "<background,parentBackground></> {{ .CurrentDate | date .Format }} "
         }
       ]
     },
@@ -259,10 +252,7 @@
           "trailing_diamond": "",
           "foreground": "7",
           "background": "5",
-          "template": " 󱃾 {{ if and .Cluster (ne .Cluster .Context) }}{{ .Cluster }} :: {{ end }}{{ .Context }}/{{if .Namespace}}{{.Namespace}}{{else}}default{{end}} ",
-          "options": {
-            "parse_kubeconfig": true
-          }
+          "template": " 󱃾 {{ if and .Cluster (ne .Cluster .Context) }}{{ .Cluster }} :: {{ end }}{{ .Context }}/{{if .Namespace}}{{.Namespace}}{{else}}default{{end}} "
         },
         {
           "type": "text",
@@ -274,6 +264,23 @@
           "template": "❯ "
         }
       ]
+    }
+  ],
+  "tooltips": [
+    {
+      "type": "git",
+      "tips": [
+        "git",
+        "lg",
+        "lzg",
+        "lazygit"
+      ],
+      "style": "powerline",
+      "powerline_symbol": "",
+      "leading_powerline_symbol": "",
+      "foreground": "0",
+      "background": "7",
+      "template": " {{ if .Upstream }} {{ .Upstream }} {{ end }} {{ .Commit.Sha | trunc 7 }} {{ .Commit.Subject | trunc 48 }} "
     }
   ]
 }

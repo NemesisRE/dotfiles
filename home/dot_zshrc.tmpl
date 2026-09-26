@@ -72,7 +72,6 @@ if command -v sheldon >/dev/null 2>&1 && [[ -f "${XDG_CONFIG_HOME}/sheldon/plugi
 fi
 
 # zsh-specific extras
-#eval "$(starship init zsh)"
 if command -v _nredf_tool_fzf_source &>/dev/null; then
   _nredf_tool_fzf_source
   _nredf_step "fzf source"
@@ -80,7 +79,10 @@ fi
 if (( ${+widgets[atuin-search]} )); then
   bindkey '^r' atuin-search
 elif command -v atuin &>/dev/null; then
-  eval "$(atuin init zsh)"
+  _nredf_refresh_cached_shell_snippet \
+    "_nredf_atuin_init_zsh" \
+    "${XDG_CACHE_HOME}/nredf/init/atuin.zsh.sh" \
+    atuin init zsh
 fi
 
 if (( ${+functions[_nredf_setup_inshellisense]} )); then

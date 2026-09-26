@@ -1,0 +1,27 @@
+{{- if ne .chezmoi.os "windows" -}}
+#!/usr/bin/env bash
+# chezmoi run_onchange_after hook — locks (installs) sheldon's zsh plugins when
+# plugins.toml changes. Sorts after aqua.sh, which links sheldon itself.
+# plugins.toml hash: {{ includeTemplate "dot_config/sheldon/plugins.toml.tmpl" . | sha256sum }}
+# sheldon present at render time: {{ includeTemplate "hook-tool-present.tmpl" (dict "tool" "sheldon" "chezmoi" .chezmoi) }}
+# (re-runs this hook once sheldon appears; see .chezmoitemplates/hook-tool-present.tmpl)
+
+set -euo pipefail
+
+[[ -n "${CI:-}" ]] && exit 0
+[[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
+
+{{ template "hook-env.sh" . }}
+SHELDON_CONF="${XDG_CONFIG_HOME:-${HOME}/.config}/sheldon/plugins.toml"
+[[ -f "${SHELDON_CONF}" ]] || exit 0
+
+if command -v sheldon >/dev/null 2>&1; then
+  echo "==> Locking sheldon plugins"
+  if out="$(sheldon --color never lock 2>&1)"; then
+    echo "    Sheldon plugins locked successfully."
+  else
+    echo "==> Warning: sheldon lock failed (offline?); zsh plugins may be missing or stale:" >&2
+    echo "${out}" >&2
+  fi
+fi
+{{- end }}

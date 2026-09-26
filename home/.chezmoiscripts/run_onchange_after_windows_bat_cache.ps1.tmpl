@@ -1,6 +1,20 @@
-{{ if eq .chezmoi.os "windows" -}}
+{{- if eq .chezmoi.os "windows" -}}
+# chezmoi run_onchange_after Windows hook — rebuilds bat's theme cache.
 # OneDarkPro.tmTheme hash: {{ include "dot_config/bat/themes/OneDarkPro.tmTheme" | sha256sum }}
-if (Get-Command bat -ErrorAction SilentlyContinue) {
-  bat cache --build
+
+$ErrorActionPreference = 'Continue'
+
+if ($env:CI -or $env:NREDF_NO_BOOTSTRAP) {
+    exit 0
 }
-{{ end -}}
+
+{{ includeTemplate "hook-env.ps1" . }}
+
+if (Get-Command bat -ErrorAction SilentlyContinue) {
+    & bat cache --build
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "bat cache --build exited with code $LASTEXITCODE; continuing."
+    }
+}
+exit 0
+{{- end }}

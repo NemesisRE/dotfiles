@@ -1,0 +1,1348 @@
+#!/usr/bin/env python3
+"""zclaude - Cross-platform Claude Code supervisor & auto-resumer for Zellij.
+
+Keeps sessions alive across system idle sleep, detects Anthropic subscription
+rate limits and capacity errors, and automatically sends 'continue' once limits
+reset. Works seamlessly inside or outside Zellij on Linux, macOS, and Windows.
+"""
+
+from __future__ import annotations
+
+import argparse
+import datetime
+import json
+import logging
+import math
+import os
+import platform
+import re
+import shutil
+import subprocess
+import sys
+import threading
+import time
+
+__version__ = "1.0.0"
+
+logger = logging.getLogger("zclaude")
+
+# =============================================================================
+# Sleep Prevention (Cross-Platform Keep-Alive)
+# =============================================================================
+
+class SleepInhibitor:
+    """Prevents system and idle sleep while active across Windows, macOS, and Linux."""
+
+    def __init__(self, reason: str = "zclaude session active"):
+        self.reason = reason
+        self.os_type = platform.system().lower()
+        self._proc: subprocess.Popen | None = None
+        self._active = False
+
+    def start(self) -> bool:
+        if self._active:
+            return True
+        if self.os_type == "windows":
+            try:
+                import ctypes
+                # ES_CONTINUOUS | ES_SYSTEM_REQUIRED | ES_AWAYMODE_REQUIRED
+                flags = 0x80000000 | 0x00000001 | 0x00000040
+                ctypes.windll.kernel32.SetThreadExecutionState(flags)
+                self._active = True
+                logger.debug("Win32 SetThreadExecutionState keep-alive enabled.")
+                return True
+            except Exception as e:
+                logger.warning("Could not enable Windows sleep inhibition: %s", e)
+                return False
+        elif self.os_type == "darwin":
+            try:
+                # caffeinate prevents idle, system, and disk sleep while PID is alive
+                self._proc = subprocess.Popen(
+                    ["caffeinate", "-ims", "-w", str(os.getpid())],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                self._active = True
+                logger.debug("macOS caffeinate process started (PID %d).", self._proc.pid)
+                return True
+            except Exception as e:
+                logger.warning("Could not start macOS caffeinate: %s", e)
+                return False
+        elif self.os_type == "linux":
+            if shutil.which("systemd-inhibit"):
+                try:
+                    self._proc = subprocess.Popen(
+                        [
+                            "systemd-inhibit",
+                            "--what=idle:sleep",
+                            f"--why={self.reason}",
+                            "--mode=block",
+                            "sleep",
+                            "864000",
+                        ],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.DEVNULL,
+                    )
+                    self._active = True
+                    logger.debug("Linux systemd-inhibit started (PID %d).", self._proc.pid)
+                    return True
+                except Exception as e:
+                    logger.warning("Could not start Linux systemd-inhibit: %s", e)
+                    return False
+            else:
+                logger.debug("Linux systemd-inhibit not available, running without OS sleep lock.")
+                self._active = True
+                return True
+        return False
+
+    def stop(self) -> None:
+        if not self._active:
+            return
+        if self.os_type == "windows":
+            try:
+                import ctypes
+                # Reset to ES_CONTINUOUS only
+                ctypes.windll.kernel32.SetThreadExecutionState(0x80000000)
+                logger.debug("Win32 SetThreadExecutionState reset to normal.")
+            except Exception:
+                pass
+        if self._proc:
+            try:
+                self._proc.terminate()
+                self._proc.wait(timeout=2)
+            except Exception:
+                pass
+            self._proc = None
+        self._active = False
+        logger.debug("Sleep inhibitor deactivated.")
+
+    def __enter__(self) -> SleepInhibitor:
+        self.start()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.stop()
+
+
+# =============================================================================
+# Zellij Controller
+# =============================================================================
+
+class ZellijController:
+    """Interacts with Zellij via its CLI IPC (`zellij action`)."""
+
+    def __init__(self, session_name: str | None = None):
+        self.session_name = session_name or os.environ.get("ZELLIJ_SESSION_NAME", "zclaude")
+
+    def _cmd(self, *action_args: str) -> list[str]:
+        # If inside a Zellij session, 'zellij action' automatically targets the current session
+        if "ZELLIJ" in os.environ:
+            return ["zellij", "action", *action_args]
+        return ["zellij", "--session", self.session_name, "action", *action_args]
+
+    def has_session(self, session_name: str) -> bool:
+        try:
+            res = subprocess.run(["zellij", "list-sessions"], capture_output=True, text=True, check=False)
+            if res.returncode == 0:
+                for line in res.stdout.splitlines():
+                    parts = line.strip().split()
+                    if parts and parts[0] == session_name:
+                        return True
+        except Exception:
+            pass
+        return False
+
+    def is_available(self) -> bool:
+        return shutil.which("zellij") is not None
+
+    def dump_screen(self, pane_id: str | None = None, full: bool = False) -> str:
+        args = ["dump-screen"]
+        if full:
+            args.append("-f")
+        if pane_id:
+            args.extend(["-p", str(pane_id)])
+        cmd = self._cmd(*args)
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            if res.returncode == 0 and res.stdout:
+                return res.stdout
+            # Fallback to focused pane if explicit pane_id failed
+            if pane_id:
+                fb_args = ["dump-screen"]
+                if full:
+                    fb_args.append("-f")
+                fb_res = subprocess.run(self._cmd(*fb_args), capture_output=True, text=True, check=False)
+                return fb_res.stdout if fb_res.returncode == 0 else ""
+            return ""
+        except Exception as e:
+            logger.debug("dump_screen failed: %s", e)
+            return ""
+
+    def write_chars(self, text: str, pane_id: str | None = None) -> bool:
+        args = ["write-chars"]
+        if pane_id:
+            args.extend(["-p", str(pane_id)])
+        args.append(text)
+        cmd = self._cmd(*args)
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            if res.returncode == 0:
+                return True
+            if pane_id:
+                fb_res = subprocess.run(self._cmd("write-chars", text), capture_output=True, text=True, check=False)
+                return fb_res.returncode == 0
+            return False
+        except Exception as e:
+            logger.warning("write_chars failed: %s", e)
+            return False
+
+    def send_keys(self, key: str, pane_id: str | None = None) -> bool:
+        args = ["send-keys"]
+        if pane_id:
+            args.extend(["-p", str(pane_id)])
+        args.append(key)
+        cmd = self._cmd(*args)
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            if res.returncode == 0:
+                return True
+            if pane_id:
+                fb_res = subprocess.run(self._cmd("send-keys", key), capture_output=True, text=True, check=False)
+                return fb_res.returncode == 0
+            return False
+        except Exception as e:
+            logger.warning("send_keys failed: %s", e)
+            return False
+
+    def rename_pane(self, name: str, pane_id: str | None = None) -> bool:
+        args = ["rename-pane"]
+        if pane_id:
+            args.extend(["-p", str(pane_id)])
+        args.append(name)
+        cmd = self._cmd(*args)
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            if res.returncode == 0:
+                return True
+            if pane_id:
+                fb_res = subprocess.run(self._cmd("rename-pane", name), capture_output=True, text=True, check=False)
+                return fb_res.returncode == 0
+            return False
+        except Exception as e:
+            logger.debug("rename_pane failed: %s", e)
+            return False
+
+    def rename_tab(self, name: str, tab_id: int | str | None = None) -> bool:
+        args = ["rename-tab"]
+        if tab_id is not None:
+            args.extend(["-t", str(tab_id)])
+        args.append(name)
+        cmd = self._cmd(*args)
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            if res.returncode == 0:
+                return True
+            if tab_id is not None:
+                fb_res = subprocess.run(self._cmd("rename-tab", name), capture_output=True, text=True, check=False)
+                return fb_res.returncode == 0
+            return False
+        except Exception as e:
+            logger.debug("rename_tab failed: %s", e)
+            return False
+
+    def get_tab_info(self, pane_id: str | None = None) -> tuple[int | None, str | None]:
+        panes = self.list_panes()
+        for p in panes:
+            if not p.get("is_plugin", False):
+                if pane_id is None or str(p.get("id", "")) == str(pane_id):
+                    return p.get("tab_id"), p.get("tab_name")
+        return None, None
+
+    def list_panes(self) -> list[dict]:
+        cmd = self._cmd("list-panes", "--json")
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True, check=False)
+            if res.returncode == 0 and res.stdout.strip():
+                return json.loads(res.stdout)
+        except Exception as e:
+            logger.debug("list_panes failed: %s", e)
+        return []
+
+    def get_other_panes(self, current_pane_id: str | None = None) -> list[str]:
+        panes = self.list_panes()
+        result = []
+        for p in panes:
+            pid = str(p.get("id", ""))
+            if current_pane_id and pid == str(current_pane_id):
+                continue
+            # terminal panes only
+            if p.get("is_plugin", False):
+                continue
+            result.append(pid)
+        return result
+
+
+# =============================================================================
+# Pattern Matching & Time Parsing
+# =============================================================================
+
+# Rate limit indicators
+LIMIT_PATTERNS = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"you'?ve hit your (?:session|weekly|daily|monthly|usage|[0-9]+-hour)?\s*limit",
+        r"you have hit your (?:session|weekly|daily|monthly|usage|[0-9]+-hour)?\s*limit",
+        r"hit your (?:session|weekly|daily|monthly|usage|rate|[0-9]+-hour)\s+limit",
+        r"you'?ve reached your (?:session|weekly|daily|monthly|usage|rate|[0-9]+-hour)?\s*limit",
+        r"(?:claude|claude code)?\s*usage limit reached",
+        r"(?:session|weekly|daily|monthly|[0-9]+-hour) limit reached",
+        r"\blimit reached\b",
+        r"\blimit exceeded\b",
+        r"\brate[- ]limit(?:ed)?\b",
+        r"\bratelimit(?:ed)?\b",
+        r"\brate_limit\b",
+        r"\bquota (?:exceeded|reached)\b",
+        r"you'?re out of (?:usage|credits|messages)",
+        r"\brate_limit_error\b",
+        r"\bhttp 429\b|\bstatus[: ]+429\b|\b429 too many requests\b",
+        r"stop and wait for limit to reset",
+        r"resets?\s*(?:in|at|tomorrow|\d)",
+        r"nutzungslimit erreicht",
+        r"limite d'utilisation atteinte",
+        r"límite de uso alcanzado",
+        r"使用上限に達しました",
+    ]
+]
+
+# Transient capacity errors & network drops (nudge with backoff)
+STALL_PATTERNS = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"selected model is at capacity",
+        r"model is at capacity",
+        r"please try a different model",
+        r"\bserver_overloaded\b",
+        r"\boverloaded_error\b",
+        r"(?:server|service|model|api) is (?:currently )?overloaded",
+        r"we'?re (?:currently )?experiencing high demand",
+        r"\bhttp 529\b|\bstatus[: ]+529\b",
+        r"\bhttp 503\b|\bstatus[: ]+503\b",
+        r"\bservice unavailable\b",
+        r"\b(?:enotfound|econnreset|etimedout|econnrefused)\b",
+        r"\bfetch failed\b",
+        r"failed to connect to api\.anthropic\.com",
+        r"network error: (?:failed to fetch|socket hang up)",
+    ]
+]
+
+# Interactive session overview / picker
+SESSION_PICKER_PATTERNS = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"resume session \(\d+ of \d+\)",
+        r"(?:select|choose) a (?:conversation|session) to resume",
+        r"resume a (?:conversation|session)",
+        r"⌕ search…",
+        r"ctrl\+a to show all projects",
+        r"space to preview",
+        r"ctrl\+b to only show current",
+        r"conversation moved to the background",
+        r"enter opens it · esc returns to it",
+        r"describe a task for a new session",
+        r"enter to collapse · ctrl\+x to delete all",
+        r"\b\d+\s+awaiting input\b",
+        r"hand off a bigger task than you would chat through",
+    ]
+]
+
+# Tool execution & destructive action approvals
+APPROVAL_PATTERNS = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"do you want to (?:run|execute|proceed|accept)",
+        r"allow [a-z0-9_-]+ to (?:run|execute|edit|read|write)",
+        r"accept (?:this )?edit\?",
+        r"\b(?:1\.\s*yes|2\.\s*yes,?\s*don'?t ask again|3\.\s*no)\b",
+        r"\[y/n\]|\(y/n\)",
+        r"approve (?:this )?(?:tool|command|action)\?",
+    ]
+]
+
+# Interactive user feedback / multiple choice questions
+QUESTION_PATTERNS = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"claude needs (?:your )?answer",
+        r"which option do you prefer\?",
+        r"please choose an option:",
+        r"answer with [0-9]+",
+    ]
+]
+
+# Authentication / login failures
+AUTH_PATTERNS = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"please run /login",
+        r"claude code is not logged in",
+        r"authentication failed",
+        r"invalid api key",
+        r"please log in to continue",
+        r"not authenticated",
+    ]
+]
+
+# Context window exhaustion
+CONTEXT_PATTERNS = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"context limit reached",
+        r"conversation is too long",
+        r"run /compact to summarize",
+        r"prompt exceeds maximum context length",
+    ]
+]
+
+# Hard account budget caps
+BUDGET_PATTERNS = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"spend limit reached",
+        r"monthly budget exceeded",
+        r"you have reached your budget limit",
+        r"out of credits",
+        r"prepaid balance exhausted",
+    ]
+]
+
+# Mid-flight / busy activity (do not inject keys)
+WORKING_PATTERNS = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"esc to interrupt",
+        r"ctrl\+c to (?:stop|interrupt)",
+        r"waiting for [0-9]+ background agents? to finish",
+        r"[✢✳✶✷✸✹✺✻✽*][ ]?[a-z]{3,}…",
+        r"\bthinking…",
+    ]
+]
+
+# Interactive /rate-limit-options prompt (must escape out first!)
+MENU_PATTERNS = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"what do you want to do\?",
+        r"1\.\s*upgrade your plan",
+        r"stop and wait for limit to reset",
+    ]
+]
+
+# False positive ignores
+IGNORE_PATTERNS = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"not your usage limit",
+        r"temporarily limiting requests",
+        r"approaching (?:your )?.{0,16}limit",
+    ]
+]
+
+ANSI_ESCAPE = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+
+
+def clean_text(text: str) -> str:
+    """Strip ANSI escape sequences from terminal dump."""
+    return ANSI_ESCAPE.sub("", text)
+
+
+def is_in_session_picker(text: str) -> bool:
+    """Check if Claude Code is displaying the interactive session picker / conversation overview."""
+    cleaned = clean_text(text)
+    if re.search(r"resume session \(\d+ of \d+\)", cleaned, re.IGNORECASE):
+        return True
+    if re.search(r"conversation moved to the background", cleaned, re.IGNORECASE):
+        return True
+    if re.search(r"describe a task for a new session", cleaned, re.IGNORECASE):
+        return True
+    if re.search(r"enter opens it · esc returns to it", cleaned, re.IGNORECASE):
+        return True
+    matches = sum(1 for pat in SESSION_PICKER_PATTERNS if pat.search(cleaned))
+    return matches >= 2
+
+
+def is_waiting_for_approval(text: str) -> bool:
+    """Check if Claude is waiting for user confirmation or tool execution approval."""
+    if is_in_session_picker(text):
+        return False
+    cleaned = clean_text(text)
+    lines = [l.strip() for l in cleaned.splitlines() if l.strip()]
+    tail = "\n".join(lines[-15:])
+    for pat in APPROVAL_PATTERNS:
+        if pat.search(tail):
+            return True
+    return False
+
+
+def is_awaiting_user_question(text: str) -> bool:
+    """Check if Claude is asking the user a multiple-choice or direct feedback question."""
+    if is_in_session_picker(text) or is_waiting_for_approval(text):
+        return False
+    cleaned = clean_text(text)
+    lines = [l.strip() for l in cleaned.splitlines() if l.strip()]
+    tail = "\n".join(lines[-15:])
+    for pat in QUESTION_PATTERNS:
+        if pat.search(tail):
+            return True
+    return False
+
+
+def is_auth_required(text: str) -> bool:
+    """Check if Claude session is stopped due to expired credentials or missing login."""
+    cleaned = clean_text(text)
+    lines = [l.strip() for l in cleaned.splitlines() if l.strip()]
+    tail = "\n".join(lines[-25:])
+    for pat in AUTH_PATTERNS:
+        if pat.search(tail):
+            return True
+    return False
+
+
+def is_context_limit(text: str) -> bool:
+    """Check if conversation has exceeded context window and requires /compact."""
+    cleaned = clean_text(text)
+    lines = [l.strip() for l in cleaned.splitlines() if l.strip()]
+    tail = "\n".join(lines[-25:])
+    for pat in CONTEXT_PATTERNS:
+        if pat.search(tail):
+            return True
+    return False
+
+
+def is_budget_exceeded(text: str) -> bool:
+    """Check if hard account budget/spend cap has been reached (non-resetting)."""
+    cleaned = clean_text(text)
+    lines = [l.strip() for l in cleaned.splitlines() if l.strip()]
+    tail = "\n".join(lines[-25:])
+    for pat in BUDGET_PATTERNS:
+        if pat.search(tail):
+            return True
+    return False
+
+
+def is_at_prompt(text: str) -> bool:
+    """Check if Claude is waiting at an interactive input prompt."""
+    if is_in_session_picker(text) or is_waiting_for_approval(text) or is_awaiting_user_question(text):
+        return False
+    cleaned = clean_text(text)
+    lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
+    for line in lines[-8:]:
+        if re.match(r"^[❯>](?:\s|$)", line):
+            return True
+    return False
+
+
+PROMPT_PLACEHOLDERS = {
+    "describe a task for a new session",
+    "ask a question, or type / to see available commands",
+    "type a message...",
+    "type a message or @ to mention...",
+}
+
+
+def get_prompt_text(text: str) -> str | None:
+    """Extract current unsubmitted text from the prompt line, if any."""
+    cleaned = clean_text(text)
+    lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
+    for line in lines[-8:]:
+        m = re.match(r"^[❯>]\s*(.*)$", line)
+        if m:
+            val = m.group(1).strip()
+            if val.lower() in PROMPT_PLACEHOLDERS:
+                return ""
+            return val
+    return None
+
+
+def is_working(text: str) -> bool:
+    """Check if Claude is currently mid-turn / processing (active spinner or interrupt prompt)."""
+    if is_in_session_picker(text) or is_waiting_for_approval(text) or is_awaiting_user_question(text):
+        return False
+    cleaned = clean_text(text)
+    lines = [line.strip() for line in cleaned.splitlines() if line.strip()]
+    # If Claude is waiting at the prompt, it cannot be actively mid-turn
+    for line in lines[-8:]:
+        if re.match(r"^[❯>](?:\s|$)", line):
+            return False
+    tail = "\n".join(lines[-8:])
+    for pat in WORKING_PATTERNS:
+        if pat.search(tail):
+            return True
+    return False
+
+
+def is_rate_limited(text: str) -> bool:
+    """Check if terminal text indicates a rate limit."""
+    # Never detect rate limit while in picker or actively mid-turn
+    if is_in_session_picker(text) or is_working(text):
+        return False
+    cleaned = clean_text(text)
+    lines = [l.strip() for l in cleaned.splitlines() if l.strip()]
+    tail = "\n".join(lines[-35:])
+    for ign in IGNORE_PATTERNS:
+        if ign.search(tail):
+            return False
+    if has_rate_limit_menu(tail):
+        return True
+    for pat in LIMIT_PATTERNS:
+        if pat.search(tail):
+            return True
+    return False
+
+
+def is_stalled(text: str) -> bool:
+    """Check if terminal text indicates a transient server capacity stall."""
+    if is_working(text):
+        return False
+    cleaned = clean_text(text)
+    lines = [l.strip() for l in cleaned.splitlines() if l.strip()]
+    tail = "\n".join(lines[-25:])
+    for ign in IGNORE_PATTERNS:
+        if ign.search(tail):
+            return False
+    for pat in STALL_PATTERNS:
+        if pat.search(tail):
+            return True
+    return False
+
+
+def has_rate_limit_menu(text: str) -> bool:
+    """Check if Claude's interactive selection dialog is actually open."""
+    cleaned = clean_text(text)
+    # Only return True if the actual interactive modal dialog is open
+    # Never match on the footer hint "/rate-limit-options" which is always present
+    has_question = bool(re.search(r"what do you want to do\?", cleaned, re.IGNORECASE))
+    has_choice = bool(
+        re.search(
+            r"(?:upgrade your plan|stop and wait for limit|don'?t continue automatically)",
+            cleaned,
+            re.IGNORECASE,
+        )
+    )
+    return has_question and has_choice
+
+
+def parse_reset_time(text: str, now: datetime.datetime | None = None) -> datetime.datetime | None:
+    """Extract and calculate the reset datetime from terminal text or transcripts."""
+    if now is None:
+        now = datetime.datetime.now()
+    cleaned = clean_text(text).lower()
+    # Normalize bullet points, middle dots, dashes to spaces
+    cleaned = re.sub(r"[·•|\-]", " ", cleaned)
+
+    # 1. Relative: 'resets in 2 hours 15 minutes' / 'resets in 45m' / 'retry in 10m'
+    m = re.search(
+        r"(?:resets?|retry|try again)\s*(?:in|after)?\s+(?:(\d+)\s*(?:hours?|hrs?|h)\b)?(?:\s*(?:and\s*)?(\d+)\s*(?:minutes?|mins?|m)\b)?",
+        cleaned,
+    )
+    if m and (m.group(1) or m.group(2)):
+        hrs = int(m.group(1)) if m.group(1) else 0
+        mins = int(m.group(2)) if m.group(2) else 0
+        if hrs > 0 or mins > 0:
+            return now + datetime.timedelta(hours=hrs, minutes=mins)
+
+    # 2. Tomorrow: 'resets tomorrow at 9:00 am' / 'resets tomorrow 9am'
+    m = re.search(r"resets?\s+tomorrow(?:[\s:]*(?:at\s+)?)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?", cleaned)
+    if m:
+        hr = int(m.group(1))
+        mn = int(m.group(2)) if m.group(2) else 0
+        ampm = m.group(3)
+        if ampm == "pm" and hr < 12:
+            hr += 12
+        elif ampm == "am" and hr == 12:
+            hr = 0
+        target = (now + datetime.timedelta(days=1)).replace(hour=hr, minute=mn, second=0, microsecond=0)
+        return target
+
+    # 2b. Day of week: 'resets friday 9am' / 'resets on monday at 10:00 am'
+    m = re.search(
+        r"resets?\s+(?:on\s+)?(monday|tuesday|wednesday|thursday|friday|saturday|sunday)(?:[\s:]*(?:at\s+)?)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?",
+        cleaned,
+    )
+    if m:
+        day_names = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+        target_day = day_names.index(m.group(1).lower())
+        hr = int(m.group(2))
+        mn = int(m.group(3)) if m.group(3) else 0
+        ampm = m.group(4)
+        if ampm == "pm" and hr < 12:
+            hr += 12
+        elif ampm == "am" and hr == 12:
+            hr = 0
+        days_ahead = (target_day - now.weekday()) % 7
+        if days_ahead == 0:
+            target = now.replace(hour=hr, minute=mn, second=0, microsecond=0)
+            if target < now - datetime.timedelta(minutes=30):
+                days_ahead = 7
+        target = (now + datetime.timedelta(days=days_ahead)).replace(hour=hr, minute=mn, second=0, microsecond=0)
+        return target
+
+    # 3. 12-hour: 'resets at 3:15 pm' / 'resets 3pm' / 'resets: 11:30am' / 'resets 4:00 pm'
+    m = re.search(r"resets?[\s:]*(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)", cleaned)
+    if m:
+        hr = int(m.group(1))
+        mn = int(m.group(2)) if m.group(2) else 0
+        ampm = m.group(3)
+        if ampm == "pm" and hr < 12:
+            hr += 12
+        elif ampm == "am" and hr == 12:
+            hr = 0
+        target = now.replace(hour=hr, minute=mn, second=0, microsecond=0)
+        if target < now - datetime.timedelta(minutes=30):
+            target += datetime.timedelta(days=1)
+        return target
+
+    # 4. 24-hour: 'resets at 15:30' / 'resets 15:30' / 'resets: 15:30'
+    m = re.search(r"resets?[\s:]*(?:at\s+)?([01]?\d|2[0-3]):([0-5]\d)", cleaned)
+    if m:
+        hr = int(m.group(1))
+        mn = int(m.group(2))
+        target = now.replace(hour=hr, minute=mn, second=0, microsecond=0)
+        if target < now - datetime.timedelta(minutes=30):
+            target += datetime.timedelta(days=1)
+        return target
+
+    # 5. ISO 8601: 2026-09-24T15:30:00
+    m = re.search(r"(\d{4}-\d{2}-\d{2}t\d{2}:\d{2}:\d{2})", cleaned)
+    if m:
+        try:
+            return datetime.datetime.fromisoformat(m.group(1))
+        except Exception:
+            pass
+
+    return None
+
+
+def inspect_claude_transcripts() -> datetime.datetime | None:
+    """Inspect latest ~/.claude/projects/ JSONL transcript for structured reset records."""
+    claude_dir = os.path.expanduser("~/.claude/projects")
+    if not os.path.isdir(claude_dir):
+        return None
+
+    newest_file = None
+    newest_mtime = 0.0
+
+    try:
+        for root, _, files in os.walk(claude_dir):
+            for file in files:
+                if file.endswith(".jsonl"):
+                    full_path = os.path.join(root, file)
+                    try:
+                        mtime = os.path.getmtime(full_path)
+                        if mtime > newest_mtime:
+                            newest_mtime = mtime
+                            newest_file = full_path
+                    except OSError:
+                        pass
+    except Exception:
+        return None
+
+    if not newest_file or (time.time() - newest_mtime > 3600):
+        return None
+
+    try:
+        with open(newest_file, "r", encoding="utf-8", errors="ignore") as f:
+            lines = f.readlines()
+            for line in reversed(lines[-20:]):
+                try:
+                    data = json.loads(line)
+                    # Check for resetsAt field or error rate_limit
+                    if "resetsAt" in data:
+                        raw = data["resetsAt"]
+                        if isinstance(raw, (int, float)):
+                            return datetime.datetime.fromtimestamp(raw / 1000.0)
+                        elif isinstance(raw, str):
+                            dt = datetime.datetime.fromisoformat(raw.replace("Z", "+00:00"))
+                            return dt.astimezone().replace(tzinfo=None)
+                except Exception:
+                    pass
+    except Exception:
+        pass
+    return None
+
+
+# =============================================================================
+# Supervisor Loop
+# =============================================================================
+
+class Supervisor(threading.Thread):
+    """Background supervisor monitoring a Zellij pane running Claude Code."""
+
+    def __init__(
+        self,
+        zellij: ZellijController,
+        pane_id: str | None = None,
+        margin_sec: int = 30,
+        retry_msg: str = "continue",
+        watch_mode: bool = False,
+    ):
+        super().__init__(daemon=True)
+        self.zellij = zellij
+        self.pane_id = pane_id
+        self.margin_sec = margin_sec
+        self.retry_msg = retry_msg
+        self.watch_mode = watch_mode
+        self._running = threading.Event()
+        self._running.set()
+        self.stall_attempts = 0
+        self.pending_draft: str | None = None
+        self._was_working: bool = False
+        self._last_pane_title: str | None = None
+
+    def stop(self) -> None:
+        self._running.clear()
+        try:
+            self.zellij.rename_pane("claude", self.pane_id)
+        except Exception:
+            pass
+        self._write_status_file("Idle")
+
+    def _write_status_file(self, status: str, detail: str | None = None) -> None:
+        try:
+            status_dir = os.path.expanduser("~/.local/state/zclaude")
+            os.makedirs(status_dir, exist_ok=True)
+            status_path = os.path.join(status_dir, "status")
+
+            msg = detail or status
+            m = re.search(r"\[(.*?)\]", msg)
+            tag = m.group(1) if m else msg
+
+            if tag.startswith("wait:"):
+                rem = tag.replace("wait:", "").strip()
+                display_msg = f"Rate limit active · Resets at {rem}"
+            elif tag == "sessions":
+                display_msg = "Session overview active"
+            elif tag == "needs approval":
+                display_msg = "Waiting for tool / command execution approval"
+            elif tag == "question":
+                display_msg = "Waiting for user answer to question"
+            elif tag == "login required":
+                display_msg = "Authentication required (run /login)"
+            elif tag == "needs /compact":
+                display_msg = "Context window full (run /compact)"
+            elif tag == "budget exceeded":
+                display_msg = "Account budget limit reached"
+            elif tag.startswith("retry:"):
+                display_msg = f"Server overloaded · Retrying in {tag.replace('retry:', '').strip()}"
+            elif tag == "resuming...":
+                display_msg = "Resuming session..."
+            elif tag.lower() in ("claude", "ready"):
+                display_msg = "Ready at prompt"
+            elif tag.lower() in ("idle", "stopped"):
+                display_msg = "Idle"
+            else:
+                display_msg = tag
+
+            with open(status_path, "w", encoding="utf-8") as f:
+                f.write(display_msg + "\n")
+        except Exception as e:
+            logger.debug("Failed to write status file: %s", e)
+
+    def _update_title(self, status: str) -> None:
+        self._write_status_file(status)
+        if status != self._last_pane_title:
+            self.zellij.rename_pane(status, self.pane_id)
+            self._last_pane_title = status
+
+    def _notify(self, msg: str, pane_status: str | None = None) -> None:
+        """Report status without corrupting the terminal buffer of Claude Code."""
+        logger.info(msg)
+        if pane_status:
+            self._update_title(pane_status)
+        else:
+            self._write_status_file(msg)
+        if self.watch_mode:
+            # Watcher mode has its own dedicated companion pane; stdout printing is safe
+            print(f"\033[1;36m[zclaude]\033[0m {msg}", flush=True)
+
+    def run(self) -> None:
+        logger.info(
+            "Supervisor active for pane '%s' (Margin: %ds, Resumption message: '%s').",
+            self.pane_id or "focused",
+            self.margin_sec,
+            self.retry_msg,
+        )
+
+        while self._running.is_set():
+            time.sleep(3)
+            screen = self.zellij.dump_screen(self.pane_id)
+            if not screen:
+                continue
+
+            currently_working = is_working(screen)
+
+            # Turn completion check: if Claude transitioned from working -> idle at prompt,
+            # and we have a saved user draft, restore it into the prompt!
+            if self._was_working and not currently_working and is_at_prompt(screen):
+                if self.pending_draft:
+                    curr_prompt = get_prompt_text(screen)
+                    if curr_prompt == "":
+                        logger.info("Restoring saved draft into prompt: %s", repr(self.pending_draft))
+                        self.zellij.write_chars(self.pending_draft, self.pane_id)
+                        self.pending_draft = None
+
+            self._was_working = currently_working
+
+            # Check 1: Session Overview / Picker (pause auto-resumption while browsing sessions)
+            if is_in_session_picker(screen):
+                self.auto_resumed = False
+                self._notify("In session picker / conversation overview.", pane_status="claude [sessions]")
+                continue
+
+            # Check 2: Auth / login failure
+            if is_auth_required(screen):
+                self._notify("Authentication required.", pane_status="claude [login required]")
+                continue
+
+            # Check 3: Tool / Command execution approval
+            if is_waiting_for_approval(screen):
+                self._notify("Waiting for user confirmation/approval.", pane_status="claude [needs approval]")
+                continue
+
+            # Check 4: Interactive user feedback / question
+            if is_awaiting_user_question(screen):
+                self._notify("Waiting for user answer to question.", pane_status="claude [question]")
+                continue
+
+            # Check 5: Context window exhaustion
+            if is_context_limit(screen):
+                self._notify("Context window limit reached.", pane_status="claude [needs /compact]")
+                continue
+
+            # Check 6: Hard account budget cap
+            if is_budget_exceeded(screen):
+                self._notify("Account budget limit reached.", pane_status="claude [budget exceeded]")
+                continue
+
+            # Check 7: Rate limit (ALWAYS evaluate rate limit before normal working/stalled checks)
+            if is_rate_limited(screen):
+                reset_dt = parse_reset_time(screen)
+                if not reset_dt:
+                    reset_dt = inspect_claude_transcripts()
+                if not reset_dt:
+                    logger.warning("Rate limit detected but reset time is unknown; waiting 5 minutes.")
+                    reset_dt = datetime.datetime.now() + datetime.timedelta(minutes=5)
+
+                target_dt = reset_dt + datetime.timedelta(seconds=self.margin_sec)
+                wait_sec = (target_dt - datetime.datetime.now()).total_seconds()
+
+                if wait_sec > 0:
+                    time_str = reset_dt.strftime("%H:%M:%S")
+                    rem_min = max(0, int(math.ceil(wait_sec / 60.0)))
+                    last_min = rem_min
+                    init_title = f"claude [wait: {time_str} ({rem_min}m)]"
+                    msg = f"Rate limit active. Resets at {time_str} (~{int(wait_sec // 60)}m {int(wait_sec % 60)}s remaining)."
+                    self._notify(msg, pane_status=init_title)
+
+                    interrupted_reason = None
+                    while self._running.is_set() and datetime.datetime.now() < target_dt:
+                        remaining = int((target_dt - datetime.datetime.now()).total_seconds())
+                        if remaining <= 0:
+                            break
+
+                        fresh_screen = self.zellij.dump_screen(self.pane_id)
+                        if fresh_screen:
+                            # Early exit if user opened session overview / picker
+                            if is_in_session_picker(fresh_screen):
+                                interrupted_reason = "picker"
+                                self._notify("Switched to session overview; pausing countdown.", pane_status="claude [sessions]")
+                                break
+
+                            # Early exit if user resumed and rate limit cleared
+                            if not is_rate_limited(fresh_screen) and is_working(fresh_screen):
+                                interrupted_reason = "working"
+                                self._notify("Claude resumed; resuming monitor.", pane_status="claude")
+                                break
+
+                            # Check if a new or updated reset time appeared on screen
+                            updated_reset = parse_reset_time(fresh_screen)
+                            if updated_reset and abs((updated_reset - reset_dt).total_seconds()) > 30:
+                                reset_dt = updated_reset
+                                target_dt = reset_dt + datetime.timedelta(seconds=self.margin_sec)
+                                time_str = reset_dt.strftime("%H:%M:%S")
+                                logger.info("Detected updated rate limit reset time: %s", time_str)
+
+                        # Update pane and tab title with live countdown
+                        rem_min = max(0, int(math.ceil(remaining / 60.0)))
+                        if rem_min != last_min:
+                            last_min = rem_min
+                            self._update_title(f"claude [wait: {time_str} ({rem_min}m)]")
+
+                        time.sleep(min(remaining, 5))
+
+                    if not self._running.is_set():
+                        break
+
+                    if interrupted_reason:
+                        time.sleep(1)
+                        continue
+                else:
+                    # Reset time has already arrived
+                    if reset_dt == getattr(self, "_last_resumed_reset_dt", None):
+                        time.sleep(30)
+                        continue
+
+                # Limit has lifted; resume!
+                self._last_resumed_reset_dt = reset_dt
+                self._resume_session()
+                time.sleep(2)
+                continue
+
+            # Check 8: Mid-turn activity
+            if is_working(screen):
+                # Claude is active and working; reset transient stall counters
+                self.stall_attempts = 0
+                continue
+
+            # Check 9: Transient server overload / capacity stall
+            if is_stalled(screen):
+                self.stall_attempts += 1
+                backoff = min(60 * (2 ** (self.stall_attempts - 1)), 600)
+                msg = f"Server overloaded/at capacity (attempt {self.stall_attempts}); retrying in {backoff}s..."
+                self._notify(msg, pane_status=f"claude [retry: {backoff}s]")
+
+                for _ in range(backoff):
+                    if not self._running.is_set():
+                        break
+                    time.sleep(1)
+
+                if self._running.is_set():
+                    self._resume_session()
+                continue
+
+    def _resume_session(self) -> None:
+        """Safely dismiss any rate-limit options dialog and inject the continue message."""
+        screen = self.zellij.dump_screen(self.pane_id)
+        if is_working(screen):
+            self._notify("Claude is already active.", pane_status="claude")
+            return
+
+        if is_in_session_picker(screen):
+            self._notify("Session picker active; deferring resumption.", pane_status="claude [sessions]")
+            return
+
+        if is_waiting_for_approval(screen):
+            self._notify("Waiting for user approval; deferring resumption.", pane_status="claude [needs approval]")
+            return
+
+        # 1. Dismiss any open interactive dialog menu with Escape (so Enter doesn't select 'Upgrade plan')
+        if has_rate_limit_menu(screen):
+            self._notify("Dismissing /rate-limit-options dialog...", pane_status="claude [resuming...]")
+            self.zellij.send_keys("Esc", self.pane_id)
+            time.sleep(0.5)
+            screen = self.zellij.dump_screen(self.pane_id)
+
+        # 2. Check current unsubmitted text on prompt line
+        prompt_text = get_prompt_text(screen)
+
+        # Draft prompt preservation:
+        # If user typed something other than the resumption message (e.g. "continue"), save it!
+        if prompt_text and prompt_text != self.retry_msg:
+            self.pending_draft = prompt_text
+            logger.info("Saved user drafted prompt for post-resumption restoration: %s", repr(prompt_text))
+            # Clear the prompt line cleanly: jump to end, kill backwards to start
+            self.zellij.send_keys("Ctrl e", self.pane_id)
+            time.sleep(0.1)
+            self.zellij.send_keys("Ctrl u", self.pane_id)
+            time.sleep(0.2)
+            screen = self.zellij.dump_screen(self.pane_id)
+            prompt_text = get_prompt_text(screen)
+
+        self._notify(f"Submitting '{self.retry_msg}' to resume Claude...", pane_status="claude [resuming...]")
+
+        needs_type = True
+        if prompt_text is not None and self.retry_msg in prompt_text:
+            needs_type = False
+        elif prompt_text is None and self.retry_msg in clean_text(screen)[-100:]:
+            needs_type = False
+
+        if needs_type:
+            # Type the message into the prompt WITHOUT trailing newline
+            self.zellij.write_chars(self.retry_msg, self.pane_id)
+            time.sleep(0.3)
+
+        # 3. Submit by sending the Enter key event (NOT a raw \n character)
+        self.zellij.send_keys("Enter", self.pane_id)
+        time.sleep(0.6)
+
+        # 4. Check if it was submitted; if not, retry Enter once more as a safety measure
+        post_screen = self.zellij.dump_screen(self.pane_id)
+        post_prompt = get_prompt_text(post_screen)
+        if post_prompt is not None and self.retry_msg in post_prompt:
+            self.zellij.send_keys("Enter", self.pane_id)
+
+        self._notify("Claude resumed.", pane_status="claude")
+        time.sleep(1)
+
+
+# =============================================================================
+# CLI Entry Point
+# =============================================================================
+
+def find_layout(layout_name: str) -> str:
+    """Resolve Zellij layout name or file path."""
+    if os.path.isfile(layout_name):
+        return os.path.abspath(layout_name)
+
+    user_layout = os.path.expanduser(f"~/.config/zellij/layouts/{layout_name}.kdl")
+    if os.path.isfile(user_layout):
+        return layout_name
+
+    source_dir = os.path.dirname(os.path.abspath(__file__))
+    candidates = [
+        os.path.join(source_dir, "..", "..", "dot_config", "zellij", "layouts", f"{layout_name}.kdl.tmpl"),
+        os.path.join(source_dir, "..", "..", "dot_config", "zellij", "layouts", f"{layout_name}.kdl"),
+    ]
+    for c in candidates:
+        if os.path.isfile(c):
+            return os.path.normpath(c)
+
+    return layout_name
+
+
+def parse_args() -> tuple[argparse.Namespace, list[str]]:
+    parser = argparse.ArgumentParser(
+        prog="zclaude",
+        description="Zellij-native supervisor for Claude Code with automatic limit resumption & keep-alive.",
+    )
+    # zclaude supervisor options
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose debug logging")
+    parser.add_argument("-W", "--watch", nargs="?", const="", help="Watch an existing Zellij pane (pane_id optional)")
+    parser.add_argument("-s", "--session", default="zclaude", help="Zellij session name (default: zclaude)")
+    parser.add_argument("-l", "--layout", default="zclaude", help="Zellij layout to use (default: zclaude)")
+    parser.add_argument("--no-keep-alive", action="store_true", help="Disable system sleep prevention")
+    parser.add_argument("--margin", type=int, default=30, help="Safety margin in seconds after reset (default: 30)")
+    parser.add_argument("--message", default="continue", help="Resumption message to send (default: continue)")
+    parser.add_argument("--cmd", default="claude", help="Claude executable command (default: claude)")
+    parser.add_argument("--inside", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+
+    # Claude Code passthrough options
+    claude_group = parser.add_argument_group("Claude Code options (forwarded directly to claude)")
+    claude_group.add_argument("-r", "--resume", nargs="?", const="", default=None,
+                              help="Resume a conversation by session ID or open interactive picker")
+    claude_group.add_argument("-c", "--continue", dest="continue_session", action="store_true",
+                              help="Continue the most recent conversation in the current directory")
+    claude_group.add_argument("-p", "--print", dest="print_mode", action="store_true",
+                              help="Run non-interactively and print response")
+    claude_group.add_argument("-m", "--model", default=None,
+                              help="Model for current session (e.g. sonnet, opus, haiku, fable)")
+    claude_group.add_argument("--effort", choices=["low", "medium", "high", "xhigh", "max"], default=None,
+                              help="Effort level for the current session (low, medium, high, xhigh, max)")
+    claude_group.add_argument("--permission-mode", choices=["acceptEdits", "auto", "bypassPermissions", "manual", "dontAsk", "plan"], default=None,
+                              help="Permission mode for the session")
+    claude_group.add_argument("--dangerously-skip-permissions", action="store_true",
+                              help="Bypass all permission checks (for unattended/sandbox runs)")
+    claude_group.add_argument("-n", "--name", default=None,
+                              help="Set display name for this session")
+    claude_group.add_argument("-w", "--worktree", nargs="?", const="", default=None,
+                              help="Create a new git worktree for this session")
+    claude_group.add_argument("--fork-session", action="store_true",
+                              help="When resuming, create a new session ID instead of reusing original")
+    claude_group.add_argument("--bare", action="store_true",
+                              help="Minimal mode: skip hooks, LSP, auto-memory, and plugin sync")
+    claude_group.add_argument("--ide", action="store_true",
+                              help="Automatically connect to IDE on startup")
+
+    return parser.parse_known_args()
+
+
+def main() -> int:
+    args, claude_args = parse_args()
+
+    # Reconstruct forwarded Claude Code options
+    forwarded_claude_args = list(claude_args)
+    if args.resume is not None:
+        if args.resume:
+            forwarded_claude_args.extend(["--resume", args.resume])
+        else:
+            forwarded_claude_args.append("--resume")
+    if args.continue_session:
+        forwarded_claude_args.append("--continue")
+    if args.print_mode:
+        forwarded_claude_args.append("--print")
+    if args.model:
+        forwarded_claude_args.extend(["--model", args.model])
+    if args.effort:
+        forwarded_claude_args.extend(["--effort", args.effort])
+    if args.permission_mode:
+        forwarded_claude_args.extend(["--permission-mode", args.permission_mode])
+    if args.dangerously_skip_permissions:
+        forwarded_claude_args.append("--dangerously-skip-permissions")
+    if args.name:
+        forwarded_claude_args.extend(["--name", args.name])
+    if args.worktree is not None:
+        if args.worktree:
+            forwarded_claude_args.extend(["--worktree", args.worktree])
+        else:
+            forwarded_claude_args.append("--worktree")
+    if args.fork_session:
+        forwarded_claude_args.append("--fork-session")
+    if args.bare:
+        forwarded_claude_args.append("--bare")
+    if args.ide:
+        forwarded_claude_args.append("--ide")
+
+    # Configure logging: integrated mode logs exclusively to zclaude.log to protect Claude's TUI.
+    # Console (stderr) stream handler is only attached in dedicated --watch mode.
+    log_dir = os.path.expanduser("~/.local/state/zclaude")
+    handlers: list[logging.Handler] = []
+    try:
+        os.makedirs(log_dir, exist_ok=True)
+        fh = logging.FileHandler(os.path.join(log_dir, "zclaude.log"), encoding="utf-8")
+        fh.setFormatter(logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", datefmt="%Y-%m-%d %H:%M:%S"))
+        handlers.append(fh)
+    except Exception:
+        pass
+
+    if args.watch is not None:
+        sh = logging.StreamHandler(sys.stderr)
+        sh.setFormatter(logging.Formatter("[%(asctime)s] %(levelname)s: %(message)s", datefmt="%H:%M:%S"))
+        handlers.append(sh)
+
+    if not handlers:
+        handlers.append(logging.NullHandler())
+
+    logging.basicConfig(
+        level=logging.DEBUG if args.verbose else logging.INFO,
+        handlers=handlers,
+    )
+
+    zellij = ZellijController(session_name=args.session)
+    if not zellij.is_available():
+        sys.stderr.write("Error: 'zellij' is not installed or not in PATH.\n")
+        sys.stderr.write("Install it via aqua: `aqua install -a -l` or your package manager.\n")
+        return 1
+
+    # Initialize sleep inhibitor
+    sleep_inhibitor = SleepInhibitor()
+    if not args.no_keep_alive:
+        sleep_inhibitor.start()
+
+    # -------------------------------------------------------------------------
+    # Case 1: Watcher Mode (--watch)
+    # -------------------------------------------------------------------------
+    if args.watch is not None:
+        target_pane = args.watch.strip()
+        current_pane = os.environ.get("ZELLIJ_PANE_ID")
+
+        if not target_pane:
+            other_panes = zellij.get_other_panes(current_pane)
+            if len(other_panes) == 1:
+                target_pane = other_panes[0]
+            elif len(other_panes) > 1:
+                print(f"Multiple panes detected: {', '.join(other_panes)}")
+                print(f"Watching pane '{other_panes[0]}'. (Specify another with --watch <pane_id>)")
+                target_pane = other_panes[0]
+            else:
+                target_pane = current_pane
+
+        print(
+            f"\033[1;36m[zclaude]\033[0m Watcher mode active on pane: {target_pane or 'focused'} (Session: {args.session})"
+        )
+        print(f"\033[1;36m[zclaude]\033[0m Keep-Alive: {'Enabled (sleep prevented)' if not args.no_keep_alive else 'Disabled'}")
+        print("\033[1;36m[zclaude]\033[0m Press Ctrl+C to stop watching.\n")
+
+        supervisor = Supervisor(
+            zellij=zellij,
+            pane_id=target_pane,
+            margin_sec=args.margin,
+            retry_msg=args.message,
+            watch_mode=True,
+        )
+        supervisor.start()
+
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            print("\n[zclaude] Stopping watcher...")
+        finally:
+            supervisor.stop()
+            sleep_inhibitor.stop()
+        return 0
+
+    # -------------------------------------------------------------------------
+    # Case 2: Outside Zellij -> Launch / Attach Session
+    # -------------------------------------------------------------------------
+    if "ZELLIJ" not in os.environ and not args.inside:
+        zclaude_bin = os.path.abspath(sys.argv[0])
+        # Always invoke via sys.executable so extensionless script works across Windows, Linux, and macOS
+        inner_cmd = [sys.executable, zclaude_bin, "--inside", "--session", args.session]
+        if args.no_keep_alive:
+            inner_cmd.append("--no-keep-alive")
+        if args.margin != 30:
+            inner_cmd.extend(["--margin", str(args.margin)])
+        if args.message != "continue":
+            inner_cmd.extend(["--message", args.message])
+        if args.cmd != "claude":
+            inner_cmd.extend(["--cmd", args.cmd])
+        if args.verbose:
+            inner_cmd.append("--verbose")
+        inner_cmd.extend(forwarded_claude_args)
+
+        if zellij.has_session(args.session):
+            print(f"\033[1;36m[zclaude]\033[0m Attaching to active Zellij session '{args.session}'...")
+            try:
+                if forwarded_claude_args:
+                    subprocess.run(["zellij", "--session", args.session, "run", "--", *inner_cmd], check=False)
+                res = subprocess.call(["zellij", "attach", args.session])
+                return res
+            except KeyboardInterrupt:
+                return 0
+            finally:
+                sleep_inhibitor.stop()
+        else:
+            layout_target = find_layout(args.layout)
+            print(f"\033[1;36m[zclaude]\033[0m Starting Zellij workspace session '{args.session}' (layout: {args.layout})...")
+            launch_args = ["zellij", "--layout", layout_target, "attach", "-c", args.session, "--", *inner_cmd]
+            try:
+                res = subprocess.call(launch_args)
+                return res
+            except KeyboardInterrupt:
+                return 0
+            finally:
+                sleep_inhibitor.stop()
+
+    # -------------------------------------------------------------------------
+    # Case 3: Inside Zellij -> Wrap Claude in Foreground + Background Supervisor
+    # -------------------------------------------------------------------------
+    current_pane_id = os.environ.get("ZELLIJ_PANE_ID")
+    supervisor = Supervisor(
+        zellij=zellij,
+        pane_id=current_pane_id,
+        margin_sec=args.margin,
+        retry_msg=args.message,
+        watch_mode=False,
+    )
+    supervisor.start()
+
+    claude_cmd = [args.cmd] + forwarded_claude_args
+    logger.debug("Executing Claude command: %s", claude_cmd)
+
+    try:
+        proc = subprocess.Popen(claude_cmd)
+        exit_code = proc.wait()
+    except FileNotFoundError:
+        sys.stderr.write(f"Error: Claude command '{args.cmd}' not found in PATH.\n")
+        exit_code = 127
+    except KeyboardInterrupt:
+        exit_code = 130
+    finally:
+        supervisor.stop()
+        sleep_inhibitor.stop()
+
+    return exit_code
+
+
+if __name__ == "__main__":
+    sys.exit(main())

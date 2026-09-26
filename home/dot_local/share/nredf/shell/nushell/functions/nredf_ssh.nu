@@ -20,18 +20,75 @@ def nredf-parse-totp [cfg: string]: nothing -> string {
     ' | str trim
 }
 
-def --wrapped nredf-ssh [...args] {
+# Finds the destination and -F config file in an ssh argument list; host is ""
+# when there is no destination. Mirrors ssh's getopt: option clusters (-4vA)
+# are skipped, and so is the value of every option letter that takes one,
+# attached (-p2222) or separate (-p 2222). The first non-option is the
+# destination, returned as given: `ssh -G` parses [user@]host and ssh:// URIs
+# itself, and needs the user to evaluate `Match user` blocks correctly.
+def nredf-ssh-destination [args: list<string>]: nothing -> record<config: string, host: string> {
+    let opts_with_arg = ("BbcDEeFIiJLlmOoPpQRSWw" | split chars)
+    mut dest = ""
+    mut cfg_file = ""
+    mut want = ""
+    mut end_opts = false
+    for arg in $args {
+        if $want != "" {
+            if $want == "F" { $cfg_file = $arg }
+            $want = ""
+            continue
+        }
+        if (not $end_opts) and $arg == "--" {
+            $end_opts = true
+            continue
+        }
+        if (not $end_opts) and ($arg =~ '^-.') {
+            let chars = ($arg | split chars)
+            mut i = 1
+            while $i < ($chars | length) {
+                let c = ($chars | get $i)
+                if $c in $opts_with_arg {
+                    if $i + 1 < ($chars | length) {
+                        if $c == "F" { $cfg_file = ($chars | skip ($i + 1) | str join) }
+                    } else {
+                        $want = $c
+                    }
+                    break
+                }
+                $i += 1
+            }
+            continue
+        }
+        $dest = $arg
+        break
+    }
+
+    {config: $cfg_file, host: $dest}
+}
+
+# --env all the way down: nredf-sshpass-bitwarden-totp sets $env.BW_SESSION
+# (via nredf-bw-ensure-session), and a single plain `def` in this chain would
+# silently drop it, re-prompting for the master password on every TOTP host.
+def --env --wrapped nredf-ssh [...args] {
     nredf-sshpass-totp ...$args
 }
 
-def --wrapped nredf-sshpass-totp [...args] {
-    let host = ($args | get 0? | default "")
-    if ($host | is-empty) {
-        print "Usage: nredf-ssh <ssh_host>"
+def --env --wrapped nredf-sshpass-totp [...args] {
+    if ($args | is-empty) {
+        print --stderr "Usage: nredf-ssh [ssh_options...] <destination> [command...]"
         return
     }
 
-    let host_cfg_result = (^ssh -G $host | complete)
+    let parsed = (nredf-ssh-destination ($args | each { into string }))
+    let host = $parsed.host
+    # No destination (e.g. `nredf-ssh -V`): nothing to look up.
+    if ($host | is-empty) {
+        ^ssh ...$args
+        return
+    }
+    let g_opts = (if ($parsed.config | is-empty) { [] } else { ["-F" $parsed.config] })
+
+    let host_cfg_result = (^ssh ...$g_opts -G $host | complete)
     if $host_cfg_result.exit_code != 0 {
         ^ssh ...$args
         return
@@ -48,7 +105,7 @@ def --wrapped nredf-sshpass-totp [...args] {
         $pj_first = ($pj_first | str replace --regex '^[^@]*@' '')
         $pj_first = ($pj_first | str replace --regex ':.*' '')
         if not ($pj_first | is-empty) {
-            let pj_cfg = (^ssh -G $pj_first | complete | get stdout)
+            let pj_cfg = (^ssh ...$g_opts -G $pj_first | complete | get stdout)
             $totp_itemid = (nredf-parse-totp $pj_cfg)
         }
     }

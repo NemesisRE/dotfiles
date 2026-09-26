@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+# Alias for lsd (home/.chezmoidata/aliases.yaml): hands the whole
+# command line to lsd's completer.
+name: la
+description: Alias for lsd
+parsing: disabled
+completion:
+  positionalany: ["$carapace.bridge.CarapaceBin([lsd])"]

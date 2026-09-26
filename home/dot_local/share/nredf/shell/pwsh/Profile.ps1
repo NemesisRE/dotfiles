@@ -26,6 +26,39 @@ if (Test-Path function:\NREDF_BwRestoreSession) {
   NREDF_Step "NREDF_BwRestoreSession"
 }
 
+# A `pwsh -Command '...'` / `pwsh -File ...` invocation loads this profile too — only
+# -NoProfile skips it — even though it will not drop into an interactive prompt
+# afterwards. Mirrors bash's `[ -z "$PS1" ] && return` / fish's `status is-interactive`:
+# skip the prompt-theme, completion and tool-init setup below (all Write-Host output or
+# otherwise pointless for a one-shot command) for that case, while still keeping the
+# BW_SESSION keychain restore above, which every consumer (including a one-shot
+# `chezmoi apply`) still needs. `-NoExit` alongside `-Command`/`-File` means the shell
+# stays interactive afterwards (VS Code / Windows Terminal launch pwsh this way), so
+# that combination is intentionally excluded.
+#
+# Known limitation: this matches exact flag spellings, not every unambiguous
+# abbreviation pwsh's own parameter binder accepts (e.g. `-Comm`), and it scans the
+# whole argv rather than only the args pwsh itself consumes, so a script/command
+# argument that happens to equal one of these tokens (e.g. `-File deploy.ps1 -NoExit`
+# where `-NoExit` is deploy.ps1's own parameter) can be misread. Low practical risk
+# for how this profile is actually invoked; not worth the complexity of replicating
+# pwsh's full parameter-abbreviation and positional-argument rules here.
+$nredfCliArgs = [Environment]::GetCommandLineArgs() | ForEach-Object { $_.ToLowerInvariant() }
+$nredfHasNoExit = $nredfCliArgs -contains '-noexit'
+$nredfHasBatchArg = [bool]($nredfCliArgs | Where-Object { $_ -in '-c', '-command', '-file', '-f', '-encodedcommand', '-ec' })
+if (($nredfCliArgs -contains '-noninteractive') -or ($nredfHasBatchArg -and -not $nredfHasNoExit)) {
+  # A batch invocation can inherit NREDF_PROFILE_STARTUP_ONESHOT=1 from a parent
+  # interactive shell that just ran `reload -p` (e.g. a tool spawns `pwsh -Command`
+  # before the new interactive shell it was meant for actually starts). Clear the
+  # oneshot flag here too, silently, so it can't leak into further children — but
+  # skip the Write-Host'd total line, since this isn't the profiled session.
+  if ($ENV:NREDF_PROFILE_STARTUP_ONESHOT -eq '1') {
+    $ENV:NREDF_PROFILE_STARTUP = $null
+    $ENV:NREDF_PROFILE_STARTUP_ONESHOT = $null
+  }
+  return
+}
+
 # Set Oh-My-Posh Theme to match bash and zsh profiles
 if (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {
   $ompConfig = $null
@@ -35,10 +68,6 @@ if (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {
     $ompConfig = "$HOME/.config/oh-my-posh/config.json"
   } elseif (-not [string]::IsNullOrEmpty($ENV:XDG_CONFIG_HOME) -and (Test-Path "$ENV:XDG_CONFIG_HOME/oh-my-posh/config.json")) {
     $ompConfig = "$ENV:XDG_CONFIG_HOME/oh-my-posh/config.json"
-  } elseif (-not [string]::IsNullOrEmpty($ENV:POSH_THEMES_PATH)) {
-    $defaultTheme = if ([string]::IsNullOrEmpty($ENV:POSH_THEME_FILE)) { 'powerlevel10k_rainbow.omp.json' } else { $ENV:POSH_THEME_FILE }
-    $candidate = Join-Path $ENV:POSH_THEMES_PATH $defaultTheme
-    if (Test-Path $candidate) { $ompConfig = $candidate }
   }
 
   $ompInitFile = Join-Path $ENV:NREDF_INITCACHE 'omp.pwsh.ps1'
@@ -63,14 +92,6 @@ if (Get-Command oh-my-posh -ErrorAction SilentlyContinue) {
     (& oh-my-posh init pwsh | Out-String) | Invoke-Expression
   }
   NREDF_Step "oh-my-posh init"
-
-  # Upgrade check (Windows only - WindowsPrincipal is not supported on non-Windows)
-  if ($IsWindows) {
-    if (-not ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] 'Administrator')) {
-      # Upgrade oh-my-posh
-      #oh-my-posh upgrade --force
-    }
-  }
 }
 
 # Optional local module importing (only runs if custom modules are defined in $PROFILE_PATH\Modules.ps1)

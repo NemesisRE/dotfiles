@@ -1,5 +1,5 @@
 {{- if eq .chezmoi.os "linux" -}}
-{{- if not (.chezmoi.kernel.osrelease | lower | contains "microsoft") -}}
+{{- if not (and (hasKey .chezmoi "kernel") (hasKey .chezmoi.kernel "osrelease") (.chezmoi.kernel.osrelease | lower | contains "microsoft")) -}}
 {{- $quakeKey := "F12" -}}
 {{- if and (hasKey . "kitty") (hasKey .kitty "quake_key") -}}
 {{-   $quakeKey = .kitty.quake_key -}}
@@ -58,6 +58,13 @@ install_kitty() (
       ;;
   esac
   url="https://github.com/kovidgoyal/kitty/releases/download/v${TARGET_VERSION}/kitty-${TARGET_VERSION}-${arch}.txz"
+
+  # The archive is xz-compressed and `tar -J` shells out to xz; check before
+  # downloading rather than failing halfway through the unpack.
+  command -v xz >/dev/null 2>&1 || {
+    echo "==> Warning: xz is not installed (package xz-utils / xz); cannot unpack the Kitty archive" >&2
+    exit 1
+  }
 
   # Same filesystem as the destination, so the final `mv` is an atomic rename.
   mkdir -p "${HOME}/.local" || exit 1
@@ -191,8 +198,9 @@ if command -v kwriteconfig6 >/dev/null 2>&1 || command -v kwriteconfig5 >/dev/nu
   CURRENT_SHORTCUT="$(${KREAD} --file kglobalshortcutsrc --group "kitty-quake.desktop" --key "_launch" 2>/dev/null || true)"
   if [[ "${CURRENT_SHORTCUT}" != "{{ $quakeKey }},"* ]]; then
     echo "==> Configuring KDE Plasma global shortcut: {{ $quakeKey }} -> kitty-quake"
-    ${KWRITE} --file kglobalshortcutsrc --group "kitty-quake.desktop" --key "_k_friendly_name" "Kitty Quake Terminal"
-    ${KWRITE} --file kglobalshortcutsrc --group "kitty-quake.desktop" --key "_launch" "{{ $quakeKey }},none,Kitty Quake Terminal"
+    ${KWRITE} --file kglobalshortcutsrc --group "kitty-quake.desktop" --key "_k_friendly_name" "Kitty Quake Terminal" || true
+    ${KWRITE} --file kglobalshortcutsrc --group "kitty-quake.desktop" --key "_launch" "{{ $quakeKey }},none,Kitty Quake Terminal" ||
+      echo "==> Warning: could not write the KDE global shortcut" >&2
 
     # Reload KWin & KGlobalAccel to ensure the shortcut is immediately active
     qdbus org.kde.KWin /KWin org.kde.KWin.reconfigure >/dev/null 2>&1 || true
@@ -229,10 +237,10 @@ fi
 {{- else }}
 # Quake shortcut disabled; clearing any existing KDE shortcut for kitty-quake
 if command -v kwriteconfig6 >/dev/null 2>&1; then
-  kwriteconfig6 --file kglobalshortcutsrc --group "kitty-quake.desktop" --key "_launch" "none,none,Kitty Quake Terminal"
+  kwriteconfig6 --file kglobalshortcutsrc --group "kitty-quake.desktop" --key "_launch" "none,none,Kitty Quake Terminal" || true
   systemctl --user restart plasma-kglobalaccel.service >/dev/null 2>&1 || true
 elif command -v kwriteconfig5 >/dev/null 2>&1; then
-  kwriteconfig5 --file kglobalshortcutsrc --group "kitty-quake.desktop" --key "_launch" "none,none,Kitty Quake Terminal"
+  kwriteconfig5 --file kglobalshortcutsrc --group "kitty-quake.desktop" --key "_launch" "none,none,Kitty Quake Terminal" || true
   systemctl --user restart plasma-kglobalaccel.service >/dev/null 2>&1 || true
 fi
 {{- end }}

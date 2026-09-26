@@ -54,14 +54,6 @@ if command -v _nredf_tool_fzf_source &>/dev/null; then
 fi
 _nredf_step "fzf source"
 
-if command -v __atuin_history &>/dev/null; then
-  if [[ -n "${BLE_VERSION-}" ]] && command -v ble-bind &>/dev/null; then
-    ble-bind -x 'C-r' __atuin_history
-  else
-    bind -x '"\C-r": __atuin_history'
-  fi
-fi
-
 if command -v _nredf_fzf_tab_complete &>/dev/null; then
   if [[ -n "${BLE_VERSION-}" ]] && command -v ble-bind &>/dev/null; then
     ble-bind -m emacs   -x 'C-@' _nredf_fzf_tab_complete 2>/dev/null || true

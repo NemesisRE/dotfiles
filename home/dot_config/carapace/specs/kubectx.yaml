@@ -1,13 +1,27 @@
 # yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+# kubectx v0.11 (`kubectx --help`). -s/-r take an optional context and fall
+# back to an interactive picker, and -d takes one or more contexts, so all
+# three are plain switches here and the context itself is completed as a
+# positional. The kctx/ctx aliases are thin bridges in kctx.yaml/ctx.yaml:
+# a spec's own `aliases:` field only names subcommand aliases, it does not
+# register a top-level command.
 name: kubectx
-aliases: ["kctx", "ctx"]
-description: Fast way to switch between clusters in kubectl
+description: Manage and switch between kubectl contexts
 flags:
-  -c, --current: show current context
-  -u, --unset: unset current context
-  -d=: delete context
+  -c, --current: show the current context name
+  -u, --unset: unset the current context
+  -d: delete context(s) ('.' for the current context)
+  -s, --shell: start a shell scoped to a context
+  -r, --readonly: start a read-only shell for a context
+  -h, --help: show help
+  -V, --version: show version
+exclusiveflags:
+  - [current, unset, d, shell, readonly, help, version]
 completion:
-  flag:
-    d: ["$carapace.tools.kubectl.Contexts"]
-  positional:
-    - ["$carapace.tools.kubectl.Contexts"]
+  # The NEW=OLD rename form is left to be typed by hand: $multiparts only
+  # splits values the action itself returns, so it cannot complete a
+  # context after a free-form `NEW=` prefix.
+  positionalany:
+    - "$carapace.tools.kubectl.Contexts"
+    - "-\tswitch to the previous context"
+    - ".\tthe current context (for -d)"

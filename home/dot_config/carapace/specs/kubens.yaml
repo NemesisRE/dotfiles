@@ -1,10 +1,17 @@
 # yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+# kubens v0.11 (`kubens --help`). The kns/ns aliases are thin bridges in
+# kns.yaml/ns.yaml (see kubectx.yaml for why `aliases:` is not used).
 name: kubens
-aliases: ["kns", "ns"]
-description: Fast way to switch between namespaces in kubectl
+description: Switch between Kubernetes namespaces
 flags:
-  -c, --current: show current namespace
-  -u, --unset: unset current namespace
+  -c, --current: show the current namespace
+  -u, --unset: unset the namespace choice (set to 'default')
+  -f, --force: switch even if the namespace does not exist
+  -h, --help: show help
+  -V, --version: show version
+exclusiveflags:
+  - [current, unset, force, help, version]
 completion:
   positional:
-    - ["$carapace.tools.kubectl.Resources({types: 'namespaces'})"]
+    - - "$carapace.tools.kubectl.Resources({types: 'namespaces'})"
+      - "-\tswitch to the previous namespace"

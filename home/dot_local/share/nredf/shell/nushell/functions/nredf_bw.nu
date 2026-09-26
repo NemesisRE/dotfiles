@@ -288,17 +288,19 @@ def --env nredf-bw-do-unlock [] {
         return
     }
 
+    # Capture only stdout (the raw session key). bw writes its interactive
+    # email/password/2FA prompts to stderr, so that has to stay on the
+    # terminal: `| complete` would swallow it and leave the user typing blind.
+    # A non-zero exit from a captured external raises an error in nu, so `try`
+    # turns "login/unlock failed or was cancelled" into a quiet return (the
+    # bash equivalent is `session="$(bw unlock --raw)" || return 1`).
     mut session = ""
     if (^bw login --check | complete | get exit_code) != 0 {
         print --stderr "Bitwarden: not logged in — running bw login"
-        let r = (^bw login --raw | complete)
-        if $r.exit_code != 0 { return }
-        $session = ($r.stdout | str trim)
+        $session = (try { ^bw login --raw | str trim } catch { return })
     } else {
         print --stderr "Bitwarden: vault locked — running bw unlock"
-        let r = (^bw unlock --raw | complete)
-        if $r.exit_code != 0 { return }
-        $session = ($r.stdout | str trim)
+        $session = (try { ^bw unlock --raw | str trim } catch { return })
     }
 
     if ($session | is-empty) {

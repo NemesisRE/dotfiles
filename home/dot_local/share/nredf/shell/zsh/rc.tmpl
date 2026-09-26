@@ -24,8 +24,6 @@ if (( ! ${+functions[_nredf_load_sheldon_plugins]} )); then
       [[ -f "${NREDF_FUNCTIONS}" ]] || continue
       source "${NREDF_FUNCTIONS}"
     done
-  elif [[ -f "${NREDF_RC_PATH}/functions" ]]; then
-    source "${NREDF_RC_PATH}/functions"
   fi
 fi
 _nredf_step "zsh rc: source functions"

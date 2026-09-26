@@ -198,13 +198,18 @@ function _nredf_prompt_yes_no --argument-names prompt
         printf "%s [y/N]: " "$prompt" >/dev/tty
         set -l reply
         if test -n "$timeout_bin"
-            set reply ($timeout_bin "$timeout_secs" fish -c 'read -l r; and echo $r' </dev/tty)
+            # --no-config: a plain `fish -c` would load the user's whole
+            # config.fish (this very framework) just to read one line.
+            set reply ($timeout_bin "$timeout_secs" fish --no-config -c 'read -l r; and echo $r' </dev/tty)
             if test $status -ne 0
                 printf "\n" >/dev/tty
                 return 2
             end
         else
-            if not read -l reply </dev/tty
+            # No -l here: inside an `if` condition it would scope `reply` to
+            # the if-block, leaving the outer `reply` empty for the switch
+            # below — i.e. every answer silently recorded as "no".
+            if not read reply </dev/tty
                 printf "\n" >/dev/tty
                 return 2
             end
@@ -243,14 +248,16 @@ function nredf_aqua_token_setup --argument-names action
             echo "Stored aqua's GitHub token in the system keyring."
 
         case --env
+            # `read` below must not use -l: it would scope `token` to the
+            # if/else block and the emptiness check would always fail.
             set -l token
             if test -r /dev/tty; and test -w /dev/tty
                 printf "Enter a GitHub access token: " >/dev/tty
-                read -s -l token </dev/tty
+                read -s token </dev/tty
                 printf "\n" >/dev/tty
             else
                 printf "Enter a GitHub access token: "
-                read -s -l token
+                read -s token
                 printf "\n"
             end
 
