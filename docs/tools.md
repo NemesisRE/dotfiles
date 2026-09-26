@@ -405,7 +405,7 @@ Configured in [`home/dot_config/k9s/`](../home/dot_config/k9s/):
 
 ### `gh` (GitHub CLI)
 
-Configured via `$GH_CONFIG_DIR` pointing to [`home/dot_config/gh/config.yml.tmpl`](../home/dot_config/gh/config.yml.tmpl):
+Configured via `$GH_CONFIG_DIR` pointing to [`home/dot_config/private_gh/config.yml.tmpl`](../home/dot_config/private_gh/config.yml.tmpl):
 
 - Configured to use SSH Git protocol, Neovim (`editor: nvim`), and `delta` as the default diff pager.
 

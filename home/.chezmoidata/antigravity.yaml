@@ -1,5 +1,5 @@
 # Antigravity CLI (`agy`) settings, merged into ~/.gemini/antigravity-cli/settings.json
-# by dot_gemini/antigravity-cli/modify_private_settings.json (rules in
+# by private_dot_gemini/antigravity-cli/modify_private_settings.json (rules in
 # .chezmoitemplates/merge-json-settings.tmpl).
 #
 # The CLI writes this file itself (/settings, "always allow" grants under

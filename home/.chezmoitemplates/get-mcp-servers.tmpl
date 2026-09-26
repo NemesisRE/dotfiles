@@ -1,7 +1,8 @@
 {{- $content := "" -}}
 {{- if and (hasKey . "secrets") (hasKey .secrets "mcp_servers") -}}
   {{- $ref := .secrets.mcp_servers -}}
-  {{- if and $ref (not (env "CI")) (ne (env "NREDF_NO_BOOTSTRAP") "1") -}}
+  {{- /* Any non-empty NREDF_NO_BOOTSTRAP skips the vault, same as the hooks. */ -}}
+  {{- if and $ref (not (env "CI")) (eq (env "NREDF_NO_BOOTSTRAP") "") -}}
     {{- if or (hasPrefix "bitwarden:" $ref) (hasPrefix "bw:" $ref) -}}
       {{- if lookPath "bw" -}}
         {{- $itemName := $ref | trimPrefix "bitwarden:" | trimPrefix "bw:" -}}
@@ -12,16 +13,19 @@
     {{- else if or (hasPrefix "onepassword:" $ref) (hasPrefix "op:" $ref) -}}
       {{- if lookPath "op" -}}
         {{- $itemName := $ref | trimPrefix "onepassword:" | trimPrefix "op:" -}}
-        {{- $item := onepassword "item" $itemName -}}
-        {{- $content = index $item "notes" | default "" -}}
+        {{- /* Item name first, and notes are a field: see get-github-token.tmpl */ -}}
+        {{- $item := onepassword $itemName -}}
+        {{- range (index $item "fields" | default (list)) -}}
+          {{- if or (eq (index . "id" | default "") "notesPlain") (eq (index . "purpose" | default "") "NOTES") -}}
+            {{- $content = index . "value" | default "" -}}
+          {{- end -}}
+        {{- end -}}
       {{- end -}}
     {{- else if hasPrefix "keepassxc:" $ref -}}
       {{- if lookPath "keepassxc-cli" -}}
         {{- $entry := trimPrefix "keepassxc:" $ref -}}
         {{- $item := keepassxc $entry -}}
-        {{- if hasKey $item "Notes" -}}
-          {{- $content = $item.Notes -}}
-        {{- end -}}
+        {{- $content = index $item "Notes" | default "" -}}
       {{- end -}}
     {{- else -}}
       {{- $content = $ref -}}
