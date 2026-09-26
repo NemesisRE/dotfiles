@@ -216,6 +216,29 @@ NREDF guarantees that common development commands behave identically regardless 
 
 ---
 
+## 🧰 Helper Functions
+
+Real functions (not aliases to another binary), implemented once with identical names and behavior in bash/zsh, fish, Nushell and PowerShell. Each one checks its own tool dependency at call time and prints a clear message on stderr instead of failing silently if it's missing — none of them do any work at shell startup.
+
+| Function | Requires | Does |
+| :--- | :--- | :--- |
+| `mkcd <dir>` | — | `mkdir -p` a directory, then `cd` into it |
+| `extract <archive>...` / `x` | `ouch` | Extract any archive format `ouch` recognizes (zip/tar/tar.gz/tar.zst/7z/rar/...) |
+| `compress <out> <files...>` | `ouch` | Compress files into an archive, format inferred from `<out>`'s extension |
+| `fif <pattern>` | `rg`, `fzf` | ripgrep for a pattern, fzf to pick a match (bat preview centered on the line), open `$EDITOR` there |
+| `fe [query]` | `fd`, `fzf` | fd for files, fzf (bat preview) to pick one, open in `$EDITOR` |
+| `fbr` | `git`, `fzf` | fzf-pick a local or remote branch, `git switch` to it |
+| `flog` | `git`, `fzf` | Browse `git log --oneline --graph`, previewing the selected commit with delta (falls back to plain `git show`) |
+| `fkill [signal]` | `fzf` | fzf-pick one or more processes (via `procs`, falling back to `ps`/`Get-Process`), kill them |
+| `path` | — | Print `$PATH`, one entry per line |
+| `ports` | — | List listening TCP ports (`ss`/`lsof`/`netstat` on Unix, `Get-NetTCPConnection` on Windows) |
+| `nredf_bench_startup` (`nredf-bench-startup` in Nu, `NREDF_BenchStartup` in PowerShell) | `hyperfine` | Benchmark interactive startup time of every installed shell |
+
+> [!NOTE]
+> In zsh, oh-my-zsh's `extract`/`x` (sheldon, lazy-loaded on the first `precmd`) and its `systemadmin` plugin's `path` alias are defined *after* this file loads, so they win for interactive zsh sessions instead of the versions above — same output for `path`, but zsh's `extract`/`x` is OMZ's own implementation rather than the `ouch`-based one every other shell gets. Fixing this would mean editing sheldon's plugin list or its lazy-load hook, both existing files outside this change — see "Known Parity Exceptions" below. `fif`/`fe`/`fbr`/`flog`/`fkill`/`mkcd`/`compress`/`ports`/`nredf_bench_startup` are unaffected (OMZ defines none of them).
+
+---
+
 ## 🏠 Local, Machine-Specific Overrides
 
 None of the following files are chezmoi-managed or committed to this repo — they live only on your machine, are yours to create, and `chezmoi apply` never touches or overwrites them. [`~/.config/nredf/README.md`](../home/dot_config/private_nredf/README.md) is a shorter, on-disk version of this same section.

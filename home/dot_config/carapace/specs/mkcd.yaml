@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+name: mkcd
+description: mkdir -p a directory and cd into it
+completion:
+  positional:
+    - ["$directories"]

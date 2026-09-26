@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+name: compress
+description: Compress files into an archive via ouch (compress <out> <files...>)
+completion:
+  positionalany: ["$files"]

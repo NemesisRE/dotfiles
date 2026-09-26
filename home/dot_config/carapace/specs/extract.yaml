@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+name: extract
+description: Universal archive extraction via ouch (also aliased as x)
+completion:
+  positionalany: ["$files"]
