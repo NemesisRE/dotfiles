@@ -4,7 +4,7 @@ This document provides a comprehensive reference for the developer tools and CLI
 
 ---
 
-## 🧰 Builtin Tooling Overview
+## Builtin Tooling Overview
 
 All core CLI tools are declared centrally in [`home/dot_config/aquaproj-aqua/aqua.yaml`](../home/dot_config/aquaproj-aqua/aqua.yaml) and installed via **aqua**.
 
@@ -25,7 +25,7 @@ All core CLI tools are declared centrally in [`home/dot_config/aquaproj-aqua/aqu
 
 ---
 
-## 🖥️ Builtin Terminal Multiplexer: Zellij
+## Builtin Terminal Multiplexer: Zellij
 
 **Zellij** is the default and builtin terminal workspace manager in NREDF. It is configured in [`home/dot_config/zellij/config.kdl.tmpl`](../home/dot_config/zellij/config.kdl.tmpl) with the unified **OneDark-Pro** theme.
 
@@ -113,7 +113,7 @@ Press <kbd>Ctrl</kbd> + <kbd>g</kbd> to lock Zellij. All keystrokes pass directl
 
 ---
 
-## 💲 Prompt: Oh-My-Posh
+## Prompt: Oh-My-Posh
 
 All five shells render the same theme, [`home/dot_config/oh-my-posh/config.json`](../home/dot_config/oh-my-posh/config.json). Every segment below appears only when it has something to say:
 
@@ -126,7 +126,7 @@ Shells cache their oh-my-posh init script for 24 hours, and tooltip, transient a
 
 ---
 
-## 📜 Encrypted Shell History: Atuin
+## Encrypted Shell History: Atuin
 
 [Atuin](https://atuin.sh) replaces your default shell history with an SQLite database backed by end-to-end encrypted synchronization across machines.
 
@@ -153,7 +153,7 @@ atuin sync
 
 ---
 
-## 🔍 Interactive Fuzzy Finding: fzf & PSFzf
+## Interactive Fuzzy Finding: fzf & PSFzf
 
 Configured with custom **OneDark-Pro** theme colors and preview commands:
 
@@ -174,7 +174,7 @@ Typing `ssh **` or `scp **` followed by <kbd>Tab</kbd> automatically fuzzy searc
 
 ---
 
-## 🧭 Smart Directory Jumping: zoxide
+## Smart Directory Jumping: zoxide
 
 `zoxide` replaces the standard `cd` command across all shells:
 
@@ -185,7 +185,7 @@ Typing `ssh **` or `scp **` followed by <kbd>Tab</kbd> automatically fuzzy searc
 
 ---
 
-## 📁 Modern File Listing & Viewing: lsd & bat
+## Modern File Listing & Viewing: lsd & bat
 
 ### `lsd` (Next-Gen `ls`)
 
@@ -202,7 +202,7 @@ Typing `ssh **` or `scp **` followed by <kbd>Tab</kbd> automatically fuzzy searc
 
 ---
 
-## 🔍 Fast Search & File Discovery: ripgrep & fd
+## Fast Search & File Discovery: ripgrep & fd
 
 ### `ripgrep` (`rg`)
 
@@ -221,7 +221,7 @@ Configured with global ignore rules in [`home/dot_config/fd/ignore`](../home/dot
 
 ---
 
-## 🌐 Network & Transfer Utilities: curl & wget
+## Network & Transfer Utilities: curl & wget
 
 Both utilities follow strict **XDG Base Directory** specifications to prevent cluttering `$HOME`.
 
@@ -246,7 +246,7 @@ Configured via `$WGETRC` pointing to [`home/dot_config/wgetrc.tmpl`](../home/dot
 
 ---
 
-## 🗂️ Terminal File Manager: Yazi
+## Terminal File Manager: Yazi
 
 [Yazi](https://yazi-rs.github.io) is an ultra-fast terminal file manager written in Rust.
 
@@ -269,7 +269,7 @@ Use the `yy` alias in any shell to launch Yazi. When you exit with <kbd>q</kbd>,
 
 ---
 
-## 🌿 Terminal Git UI: LazyGit (`lzg` / `lg`)
+## Terminal Git UI: LazyGit (`lzg` / `lg`)
 
 Launch interactive Git management with `lzg` or `lg` (or <kbd>Space</kbd> <kbd>g</kbd> <kbd>g</kbd> in Neovim).
 
@@ -291,7 +291,7 @@ Configured with the **OneDark-Pro** color scheme and integrates with `delta` for
 
 ---
 
-## 🔧 Git & SSH Configuration
+## Git & SSH Configuration
 
 Git reads [`home/dot_config/git/config.tmpl`](../home/dot_config/git/config.tmpl) from `~/.config/git/config`. It sets `delta` as the pager, `zdiff3` conflicts, histogram diffs, `rerere`, `fetch.prune`, `push.autoSetupRemote`, rebase-on-pull and a set of short aliases (`git st`, `git lg`, `git gone`, ...).
 
@@ -302,7 +302,7 @@ Git reads [`home/dot_config/git/config.tmpl`](../home/dot_config/git/config.tmpl
 
 ---
 
-## 🐳 Container Management: lazydocker (`lzd`)
+## Container Management: lazydocker (`lzd`)
 
 [lazydocker](https://github.com/jesseduffield/lazydocker) is an interactive terminal UI for both Docker and Docker Compose environments, aliased to `lzd`:
 
@@ -323,7 +323,7 @@ Git reads [`home/dot_config/git/config.tmpl`](../home/dot_config/git/config.tmpl
 
 ---
 
-## 🪵 Log Analysis & Navigation: lazyjournal (`lzj` / `lj`) & lnav
+## Log Analysis & Navigation: lazyjournal (`lzj` / `lj`) & lnav
 
 ### 1. `lazyjournal` (`lzj` / `lj`)
 
@@ -357,7 +357,7 @@ Git reads [`home/dot_config/git/config.tmpl`](../home/dot_config/git/config.tmpl
 
 ---
 
-## 📊 System Resource Monitoring: bottom (btm)
+## System Resource Monitoring: bottom (btm)
 
 [bottom](https://github.com/ClementTsang/bottom) is an interactive, cross-platform graphical system and process monitor displaying CPU cores, memory, disk I/O, network bandwidth, and a process tree themed with **OneDark-Pro**:
 
@@ -371,7 +371,7 @@ Git reads [`home/dot_config/git/config.tmpl`](../home/dot_config/git/config.tmpl
 
 ---
 
-## 📖 Markdown, System Info & Disk Usage: glow, fastfetch & dust
+## Markdown, System Info & Disk Usage: glow, fastfetch & dust
 
 ### `glow`
 
@@ -393,7 +393,7 @@ Configured in [`home/dot_config/dust/config.toml.tmpl`](../home/dot_config/dust/
 
 ---
 
-## ☸️ Kubernetes Tooling Suite
+## Kubernetes Tooling Suite
 
 Declarative Kubernetes management configured across all operating systems:
 
@@ -437,7 +437,7 @@ Configured in [`home/dot_config/k9s/`](../home/dot_config/k9s/):
 
 ---
 
-## 🛠️ Developer Ecosystem: gh, uv, ruff & mise
+## Developer Ecosystem: gh, uv, ruff & mise
 
 ### `gh` (GitHub CLI)
 
@@ -464,7 +464,7 @@ Configured in [`home/dot_config/drydock/config.toml.tmpl`](../home/dot_config/dr
 
 ---
 
-## 🤖 AI Coding CLIs: Claude Code & Antigravity
+## AI Coding CLIs: Claude Code & Antigravity
 
 Both are installed and version-pinned by aqua (`claude` from `anthropics/claude-code`, `agy` from `google-antigravity/antigravity-cli`), so Renovate bumps them like every other tool.
 
@@ -493,7 +493,7 @@ What Claude Code gets by default: background auto-update off (aqua owns the vers
 - **Dedicated AI Layout (`zclaude`)**: Features a 72% primary Claude pane flanked by a command terminal and suspended `lazygit`, secondary tabs for code editing and `bottom` monitoring, and dynamic swap layouts.
 - **System Keep-Alive**: Prevents system and idle sleep while Claude is active and while waiting out limits (`caffeinate` on macOS, Win32 `SetThreadExecutionState` on Windows, and `systemd-inhibit` on Linux).
 - **Auto-Resumption**: Accurately parses limit reset times (e.g. `resets 3:15 PM` or relative duration) from viewport dumps and transcripts, safely dismisses any interactive `/rate-limit-options` dialog with `Esc`, and injects `continue` once the reset time (+ safety margin) arrives. Handles transient 529/503 overloads with progressive backoff.
-- **Claude CLI Option Parity**: Forwards common Claude Code flags seamlessly:
+- **Claude CLI Option Parity**: Forwards common Claude Code flags:
   - `-r, --resume [ID]`: Resume an existing session or open the interactive picker.
   - `-c, --continue`: Continue the latest session in the directory.
   - `-p, --print`: Run non-interactively and stream response.
@@ -507,7 +507,7 @@ What Claude Code gets by default: background auto-update off (aqua owns the vers
 
 ---
 
-## 🔄 Package & Tool Management: aqua
+## Package & Tool Management: aqua
 
 NREDF uses **aqua** to declaratively install, lock, and manage CLI tools across Linux, macOS, and Windows.
 

@@ -4,7 +4,7 @@ This guide details setting up, using, and troubleshooting **NREDF dotfiles** on 
 
 ---
 
-## 🚀 Quick Install (One-Liners)
+## Quick Install (One-Liners)
 
 Using chezmoi directly:
 
@@ -22,7 +22,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/NemesisRE/dotfiles/main/boot
 
 ---
 
-## 📦 Package Management Across Distributions
+## Package Management Across Distributions
 
 NREDF manages native prerequisite packages automatically via [`home/.chezmoidata/packages.yaml`](../home/.chezmoidata/packages.yaml) during `chezmoi apply`.
 
@@ -37,7 +37,7 @@ All developer CLI tools (such as `neovim`, `zellij`, `atuin`, `fzf`, `zoxide`, `
 
 ---
 
-## 🐚 Supported Shells on Linux
+## Supported Shells on Linux
 
 ### 1. Zsh
 
@@ -67,7 +67,7 @@ reload -s pwsh   # Switch to PowerShell
 
 ---
 
-## 🪟 Terminal Emulation (Kitty)
+## Terminal Emulation (Kitty)
 
 On Linux desktop environments, **Kitty** is the recommended GPU-accelerated terminal emulator:
 
@@ -113,7 +113,7 @@ NREDF includes pre-configured drop-down terminal settings in [`home/dot_config/k
 
 ---
 
-## 🔑 SSH Agent Management
+## SSH Agent Management
 
 NREDF features an intelligent SSH Agent detection engine in [`nredf_set_ssh_agent.bash`](../home/dot_local/share/nredf/shell/common/functions/nredf_set_ssh_agent.bash):
 
@@ -146,7 +146,7 @@ In WSL 1/2, NREDF can bridge your Windows SSH Agent (e.g. Bitwarden Desktop or W
 
 ---
 
-## 💡 Linux Tips & Tricks
+## Linux Tips & Tricks
 
 ### 1. Fast Package Maintenance (`aptall`)
 
@@ -190,7 +190,7 @@ systemctl --user list-timers nredf-daily-sync.timer
 
 ---
 
-## ❓ FAQ & Troubleshooting
+## FAQ & Troubleshooting
 
 ### Q1: Locale warnings (`perl: warning: Setting locale failed...`)
 

@@ -1,10 +1,10 @@
-# 🔐 Secrets & Multi-Store Management Guide
+# Secrets & Multi-Store Management Guide
 
-NREDF dotfiles feature a **pluggable, multi-store secret management architecture** powered by [chezmoi](https://chezmoi.io). It allows you to manage developer secrets (such as GitHub API tokens for [aqua](https://aquaproj.github.io/) and Git SSH commit signing keys) seamlessly without hardcoding credentials or duplicating them across multiple password managers.
+NREDF dotfiles feature a **pluggable, multi-store secret management architecture** powered by [chezmoi](https://chezmoi.io). It manages developer secrets (such as GitHub API tokens for [aqua](https://aquaproj.github.io/) and Git SSH commit signing keys) without hardcoding credentials or duplicating them across multiple password managers.
 
 ---
 
-## 🌟 Core Concepts
+## Core Concepts
 
 1. **Direct Machine Mapping**: Every machine's `~/.config/chezmoi/chezmoi.toml` declares where its credentials come from.
 2. **Multi-Store Concurrency**: You can mix and match stores on a single deployment (e.g. personal secrets from **Bitwarden** and work secrets from **KeePassXC**).
@@ -14,7 +14,7 @@ NREDF dotfiles feature a **pluggable, multi-store secret management architecture
 
 ---
 
-## 🧭 Profile Presets
+## Profile Presets
 
 When running `chezmoi init` (or `chezmoi init --prompt`), you are prompted to choose a secrets profile preset:
 
@@ -27,7 +27,7 @@ When running `chezmoi init` (or `chezmoi init --prompt`), you are prompted to ch
 
 ---
 
-## 🔗 URI Pointer Format
+## URI Pointer Format
 
 Secrets configured under `[data.secrets]` in `~/.config/chezmoi/chezmoi.toml` use prefix-based routing:
 
@@ -47,7 +47,7 @@ Secrets configured under `[data.secrets]` in `~/.config/chezmoi/chezmoi.toml` us
 
 ---
 
-## 🗄️ Multi-Store Hybrid Deployments
+## Multi-Store Hybrid Deployments
 
 You can query multiple password managers in a single `chezmoi apply` run.
 
@@ -83,7 +83,7 @@ During `chezmoi apply`:
 
 ---
 
-## ⚙️ Managed Secrets & Output Files
+## Managed Secrets & Output Files
 
 ### 1. Aqua GitHub Token (`~/.config/nredf/aqua-vault.env`)
 
@@ -148,7 +148,7 @@ servers:
 
 ---
 
-## 🛠️ Step-by-Step Setup
+## Step-by-Step Setup
 
 ### Step 1: Prepare Vault Items
 
@@ -196,7 +196,7 @@ Chezmoi will unlock your secret store(s), retrieve the credentials, and populate
 
 ---
 
-## 🔍 Verification & Troubleshooting
+## Verification & Troubleshooting
 
 ### Test Secret Resolution Directly
 

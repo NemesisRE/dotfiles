@@ -6,7 +6,7 @@ None of the five is the default login shell — install and try any of them with
 
 ---
 
-## 🧭 Shell Feature Parity Matrix
+## Shell Feature Parity Matrix
 
 All five shells share a unified experience designed around modern developer ergonomics, with a small number of documented exceptions — see "Known Parity Exceptions" below.
 
@@ -30,7 +30,7 @@ All five shells share a unified experience designed around modern developer ergo
 
 ---
 
-## ⚙️ Shell Implementations & Initialization
+## Shell Implementations & Initialization
 
 ### 1. Zsh Architecture
 
@@ -111,7 +111,7 @@ All five shells share a unified experience designed around modern developer ergo
 | <kbd>Ctrl</kbd> + <kbd>l</kbd> | Clear Screen | Clear terminal screen |
 
 > [!NOTE]
-> On macOS, Option+c produces `ç` or `©` by default. NREDF automatically binds `ç` and `©` to `fzf-cd-widget` in Zsh so directory fuzzy jumping works seamlessly without changing Terminal settings.
+> On macOS, Option+c produces `ç` or `©` by default. NREDF binds `ç` and `©` to `fzf-cd-widget` in Zsh so directory fuzzy jumping works without changing Terminal settings.
 
 ---
 
@@ -182,7 +182,7 @@ All five shells share a unified experience designed around modern developer ergo
 
 ---
 
-## 🛠️ Unified Aliases & Functions
+## Unified Aliases & Functions
 
 NREDF guarantees that common development commands behave identically regardless of your current shell or operating system, across all five shells:
 
@@ -219,7 +219,7 @@ NREDF guarantees that common development commands behave identically regardless 
 
 ---
 
-## 🧰 Helper Functions
+## Helper Functions
 
 Real functions (not aliases to another binary), implemented once with identical names and behavior in bash/zsh, fish, Nushell and PowerShell. Each one checks its own tool dependency at call time and prints a clear message on stderr instead of failing silently if it's missing — none of them do any work at shell startup.
 
@@ -242,7 +242,7 @@ Real functions (not aliases to another binary), implemented once with identical 
 
 ---
 
-## 🏠 Local, Machine-Specific Overrides
+## Local, Machine-Specific Overrides
 
 None of the following files are chezmoi-managed or committed to this repo — they live only on your machine, are yours to create, and `chezmoi apply` never touches or overwrites them. [`~/.config/nredf/README.md`](../home/dot_config/private_nredf/README.md) is a shorter, on-disk version of this same section.
 
@@ -295,7 +295,7 @@ mise natively loads `config.local.toml` alongside `config.toml` in the same dire
 
 ---
 
-## 🔄 The Unified `reload` Command
+## The Unified `reload` Command
 
 Each of the five shells provides a high-performance `reload` function with identical arguments (in Nushell, its typed named flags are generated from the same option set, so `reload --help` documents itself):
 
@@ -344,7 +344,7 @@ Options:
 
 ---
 
-## 📂 Yazi CWD Wrapper (`yy`)
+## Yazi CWD Wrapper (`yy`)
 
 Running standard `yazi` leaves the shell in whatever directory you started in. NREDF includes the `yy` function in all five shells:
 
@@ -356,7 +356,7 @@ When you navigate to a directory inside Yazi and quit with <kbd>q</kbd>, your sh
 
 ---
 
-## 🔄 Automated Daily Maintenance & Hot-Reloading
+## Automated Daily Maintenance & Hot-Reloading
 
 NREDF decouples all periodic maintenance and network-heavy upgrade tasks from interactive shell startup. Interactive shells start in milliseconds without waiting on network checks, git pulls, or package managers.
 
@@ -392,7 +392,7 @@ If you have open terminals when the background sync completes:
 
 ---
 
-## ⚠️ Known Parity Exceptions
+## Known Parity Exceptions
 
 "Five-shell parity" (AGENTS.md) means every command, alias and completion is either implemented identically everywhere, or its gap here is deliberate, understood, and won't silently regress. These are the current gaps:
 
@@ -418,7 +418,7 @@ If you have open terminals when the background sync completes:
 
 ---
 
-## ❓ FAQ & Troubleshooting
+## FAQ & Troubleshooting
 
 ### Q1: How are runtime versions (Node.js, Python, Ruby, Go) managed?
 

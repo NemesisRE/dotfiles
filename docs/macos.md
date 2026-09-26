@@ -4,7 +4,7 @@ This guide covers configuring, optimizing, and troubleshooting your **macOS** wo
 
 ---
 
-## 🚀 Quick Install (One-Liners)
+## Quick Install (One-Liners)
 
 Using chezmoi directly:
 
@@ -22,7 +22,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/NemesisRE/dotfiles/main/boot
 
 ---
 
-## 🏗️ Apple Silicon vs Intel Architecture
+## Apple Silicon vs Intel Architecture
 
 NREDF automatically adapts all paths, compiler flags, and package locations based on your CPU architecture:
 
@@ -41,7 +41,7 @@ Homebrew analytics and cleanup noise are disabled automatically in [`common/rc.t
 
 ---
 
-## 📦 Prerequisites Managed via Homebrew
+## Prerequisites Managed via Homebrew
 
 Chezmoi manages native macOS packages and fonts declared in [`home/.chezmoidata/packages.yaml`](../home/.chezmoidata/packages.yaml) during `chezmoi apply`:
 
@@ -62,17 +62,17 @@ packages:
 
 ---
 
-## 🐚 Supported Shells on macOS
+## Supported Shells on macOS
 
 ### 1. Zsh (Default macOS Shell)
 
 - Pre-installed by Apple and configured as the default shell.
-- NREDF supercharges Zsh with **Sheldon** plugin management, **Oh-My-Posh** prompt (`OneDark-Pro`), **Atuin** history sync, and **zoxide** navigation.
+- NREDF configures Zsh with **Sheldon** plugin management, **Oh-My-Posh** prompt (`OneDark-Pro`), **Atuin** history sync, and **zoxide** navigation.
 
 ### 2. Modern Bash (Bash 4.4+ / 5.x)
 
 - Apple ships an obsolete **Bash 3.2** (from 2007) due to GPL licensing.
-- **NREDF Solution**: When you start Bash, [`.bashrc.tmpl`](../home/dot_bashrc.tmpl) automatically detects Homebrew Bash (`/opt/homebrew/bin/bash` or `/usr/local/bin/bash`) and seamlessly re-executes into it!
+- **NREDF Solution**: When you start Bash, [`.bashrc.tmpl`](../home/dot_bashrc.tmpl) detects Homebrew Bash (`/opt/homebrew/bin/bash` or `/usr/local/bin/bash`) and re-executes into it.
 - This unlocks **ble.sh** (Bash Line Editor), giving Bash real-time syntax highlighting, autosuggestions, and modern completion.
 
 ### 3. PowerShell (`pwsh`)
@@ -115,7 +115,7 @@ On macOS, pressing <kbd>Option</kbd> + <kbd>key</kbd> (such as <kbd>Option</kbd>
 
 ---
 
-## 🔑 SSH Agent Management (Bitwarden / 1Password)
+## SSH Agent Management (Bitwarden / 1Password)
 
 ### 1. Bitwarden Desktop SSH Agent
 
@@ -135,7 +135,7 @@ If configured for 1Password, NREDF automatically detects:
 
 ---
 
-## 💡 macOS Tips & Tricks
+## macOS Tips & Tricks
 
 ### 1. Change Login Shell to Homebrew Bash or Zsh
 
@@ -186,7 +186,7 @@ macOS by default prints `Last login: <date> on <tty>` on every login shell, caus
 
 ---
 
-## ❓ FAQ & Troubleshooting
+## FAQ & Troubleshooting
 
 ### Q1: "xcode-select: note: install requested for command line developer tools"
 

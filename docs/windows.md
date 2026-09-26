@@ -4,7 +4,7 @@ This guide walks you through setting up, configuring, and optimizing your Window
 
 ---
 
-## 🚀 Quick Install (One-Liner)
+## Quick Install (One-Liner)
 
 Open **PowerShell** (run as Administrator for service and package setups) and run:
 
@@ -27,7 +27,7 @@ chezmoi init --apply NemesisRE/dotfiles
 
 ---
 
-## 📋 Prerequisites & Recommended Tooling
+## Prerequisites & Recommended Tooling
 
 Chezmoi automatically manages and installs these core prerequisite packages on Windows via [`home/.chezmoidata/packages.yaml`](../home/.chezmoidata/packages.yaml) and `winget` during `chezmoi apply`.
 
@@ -78,7 +78,7 @@ By default, NREDF uses safe defaults (`false`) and will **not** overwrite pre-ex
 
 ---
 
-## 🐚 Supported Shells on Windows
+## Supported Shells on Windows
 
 NREDF supports multiple shells on Windows with shared aliases, history, and modern tool replacements:
 
@@ -165,7 +165,7 @@ To eliminate startup lag on Windows:
 
 ---
 
-## 🔑 SSH Agent Setup (Bitwarden SSH Agent)
+## SSH Agent Setup (Bitwarden SSH Agent)
 
 Bitwarden Desktop includes a built-in SSH Agent on Windows:
 
@@ -177,7 +177,7 @@ Bitwarden Desktop includes a built-in SSH Agent on Windows:
 
 ---
 
-## 📦 Aqua CLI Tool Manager on Windows
+## Aqua CLI Tool Manager on Windows
 
 Aqua manages cross-platform developer tools on Windows without needing separate Scoop or Chocolatey manifests:
 
@@ -190,8 +190,8 @@ Aqua manages cross-platform developer tools on Windows without needing separate 
 | **bat** | Syntax-highlighting cat (OneDarkPro) | `bat` |
 | **lsd** | Modern file listing with icons | `lsd` |
 | **lazygit** | Terminal Git UI | `lazygit` / `lzg` / `lg` |
-| **neovim** | Hyperextensible AstroNvim v6 editor | `nvim` |
-| **yazi** | Blazing fast terminal file manager | `yazi` / `yy` |
+| **neovim** | AstroNvim v6 editor | `nvim` |
+| **yazi** | Terminal file manager | `yazi` / `yy` |
 | **lazydocker** | Terminal Docker & Compose UI | `lazydocker` / `lzd` |
 | **lazyjournal** | Multi-source log viewer & TUI | `lazyjournal` / `lzj` / `lj` |
 | **lnav** | Advanced log file navigator & SQL analyzer | `lnav` |
@@ -209,7 +209,7 @@ aqua token set
 
 ---
 
-## 🛠️ Windows System Tweaks & Optimizations
+## Windows System Tweaks & Optimizations
 
 > [!TIP]
 > You can automatically apply these tweaks by setting `apply_tweaks = true` under `[data.windows.systemTweaks]` and `[data.windows.explorer]` in `~/.config/chezmoi/chezmoi.toml`.
@@ -241,7 +241,7 @@ reg add "HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\TimeZoneInformation
 
 ---
 
-## 💡 Windows Tips & Tricks
+## Windows Tips & Tricks
 
 ### 1. Visual File Navigation with CWD Tracking (`yy`)
 
@@ -257,7 +257,7 @@ Displays millisecond execution time for Oh-My-Posh, Atuin, PSFzf, and custom fun
 
 ### 3. Sudo Privileges in PowerShell
 
-NREDF includes a smart `sudo` command that leverages `sudo.exe` (Windows 11), `gsudo`, or an elevated process window:
+NREDF includes a smart `sudo` command that uses `sudo.exe` (Windows 11), `gsudo`, or an elevated process window:
 
 ```powershell
 sudo notepad C:\Windows\System32\drivers\etc\hosts
@@ -265,7 +265,7 @@ sudo notepad C:\Windows\System32\drivers\etc\hosts
 
 ---
 
-## ❓ Troubleshooting & FAQs
+## Troubleshooting & FAQs
 
 ### "File cannot be loaded because running scripts is disabled on this system"
 
@@ -350,11 +350,11 @@ Add-MpPreference -ExclusionPath "$env:LOCALAPPDATA\aquaproj-aqua"
 **2. Mason: "Installation failed for ansible-lint: Platform not supported"**
 
 - **Root Cause**: `ansible-lint` is an Ansible/Python CLI tool that requires POSIX APIs and does not natively support Windows. Mason's package registry explicitly restricts it to `supported_platforms: [unix]`.
-- **Resolution**: NREDF automatically filters `ansible-lint` out of Mason's automatic installer on Windows in [`lua/plugins/mason.lua`](../home/dot_config/nvim/lua/plugins/mason.lua). The Ansible Language Server (`ansible-language-server` via npm) and syntax highlighting continue to work seamlessly on Windows, while `ansible-lint` is used when running in Linux/macOS/WSL.
+- **Resolution**: NREDF filters `ansible-lint` out of Mason's automatic installer on Windows in [`lua/plugins/mason.lua`](../home/dot_config/nvim/lua/plugins/mason.lua). The Ansible Language Server (`ansible-language-server` via npm) and syntax highlighting continue to work on Windows, while `ansible-lint` is used when running in Linux/macOS/WSL.
 
 ---
 
-## 🔄 Daily Commands
+## Daily Commands
 
 ```powershell
 chezmoi update                                                         # Pull latest dotfiles and apply
@@ -365,7 +365,7 @@ reload                                                                 # Reload 
 
 ---
 
-## 📖 Further Documentation
+## Further Documentation
 
 - [Unified Shells Guide (Zsh, Bash, Fish, Nushell, pwsh)](shells.md) — note: Fish has no Windows build; Nushell does
 - [Core Features & Tools Guide](tools.md)
