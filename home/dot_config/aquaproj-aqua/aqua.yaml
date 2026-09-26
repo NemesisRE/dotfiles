@@ -50,7 +50,7 @@ packages:
     tags:
       - default
       - required
-  - name: carapace-sh/carapace-bin@v1.7.3 # renovate: depName=carapace-sh/carapace-bin
+  - name: carapace-sh/carapace-bin@v1.8.0 # renovate: depName=carapace-sh/carapace-bin
     tags:
       - default
       - required
@@ -119,7 +119,7 @@ packages:
   - name: github/copilot-cli@v1.0.88 # renovate: depName=github/copilot-cli
     tags:
       - default
-  - name: anthropics/claude-code@v2.1.282 # renovate: depName=anthropics/claude-code
+  - name: anthropics/claude-code@v2.1.283 # renovate: depName=anthropics/claude-code
     tags:
       - default
   - name: google-antigravity/antigravity-cli@1.2.11 # renovate: depName=google-antigravity/antigravity-cli
@@ -156,7 +156,7 @@ packages:
     tags:
       - default
       - required
-  - name: smallstep/cli@v0.30.6 # renovate: depName=smallstep/cli
+  - name: smallstep/cli@v0.31.0 # renovate: depName=smallstep/cli
     tags:
       - default
   - name: yetidevworks/drydock@v1.2.1 # renovate: depName=yetidevworks/drydock
@@ -173,7 +173,7 @@ packages:
   - name: sharkdp/hyperfine@v1.20.0 # renovate: depName=sharkdp/hyperfine
     tags:
       - default
-  - name: jdx/mise@v2026.9.13 # renovate: depName=jdx/mise
+  - name: jdx/mise@v2026.9.14 # renovate: depName=jdx/mise
     tags:
       - default
       - required
