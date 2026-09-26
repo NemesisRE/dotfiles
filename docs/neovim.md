@@ -4,7 +4,7 @@ This document provides a comprehensive guide to the **Neovim** setup in the **NR
 
 ---
 
-## 🏗️ Architecture & Configuration Layout
+## Architecture & Configuration Layout
 
 Neovim configuration resides in [`home/dot_config/nvim/`](../home/dot_config/nvim/) and follows the modular AstroNvim structure:
 
@@ -39,7 +39,7 @@ Any additional `*.lua` file you add under `lua/plugins/` is picked up automatica
 
 The leader key is set to <kbd>Space</kbd> and the local leader is set to <kbd>,</kbd>.
 
-### 📁 File & Buffer Management
+### File & Buffer Management
 
 | Shortcut | Mode | Description |
 | :--- | :--- | :--- |
@@ -58,7 +58,7 @@ The leader key is set to <kbd>Space</kbd> and the local leader is set to <kbd>,<
 
 ---
 
-### 🧠 LSP & Code Intelligence
+### LSP & Code Intelligence
 
 | Shortcut | Mode | Description |
 | :--- | :--- | :--- |
@@ -78,7 +78,7 @@ The leader key is set to <kbd>Space</kbd> and the local leader is set to <kbd>,<
 
 ---
 
-### 🔀 Git & Version Control
+### Git & Version Control
 
 | Shortcut | Mode | Description |
 | :--- | :--- | :--- |
@@ -93,7 +93,7 @@ The leader key is set to <kbd>Space</kbd> and the local leader is set to <kbd>,<
 
 ---
 
-### 🪟 Window & Split Management
+### Window & Split Management
 
 | Shortcut | Mode | Description |
 | :--- | :--- | :--- |
@@ -107,7 +107,7 @@ The leader key is set to <kbd>Space</kbd> and the local leader is set to <kbd>,<
 
 ---
 
-### 💻 Embedded Terminal
+### Embedded Terminal
 
 | Shortcut | Mode | Description |
 | :--- | :--- | :--- |
@@ -118,7 +118,7 @@ The leader key is set to <kbd>Space</kbd> and the local leader is set to <kbd>,<
 
 ---
 
-### ⚙️ UI & Quick Toggles (`<Leader>u` prefix)
+### UI & Quick Toggles (`<Leader>u` prefix)
 
 | Shortcut | Mode | Description |
 | :--- | :--- | :--- |
@@ -131,7 +131,7 @@ The leader key is set to <kbd>Space</kbd> and the local leader is set to <kbd>,<
 
 ---
 
-## 📦 Managing Plugins & Language Servers
+## Managing Plugins & Language Servers
 
 ### 1. Lazy.nvim Plugin Management
 
@@ -225,14 +225,14 @@ return {
 
 ---
 
-## 💡 Tips & Tricks
+## Tips & Tricks
 
 ### Fast File Jump & Navigation
 
 - Press <kbd>Space</kbd> <kbd>f</kbd> <kbd>f</kbd> to find files. Type any substring (e.g. `zshrc` or `profile`) and press <kbd>Enter</kbd> to jump straight there.
 - Use <kbd>Space</kbd> <kbd>f</kbd> <kbd>w</kbd> (live grep) to search across the entire repository. Press <kbd>Ctrl</kbd> + <kbd>q</kbd> in the search popup to send all results into a quickfix list.
 
-### Seamless Clipboard Sharing (OSC 52)
+### Clipboard Sharing (OSC 52)
 
 NREDF configures terminal clipboard integration with OSC 52 passthrough. Even across remote SSH sessions or inside Zellij multiplexer sessions, copying with `y` or `"+y` syncs directly to your local desktop clipboard.
 
@@ -250,7 +250,7 @@ Formatting can be invoked on demand with <kbd>Space</kbd> <kbd>l</kbd> <kbd>f</k
 
 ---
 
-## ❓ FAQ & Troubleshooting
+## FAQ & Troubleshooting
 
 ### Q1: Why are icons showing as boxes or broken question marks?
 
