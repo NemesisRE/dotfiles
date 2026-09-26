@@ -12,15 +12,78 @@ on:
   # Lets refresh-pins.yml re-run CI on a commit it pushed with the default token
   # (which does not trigger `pull_request` runs), so those PRs are still checked.
   workflow_dispatch:
+  # Keeps the heavy pins/aqua-install jobs (gated below on `paths-filter` so they
+  # don't run on every unrelated push) honest even when nothing in the repo
+  # changed — upstream pinned artifacts and aqua registry entries can go stale
+  # or disappear on their own.
+  schedule:
+    - cron: "0 6 * * 1" # Monday 06:00 UTC
+
+# A new push/PR update supersedes whatever this workflow was already running for
+# the same ref — cancel it instead of burning runner time on stale output. Never
+# cancel a `push` run on a shared branch (main/master) that's just building once.
+# The weekly `schedule` run gets its OWN group (not keyed on `github.ref`, which
+# is just the default branch for a schedule event): sharing main's push group
+# would let a slow scheduled run (it's the one that actually exercises
+# aqua-validate/pins) queue a real push's CI behind it, since neither push nor
+# schedule cancels the other.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'schedule' && 'schedule' || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # ── Detect changed paths (gates the heavy jobs below) ───────────────────────
+  changes:
+    name: Detect changed paths
+    if: github.event_name != 'pull_request' || github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      pins: ${{ steps.filter.outputs.pins }}
+      aqua: ${{ steps.filter.outputs.aqua }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # No-op on `schedule` (no sensible base commit to diff against there,
+      # and none is needed: the downstream jobs' own `if:` already runs them
+      # unconditionally on `schedule`, path-filter output or not).
+      #
+      # `base: ${{ github.ref }}` matches dorny/paths-filter's own documented
+      # pattern for "push to a long-lived branch" (this repo pushes straight
+      # to main/master, not through a feature-branch merge-base): explicit
+      # rather than relying on its "repository default branch" fallback,
+      # which would compare a push to `master` against `main`'s tip instead
+      # of `master`'s own previous commit. No `fetch-depth` override on the
+      # checkout above — the action deepens its own shallow clone as needed
+      # (`initial-fetch-depth`, doubling until it finds the merge-base); the
+      # same doc page's own example for this exact scenario uses a plain,
+      # unmodified `actions/checkout` too.
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        if: github.event_name != 'schedule'
+        id: filter
+        with:
+          base: ${{ github.ref }}
+          filters: |
+            pins:
+              - '.github/scripts/pins.py'
+              - 'home/.chezmoidata/kitty.yaml'
+              - 'home/.chezmoidata/aqua-bootstrap.yaml'
+              - 'bootstrap.ps1'
+            aqua:
+              - 'home/dot_config/aquaproj-aqua/**'
+
   # ── ShellCheck ───────────────────────────────────────────────────────────────
   shellcheck:
     name: ShellCheck
     if: github.event_name != 'pull_request' || github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: ShellCheck — shell function library
         uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0
@@ -39,8 +102,11 @@ jobs:
     name: YAML lint
     if: github.event_name != 'pull_request' || github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - uses: ibiqlik/action-yamllint@2576378a8e339169678f9939646ee3ee325e845c # v3
         with:
@@ -56,8 +122,11 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Install chezmoi (Unix)
         if: runner.os != 'Windows'
@@ -159,12 +228,25 @@ jobs:
           if ($failed) { exit 1 }
 
   # ── aqua config validation ───────────────────────────────────────────────────
+  # `aqua install -a` resolves and downloads every pinned package's asset for
+  # every configured tag — slow, and only actually exercises anything new when
+  # aqua.yaml (or its lockfile/policy) changed, so it's gated the same way as
+  # the pins job below: on a relevant path change, on the weekly schedule so an
+  # upstream registry/asset regression is still caught even with no diff, or on
+  # a manual `workflow_dispatch` (a deliberate "check everything now" request
+  # — gating that on a diff too would make a manual re-run silently skip it).
   aqua-validate:
     name: aqua install (validate pinned versions)
-    if: github.event_name != 'pull_request' || github.actor != 'github-actions[bot]'
+    needs: changes
+    if: |
+      (github.event_name != 'pull_request' || github.actor != 'github-actions[bot]') &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || needs.changes.outputs.aqua == 'true')
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Install aqua
         uses: aquaproj/aqua-installer@96a9bc20066c5bf5e275b41019cfc165b25f4e2e # v4.0.5
@@ -188,9 +270,16 @@ jobs:
     name: Lint rendered templates
     if: github.event_name != 'pull_request' || github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
+      # fish still comes from apt, not aqua: fish-shell/fish-shell in aqua.yaml
+      # doesn't carry the `ci-lint` tag that nu's entry does (only nu needs
+      # that filter, to install just one package without pulling in the rest
+      # of aqua.yaml) — install it via aqua too if that tag gets added.
       - name: Install chezmoi, shellcheck, zsh and fish
         run: |
           sh -c "$(curl -fsLS get.chezmoi.io)" -- -b "${HOME}/.local/bin"
@@ -249,17 +338,41 @@ jobs:
           export PATH="${HOME}/.local/bin:${PATH}"
           ./.github/scripts/test-secret-templates.py
 
+  # ── Repo-wide invariants ─────────────────────────────────────────────────────
+  # Static, source-only checks from AGENTS.md that no render/lint step above
+  # catches: a run_onchange_ script whose hash comment can't detect its own
+  # input changing, a hook missing its CI/NREDF_NO_BOOTSTRAP guard, a modify_
+  # script with the wrong shape, a secret-fed file that isn't private_.
+  repo-rules:
+    name: Repository rules
+    if: github.event_name != 'pull_request' || github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: test-repo-rules.py
+        run: ./.github/scripts/test-repo-rules.py
+
   # ── PowerShell lint ──────────────────────────────────────────────────────────
   psscriptanalyzer:
     name: PSScriptAnalyzer
     if: github.event_name != 'pull_request' || github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Install PSScriptAnalyzer
         shell: pwsh
-        run: Install-Module PSScriptAnalyzer -Force -Scope CurrentUser -ErrorAction Stop
+        env:
+          # renovate: datasource=nuget depName=PSScriptAnalyzer registryUrl=https://www.powershellgallery.com/api/v2/
+          PSSCRIPTANALYZER_VERSION: 1.25.0
+        run: Install-Module PSScriptAnalyzer -RequiredVersion $env:PSSCRIPTANALYZER_VERSION -Force -Scope CurrentUser -ErrorAction Stop
 
       - name: Analyze
         shell: pwsh
@@ -270,13 +383,25 @@ jobs:
   # version AND a SHA-256. A pin only helps if it cannot silently rot: this re-downloads
   # every pinned artifact and compares. A Renovate version bump therefore fails here
   # until `.github/scripts/pins.py update` refreshes the hashes.
+  # Gated the same way as aqua-validate above: re-downloading and re-hashing
+  # every pinned artifact is slow and network-bound, so it only needs to run
+  # when a pin-relevant path changed, weekly to catch an upstream artifact
+  # rotting (same SHA-256 no longer being served) even without a local diff, or
+  # on `workflow_dispatch` — including the `refresh-pins.yml`-triggered one
+  # this file's `on:` block documents, which always does have a pin-relevant
+  # diff, but a manual dispatch for any other reason should still run this.
   pins:
     name: Verify pinned checksums
-    if: github.event_name != 'pull_request' || github.actor != 'github-actions[bot]'
+    needs: changes
+    if: |
+      (github.event_name != 'pull_request' || github.actor != 'github-actions[bot]') &&
+      (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' || needs.changes.outputs.pins == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: Verify
         run: python3 .github/scripts/pins.py verify
@@ -287,13 +412,19 @@ jobs:
     name: Markdown lint
     if: github.event_name != 'pull_request' || github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: "24"
 
+      # check.sh's markdownlint_all() pins the same version when it has to
+      # fall back to `npx`/`bunx` (i.e. markdownlint-cli2 isn't already on
+      # PATH) — keep the two in sync.
       - name: markdownlint-cli2
         run: npx --yes markdownlint-cli2@0.23.3 --config .markdownlint.yaml "**/*.md"
 
@@ -301,3 +432,26 @@ jobs:
       # everyone but their author) are rejected.
       - name: Check Markdown links
         run: python3 .github/scripts/check-md-links.py
+
+  # ── GitHub Actions workflow lint ─────────────────────────────────────────────
+  # check.sh already runs actionlint locally when it's installed; CI had no
+  # equivalent gate at all until now. raven-actions/actionlint is a plain
+  # install-and-run wrapper (no reviewdog dependency, so no extra checks:write
+  # / pull-requests:write permission is needed beyond this workflow's
+  # top-level contents:read) — pin its own `version` input too, not just the
+  # wrapper action's SHA, so a wrapper update can't silently change which
+  # actionlint build runs.
+  actionlint:
+    name: actionlint
+    if: github.event_name != 'pull_request' || github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2.2.0
+        with:
+          version: "1.7.12"
+          fail-on-error: true
