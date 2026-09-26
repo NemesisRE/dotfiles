@@ -1,3 +1,11 @@
 # ble.sh version data for chezmoi
+#
+# `sha256` pins the release archive that home/.chezmoiexternals/ble.toml.tmpl
+# unpacks into ~/.local/share/blesh and every interactive bash then sources; chezmoi
+# rejects a download that does not match. Renovate bumps `tag`;
+# .github/workflows/refresh-pins.yml then recomputes the hash on the PR branch and
+# re-runs CI. By hand: change `tag` and run `.github/scripts/pins.py update` (the
+# `pins` CI job fails until they match).
 ble:
   tag: v0.4.0-devel3 # renovate: depName=akinomyoga/ble.sh
+  sha256: "c8612ee612bc6b10dbfd6e85c6cbdfd7caf152a12d1f9de22ea0a9d735b3080c"
