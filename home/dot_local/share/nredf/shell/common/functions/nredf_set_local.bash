@@ -18,12 +18,19 @@ _nredf_set_local () {
       source "${NREDF_RC_PATH}/aliases"
     fi
 
-    if [[ -f "${NREDF_RC_LOCAL}/aliases" ]]; then
-      source "${NREDF_RC_LOCAL}/aliases"
-    fi
+    # The user's own ~/.config/<shell>/aliases is intentionally NOT sourced
+    # here: this function runs under `setopt localoptions`, which reverts any
+    # `setopt`/`unsetopt` a sourced file makes as soon as the function
+    # returns. The caller sources it at top level instead — see rc.tmpl.
   else
     if [[ ! -d "${NREDF_RC_LOCAL}" ]]; then
       mkdir -p "${NREDF_RC_LOCAL}"
+    fi
+
+    # Bundle loads first so a user override in NREDF_RC_LOCAL/functions
+    # (loaded below) can rely on — or redefine — anything nredf itself defines.
+    if [[ -s "${NREDF_RC_PATH}/functions.bundle" ]]; then
+      source "${NREDF_RC_PATH}/functions.bundle"
     fi
 
     if [[ -d "${NREDF_RC_LOCAL}/functions" ]]; then
@@ -34,14 +41,8 @@ _nredf_set_local () {
       done
     fi
 
-    if [[ -s "${NREDF_RC_PATH}/functions.bundle" ]]; then
-      source "${NREDF_RC_PATH}/functions.bundle"
-    elif [[ -f "${NREDF_RC_PATH}/functions" ]]; then
-      source "${NREDF_RC_PATH}/functions"
-    fi
-
-    if [[ -f "${NREDF_RC_LOCAL}/rc" ]]; then
-      source "${NREDF_RC_LOCAL}/rc"
-    fi
+    # The user's own ~/.config/<shell>/rc is intentionally NOT sourced here —
+    # see the comment above the aliases branch; the caller sources it at top
+    # level instead.
   fi
 }

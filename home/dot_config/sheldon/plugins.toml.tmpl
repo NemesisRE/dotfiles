@@ -17,18 +17,18 @@ use = [
   "lib/termsupport.zsh",
   "lib/theme-and-appearance.zsh",
   "plugins/npm/npm.plugin.zsh",
-  "plugins/rvm/rvm.plugin.zsh",
   "plugins/extract/extract.plugin.zsh",
   "plugins/colored-man-pages/colored-man-pages.plugin.zsh",
-  "plugins/colorize/colorize.plugin.zsh",
   "plugins/cp/cp.plugin.zsh",
-  "plugins/git-extras/git-extras.plugin.zsh",
   "plugins/systemadmin/systemadmin.plugin.zsh",
 ]
 
 
 [plugins.ohmyzsh.hooks]
-pre  = 'DISABLE_AUTO_TITLE=true; HYPHEN_INSENSITIVE=true; DISABLE_AUTO_UPDATE=true; ENABLE_CORRECTION=false; HIST_STAMPS="dd.mm.yyyy"; ZSH_CUSTOM="${NREDF_RC_PATH:-${HOME}/.config/zsh}"; (( ${+functions[compdef]} )) || { autoload -Uz compinit; (( ${+functions[_nredf_compinit]} )) && _nredf_compinit -i || compinit -i; }'
+# DISABLE_LS_COLORS=true: lib/theme-and-appearance.zsh (lazy-loaded on the
+# first precmd, after nredf's own `ls`/`lsd` alias from common/aliases is
+# already set) otherwise re-aliases `ls` with its own LS_COLORS/LSCOLORS.
+pre  = 'DISABLE_AUTO_TITLE=true; HYPHEN_INSENSITIVE=true; DISABLE_AUTO_UPDATE=true; DISABLE_LS_COLORS=true; ENABLE_CORRECTION=false; HIST_STAMPS="dd.mm.yyyy"; ZSH_CUSTOM="${NREDF_RC_PATH:-${HOME}/.config/zsh}"; (( ${+functions[compdef]} )) || { autoload -Uz compinit; (( ${+functions[_nredf_compinit]} )) && _nredf_compinit -i || compinit -i; }'
 post = '[[ -f "${HOME}/.config/fzf/key-bindings.zsh" ]] && source "${HOME}/.config/fzf/key-bindings.zsh"'
 
 # ── fzf completions ───────────────────────────────────────────────────────────

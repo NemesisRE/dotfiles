@@ -31,6 +31,8 @@ fi
 stty stop '' start '' -ixon -ixoff 2>/dev/null || true
 
 # History Settings
+[[ -d "${XDG_STATE_HOME}/bash" ]] || mkdir -p "${XDG_STATE_HOME}/bash"
+export HISTFILE="${XDG_STATE_HOME}/bash/history"
 HISTCONTROL=ignoreboth
 HISTTIMEFORMAT="%d/%m/%y %T "
 shopt -s histappend
@@ -56,5 +58,3 @@ if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 4) )
   unset -f _nredf_omp_gen_bash 2>/dev/null || true
   unset _nredf_omp_bash_init_file
 fi
-
-
