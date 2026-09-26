@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+# nredf_ssh <host> [ssh options...] (shell/*/functions/nredf_ssh.*): ssh
+# with an automatic TOTP via sshpass, so it takes ssh's own arguments.
+name: nredf_ssh
+description: ssh with automatic TOTP from Bitwarden/1Password
+parsing: disabled
+completion:
+  positionalany: ["$carapace.bridge.CarapaceBin([ssh])"]

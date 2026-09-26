@@ -1,0 +1,56 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+# lazyjournal 0.8 (`lazyjournal --help`). carapace-bin ships no lazyjournal
+# completer; the lzj/lj aliases (home/.chezmoidata/aliases.yaml) bridge here.
+name: lazyjournal
+description: TUI for logs from journald, auditd, files, containers and pods
+flags:
+  -h, --help: show help
+  -v, --version: show version
+  -g, --config: show configuration of hotkeys and settings
+  -a, --audit: show audit information
+  -l, --logging: enable logging of executed commands for debugging
+  -d, --tail-mode-disable: disable streaming of new events
+  -t, --tail-lines=: number of log lines to output (200-200000)
+  -u, --update-interval=: update interval of the log output (2-10)
+  -F, --min-symbols-filter=: minimum number of symbols for filtering (1-10)
+  -T, --timezone-filter=: UTC offset when filtering by date
+  -m, --mouse-disable: disable mouse control support
+  -w, --wrap-disable: disable wrap mode in log content
+  -C, --color-mode=: highlighting mode for logs
+  -U, --unit-types=: filter the list of units by type
+  -j, --journal-field=: filter the list of system journals by field
+  -J, --journal-priority=: filter the log output by priority
+  -b, --journal-boot=: filter the log output by boot (0 current, -1 previous)
+  -p, --custom-path=: path in the file system to search for logs
+  -o, --docker-stream-only: force reading Docker logs in stream mode
+  -D, --docker-context=: Docker context to use
+  -P, --podman-context=: Podman context to use
+  -K, --kubernetes-context=: Kubernetes context to use
+  -n, --kubernetes-namespace=: Kubernetes namespace to use
+  -c, --command-color: ANSI coloring in command line mode
+  -f, --command-fuzzy=: filter with fuzzy search in command line mode
+  -r, --command-regex=: filter with a regular expression in command line mode
+  -s, --ssh=: connect to a remote host using standard ssh options
+completion:
+  flag:
+    color-mode: [default, tailspin, bat, disable]
+    unit-types:
+      - service
+      - timer
+      - scope
+      - socket
+      - mount
+      - slice
+      - path
+      - target
+      - device
+      - swap
+      - automount
+      - "$uniquelist(,)"
+    journal-field: [SYSLOG_IDENTIFIER, _UID, _PID, _COMM, _EXE, _CMDLINE]
+    journal-priority: [debug, info, notice, warning, err, crit, alert, emerg]
+    custom-path: ["$directories"]
+    docker-context: ["$carapace.tools.docker.Contexts"]
+    kubernetes-context: ["$carapace.tools.kubectl.Contexts"]
+    kubernetes-namespace: ["$carapace.tools.kubectl.Resources({types: 'namespaces'})"]
+    ssh: ["$carapace.net.ssh.Hosts"]

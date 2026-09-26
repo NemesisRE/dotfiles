@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+# Alias for lazydocker (home/.chezmoidata/aliases.yaml): hands the whole
+# command line to lazydocker's completer.
+name: lzd
+description: Alias for lazydocker
+parsing: disabled
+completion:
+  positionalany: ["$carapace.bridge.CarapaceBin([lazydocker])"]
