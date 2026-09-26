@@ -1,6 +1,5 @@
 k9s:
   liveViewAutoRefresh: true
-  screenDumpDir: /tmp/k9s-screens
   refreshRate: 2
   maxConnRetry: 5
   readOnly: false
@@ -13,7 +12,7 @@ k9s:
     noIcons: false
     reactive: true
     skin: one-dark
-  skipLatestRevCheck: false
+  skipLatestRevCheck: true
   disablePodCounting: false
   shellPod:
     image: busybox:1.35.0

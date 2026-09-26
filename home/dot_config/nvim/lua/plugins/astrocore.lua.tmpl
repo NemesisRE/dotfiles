@@ -1,19 +1,5 @@
-{{- $relativenumber := false -}}
-{{- if and (hasKey . "editor") (hasKey .editor "nvim") (hasKey .editor.nvim "relativenumber") -}}
-  {{- $relativenumber = .editor.nvim.relativenumber -}}
-{{- else if and (hasKey . "nvim") (hasKey .nvim "relativenumber") -}}
-  {{- $relativenumber = .nvim.relativenumber -}}
-{{- else if hasKey . "relativenumber" -}}
-  {{- $relativenumber = .relativenumber -}}
-{{- end -}}
-{{- $number := true -}}
-{{- if and (hasKey . "editor") (hasKey .editor "nvim") (hasKey .editor.nvim "number") -}}
-  {{- $number = .editor.nvim.number -}}
-{{- else if and (hasKey . "nvim") (hasKey .nvim "number") -}}
-  {{- $number = .nvim.number -}}
-{{- else if hasKey . "number" -}}
-  {{- $number = .number -}}
-{{- end -}}
+{{- $relativenumber := dig "editor" "nvim" "relativenumber" false . -}}
+{{- $number := dig "editor" "nvim" "number" true . -}}
 -- AstroCore provides a central place to modify mappings, vim options, autocommands, and more!
 -- Configuration documentation can be found with `:h astrocore`
 

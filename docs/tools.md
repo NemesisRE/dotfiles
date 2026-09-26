@@ -18,7 +18,7 @@ All core CLI tools are declared centrally in [`home/dot_config/aquaproj-aqua/aqu
 | **Git UI** | `lazygit` (`lzg` / `lg`) | Interactive terminal Git management |
 | **Containers & Logs** | `lazydocker` (`lzd`), `lazyjournal` (`lzj` / `lj`), `lnav` | Terminal UIs for Docker management, log aggregation, and SQL log analysis |
 | **System Monitoring** | `bottom` (`btm`) | Real-time interactive system resource & process monitor |
-| **Kubernetes** | `kubectl`, `kubectx`, `kubens`, `k9s`, `helm` | Container orchestration, context switching, and TUI |
+| **Kubernetes** | `kubectl`, `kubectx`, `kubens`, `k9s`, `helm`, `stern` | Container orchestration, context switching, and TUI |
 | **Network & Transfers** | `curl`, `wget` | Hardened, XDG-compliant network transfer clients |
 | **Developer Ecosystem** | `gh`, `uv`, `ruff`, `mise`, `tealdeer` (`tldr`) | GitHub CLI, Python toolchain, runtime manager, and community-maintained man-page summaries |
 | **Repo Fleet Dashboard** | `drydock` | What's uncommitted, unpushed, and unreleased across every repo under `roots` |
@@ -403,6 +403,8 @@ Declarative Kubernetes management configured across all operating systems:
 | `kctx` / `ctx` | Shorthand for `kubectx` (interactive context selection) |
 | `kns` / `ns` | Shorthand for `kubens` (interactive namespace selection) |
 | `k9s` | Rich full-screen terminal UI for Kubernetes clusters |
+| `stern` | Multi-pod log tailing; [`home/dot_config/stern/config.yaml`](../home/dot_config/stern/config.yaml) defaults to `--tail=50` instead of the whole 48h window |
+| `kubectl getw` / `gety` / `getn` | kuberc aliases for `get -o wide`, `get -o yaml` and `get nodes -o wide`, from [`home/private_dot_kube/kuberc`](../home/private_dot_kube/kuberc) (aliases only, so scripts calling plain `kubectl` behave as before) |
 
 ### `k9s` Quick Keys & Plugins
 
@@ -425,6 +427,13 @@ Configured in [`home/dot_config/k9s/`](../home/dot_config/k9s/):
   - <kbd>a</kbd> (in CSR view): Automatically approve certificate signing request (`kubectl certificate approve`).
   - <kbd>l</kbd> (in Backup view): Stream Velero backup logs.
   - <kbd>Ctrl</kbd> + <kbd>l</kbd> (in Backup view): Describe Velero backup.
+- **Upstream Plugins & Skins**: [`home/.chezmoiexternals/k9s.toml.tmpl`](../home/.chezmoiexternals/k9s.toml.tmpl) pulls a curated set of upstream plugins and every skin from the k9s release pinned in `aqua.yaml`. Only plugins whose tools this repo installs are included, and `~/.config/k9s/plugins` is managed exactly, so keep personal plugins in `plugins.yaml`.
+- **Custom Jumps**: [`jumps.yaml`](../home/dot_config/k9s/jumps.yaml) (cert-manager Certificate to its Secret, Karpenter NodePool to its nodes). k9s only reads `jumps.yaml`, not a `jumps/` directory.
+- **Settings**: screen dumps use k9s's default per-user state directory (not a shared `/tmp`), and the startup check for a newer k9s release is off since aqua pins the version.
+
+### Terraform
+
+[`home/dot_terraformrc.tmpl`](../home/dot_terraformrc.tmpl) (rendered to `%APPDATA%\terraform.rc` on Windows) shares downloaded providers through `~/.cache/terraform/plugin-cache`, which chezmoi creates, and sets `disable_checkpoint = true`.
 
 ---
 

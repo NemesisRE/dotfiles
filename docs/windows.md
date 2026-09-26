@@ -348,7 +348,7 @@ Add-MpPreference -ExclusionPath "$env:LOCALAPPDATA\aquaproj-aqua"
 **1. Chezmoi Pack: "attempt to concatenate a nil value"**
 
 - **Root Cause**: `astrocommunity.pack.chezmoi` concatenates `os.getenv "HOME" .. "/.local/share/chezmoi"`. Because Windows defaults to `USERPROFILE` rather than `HOME`, `HOME` was unset (`nil`), causing a Lua runtime failure during lazy spec loading.
-- **Resolution**: NREDF automatically normalizes `vim.env.HOME = vim.env.USERPROFILE` at the top of Neovim's `init.lua`, persists `$env:HOME = $HOME` to Windows User environment variables, and configures Windows-compatible source paths (`%LOCALAPPDATA%\chezmoi`) in [`lua/plugins/chezmoi.lua`](../home/dot_config/nvim/lua/plugins/chezmoi.lua).
+- **Resolution**: NREDF automatically normalizes `vim.env.HOME = vim.env.USERPROFILE` at the top of Neovim's `init.lua`, persists `$env:HOME = $HOME` to Windows User environment variables, and points the chezmoi plugins at the source directory chezmoi itself renders (`.chezmoi.sourceDir`) in [`lua/plugins/chezmoi.lua.tmpl`](../home/dot_config/nvim/lua/plugins/chezmoi.lua.tmpl).
 
 **2. Mason: "Installation failed for ansible-lint: Platform not supported"**
 

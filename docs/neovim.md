@@ -18,7 +18,7 @@ Neovim configuration resides in [`home/dot_config/nvim/`](../home/dot_config/nvi
 │   └── plugins/
 │       ├── astrocore.lua.tmpl # Core options (numbers, undofile, swap), mappings, autocommands
 │       ├── astroui.lua        # UI theme configuration (OneDark-Pro)
-│       ├── chezmoi.lua        # chezmoi.vim: highlights and edits chezmoi-managed source files
+│       ├── chezmoi.lua.tmpl   # chezmoi.vim: highlights and edits chezmoi-managed source files
 │       ├── heirline.lua       # Heirline statusline & winbar configuration
 │       └── mason.lua          # Mason automatic tool & LSP installer configuration
 ```
@@ -300,7 +300,7 @@ aqua install
 ### Q5: Windows: Chezmoi pack "attempt to concatenate a nil value"
 
 **Cause**: The upstream `astrocommunity.pack.chezmoi` hardcodes `os.getenv "HOME" .. "/.local/share/chezmoi"`. Windows does not set `$env:HOME` by default (it uses `USERPROFILE`), causing a fatal concatenation error when evaluating lazy specs.
-**Resolution**: NREDF automatically normalizes `vim.env.HOME = vim.env.USERPROFILE` at the start of `init.lua` and `community.lua`, persists `HOME` in Windows User environment variables, and configures cross-platform source directory paths (`%LOCALAPPDATA%\chezmoi`) in [`lua/plugins/chezmoi.lua`](../home/dot_config/nvim/lua/plugins/chezmoi.lua).
+**Resolution**: NREDF automatically normalizes `vim.env.HOME = vim.env.USERPROFILE` at the start of `init.lua` and `community.lua`, persists `HOME` in Windows User environment variables, and points the chezmoi plugins at the source directory chezmoi itself renders (`.chezmoi.sourceDir`) in [`lua/plugins/chezmoi.lua.tmpl`](../home/dot_config/nvim/lua/plugins/chezmoi.lua.tmpl).
 
 ### Q6: Windows: "Installation failed for ansible-lint: Platform not supported"
 
