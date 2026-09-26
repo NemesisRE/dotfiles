@@ -59,9 +59,9 @@ The core stack powering this setup includes:
 
 ---
 
-## ⚙️ Fresh Install (One-Liners)
+## Fresh Install (One-Liners)
 
-### 🐧 Linux & 🍏 macOS
+### Linux & macOS
 
 Using chezmoi's installer directly:
 
@@ -79,7 +79,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/NemesisRE/dotfiles/main/boot
 
 ---
 
-### 🪟 Windows
+### Windows
 
 Open **PowerShell** and run the bootstrap script:
 
@@ -96,11 +96,11 @@ aqua install -a -l
 ```
 
 > [!TIP]
-> For in-depth platform configurations, check the dedicated [Linux Guide](docs/linux.md), [macOS Guide](docs/macos.md), and [Windows Guide](docs/windows.md). Explore all tools, shells, and Neovim in the [Documentation Hub](#-documentation-hub).
+> For in-depth platform configurations, check the dedicated [Linux Guide](docs/linux.md), [macOS Guide](docs/macos.md), and [Windows Guide](docs/windows.md). Explore all tools, shells, and Neovim in the [Documentation Hub](#documentation-hub).
 
 ---
 
-## 🔍 What Happens During Installation
+## What Happens During Installation
 
 1. **chezmoi** is installed (`~/.local/bin/chezmoi` on Unix, `%USERPROFILE%\.local\bin\chezmoi.exe` or winget on Windows)
 2. The dotfiles repository is cloned to `~/.local/share/chezmoi`
@@ -110,11 +110,11 @@ aqua install -a -l
 
 ---
 
-## 📝 After Install
+## After Install
 
 The initial `chezmoi init` prompts for machine-local values (such as Git name/email, secrets profile preset, SSH agent provider, and remote multiplexer). Answers are stored in `~/.config/chezmoi/chezmoi.toml` and override defaults without dirtying tracked repository files. To re-prompt or reconfigure anytime, run `chezmoi init --prompt && chezmoi apply`.
 
-If you use **Bitwarden**, **KeePassXC**, or **1Password**, your `AQUA_GITHUB_TOKEN` and Git SSH commit signing key are automatically resolved from your secret store without manual token entry. For full details on setting up personal or work secret profiles, see the [🔐 Secrets Guide](docs/secrets.md).
+If you use **Bitwarden**, **KeePassXC**, or **1Password**, your `AQUA_GITHUB_TOKEN` and Git SSH commit signing key are automatically resolved from your secret store without manual token entry. For full details on setting up personal or work secret profiles, see the [Secrets Guide](docs/secrets.md).
 
 Alternatively, if no secret store is configured and neither `GITHUB_TOKEN` nor `AQUA_GITHUB_TOKEN` is set, the first interactive session also offers to run `aqua token set` and store a token in your system keyring to prevent GitHub API rate limits.
 
@@ -141,23 +141,23 @@ reload
 
 ---
 
-## 📚 Documentation Hub
+## Documentation Hub
 
 Comprehensive, platform-specific and tool-specific guides:
 
 | Guide | Description |
 | :--- | :--- |
-| [🐧 Linux Guide](docs/linux.md) | Distro packages (`apt`, `pacman`, `dnf`), Linuxbrew, WSL with `npiperelay`, Kitty, shortcuts, tips, and troubleshooting |
-| [🍏 macOS Guide](docs/macos.md) | Apple Silicon & Intel Homebrew, modern Bash 5.x migration, Option-as-Alt fixes, Bitwarden SSH, Kitty, shortcuts, and troubleshooting |
-| [🪟 Windows Guide](docs/windows.md) | Windows Terminal, PowerShell 7+ & 5.1, Developer Mode, Win32 Long Paths, UTC RTC dual-boot fix, OneDrive junctions, Defender exclusions |
-| [🐚 Unified Shells Guide](docs/shells.md) | Feature parity matrix across **Zsh**, **Bash**, **Fish**, **Nushell**, and **PowerShell (pwsh)**, keybindings, PSReadLine, `ble.sh`, unified aliases, and `reload` |
-| [🧰 Core Tools Reference](docs/tools.md) | Declarative CLI tools (`aqua`, `chezmoi`), history sync (`atuin`), fuzzy find (`fzf`), smart jump (`zoxide`), `lsd`, `bat`, `lazygit` (`lzg`), `lazydocker` (`lzd`), `lazyjournal` (`lzj`), `lnav`, `yazi` (`yy`), `bottom` (`btm`), `k9s`, and builtin multiplexer **`zellij`** |
-| [🔐 Secrets & Multi-Store Guide](docs/secrets.md) | Pluggable secret store management (Bitwarden, KeePassXC, 1Password), URI routing, zero-duplication SSH keys, and automated `aqua` token sync |
-| [⚡ Neovim Guide](docs/neovim.md) | Dedicated **AstroNvim v6** documentation: OneDark-Pro theme, full keyboard shortcuts cheat sheet, LSP, Mason, Lazy, plugins, tips, and troubleshooting |
+| [Linux Guide](docs/linux.md) | Distro packages (`apt`, `pacman`, `dnf`), Linuxbrew, WSL with `npiperelay`, Kitty, shortcuts, tips, and troubleshooting |
+| [macOS Guide](docs/macos.md) | Apple Silicon & Intel Homebrew, modern Bash 5.x migration, Option-as-Alt fixes, Bitwarden SSH, Kitty, shortcuts, and troubleshooting |
+| [Windows Guide](docs/windows.md) | Windows Terminal, PowerShell 7+ & 5.1, Developer Mode, Win32 Long Paths, UTC RTC dual-boot fix, OneDrive junctions, Defender exclusions |
+| [Unified Shells Guide](docs/shells.md) | Feature parity matrix across **Zsh**, **Bash**, **Fish**, **Nushell**, and **PowerShell (pwsh)**, keybindings, PSReadLine, `ble.sh`, unified aliases, and `reload` |
+| [Core Tools Reference](docs/tools.md) | Declarative CLI tools (`aqua`, `chezmoi`), history sync (`atuin`), fuzzy find (`fzf`), smart jump (`zoxide`), `lsd`, `bat`, `lazygit` (`lzg`), `lazydocker` (`lzd`), `lazyjournal` (`lzj`), `lnav`, `yazi` (`yy`), `bottom` (`btm`), `k9s`, and builtin multiplexer **`zellij`** |
+| [Secrets & Multi-Store Guide](docs/secrets.md) | Pluggable secret store management (Bitwarden, KeePassXC, 1Password), URI routing, zero-duplication SSH keys, and automated `aqua` token sync |
+| [Neovim Guide](docs/neovim.md) | Dedicated **AstroNvim v6** documentation: OneDark-Pro theme, full keyboard shortcuts cheat sheet, LSP, Mason, Lazy, plugins, tips, and troubleshooting |
 
 ---
 
-## 🔄 Daily Use
+## Daily Use
 
 ```bash
 chezmoi update          # Pull latest dotfiles and re-apply
@@ -176,7 +176,7 @@ reload                  # Reload current PowerShell environment
 
 ---
 
-## 🛡️ Safety Nets
+## Safety Nets
 
 ### Automated Daily Sync
 
@@ -192,7 +192,7 @@ Every `.chezmoiscripts/` hook and `get-*.tmpl` vault lookup checks `$CI` (in add
 
 ---
 
-## 🤖 Central Dependency Updates
+## Central Dependency Updates
 
 [Renovate](renovate.json) opens PRs for everything version-pinned in this repo, not just `package.json`-style manifests:
 
@@ -212,7 +212,7 @@ Kitty and the aqua bootstrap are also pinned by SHA-256. A Renovate PR that bump
 
 ---
 
-## 🌐 Environment Variables
+## Environment Variables
 
 | Variable | Default | Purpose |
 | :--- | :--- | :--- |
@@ -222,6 +222,6 @@ Kitty and the aqua bootstrap are also pinned by SHA-256. A Renovate PR that bump
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the [GNU General Public License v3.0](LICENSE).
