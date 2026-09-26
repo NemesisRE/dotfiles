@@ -46,6 +46,7 @@ function NREDF_LastRun {
   # Backward compatibility fallback: check stored next run filetime
   try {
     $content = [System.IO.File]::ReadAllText($LastRunFile).Trim()
+    $storedTime = 0L
     if (-not [string]::IsNullOrEmpty($content) -and [long]::TryParse($content, [ref]$storedTime)) {
       if ($storedTime -gt (Get-Date).ToFileTime()) {
         return $true

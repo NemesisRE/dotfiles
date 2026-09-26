@@ -90,6 +90,7 @@ NREDF supports multiple shells on Windows with shared aliases, history, and mode
 - **PowerShell 7+**: `Documents\PowerShell\Microsoft.PowerShell_profile.ps1`
 - **Windows PowerShell 5.1**: `Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` (dot-sources PowerShell 7 profile)
 - 100% native CLI tooling: `fzf` (<kbd>Ctrl</kbd>+<kbd>t</kbd>, <kbd>Alt</kbd>+<kbd>c</kbd>), `lsd`, `bat`, `Atuin` history search, and `MenuComplete`.
+- **5.1 limitation**: the NREDF function library (Bitwarden session restore, `reload`, `NREDF_DailySync`, etc.) needs PowerShell 7+ — one of its files uses the `??` operator, a parse error on 5.1 — so it is skipped there with a one-line warning. Everything else (aliases, prompt theme, tool init) still loads.
 
 ### 2. Bash & Zsh on Windows
 
