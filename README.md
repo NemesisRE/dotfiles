@@ -4,14 +4,14 @@
 
 <div align="center">
   <a href="../../commits/main">
-    <img alt="Last commit" src="https://img.shields.io/github/last-commit/NemesisRE/chezmoi?style=for-the-badge&color=f2cdcd&labelColor=363a4f"/>
+    <img alt="Last commit" src="https://img.shields.io/github/last-commit/NemesisRE/dotfiles?style=for-the-badge&color=f2cdcd&labelColor=363a4f"/>
   </a>
-  <img alt="Repo size" src="https://img.shields.io/github/repo-size/NemesisRE/chezmoi?style=for-the-badge&color=eba0ac&labelColor=363a4f"/>
-  <a href="https://github.com/NemesisRE/chezmoi/actions/workflows/ci.yml">
-    <img alt="CI" src="https://img.shields.io/github/actions/workflow/status/NemesisRE/chezmoi/ci.yml?branch=main&label=CI&style=for-the-badge&color=a6e3a1&labelColor=363a4f"/>
+  <img alt="Repo size" src="https://img.shields.io/github/repo-size/NemesisRE/dotfiles?style=for-the-badge&color=eba0ac&labelColor=363a4f"/>
+  <a href="https://github.com/NemesisRE/dotfiles/actions/workflows/ci.yml">
+    <img alt="CI" src="https://img.shields.io/github/actions/workflow/status/NemesisRE/dotfiles/ci.yml?branch=main&label=CI&style=for-the-badge&color=a6e3a1&labelColor=363a4f"/>
   </a>
   <a href="LICENSE">
-    <img alt="License" src="https://img.shields.io/github/license/NemesisRE/chezmoi?style=for-the-badge&color=b4befe&labelColor=363a4f"/>
+    <img alt="License" src="https://img.shields.io/github/license/NemesisRE/dotfiles?style=for-the-badge&color=b4befe&labelColor=363a4f"/>
   </a>
 </div>
 
@@ -66,13 +66,13 @@ The core stack powering this setup includes:
 Using chezmoi's installer directly:
 
 ```bash
-sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin init --apply NemesisRE/chezmoi
+sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin init --apply NemesisRE/dotfiles
 ```
 
 Or run the bootstrap script:
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/NemesisRE/chezmoi/main/bootstrap.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/NemesisRE/dotfiles/main/bootstrap.sh)
 ```
 
 > **Prerequisites:** `curl`, `git` (auto-installed on Debian/Ubuntu). On macOS, Homebrew is used when available.
@@ -84,14 +84,14 @@ bash <(curl -fsSL https://raw.githubusercontent.com/NemesisRE/chezmoi/main/boots
 Open **PowerShell** and run the bootstrap script:
 
 ```powershell
-irm https://raw.githubusercontent.com/NemesisRE/chezmoi/main/bootstrap.ps1 | iex
+irm https://raw.githubusercontent.com/NemesisRE/dotfiles/main/bootstrap.ps1 | iex
 ```
 
 Or using chezmoi directly via winget:
 
 ```powershell
 winget install twpayne.chezmoi
-chezmoi init --apply NemesisRE/chezmoi
+chezmoi init --apply NemesisRE/dotfiles
 aqua install -a -l
 ```
 
@@ -162,33 +162,53 @@ Comprehensive, platform-specific and tool-specific guides:
 ```bash
 chezmoi update          # Pull latest dotfiles and re-apply
 chezmoi edit ~/.zshrc   # Edit a managed file
-aqua install            # Install/update all managed CLI tools
-sheldon lock            # Refresh zsh plugin lockfile
+aqua install -a         # Install/update all managed CLI tools
+sheldon lock --update   # Refresh zsh plugin lockfile against upstream
 ```
 
 On Windows (PowerShell):
 
 ```powershell
 chezmoi update          # Pull latest dotfiles and re-apply
-aqua install            # Update/install managed CLI tools
+aqua install -a         # Update/install managed CLI tools
 reload                  # Reload current PowerShell environment
 ```
 
 ---
 
+## 🛡️ Safety Nets
+
+### Automated Daily Sync
+
+A native background scheduler (`launchd` on macOS, `systemd --user` on Linux, Task Scheduler on Windows) runs once a day with low CPU/I/O priority: it fast-forwards this repo, re-applies dotfiles, upgrades chezmoi/aqua/Homebrew, and refreshes the Sheldon plugin lock — all without adding a single millisecond to interactive shell startup. See the "Automated Daily Maintenance & Hot-Reloading" section of the [Unified Shells Guide](docs/shells.md) for exactly what it runs, how it skips itself when a secret store is locked, and how an already-open shell picks up the result (`reload` / `reload -f`).
+
+### CI Guard
+
+Every `.chezmoiscripts/` hook and `get-*.tmpl` vault lookup checks `$CI` (in addition to `$NREDF_NO_BOOTSTRAP`, see below) before it installs anything, calls a package manager, or reads a secret store, and exits cleanly instead. This is what lets `.github/scripts/check.sh` dry-run the entire tree — including the Windows and vault-gated paths — in GitHub Actions with `CI=1`, with no network access and no `bw`/`op`/`keepassxc-cli` in sight.
+
+### `.chezmoiremove` Cleanup
+
+[`home/.chezmoiremove.tmpl`](home/.chezmoiremove.tmpl) lists target paths chezmoi deletes on `chezmoi apply` once they're no longer part of the tracked source — how this repo retires an old config layout (completions replaced by Carapace, deprecated dotfiles, a legacy shell-override directory) without leaving orphaned files behind on every machine.
+
+---
+
 ## 🤖 Central Dependency Updates
 
-Centralized dependency PRs prevent drift from chezmoi-managed files:
+[Renovate](renovate.json) opens PRs for everything version-pinned in this repo, not just `package.json`-style manifests:
 
-- Renovate configuration in [renovate.json](renovate.json)
-- GitHub Actions workflow updates grouped automatically
-- aqua registry reference in [home/dot_config/aquaproj-aqua/aqua.yaml](home/dot_config/aquaproj-aqua/aqua.yaml) updated automatically via Renovate regex manager
+- **GitHub Actions**: grouped, with a 3-day release wait (they run third-party code in CI).
+- **mise tool versions**: parsed out of [`home/dot_config/mise/config.toml.tmpl`](home/dot_config/mise/config.toml.tmpl).
+- **aqua packages**: both the registry `ref:` and each package's `version:` in [`home/dot_config/aquaproj-aqua/aqua.yaml`](home/dot_config/aquaproj-aqua/aqua.yaml), via custom regex managers (grouped as "aqua packages").
+- **`ble.sh`** (`home/.chezmoidata/ble.yaml`) and **Kitty** (`home/.chezmoidata/kitty.yaml`): release-tag/version bumps.
+- **The Windows aqua bootstrap** (`home/.chezmoidata/aqua-bootstrap.yaml`).
+
+Kitty and the aqua bootstrap are also pinned by SHA-256. A Renovate PR that bumps either version alone would fail the checksum-verification CI job, so [`.github/workflows/refresh-pins.yml`](.github/workflows/refresh-pins.yml) recomputes and commits the matching hashes on the PR branch and re-runs CI, letting Renovate automerge once it's green. Minor/patch/digest bumps elsewhere automerge the same way, on green CI only.
 
 **Recommended workflow:**
 
-1. Let Renovate open PRs
-2. Merge PRs in this repository
-3. Apply everywhere via `chezmoi update`
+1. Let Renovate open PRs (most automerge on green CI without any action).
+2. For anything that doesn't automerge, review and merge in this repository.
+3. Apply everywhere via `chezmoi update`.
 
 ---
 
@@ -198,7 +218,7 @@ Centralized dependency PRs prevent drift from chezmoi-managed files:
 | :--- | :--- | :--- |
 | `NREDF_DOT_PATH` | `~/.local/share/nredf` | Shell library root |
 | `NREDF_COMMON_RC_PROFILE` | `full` | RC profile level (`full` / `login-minimal` / `interactive-minimal`) |
-| `NREDF_NO_BOOTSTRAP` | unset | Set to `1` to skip aqua install + tool linking during `chezmoi apply` |
+| `NREDF_NO_BOOTSTRAP` | unset | Set to `1` to skip every install/link/bootstrap hook *and* every vault secret lookup (GitHub token, git signing key, MCP servers) during `chezmoi apply` — the same switch CI flips on for its dry-runs |
 
 ---
 

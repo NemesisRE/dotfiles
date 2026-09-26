@@ -9,7 +9,7 @@ This guide walks you through setting up, configuring, and optimizing your Window
 Open **PowerShell** (run as Administrator for service and package setups) and run:
 
 ```powershell
-irm https://raw.githubusercontent.com/NemesisRE/chezmoi/main/bootstrap.ps1 | iex
+irm https://raw.githubusercontent.com/NemesisRE/dotfiles/main/bootstrap.ps1 | iex
 ```
 
 Or using chezmoi directly:
@@ -20,7 +20,7 @@ winget install Microsoft.PowerShell
 winget install twpayne.chezmoi
 
 # 2. Open a new terminal so both are on PATH, then initialize and apply dotfiles
-chezmoi init --apply NemesisRE/chezmoi
+chezmoi init --apply NemesisRE/dotfiles
 ```
 
 `bootstrap.ps1` does the same, installing PowerShell 7 first when it is missing, because the hook that installs the other prerequisites is itself a PowerShell 7 script. The first apply installs aqua (the version pinned in [`aqua-bootstrap.yaml`](../home/.chezmoidata/aqua-bootstrap.yaml)) and links its tools.
@@ -281,7 +281,7 @@ In Windows environments, your `Documents` folder may be redirected away from `$H
 
 1. **OneDrive Known Folder Move** (e.g. `C:\Users\<user>\OneDrive\Documents`):
    - PowerShell resolves `$PROFILE` to the OneDrive path.
-   - chezmoi's post-apply hook (`.chezmoiscripts/run_onchange_after_windows_sync-profiles.ps1.tmpl`) automatically creates NTFS directory junctions (`PowerShell` and `WindowsPowerShell`) pointing from OneDrive's Documents folder to `$HOME\Documents\PowerShell`.
+   - Chezmoi's post-apply hook (`.chezmoiscripts/run_onchange_after_windows_sync-profiles.ps1.tmpl`) automatically creates NTFS directory junctions (`PowerShell` and `WindowsPowerShell`) pointing from OneDrive's Documents folder to `$HOME\Documents\PowerShell`. `bootstrap.ps1` runs `chezmoi init --apply`, which triggers this same hook — it no longer carries its own separate copy of this logic.
    - The hook runs on the first apply and again only when the hook itself changes. If you move Documents later (e.g. turn on OneDrive Known Folder Move), re-run it with `chezmoi state delete-bucket --bucket=entryState` followed by `chezmoi apply`.
    - Directory junctions are local NTFS reparse points that do not require Administrator privileges.
 
