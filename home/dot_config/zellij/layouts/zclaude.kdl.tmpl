@@ -6,13 +6,18 @@ layout {
     pane size=1 borderless=true {
       plugin location="file:{{ .chezmoi.homeDir }}/.config/zellij/plugins/zjstatus.wasm" {
         format_left   "#[fg=#282C34,bg=#4AA5F0,bold] 󰚩 Claude #[fg=#4AA5F0,bg=#3F4451]{command_status}#[fg=#3F4451,bg=#282C34]"
-        format_right  "#[fg=#3F4451,bg=#282C34]{datetime}#[fg=#4AA5F0,bg=#3F4451]#[fg=#282C34,bg=#4AA5F0,bold] zclaude "
+        format_right  "#[fg=#3F4451,bg=#282C34]{command_usage}{datetime}#[fg=#4AA5F0,bg=#3F4451]#[fg=#282C34,bg=#4AA5F0,bold] zclaude "
         format_space  "#[bg=#282C34]"
 
         command_status_command     "bash -c 'printf \"%s\" \"$(cat ~/.local/state/zclaude/status 2>/dev/null || echo Idle)\"'"
         command_status_format      "#[fg=#ABB2BF,bg=#3F4451] {stdout} "
         command_status_interval    "2"
         command_status_rendermode  "static"
+
+        command_usage_command      "bash -c 'printf \"%s\" \"$(cat ~/.local/state/zclaude/usage 2>/dev/null)\"'"
+        command_usage_format       "#[fg=#ABB2BF,bg=#3F4451] {stdout} #[fg=#5c6370,bg=#3F4451]"
+        command_usage_interval     "10"
+        command_usage_rendermode   "static"
 
         datetime          "#[fg=#ABB2BF,bg=#3F4451] {format} "
         datetime_format   "%H:%M"

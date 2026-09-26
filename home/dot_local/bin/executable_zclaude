@@ -771,6 +771,123 @@ def inspect_claude_transcripts() -> datetime.datetime | None:
 
 
 # =============================================================================
+# Usage Tracking (/usage quota & limits)
+# =============================================================================
+
+def parse_time_24h(time_str: str) -> str:
+    """Normalize 12h/24h time strings to 24h format (HH:MM)."""
+    time_str = re.sub(r"\s+", "", time_str.strip().lower())
+    for fmt in ("%I:%M%p", "%I%p"):
+        try:
+            return datetime.datetime.strptime(time_str, fmt).strftime("%H:%M")
+        except ValueError:
+            pass
+    return time_str
+
+
+def format_detailed_reset(raw: str, is_weekly: bool = False) -> str:
+    """Format Claude /usage reset strings into clean 24h timestamps."""
+    raw = raw.strip()
+    m_date = re.search(r"\b([A-Za-z]{3,9}\s+\d{1,2})\b", raw)
+    m_time = re.search(r"\b(\d{1,2}:\d{2}\s*(?:am|pm)?|\d{1,2}\s*(?:am|pm))\b", raw, re.IGNORECASE)
+
+    t_str = ""
+    if m_time:
+        t_str = parse_time_24h(m_time.group(1))
+
+    d_str = m_date.group(1) if m_date else ""
+
+    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    now = datetime.datetime.now()
+    today_str = f"{months[now.month - 1]} {now.day}"
+
+    if is_weekly:
+        if d_str and t_str:
+            return f"{d_str} {t_str}"
+        return d_str or t_str or raw
+    else:
+        if d_str and d_str.lower() != today_str.lower():
+            if t_str:
+                return f"{d_str} {t_str}"
+            return d_str
+        return t_str or raw
+
+
+def check_and_update_usage(claude_cmd: str = "claude") -> str | None:
+    """Query Claude Code usage via non-interactive /usage, update status file, and return formatted string."""
+    try:
+        claude_bin = shutil.which(claude_cmd) or claude_cmd
+        res = subprocess.run(
+            [claude_bin, "-p", "/usage", "--output-format", "json"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if res.returncode != 0:
+            logger.debug("Claude /usage returned code %d: %s", res.returncode, res.stderr)
+            return None
+
+        data = json.loads(res.stdout)
+        raw_text = data.get("result", "")
+
+        parts = []
+        m_session = re.search(r"Current session:\s*(\d+%) used\s*·\s*resets\s+([^(\n\r]+)", raw_text)
+        if m_session:
+            s_pct = m_session.group(1)
+            s_res = format_detailed_reset(m_session.group(2), is_weekly=False)
+            parts.append(f"\uf017 {s_pct} ({s_res})")
+
+        m_week = re.search(r"Current week[^:]*:\s*(\d+%) used\s*·\s*resets\s+([^(\n\r]+)", raw_text)
+        if m_week:
+            w_pct = m_week.group(1)
+            w_res = format_detailed_reset(m_week.group(2), is_weekly=True)
+            parts.append(f"\uf073 {w_pct} ({w_res})")
+
+        if not parts:
+            return None
+
+        formatted = " · ".join(parts)
+        usage_dir = os.path.expanduser("~/.local/state/zclaude")
+        os.makedirs(usage_dir, exist_ok=True)
+        usage_path = os.path.join(usage_dir, "usage")
+        with open(usage_path, "w", encoding="utf-8") as f:
+            f.write(formatted)
+        return formatted
+    except Exception as e:
+        logger.debug("Failed to check /usage: %s", e)
+        return None
+
+
+class UsageTracker(threading.Thread):
+    """Background worker periodically checking Claude Code usage."""
+
+    def __init__(self, claude_cmd: str = "claude", interval_sec: int = 120):
+        super().__init__(daemon=True)
+        self.claude_cmd = claude_cmd
+        self.interval_sec = interval_sec
+        self._running = threading.Event()
+        self._running.set()
+        self._trigger = threading.Event()
+
+    def stop(self) -> None:
+        self._running.clear()
+        self._trigger.set()
+
+    def trigger(self) -> None:
+        """Trigger an immediate background refresh (e.g. after turn completion or rate limit)."""
+        self._trigger.set()
+
+    def run(self) -> None:
+        check_and_update_usage(self.claude_cmd)
+        while self._running.is_set():
+            self._trigger.wait(timeout=self.interval_sec)
+            self._trigger.clear()
+            if not self._running.is_set():
+                break
+            check_and_update_usage(self.claude_cmd)
+
+
+# =============================================================================
 # Supervisor Loop
 # =============================================================================
 
@@ -797,9 +914,14 @@ class Supervisor(threading.Thread):
         self.pending_draft: str | None = None
         self._was_working: bool = False
         self._last_pane_title: str | None = None
+        self.usage_tracker = UsageTracker(interval_sec=120)
 
     def stop(self) -> None:
         self._running.clear()
+        try:
+            self.usage_tracker.stop()
+        except Exception:
+            pass
         try:
             self.zellij.rename_pane("claude", self.pane_id)
         except Exception:
@@ -871,6 +993,10 @@ class Supervisor(threading.Thread):
             self.margin_sec,
             self.retry_msg,
         )
+        try:
+            self.usage_tracker.start()
+        except Exception as e:
+            logger.debug("Failed to start usage tracker: %s", e)
 
         while self._running.is_set():
             time.sleep(3)
@@ -883,6 +1009,7 @@ class Supervisor(threading.Thread):
             # Turn completion check: if Claude transitioned from working -> idle at prompt,
             # and we have a saved user draft, restore it into the prompt!
             if self._was_working and not currently_working and is_at_prompt(screen):
+                self.usage_tracker.trigger()
                 if self.pending_draft:
                     curr_prompt = get_prompt_text(screen)
                     if curr_prompt == "":
@@ -925,6 +1052,7 @@ class Supervisor(threading.Thread):
 
             # Check 7: Rate limit (ALWAYS evaluate rate limit before normal working/stalled checks)
             if is_rate_limited(screen):
+                self.usage_tracker.trigger()
                 reset_dt = parse_reset_time(screen)
                 if not reset_dt:
                     reset_dt = inspect_claude_transcripts()
@@ -1081,6 +1209,7 @@ class Supervisor(threading.Thread):
             self.zellij.send_keys("Enter", self.pane_id)
 
         self._notify("Claude resumed.", pane_status="claude")
+        self.usage_tracker.trigger()
         time.sleep(1)
 
 
@@ -1123,6 +1252,8 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
     parser.add_argument("--margin", type=int, default=30, help="Safety margin in seconds after reset (default: 30)")
     parser.add_argument("--message", default="continue", help="Resumption message to send (default: continue)")
     parser.add_argument("--cmd", default="claude", help="Claude executable command (default: claude)")
+    parser.add_argument("--usage", dest="check_usage", action="store_true",
+                        help="Check Claude Code quota and limits via /usage, update cache and print")
     parser.add_argument("--inside", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
 
@@ -1158,6 +1289,14 @@ def parse_args() -> tuple[argparse.Namespace, list[str]]:
 
 def main() -> int:
     args, claude_args = parse_args()
+
+    if args.check_usage:
+        usage_res = check_and_update_usage(args.cmd)
+        if usage_res:
+            print(usage_res)
+            return 0
+        sys.stderr.write("Failed to retrieve usage data from Claude Code.\n")
+        return 1
 
     # Reconstruct forwarded Claude Code options
     forwarded_claude_args = list(claude_args)
