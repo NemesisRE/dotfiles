@@ -1,0 +1,353 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+# zellij v0.45.1 (zellij-utils/src/cli.rs). carapace-bin ships no zellij
+# completer. `action` lists its ~78 sub-actions by name only (no per-action
+# flags); `options`/`web`/`subscribe` get a description only - all three are
+# rarely used interactively and not worth the maintenance cost of full detail.
+# Session-name positionals (attach/watch/kill-session/delete-session) have no
+# completion source: unlike $carapace.tools.docker.Contexts, carapace-bin has
+# no $carapace.tools.zellij.* macro to list running sessions.
+name: zellij
+description: A terminal workspace with batteries included
+flags:
+  -s, --session=: Specify name of a new session
+  -l, --layout=: Predefined layout name or path to a layout file
+  --layout-string=: Raw KDL layout string to use instead of a file
+  -n, --new-session-with-layout=: Layout for a new session (always starts new, even inside one)
+  -c, --config=: Path to the configuration file
+  --config-dir=: Path to the configuration directory
+  --max-panes=: Maximum panes on screen at once
+  --data-dir=: Directory zellij looks for plugins in
+  -d, --debug: Emit additional debug information
+  -h, --help: Print help
+  -V, --version: Print version
+exclusiveflags:
+  - [layout, layout-string, new-session-with-layout]
+completion:
+  flag:
+    config: ["$files"]
+    layout: ["$files"]
+    data-dir: ["$directories"]
+commands:
+  - name: list-sessions
+    aliases: ["ls"]
+    description: List active sessions
+    flags:
+      -n, --no-formatting: Do not add colors and formatting to the list
+      -s, --short: Print just the session name
+      -r, --reverse: List the sessions in reverse order
+  - name: list-aliases
+    aliases: ["la"]
+    description: List existing plugin aliases
+  - name: attach
+    aliases: ["a"]
+    description: Attach to a session
+    flags:
+      -c, --create: Create a session if one does not exist
+      -b, --create-background: Create a detached session in the background if one does not exist
+      --index=: Number of the session index in active sessions by creation date
+      -f, --force-run-commands: If resurrecting a dead session, run its commands immediately
+      -t, --token=: Authentication token for remote sessions
+      -r, --remember: Save session for automatic re-authentication (4 weeks)
+      --forget: Delete saved session before connecting
+      --ca-cert=: Path to a custom CA certificate (PEM format) for the remote server
+      --insecure: Skip TLS certificate validation (development only)
+      --close-on-exit: Close the initial command's pane immediately when it exits
+      --start-suspended: Start the initial command suspended, running after first ENTER
+    completion:
+      flag:
+        ca-cert: ["$files"]
+  - name: watch
+    aliases: ["w"]
+    description: Watch a session (read-only)
+  - name: kill-session
+    aliases: ["k"]
+    description: Kill a specific session
+  - name: delete-session
+    aliases: ["d"]
+    description: Delete a specific session
+    flags:
+      -f, --force: Kill the session first if it's running
+  - name: kill-all-sessions
+    aliases: ["ka"]
+    description: Kill all sessions
+    flags:
+      -y, --yes: Automatic yes to prompts
+  - name: delete-all-sessions
+    aliases: ["da"]
+    description: Delete all sessions
+    flags:
+      -y, --yes: Automatic yes to prompts
+      -f, --force: Kill the sessions first if they're running
+  - name: run
+    aliases: ["r"]
+    description: Run a command in a new pane
+    flags:
+      -d, --direction=: Direction to open the new pane in
+      --cwd=: Working directory of the new pane
+      -f, --floating: Open the new pane in floating mode
+      -i, --in-place: Open in place of the current pane, temporarily suspending it
+      --close-replaced-pane: Close the replaced pane instead of suspending it (needs --in-place)
+      -n, --name=: Name of the new pane
+      -c, --close-on-exit: Close the pane immediately when its command exits
+      -s, --start-suspended: Start the command suspended, running after first ENTER
+      -x=: X coordinate if floating (bare integer or percent)
+      -y=: Y coordinate if floating (bare integer or percent)
+      --width=: Width if floating (bare integer or percent)
+      --height=: Height if floating (bare integer or percent)
+      --pinned=: Pin the floating pane so it's always on top
+      --stacked: Stack this pane
+      --blocking: Block until the command has finished and its pane closed
+      --block-until-exit-success: Block until the command exits successfully or its pane closes
+      --block-until-exit-failure: Block until the command exits with failure or its pane closes
+      --block-until-exit: Block until the command exits (any status) or its pane closes
+      --near-current-pane: Open near the current pane rather than following focus
+      --no-focus: Don't change the focus of any client
+      -b, --borderless=: Start this pane without a border
+      --tab-id=: Target a specific tab by ID
+    exclusiveflags:
+      - [direction, floating, in-place, stacked]
+    completion:
+      flag:
+        direction: [Left, Right, Up, Down]
+        cwd: ["$directories"]
+        pinned: ["true", "false"]
+        borderless: ["true", "false"]
+  - name: edit
+    aliases: ["e"]
+    description: Edit a file with the default $EDITOR/$VISUAL
+    flags:
+      -l, --line-number=: Open the file at the specified line number
+      -d, --direction=: Direction to open the new pane in
+      -i, --in-place: Open in place of the current pane, temporarily suspending it
+      --close-replaced-pane: Close the replaced pane instead of suspending it (needs --in-place)
+      -f, --floating: Open the new pane in floating mode
+      --cwd=: Working directory of the editor
+      -x=: X coordinate if floating (bare integer or percent)
+      -y=: Y coordinate if floating (bare integer or percent)
+      --width=: Width if floating (bare integer or percent)
+      --height=: Height if floating (bare integer or percent)
+      --pinned=: Pin the floating pane so it's always on top
+      --near-current-pane: Open near the current pane rather than following focus
+      --no-focus: Don't change the focus of any client
+      -b, --borderless=: Start this pane without a border
+      --tab-id=: Target a specific tab by ID
+    exclusiveflags:
+      - [direction, floating, in-place]
+    completion:
+      positionalany:
+        - "$files"
+      flag:
+        direction: [Left, Right, Up, Down]
+        cwd: ["$directories"]
+        pinned: ["true", "false"]
+        borderless: ["true", "false"]
+  - name: plugin
+    aliases: ["p"]
+    description: Load a plugin
+    flags:
+      -c, --configuration=: Plugin configuration
+      -f, --floating: Open the new pane in floating mode
+      -i, --in-place: Open in place of the current pane, temporarily suspending it
+      --close-replaced-pane: Close the replaced pane instead of suspending it (needs --in-place)
+      -s, --skip-plugin-cache: Force recompile of the plugin, skipping the cache
+      -x=: X coordinate if floating (bare integer or percent)
+      -y=: Y coordinate if floating (bare integer or percent)
+      --width=: Width if floating (bare integer or percent)
+      --height=: Height if floating (bare integer or percent)
+      --pinned=: Pin the floating pane so it's always on top
+      --no-focus: Don't change the focus of any client
+      -b, --borderless=: Start this pane without a border
+      --tab-id=: Target a specific tab by ID
+    completion:
+      flag:
+        pinned: ["true", "false"]
+        borderless: ["true", "false"]
+  - name: pipe
+    description: Send data to one or more plugins, launching them if needed
+    flags:
+      -n, --name=: Name of the pipe
+      -a, --args=: Args of the pipe
+      -p, --plugin=: Plugin URL to direct this pipe to
+      -c, --plugin-configuration=: Plugin configuration (distinguishes pipe destinations)
+  - name: setup
+    description: Setup zellij and check its configuration
+    flags:
+      --dump-config: Dump the default configuration file to stdout
+      --clean: Load the defaults zellij ships with, skipping the config file
+      --check: Check zellij's configuration and display currently used directories
+      --dump-layout=: Dump the specified layout to stdout
+      --dump-swap-layout=: Dump the specified swap layout file to stdout
+      --dump-plugins?=: "Dump the builtin plugins to DIR (default: data dir)"
+      --generate-completion=: Generate completions for the specified shell
+      --generate-auto-start=: Generate an auto-start script for the specified shell
+    completion:
+      flag:
+        dump-plugins: ["$directories"]
+        generate-completion: [bash, zsh, fish, elvish, powershell]
+        generate-auto-start: [bash, zsh, fish, elvish, powershell]
+  - name: options
+    description: Change the behaviour of zellij (see `zellij options --help`)
+  - name: web
+    description: Run a web server to serve terminal sessions (see `zellij web --help`)
+  - name: subscribe
+    description: Subscribe to pane render updates (viewport and scrollback)
+  - name: action
+    aliases: ["ac"]
+    description: Send actions to a specific session
+    commands:
+      - name: write
+        description: Write bytes to the terminal
+      - name: write-chars
+        description: Write characters to the terminal
+      - name: paste
+        description: Paste text to the terminal (bracketed paste mode)
+      - name: send-keys
+        description: Send one or more keys to the terminal
+      - name: resize
+        description: Increase/decrease the focused pane's area at a border
+      - name: focus-next-pane
+        description: Change focus to the next pane
+      - name: focus-previous-pane
+        description: Change focus to the previous pane
+      - name: focus-pane-id
+        description: Focus a specific pane by its ID
+      - name: focus-last-pane
+        description: Change focus to the last focused pane
+      - name: move-focus
+        description: Move the focused pane in the specified direction
+      - name: move-focus-or-tab
+        description: Move focus to a pane or tab in the specified direction
+      - name: move-pane
+        description: Change location of the focused pane, or rotate forwards
+      - name: move-pane-backwards
+        description: Rotate location of the previous pane backwards
+      - name: clear
+        description: Clear all buffers for the focused pane
+      - name: dump-screen
+        description: Dump viewport (and optionally scrollback) to a file/stdout
+      - name: dump-layout
+        description: Dump the current layout to stdout
+      - name: save-session
+        description: Save the current session state to disk immediately
+      - name: edit-scrollback
+        description: Open the pane scrollback in the default editor
+      - name: scroll-up
+        description: Scroll up in the focused pane
+      - name: scroll-down
+        description: Scroll down in the focused pane
+      - name: scroll-to-bottom
+        description: Scroll to the bottom in the focused pane
+      - name: scroll-to-top
+        description: Scroll to the top in the focused pane
+      - name: page-scroll-up
+        description: Scroll up one page in the focused pane
+      - name: page-scroll-down
+        description: Scroll down one page in the focused pane
+      - name: half-page-scroll-up
+        description: Scroll up half a page in the focused pane
+      - name: half-page-scroll-down
+        description: Scroll down half a page in the focused pane
+      - name: toggle-fullscreen
+        description: Toggle fullscreen for the focused pane vs. the normal layout
+      - name: toggle-no-ui-fullscreen
+        description: Toggle fullscreen over the entire display vs. the normal layout
+      - name: toggle-pane-frames
+        description: Toggle frames around panes in the UI
+      - name: set-pane-frame-style
+        description: Set pane frame styling
+      - name: toggle-active-sync-tab
+        description: Toggle sending text commands to all panes on the tab
+      - name: new-pane
+        description: Open a new pane in the specified direction
+      - name: edit
+        description: Open the specified file in a new zellij pane with $EDITOR
+      - name: switch-mode
+        description: Switch the input mode of all connected clients
+      - name: toggle-pane-embed-or-floating
+        description: Embed a floating pane, or float an embedded pane
+      - name: toggle-floating-panes
+        description: Toggle visibility of floating panes in the current tab
+      - name: show-floating-panes
+        description: Show all floating panes in the specified tab
+      - name: hide-floating-panes
+        description: Hide all floating panes in the specified tab
+      - name: are-floating-panes-visible
+        description: Check floating pane visibility in the specified tab
+      - name: close-pane
+        description: Close the focused pane
+      - name: rename-pane
+        description: Rename the focused pane
+      - name: undo-rename-pane
+        description: Remove the previously set pane name
+      - name: go-to-next-tab
+        description: Go to the next tab
+      - name: go-to-previous-tab
+        description: Go to the previous tab
+      - name: close-tab
+        description: Close the current tab
+      - name: go-to-tab
+        description: Go to the tab with the specified index
+      - name: go-to-tab-name
+        description: Go to the tab with the specified name
+      - name: rename-tab
+        description: Rename the focused tab
+      - name: undo-rename-tab
+        description: Remove the previously set tab name
+      - name: go-to-tab-by-id
+        description: Go to the tab with the specified stable ID
+      - name: close-tab-by-id
+        description: Close the tab with the specified stable ID
+      - name: rename-tab-by-id
+        description: Rename the tab with the specified stable ID
+      - name: new-tab
+        description: Create a new tab with an optional layout and name
+      - name: move-tab
+        description: Move the focused tab in the specified direction
+      - name: previous-swap-layout
+        description: Switch to the previous swap layout
+      - name: next-swap-layout
+        description: Switch to the next swap layout
+      - name: override-layout
+        description: Override the layout of the active tab
+      - name: query-tab-names
+        description: Query all tab names
+      - name: start-or-reload-plugin
+        description: Start or reload a plugin
+      - name: launch-or-focus-plugin
+        description: Launch a plugin, or focus it if already running
+      - name: launch-plugin
+        description: Launch a plugin
+      - name: rename-session
+        description: Rename the current session
+      - name: pipe
+        description: Send data to one or more plugins
+      - name: list-clients
+        description: List connected clients
+      - name: list-panes
+        description: List all panes in the current session
+      - name: list-tabs
+        description: List all tabs with their information
+      - name: current-tab-info
+        description: Get information about the currently active tab
+      - name: toggle-pane-pinned
+        description: Toggle whether the pane is pinned
+      - name: stack-panes
+        description: Stack the specified pane IDs
+      - name: change-floating-pane-coordinates
+        description: Change a floating pane's position/size
+      - name: toggle-pane-borderless
+        description: Toggle pane border visibility
+      - name: set-pane-borderless
+        description: Set the pane border visibility state
+      - name: detach
+        description: Detach from the current session
+      - name: set-dark-theme
+        description: Switch to the dark theme
+      - name: set-light-theme
+        description: Switch to the light theme
+      - name: toggle-theme
+        description: Toggle between the dark and light themes
+      - name: switch-session
+        description: Switch to a different session
+      - name: set-pane-color
+        description: Set the default foreground/background color of the pane
