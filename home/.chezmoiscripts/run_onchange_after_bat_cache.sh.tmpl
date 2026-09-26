@@ -1,10 +1,14 @@
 {{ if ne .chezmoi.os "windows" -}}
 #!/usr/bin/env bash
+# chezmoi run_onchange_after hook — rebuilds bat's theme cache when a theme changes.
 # OneDarkPro.tmTheme hash: {{ include "dot_config/bat/themes/OneDarkPro.tmTheme" | sha256sum }}
+# bat present at render time: {{ includeTemplate "hook-tool-present.tmpl" (dict "tool" "bat" "chezmoi" .chezmoi) }}
+# (re-runs this hook once bat appears; see .chezmoitemplates/hook-tool-present.tmpl)
 
 [[ -n "${CI:-}" ]] && exit 0
 [[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
 
+{{ template "hook-env.sh" . }}
 if command -v bat >/dev/null 2>&1; then
   bat cache --build || echo "==> Warning: bat cache --build failed; continuing" >&2
 fi
