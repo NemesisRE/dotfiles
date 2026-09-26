@@ -110,6 +110,19 @@ Press <kbd>Ctrl</kbd> + <kbd>g</kbd> to lock Zellij. All keystrokes pass directl
 
 ---
 
+## 💲 Prompt: Oh-My-Posh
+
+All five shells render the same theme, [`home/dot_config/oh-my-posh/config.json`](../home/dot_config/oh-my-posh/config.json). Every segment below appears only when it has something to say:
+
+- **Left, line one**: OS icon, a red root indicator, `user@host` (only over SSH), the shell, the path, and git. The git segment shows `*` stashes, `~` conflicts, `+` staged, `!` unstaged, `✘` deleted and `?` untracked files. Submodule worktrees are not scanned (`ignore_submodules: dirty`), which keeps large repositories fast.
+- **Right, line one**: exit status, the duration of commands that ran longer than 3s, versions of Node, Go, Python and Rust in matching projects, the Terraform workspace, the Helm version inside a chart or helmfile directory, the Docker context when it points somewhere other than a local daemon, and the time.
+- **Line two**: the Kubernetes context and namespace, always visible so that you can see which cluster you are working against.
+- **Tooltips** (zsh, fish and PowerShell only): while you type `git`, `lg`, `lzg` or `lazygit`, the right prompt shows the upstream branch and the last commit.
+
+Shells cache their oh-my-posh init script for 24 hours, and tooltip, transient and secondary prompt settings are part of that script. After changing those settings, run `reload -c` so the script is regenerated.
+
+---
+
 ## 📜 Encrypted Shell History: Atuin
 
 [Atuin](https://atuin.sh) replaces your default shell history with an SQLite database backed by end-to-end encrypted synchronization across machines.
