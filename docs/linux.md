@@ -74,7 +74,11 @@ On Linux desktop environments, **Kitty** is the recommended GPU-accelerated term
 - **Upstream Installation**: Managed standalone via the official installer to `~/.local/kitty.app` with binaries linked to `~/.local/bin/` (version pinned in [`.chezmoidata/kitty.yaml`](../home/.chezmoidata/kitty.yaml) and kept current with Renovate). This avoids severely outdated distribution packages (like Debian/Ubuntu `apt`).
 - **Desktop & Icon Integration**: Chezmoi automatically creates and patches `kitty.desktop` and icons in `~/.local/share/applications` and `~/.local/share/icons`.
 - **WSL Excluded**: Kitty installation is automatically skipped on WSL environments (where Windows Terminal on the host OS is used).
-- **Font**: Configured with `FiraMono Nerd Font Mono` (or `FiraCode Nerd Font`).
+- **Font**: `FiraCode Nerd Font Mono`, installed automatically from the pinned
+  [ryanoasis/nerd-fonts](https://github.com/ryanoasis/nerd-fonts) release archive
+  (see [`.chezmoiexternals/fonts.toml.tmpl`](../home/.chezmoiexternals/fonts.toml.tmpl)
+  and [`.chezmoidata/nerd-fonts.yaml`](../home/.chezmoidata/nerd-fonts.yaml)), not a
+  distro package.
 - **Theme**: Automatically imports the matching **OneDark-Pro** theme (`~/.config/kitty/current-theme.conf`).
 - **Scrollback**: 10,000 lines with smart trailing space stripping.
 - **Copy on Select**: Text selected with mouse is copied to system clipboard automatically (`copy_on_select clipboard`).

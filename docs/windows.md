@@ -41,9 +41,6 @@ winget install Microsoft.WindowsTerminal
 # Version Control
 winget install Git.Git
 
-# Recommended Default Font: FiraMono / FiraCode Nerd Font
-winget install DEVCOM.FiraCodeFont
-
 # C/C++ Compiler for Neovim Tree-sitter
 winget install LLVM.LLVM
 
@@ -52,7 +49,7 @@ winget install albertony.npiperelay
 ```
 
 > [!TIP]
-> In Windows Terminal Settings (`Ctrl+,`) &rarr; **Defaults** &rarr; **Appearance** &rarr; **Font face**, set the font to **FiraMono Nerd Font Mono** (or **FiraMono Nerd Font**) to match kitty terminal.
+> **Font**: this repo standardizes on **FiraCode Nerd Font Mono** everywhere (kitty, Konsole, Windows Terminal). On Linux and macOS it's installed automatically — Linux from a pinned, checksummed [ryanoasis/nerd-fonts](https://github.com/ryanoasis/nerd-fonts) release archive, macOS from the `font-fira-code-nerd-font` Homebrew cask — but there is no `winget` package for it (`DEVCOM.FiraCodeFont` no longer exists in the winget-pkgs manifest tree). Install it by hand: download the `FiraCode.zip` asset from the [pinned release](https://github.com/ryanoasis/nerd-fonts/releases) (the version chezmoi installs on Linux/macOS is in [`.chezmoidata/nerd-fonts.yaml`](../home/.chezmoidata/nerd-fonts.yaml)), extract it, select all the `.ttf` files, right-click &rarr; **Install for all users**. Then in Windows Terminal Settings (`Ctrl+,`) &rarr; **Defaults** &rarr; **Appearance** &rarr; **Font face**, set it to **FiraCode Nerd Font Mono**.
 
 ### Windows Optional Features & Synchronization
 

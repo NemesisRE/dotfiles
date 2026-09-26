@@ -1,0 +1,13 @@
+{{- /* Tag and SHA-256 are pinned in .chezmoidata/nerd-fonts.yaml. A fixed tag
+       needs no refreshPeriod: chezmoi downloads again whenever the URL
+       changes. macOS gets the same family from the font-fira-code-nerd-font
+       cask (packages.yaml) instead of this external; fontconfig has no macOS
+       equivalent of ~/.local/share/fonts, and Homebrew already keeps that
+       cask current. */ -}}
+{{- if eq .chezmoi.os "linux" }}
+[".local/share/fonts/NerdFonts/FiraCode"]
+type = "archive"
+url = "{{ printf "https://github.com/ryanoasis/nerd-fonts/releases/download/%s/FiraCode.tar.xz" .nerdFontsFiraCode.tag }}"
+checksum.sha256 = "{{ .nerdFontsFiraCode.sha256 }}"
+exact = true
+{{- end }}
