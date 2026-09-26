@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+# yy: yazi wrapper that cds into yazi's last directory on exit
+# (shell/*/functions/yy.*). --cwd-file is passed by the wrapper itself, so
+# it is left out. carapace-bin ships no yazi completer.
+name: yy
+description: Open yazi and change to its last directory on exit
+flags:
+  --chooser-file=: write the selected files to this file on open fired
+  --client-id=: use the specified client ID (a globally unique number)
+  --local-events=: report the specified local events to stdout
+  --remote-events=: report the specified remote events to stdout
+  -V, --version: print version
+  -h, --help: print help
+completion:
+  flag:
+    chooser-file: ["$files"]
+  positionalany: ["$files"]

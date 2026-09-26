@@ -1,0 +1,6 @@
+# CI-only fixture data. See ci-data-ssh-agent-bitwarden.yaml: shell.ssh.agent's
+# variants are mutually exclusive, so each gets its own fixture. Not used
+# outside CI.
+shell:
+  ssh:
+    agent: "pipe"

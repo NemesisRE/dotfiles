@@ -9,17 +9,23 @@ layout {
     }
   }
 
+{{- if lookPath "btm" }}
+
   tab name="Monitor" focus=true split_direction="horizontal" {
-    pane command="btop" size="40%" borderless=true {
-      args "-p" "1"
+    pane command="btm" size="40%" borderless=true {
+      args "-C" "{{ .chezmoi.homeDir }}/.config/bottom/layout-top.toml"
     }
     pane split_direction="vertical" {
       pane name="Term" focus=true
-      pane command="btop" size="25%" borderless=true {
-        args "-p" "2"
+      pane command="btm" size="25%" borderless=true {
+        args "-C" "{{ .chezmoi.homeDir }}/.config/bottom/layout-side.toml"
       }
     }
   }
 
   tab
+{{- else }}
+
+  tab focus=true
+{{- end }}
 }

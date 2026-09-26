@@ -17,7 +17,7 @@ All core CLI tools are declared centrally in [`home/dot_config/aquaproj-aqua/aqu
 | **File Management** | `yazi` (`yy`) | Fast async terminal file manager with custom plugins |
 | **Git UI** | `lazygit` (`lzg` / `lg`) | Interactive terminal Git management |
 | **Containers & Logs** | `lazydocker` (`lzd`), `lazyjournal` (`lzj` / `lj`), `lnav` | Terminal UIs for Docker management, log aggregation, and SQL log analysis |
-| **System Monitoring** | `btop` | Real-time interactive system resource & process monitor |
+| **System Monitoring** | `bottom` (`btm`) | Real-time interactive system resource & process monitor |
 | **Kubernetes** | `kubectl`, `kubectx`, `kubens`, `k9s`, `helm` | Container orchestration, context switching, and TUI |
 | **Network & Transfers** | `curl`, `wget` | Hardened, XDG-compliant network transfer clients |
 | **Developer Ecosystem** | `gh`, `uv`, `ruff`, `mise` | GitHub CLI, Python toolchain, and runtime manager |
@@ -343,16 +343,17 @@ Configured with the **OneDark-Pro** color scheme and integrates with `delta` for
 
 ---
 
-## 📊 System Resource Monitoring: btop
+## 📊 System Resource Monitoring: bottom (btm)
 
-[btop](https://github.com/aristocratos/btop) is an interactive real-time system monitor displaying CPU cores, memory, disk I/O, network bandwidth, and a process tree:
+[bottom](https://github.com/ClementTsang/bottom) is an interactive, cross-platform graphical system and process monitor displaying CPU cores, memory, disk I/O, network bandwidth, and a process tree themed with **OneDark-Pro**:
 
-- <kbd>m</kbd>: Open main menu / settings
-- <kbd>e</kbd>: Toggle process tree view
-- <kbd>f</kbd>: Filter processes by name
-- <kbd>k</kbd>: Send terminate/kill signal to selected process
-- <kbd>1</kbd> &ndash; <kbd>4</kbd>: Change sort criteria
-- <kbd>q</kbd>: Quit
+- <kbd>?</kbd>: Open help / keybindings
+- <kbd>Tab</kbd>: Cycle through active widgets
+- <kbd>/</kbd>: Search and filter processes
+- <kbd>t</kbd>: Toggle process tree view
+- <kbd>d</kbd> / <kbd>k</kbd>: Send terminate/kill signal to selected process
+- <kbd>s</kbd>: Change process sort criteria
+- <kbd>q</kbd> / <kbd>Ctrl</kbd> + <kbd>c</kbd>: Quit
 
 ---
 
@@ -417,7 +418,7 @@ Configured in [`home/dot_config/k9s/`](../home/dot_config/k9s/):
 
 ### `gh` (GitHub CLI)
 
-Configured via `$GH_CONFIG_DIR` pointing to [`home/dot_config/gh/config.yml.tmpl`](../home/dot_config/gh/config.yml.tmpl):
+Configured via `$GH_CONFIG_DIR` pointing to [`home/dot_config/private_gh/config.yml.tmpl`](../home/dot_config/private_gh/config.yml.tmpl):
 
 - Configured to use SSH Git protocol, Neovim (`editor: nvim`), and `delta` as the default diff pager.
 
@@ -452,6 +453,26 @@ Each data file has up to three sections:
 Everything else in the file (allow rules, hooks, model, ...) is left alone. Invalid JSON aborts the apply instead of being overwritten.
 
 What Claude Code gets by default: background auto-update off (aqua owns the version; `claude update` still works), no survey or spinner tips, and deny rules for secrets. The deny rules cover `.env` files, `~/.ssh`, the vault-fed `~/.config/nredf/mcp.json`, and `bw get`/`list`/`export`/`unlock`, since `BW_SESSION` is present in every child process. To drop a deny rule, remove it from `claude.yaml` **and** from `~/.claude/settings.json`.
+
+### `zclaude`: Persistent Claude Supervisor with Keep-Alive & Auto-Retry
+
+`zclaude` is a cross-platform supervisor for Claude Code that integrates natively with Zellij, keeping sessions active across system idle sleep and automatically resuming long-running tasks when rate limits reset:
+
+- **Multiplexer Integration**: Uses Zellij's native CLI (`dump-screen`, `write-chars`, `send-keys`) instead of `tmux`, working identically on Linux, macOS, and Windows.
+- **Dedicated AI Layout (`zclaude`)**: Features a 72% primary Claude pane flanked by a command terminal and suspended `lazygit`, secondary tabs for code editing and `bottom` monitoring, and dynamic swap layouts.
+- **System Keep-Alive**: Prevents system and idle sleep while Claude is active and while waiting out limits (`caffeinate` on macOS, Win32 `SetThreadExecutionState` on Windows, and `systemd-inhibit` on Linux).
+- **Auto-Resumption**: Accurately parses limit reset times (e.g. `resets 3:15 PM` or relative duration) from viewport dumps and transcripts, safely dismisses any interactive `/rate-limit-options` dialog with `Esc`, and injects `continue` once the reset time (+ safety margin) arrives. Handles transient 529/503 overloads with progressive backoff.
+- **Claude CLI Option Parity**: Forwards common Claude Code flags seamlessly:
+  - `-r, --resume [ID]`: Resume an existing session or open the interactive picker.
+  - `-c, --continue`: Continue the latest session in the directory.
+  - `-p, --print`: Run non-interactively and stream response.
+  - `-m, --model <MODEL>`: Switch model (`sonnet`, `opus`, `haiku`).
+  - `--dangerously-skip-permissions`: Bypass permission prompts for unattended execution.
+  - `--effort <low|medium|high|max>`: Control reasoning effort depth.
+  - `-w, --worktree [NAME]`: Branch off into an isolated git worktree.
+- **Dual Execution Modes**:
+  - **Integrated run**: `zclaude [args...]` wraps Claude directly in the current Zellij pane (or starts a Zellij session if run outside).
+  - **Watcher mode**: `zclaude -W/--watch [pane_id]` monitors an existing Claude pane in Zellij as a sidecar or companion pane.
 
 ---
 

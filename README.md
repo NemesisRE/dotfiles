@@ -151,7 +151,7 @@ Comprehensive, platform-specific and tool-specific guides:
 | [🍏 macOS Guide](docs/macos.md) | Apple Silicon & Intel Homebrew, modern Bash 5.x migration, Option-as-Alt fixes, Bitwarden SSH, Kitty, shortcuts, and troubleshooting |
 | [🪟 Windows Guide](docs/windows.md) | Windows Terminal, PowerShell 7+ & 5.1, Developer Mode, Win32 Long Paths, UTC RTC dual-boot fix, OneDrive junctions, Defender exclusions |
 | [🐚 Unified Shells Guide](docs/shells.md) | Feature parity matrix across **Zsh**, **Bash**, **Fish**, **Nushell**, and **PowerShell (pwsh)**, keybindings, PSReadLine, `ble.sh`, unified aliases, and `reload` |
-| [🧰 Core Tools Reference](docs/tools.md) | Declarative CLI tools (`aqua`, `chezmoi`), history sync (`atuin`), fuzzy find (`fzf`), smart jump (`zoxide`), `lsd`, `bat`, `lazygit` (`lzg`), `lazydocker` (`lzd`), `lazyjournal` (`lzj`), `lnav`, `yazi` (`yy`), `btop`, `k9s`, and builtin multiplexer **`zellij`** |
+| [🧰 Core Tools Reference](docs/tools.md) | Declarative CLI tools (`aqua`, `chezmoi`), history sync (`atuin`), fuzzy find (`fzf`), smart jump (`zoxide`), `lsd`, `bat`, `lazygit` (`lzg`), `lazydocker` (`lzd`), `lazyjournal` (`lzj`), `lnav`, `yazi` (`yy`), `bottom` (`btm`), `k9s`, and builtin multiplexer **`zellij`** |
 | [🔐 Secrets & Multi-Store Guide](docs/secrets.md) | Pluggable secret store management (Bitwarden, KeePassXC, 1Password), URI routing, zero-duplication SSH keys, and automated `aqua` token sync |
 | [⚡ Neovim Guide](docs/neovim.md) | Dedicated **AstroNvim v6** documentation: OneDark-Pro theme, full keyboard shortcuts cheat sheet, LSP, Mason, Lazy, plugins, tips, and troubleshooting |
 

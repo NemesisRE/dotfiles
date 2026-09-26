@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+# Alias for lazygit (home/.chezmoidata/aliases.yaml): hands the whole
+# command line to lazygit's completer.
+name: lg
+description: Alias for lazygit
+parsing: disabled
+completion:
+  positionalany: ["$carapace.bridge.CarapaceBin([lazygit])"]

@@ -25,22 +25,31 @@ if (Test-Path $nredfLocalModules) {
 }
 NREDF_Step "Modules.ps1"
 
-$bundlePath = Join-Path $ENV:NREDF_PATH 'Functions.bundle.ps1'
-if (Test-Path -LiteralPath $bundlePath) {
-  . $bundlePath
-} else {
-  $functionsDir = Join-Path $ENV:NREDF_PATH 'Functions'
-  if (-not (Test-Path $functionsDir)) {
-    $functionsDir = Join-Path $ENV:NREDF_PATH 'functions'
+# The function bundle (and the per-file fallback below, which dot-sources the same
+# files individually) requires PowerShell 7+: NREDF_Bw.ps1 uses the `??`
+# null-coalescing operator, a parse error on Windows PowerShell 5.1. The
+# Documents/WindowsPowerShell profile dot-sources this same Sources.ps1 (via the
+# PowerShell 7 profile stub), so this has to be a runtime guard around the
+# dot-source calls themselves — PowerShell only parses a dynamically dot-sourced
+# file when the `.` actually executes, so skipping the call avoids the parse error.
+if ($PSVersionTable.PSVersion.Major -ge 7) {
+  $bundlePath = Join-Path $ENV:NREDF_PATH 'Functions.bundle.ps1'
+  if (Test-Path -LiteralPath $bundlePath) {
+    . $bundlePath
+  } else {
+    # Directory is always 'Functions' (capitalized) in this repo; no lowercase fallback needed.
+    $functionsDir = Join-Path $ENV:NREDF_PATH 'Functions'
+    Get-ChildItem -Path $functionsDir -Filter '*.ps1' | ForEach-Object {
+      . $_.FullName
+    }
   }
-  Get-ChildItem -Path $functionsDir -Filter '*.ps1' | ForEach-Object {
-    . $_.FullName
+  $nredfLocalFunctions = Join-Path $nredfPwshDir 'functions'
+  if (Test-Path $nredfLocalFunctions) {
+    Get-ChildItem -Path $nredfLocalFunctions -Filter '*.ps1' | ForEach-Object {
+      . $_.FullName
+    }
   }
-}
-$nredfLocalFunctions = Join-Path $nredfPwshDir 'functions'
-if (Test-Path $nredfLocalFunctions) {
-  Get-ChildItem -Path $nredfLocalFunctions -Filter '*.ps1' | ForEach-Object {
-    . $_.FullName
-  }
+} elseif ([Environment]::UserInteractive) {
+  Write-Warning "NREDF: function bundle needs PowerShell 7+, skipped on Windows PowerShell $($PSVersionTable.PSVersion) — see docs/windows.md."
 }
 NREDF_Step "Functions/*.ps1"

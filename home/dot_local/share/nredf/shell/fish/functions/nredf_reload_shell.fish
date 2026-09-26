@@ -15,7 +15,7 @@ function _nredf_reload_shell --description 'The `reload` command'
 Usage: reload [options]
 
 Options:
--c, [--cache]               # Delete 'Last Run Cache'
+-c, [--cache]               # Delete 'Last Run Cache' and init script snippets
 -d, [--downloads]           # Delete aqua pkgs (archives + binaries, keeps bin/ symlinks)
 -f, [--full]                # Full refresh: clear caches + chezmoi/aqua
 -l, [--last-run]            # Delete only 'Last Run Cache'
@@ -29,11 +29,13 @@ Options:
 
     set -l has_other_options false
     set -l lrcache false
+    set -l initcache false
     set -l downloads false
     set -l full_reload false
 
     if set -q _flag_cache
         set lrcache true
+        set initcache true
         set has_other_options true
     end
     if set -q _flag_downloads
@@ -42,6 +44,7 @@ Options:
     end
     if set -q _flag_full
         set lrcache true
+        set initcache true
         set full_reload true
         set has_other_options true
     end
@@ -61,9 +64,26 @@ Options:
 
     if test "$lrcache" = true
         rm -rf "$NREDF_LRCACHE"
-        rm -rf "$XDG_CACHE_HOME/nredf/init"
-        rm -f "$XDG_CACHE_HOME/sheldon/sheldon.zsh"*
-        rm -f "$XDG_CACHE_HOME/zsh/.zcompdump"*
+    end
+
+    if test "$initcache" = true
+        set -l init_cache "$XDG_CACHE_HOME/nredf/init"
+        if test -d "$init_cache"
+            # Truncate Nushell's *.nu snippets instead of deleting them: nu's
+            # `source` needs each file to exist when config.nu is parsed, and
+            # the empty placeholders chezmoi seeds are only recreated by the
+            # next `chezmoi apply`. A *.nu symlink is left alone. Everything
+            # else in the directory is removed.
+            find "$init_cache" -mindepth 1 -maxdepth 1 ! -name '*.nu' -exec rm -rf {} +
+            for f in "$init_cache"/*.nu
+                if test -f "$f"; and not test -L "$f"
+                    printf '' >"$f"
+                end
+            end
+        end
+        # An unmatched fish glob is only silent inside `set`/`for`/`count`.
+        set -l stale "$XDG_CACHE_HOME/sheldon/sheldon.zsh"* "$XDG_CACHE_HOME/zsh/.zcompdump"*
+        test (count $stale) -gt 0; and rm -f $stale
     end
 
     if test "$downloads" = true
@@ -78,7 +98,6 @@ Options:
 
     if test "$full_reload" = true
         printf "\033[1mStarting full reload\033[0m\n"
-        rm -f "$XDG_CACHE_HOME/sheldon/sheldon.zsh"
         if type -q nredf-daily-sync
             nredf-daily-sync --verbose
         end

@@ -7,5 +7,7 @@ Wants=network-online.target
 Type=oneshot
 Nice=10
 IOSchedulingClass=idle
+# A oneshot has no start timeout by default, so a hung brew/chezmoi/aqua call
+# would block every later run. Matches the Windows task's 2h ExecutionTimeLimit.
+TimeoutStartSec=2h
 ExecStart={{ .chezmoi.homeDir }}/.local/bin/nredf-daily-sync
-

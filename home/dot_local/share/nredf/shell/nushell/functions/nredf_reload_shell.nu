@@ -4,7 +4,7 @@
 # while/case argv loop.
 
 def --env reload [
-    --cache(-c) # Delete 'Last Run Cache'
+    --cache(-c) # Delete 'Last Run Cache' and init script snippets
     --downloads(-d) # Delete aqua pkgs (archives + binaries, keeps bin/ symlinks)
     --full(-f) # Full refresh: clear caches + chezmoi/aqua
     --profile(-p) # Toggle startup profiling (or one-shot if combined with other options)
@@ -13,11 +13,13 @@ def --env reload [
 ] {
     mut has_other_options = false
     mut lrcache = false
+    mut initcache = false
     mut do_downloads = false
     mut full_reload = false
 
     if $cache {
         $lrcache = true
+        $initcache = true
         $has_other_options = true
     }
     if $downloads {
@@ -26,6 +28,7 @@ def --env reload [
     }
     if $full {
         $lrcache = true
+        $initcache = true
         $full_reload = true
         $has_other_options = true
     }
@@ -46,7 +49,37 @@ def --env reload [
 
     if $lrcache {
         rm --recursive --force $env.NREDF_LRCACHE
-        rm --recursive --force ($env.XDG_CACHE_HOME | path join "nredf" "init")
+    }
+
+    if $initcache {
+        let init_cache = ($env.XDG_CACHE_HOME | path join "nredf" "init")
+        if ($init_cache | path exists) {
+            # Truncate the *.nu snippets instead of deleting them: config.nu's
+            # `source` lines need each file to exist when config.nu is parsed,
+            # and the empty placeholders chezmoi seeds are only recreated by
+            # the next `chezmoi apply`. A *.nu symlink is left alone.
+            # Everything else is removed.
+            for entry in (ls --all $init_cache) {
+                if ($entry.name | str ends-with ".nu") {
+                    if $entry.type == "file" {
+                        "" | save --force $entry.name
+                    }
+                } else {
+                    rm --recursive --force $entry.name
+                }
+            }
+        }
+        # Matched by name via `ls` rather than `glob`: nu's glob parser
+        # rejects the backslashes and drive colon of a Windows path.
+        for stale in [["sheldon" "sheldon.zsh"] ["zsh" ".zcompdump"]] {
+            let dir = ($env.XDG_CACHE_HOME | path join $stale.0)
+            if ($dir | path exists) {
+                ls --all $dir
+                | where {|e| ($e.name | path basename | str starts-with $stale.1) }
+                | each {|e| rm --force $e.name }
+                | ignore
+            }
+        }
     }
 
     if $do_downloads {

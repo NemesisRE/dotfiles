@@ -3,32 +3,6 @@
 # vim: ts=2 sw=2 et ff=unix ft=zsh syntax=zsh
 # chezmoi-managed: sheldon plugin management for zsh
 
-function _nredf_update_sheldon_plugins() {
-  local sheldon_conf="${XDG_CONFIG_HOME:-${HOME}/.config}/sheldon/plugins.toml"
-
-  if [[ ! -f "${sheldon_conf}" ]]; then
-    return 0
-  fi
-
-  if ! command -v sheldon >/dev/null 2>&1; then
-    return 0
-  fi
-
-  if ! _nredf_last_run "_nredf_update_sheldon_plugins"; then
-    if ! _nredf_create_lock; then
-      return 0
-    fi
-
-    _nredf_last_run "_nredf_update_sheldon_plugins" "true" "86400"
-    local sheldon_lock_opts=(--color never)
-    if [[ -z "${NREDF_VERBOSE:-}" && -z "${NREDF_PROFILE_STARTUP:-}" ]]; then
-      sheldon_lock_opts+=(--quiet)
-    fi
-    sheldon "${sheldon_lock_opts[@]}" lock --update >/dev/null 2>&1 || true
-    _nredf_remove_lock
-  fi
-}
-
 function _nredf_load_sheldon_plugins() {
   # Initialize completion before plugin load if compdef is still unavailable.
   if (( ! ${+functions[compdef]} )); then
@@ -92,15 +66,10 @@ function _nredf_load_sheldon_plugins() {
     bindkey -M vicmd 'k' atuin-up-search-vicmd
   fi
 
-  # Ensure fzf-cd-widget is bound to ç and © on macOS (Option+c special character)
-  if (( ${+widgets[fzf-cd-widget]} )); then
-    bindkey -M emacs 'ç' fzf-cd-widget 2>/dev/null || true
-    bindkey -M viins 'ç' fzf-cd-widget 2>/dev/null || true
-    bindkey -M vicmd 'ç' fzf-cd-widget 2>/dev/null || true
-    bindkey -M emacs '©' fzf-cd-widget 2>/dev/null || true
-    bindkey -M viins '©' fzf-cd-widget 2>/dev/null || true
-    bindkey -M vicmd '©' fzf-cd-widget 2>/dev/null || true
-  fi
+  # fzf-cd-widget's ç/© (Option+c) binding lives in _nredf_tool_fzf_source
+  # (common/functions/nredf_tool_fzf.bash), which runs right after the
+  # fzf --zsh snippet that defines the widget in the first place — doing it
+  # here too was a pure duplicate rebind of the same widget to the same keys.
 
   if (( ${+functions[_nredf_setup_inshellisense]} )); then
     _nredf_setup_inshellisense

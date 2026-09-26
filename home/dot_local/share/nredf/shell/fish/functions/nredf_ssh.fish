@@ -25,15 +25,73 @@ function _nredf_parse_totp
     '
 end
 
-function _nredf_sshpass_totp
-    set -l host "$argv[1]"
+# Prints the -F config file (possibly empty) on line 1 and the destination of
+# an ssh argument list on line 2; prints nothing when there is no destination.
+# Mirrors ssh's getopt: option clusters (-4vA) are skipped, and so is the value
+# of every option letter that takes one, attached (-p2222) or separate
+# (-p 2222). The first non-option is the destination, returned as given:
+# `ssh -G` parses [user@]host and ssh:// URIs itself, and needs the user to
+# evaluate `Match user` blocks correctly.
+function _nredf_ssh_destination
+    set -l opts_with_arg B b c D E e F I i J L l m O o P p Q R S W w
+    set -l dest
+    set -l cfg_file
+    set -l want
+    set -l end_opts 0
+    for arg in $argv
+        if test -n "$want"
+            test "$want" = F; and set cfg_file "$arg"
+            set want
+            continue
+        end
+        if test $end_opts -eq 0; and test "$arg" = --
+            set end_opts 1
+            continue
+        end
+        if test $end_opts -eq 0; and string match -qr -- '^-.' "$arg"
+            set -l chars (string split '' -- "$arg")
+            for i in (seq 2 (count $chars))
+                set -l c $chars[$i]
+                if contains -- "$c" $opts_with_arg
+                    if test $i -lt (count $chars)
+                        test "$c" = F; and set cfg_file (string join '' -- $chars[(math $i + 1)..-1])
+                    else
+                        set want "$c"
+                    end
+                    break
+                end
+            end
+            continue
+        end
+        set dest "$arg"
+        break
+    end
 
-    if test -z "$host"
-        echo "Usage: nredf_ssh <ssh_host>"
+    test -z "$dest"; and return 0
+
+    printf '%s\n%s\n' "$cfg_file" "$dest"
+end
+
+function _nredf_sshpass_totp
+    if test (count $argv) -eq 0
+        echo "Usage: nredf_ssh [ssh_options...] <destination> [command...]" >&2
         return 1
     end
 
-    set -l host_cfg (ssh -G "$host" 2>/dev/null)
+    set -l parsed (_nredf_ssh_destination $argv)
+    set -l cfg_file "$parsed[1]"
+    set -l host "$parsed[2]"
+
+    # No destination (e.g. `nredf_ssh -V`): nothing to look up.
+    if test -z "$host"
+        ssh $argv
+        return $status
+    end
+
+    set -l g_opts
+    test -n "$cfg_file"; and set g_opts -F "$cfg_file"
+
+    set -l host_cfg (ssh $g_opts -G "$host" 2>/dev/null)
     if test -z "$host_cfg"
         ssh $argv
         return $status
@@ -49,7 +107,7 @@ function _nredf_sshpass_totp
         set pj_first (string replace -r '^[^@]*@' '' -- "$pj_first")
         set pj_first (string replace -r ':.*' '' -- "$pj_first")
         if test -n "$pj_first"
-            set -l pj_cfg (ssh -G "$pj_first" 2>/dev/null)
+            set -l pj_cfg (ssh $g_opts -G "$pj_first" 2>/dev/null)
             set totp_itemid (_nredf_parse_totp $pj_cfg)
         end
     end
@@ -77,6 +135,8 @@ function _nredf_sshpass_totp
 
     switch "$totp_provider"
         case bitwarden
+            # Unlike bash's $(...), fish's (...) runs in this process, so
+            # the BW_SESSION exported by _nredf_bw_ensure_session survives.
             set item_totp (_nredf_sshpass_bitwarden_totp "$totp_itemid")
         case 1password onepassword op
             set item_totp (_nredf_sshpass_1password_totp "$totp_itemid")

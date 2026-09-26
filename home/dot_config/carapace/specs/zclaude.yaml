@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+name: zclaude
+description: Zellij-native supervisor for Claude Code with auto-retry and keep-alive
+flags:
+  -v, --verbose: Enable verbose debug logging
+  -W, --watch?: Watch an existing Zellij pane (pane_id optional)
+  -s, --session=: "Zellij session name (default: zclaude)"
+  -l, --layout=: "Zellij layout to use (default: zclaude)"
+  --no-keep-alive: Disable system sleep prevention
+  --margin=: "Safety margin in seconds after reset (default: 30)"
+  --message=: "Resumption message to send (default: continue)"
+  --cmd=: "Claude executable command (default: claude)"
+  --version: Show program version number and exit
+  -r, --resume?: Resume a conversation by session ID or open interactive picker
+  -c, --continue: Continue the most recent conversation in the current directory
+  -p, --print: Run non-interactively and print response
+  -m, --model=: "Model for current session (e.g. sonnet, opus, haiku, fable)"
+  --effort=: "Effort level for current session (low, medium, high, xhigh, max)"
+  --permission-mode=: "Permission mode (acceptEdits, auto, bypassPermissions, manual, dontAsk, plan)"
+  --dangerously-skip-permissions: Bypass all permission checks (for sandboxes/unattended runs)
+  -n, --name=: Set display name for this session
+  -w, --worktree?: Create a new git worktree for this session
+  --fork-session: When resuming, create a new session ID instead of reusing original
+  --bare: "Minimal mode: skip hooks, LSP, auto-memory, and plugin sync"
+  --ide: Automatically connect to IDE on startup
+completion:
+  flag:
+    effort:
+      - "low\tefficient and fast"
+      - "medium\tbalanced"
+      - "high\tthorough thinking"
+      - "xhigh\textra high reasoning depth"
+      - "max\tmaximum reasoning depth"
+    permission-mode:
+      - "acceptEdits\tauto-accept file edits, prompt on commands"
+      - "auto\tstandard auto mode"
+      - "bypassPermissions\tbypass all permission checks"
+      - "manual\tprompt for all actions"
+      - "dontAsk\tnever prompt, deny anything requiring permission"
+      - "plan\tread-only planning mode"
+    model:
+      - "sonnet\tClaude Sonnet (default)"
+      - "opus\tClaude Opus"
+      - "haiku\tClaude Haiku"
+      - "fable\tClaude Fable preview"

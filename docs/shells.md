@@ -78,6 +78,13 @@ All five shells share a unified experience designed around modern developer ergo
   - `Functions.ps1`: Utility functions (`reload`, `sudo`, `md5`, `sha256`, `NREDF_DailySync`).
   - `Profile.ps1`: High-performance startup orchestration with snippet caching (`NREDF_RefreshCachedShellSnippet`) for Oh-My-Posh, Atuin, Zoxide, and **Carapace** completions (including custom specs in `~/.config/carapace/specs/`).
 
+### 6. Custom Completions (Carapace)
+
+- **Specs**: [`home/dot_config/carapace/specs/`](../home/dot_config/carapace/specs/) holds one YAML spec per command carapace-bin doesn't know: the NREDF functions (`reload`, `yy`, `nredf_ssh`, `nredf_aqua_token_setup`, `nredf-daily-sync`) and aqua tools without a completer (`kubectx`, `kubens`, `lsd`, `lazydocker`, `lazyjournal`).
+- **Aliases**: bash can't complete an alias through its target, so every alias in `home/.chezmoidata/aliases.yaml` whose target needs it (`k`, `kctx`/`ctx`, `kns`/`ns`, `lzg`/`lg`, `lzd`, `lzj`/`lj`, `ll`/`la`/`tree`, `pst`) has its own thin spec that bridges to the target with `$carapace.bridge.CarapaceBin([target])`. A spec's `aliases:` field does not help here: it only names subcommand aliases and never registers a top-level command.
+- **Cobra bridges**: [`home/dot_config/carapace/choices/`](../home/dot_config/carapace/choices/) makes carapace ask `flux`, `oras`, `stern`, `velero` and `yq` for their own completions (the same files `carapace --choice flux/cobra@bridge` writes).
+- **Cache lag**: bash, zsh, fish and PowerShell only complete command names that were listed in carapace's init snippet, which is cached for 24 hours. A **new** spec or choice therefore appears only after `reload -c` (or the next daily refresh); edits to an existing spec apply immediately. Nushell's snippet is a generic external completer, so it picks up new specs at once.
+
 ---
 
 ## ⌨️ Shell Keyboard Shortcuts
@@ -201,11 +208,11 @@ NREDF guarantees that common development commands behave identically regardless 
 
 ## 🏠 Local, Machine-Specific Overrides
 
-None of the following files are chezmoi-managed or committed to this repo — they live only on your machine, are yours to create, and `chezmoi apply` never touches or overwrites them. [`~/.config/nredf/README.md`](../home/dot_config/nredf/README.md) is a shorter, on-disk version of this same section.
+None of the following files are chezmoi-managed or committed to this repo — they live only on your machine, are yours to create, and `chezmoi apply` never touches or overwrites them. [`~/.config/nredf/README.md`](../home/dot_config/private_nredf/README.md) is a shorter, on-disk version of this same section.
 
 ### `~/.config/nredf/local.yaml` — paths and simple aliases
 
-The same declarative format `.chezmoidata/paths.yaml` and `.chezmoidata/aliases.yaml` use internally. If this file exists, every shell reads and merges it in at `chezmoi apply` time (it is re-read on every apply, so editing it and re-applying picks up changes immediately). chezmoi deploys a copy-and-edit starting point at [`~/.config/nredf/local.yaml.example`](../home/dot_config/nredf/local.yaml.example) — copy it to `local.yaml` in the same directory:
+The same declarative format `.chezmoidata/paths.yaml` and `.chezmoidata/aliases.yaml` use internally. If this file exists, every shell reads and merges it in at `chezmoi apply` time (it is re-read on every apply, so editing it and re-applying picks up changes immediately). chezmoi deploys a copy-and-edit starting point at [`~/.config/nredf/local.yaml.example`](../home/dot_config/private_nredf/local.yaml.example) — copy it to `local.yaml` in the same directory:
 
 ```yaml
 # ~/.config/nredf/local.yaml
@@ -269,6 +276,8 @@ Options:
   -h, --help        Show usage help
 ```
 
+`-l` removes only the last-run stamps and keeps the cached init snippets, the sheldon cache and the zsh completion dump. `-c` and `-f` clear those as well; use one of them to pick up a tool upgrade immediately. Nushell's `*.nu` snippets are truncated rather than deleted, because nu's `source` needs each file to exist when `config.nu` is parsed.
+
 ### Examples
 
 - **Fast shell refresh**:
@@ -320,7 +329,7 @@ NREDF decouples all periodic maintenance and network-heavy upgrade tasks from in
 Daily maintenance is scheduled natively per operating system via chezmoi:
 
 - **macOS (`launchd`)**: `com.nredf.daily-sync.plist` (managed via `home/private_Library/private_LaunchAgents/com.nredf.daily-sync.plist.tmpl`).
-- **Linux (`systemd --user`)**: `nredf-daily-sync.timer` & `nredf-daily-sync.service` in `~/.config/systemd/user/`.
+- **Linux (`systemd --user`)**: `nredf-daily-sync.timer` & `nredf-daily-sync.service` in `~/.config/systemd/user/`. The timer is `Persistent=true`, so a run missed while the machine was off happens at the next boot.
 - **Windows (Task Scheduler)**: `NREDF-DailySync` registered with `StartWhenAvailable` to catch up after sleep.
 
 ### 2. What Daily Maintenance Executes
@@ -329,9 +338,11 @@ The unified payload (`nredf-daily-sync` on POSIX, `NREDF_DailySync` on PowerShel
 
 1. **Package Upgrades**: Homebrew (`brew update && brew upgrade && brew cleanup -s` on macOS).
 2. **Chezmoi Upgrade**: Upgrades the chezmoi binary.
-3. **Dotfiles Remote Sync**: Fetches upstream dotfiles changes, fast-forwards Git, and runs `chezmoi apply --refresh-externals` (skipping secret templates when the password safe is locked).
+3. **Dotfiles Remote Sync**: Fetches upstream dotfiles changes, fast-forwards Git, and runs `chezmoi apply --refresh-externals --force`. A scheduled run has no terminal to unlock a password safe, so it first checks the one your secrets reference: Bitwarden must report `unlocked` from `bw status` (after restoring `BW_SESSION` from the keychain, as shell startup does), 1Password must pass `op whoami`, and a KeePassXC reference always needs its database password. If that check fails, the apply is skipped with a log line and the other steps still run. Run `bwu` and then `reload -f` to catch up. PowerShell only pre-checks Bitwarden; for the other two it detects a locked safe from the failed apply's output.
 4. **Aqua Tools**: Updates Aqua (`aqua update-aqua`), ensures tool links (`aqua install -a -l`), and vacuums packages unused for >30 days (`aqua vacuum -d 30`).
-5. **Zsh Plugins**: Updates Sheldon plugin locks (`sheldon lock --update`).
+5. **Zsh Plugins**: Updates Sheldon plugin locks (`sheldon lock --update`). Not on PowerShell.
+6. **tldr Pages**: Refreshes the tldr page cache (`tldr --update`).
+7. **oh-my-posh Session Caches**: Deletes `*.omp.cache` files older than 7 days from the oh-my-posh cache directory. Every shell gets a new `POSH_SESSION_ID`, so these files otherwise pile up forever.
 
 All runs are logged to `${XDG_STATE_HOME:-~/.local/state}/nredf/daily-sync.log` (macOS/Linux) and `$LOCALAPPDATA\nredf\daily-sync.log` (Windows). `reload -f` (or `nredf-daily-sync --verbose`) also prints that output to the terminal.
 
@@ -359,12 +370,11 @@ If you have open terminals when the background sync completes:
 | Directory-glob fallback when the function bundle is absent | Nushell | The fallback loop would itself need to `source` a runtime-determined file list — same restriction again. | The generated bundle is nu's only load path, not a fast path with a fallback the way bash/zsh/fish have. |
 | Caller-name auto-detection for the throttle gate and mkdir-based lock (`_nredf_last_run`, `_nredf_create_lock`) | Fish, Nushell | Neither has an equivalent of bash's `FUNCNAME`/zsh's `funcstack`. | Both take an explicit `key` argument at every call site instead of inferring one. |
 | Kitty terminal shell-integration | Nushell | Kitty ships integration scripts for bash/zsh/fish only — no nushell target exists upstream. | Not implemented; not something this repo can fix. |
-| pyenv shell integration | Nushell | pyenv has no nushell integration upstream (bash/zsh/fish only). | Not implemented; `pyenv exec`/`pyenv which` still work as plain external commands. |
 | `dircolors`/`LS_COLORS` integration | Nushell | nu's own `ls` builtin has its own color theming (`$env.config.color_config`) and never reads `LS_COLORS`, unlike the external-`ls`-based `ls`/`ll`/`la` aliases every other shell here uses. | Not implemented; low value for nu specifically, not a gap in the external-`ls` sense the other shells have. |
 | Prompt-with-timeout for the aqua GitHub-token setup wizard | Fish, Nushell | Neither fish's `read` nor nu's `input` has a timeout flag at all (unlike bash's `read -t`). | Shells out to `timeout`/`gtimeout` if one is installed; otherwise falls back to an untimed prompt, still gated on being a real interactive tty so it can never block a non-interactive shell. |
 | `zcompile`-equivalent bundle byte-caching | Fish, Nushell | Neither has a bytecode-cache mechanism comparable to zsh's `zcompile`. | Accepted as a minor, unavoidable cold-start cost; the cached-snippet mechanism still covers the genuinely expensive parts (tool inits). |
 | oh-my-posh tooltips (git details while typing `git`/`lg`/`lzg`/`lazygit`) | Bash, Nushell | oh-my-posh only implements tooltips for zsh, fish and PowerShell; bash and nu's line editors have no hook for re-rendering the right prompt on each keystroke. | Not implemented. The tooltip only adds detail: branch and status stay in the main prompt in every shell, and the kube context stays on line two instead of becoming a tooltip for the same reason. |
-| PowerShell automatically restoring `$env:SSH_AUTH_SOCK` | PowerShell | Pre-existing gap, unrelated to the fish/nu work above — flagged here so it isn't mistaken for a new one. | Out of scope for this document; PowerShell users configure SSH agent forwarding another way for now. |
+| PowerShell automatically restoring `$env:SSH_AUTH_SOCK` | PowerShell, Nushell on native Windows | Pre-existing gap, unrelated to the fish/nu work above — flagged here so it isn't mistaken for a new one. On native Windows, `nredf-set-ssh-agent` returns immediately: its Unix-socket logic (`id`, `chmod`, `ssh-agent -a`) cannot run there, and a Unix `SSH_AUTH_SOCK` would override the OpenSSH named pipe. WSL is unaffected. | Out of scope for this document; PowerShell users configure SSH agent forwarding another way for now. With `SSH_AUTH_SOCK` unset, Windows OpenSSH uses its `\\.\pipe\openssh-ssh-agent` pipe. |
 
 ---
 

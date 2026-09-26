@@ -15,6 +15,10 @@ Pins covered:
   home/.chezmoidata/kitty.yaml            Linux kitty archives (x86_64, arm64)
   home/.chezmoidata/aqua-bootstrap.yaml   Windows aqua zips (amd64, arm64)
   bootstrap.ps1                           same aqua literals (cannot read chezmoi data)
+  home/.chezmoidata/ble.yaml              ble.sh release archive (chezmoi external)
+  home/.chezmoidata/fzf.yaml              fzf source archive for its shell scripts
+                                          (chezmoi external); its version follows
+                                          junegunn/fzf in aqua.yaml
   home/.chezmoiscripts/run_once_before_install-tools.sh.tmpl   aqua-installer script
 
 No third-party dependencies (the YAML involved is deliberately trivial).
@@ -33,6 +37,9 @@ DEFAULT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..
 KITTY = "home/.chezmoidata/kitty.yaml"
 AQUA = "home/.chezmoidata/aqua-bootstrap.yaml"
 BOOTSTRAP = "bootstrap.ps1"
+BLE = "home/.chezmoidata/ble.yaml"
+FZF = "home/.chezmoidata/fzf.yaml"
+AQUA_YAML = "home/dot_config/aquaproj-aqua/aqua.yaml"
 INSTALLER = "home/.chezmoiscripts/run_once_before_install-tools.sh.tmpl"
 
 HEX = r"[0-9a-f]{64}"
@@ -88,6 +95,35 @@ def sync_bootstrap_version(root):
         print("  synced   bootstrap.ps1 $aquaVersion -> %s" % version)
 
 
+def aqua_fzf_version(root):
+    """junegunn/fzf's version in aqua.yaml, or None when fzf is not installed.
+
+    fzf.toml.tmpl only deploys the external while aqua.yaml lists fzf, so its pin
+    is only checked (and synced) then; dropping fzf must not break the other pins.
+    """
+    m = re.search(r'^\s*-\s+name:\s*junegunn/fzf@(v[^\s#]+)', read(root, AQUA_YAML), re.M)
+    return m.group(1) if m else None
+
+
+def sync_fzf_version(root):
+    """Make fzf.yaml's `version` follow aqua.yaml's junegunn/fzf pin.
+
+    Renovate bumps fzf only in aqua.yaml (the binary). The chezmoi external that
+    ships fzf's shell scripts is pinned separately, by version and hash, in
+    fzf.yaml; `update` carries the version across before rehashing.
+    """
+    version = aqua_fzf_version(root)
+    if version is None:
+        return
+    text = read(root, FZF)
+    new, n = re.subn(r'(^\s*version:\s*")v[^"]+(")', lambda m: m.group(1) + version + m.group(2), text, count=1, flags=re.M)
+    if n != 1:
+        sys.exit("pins.py: could not find version in %s" % FZF)
+    if new != text:
+        write(root, FZF, new)
+        print("  synced   fzf.yaml version -> %s" % version)
+
+
 def pins(root):
     """Return [(label, url, pinned_sha, rewrite)] for every pinned artifact."""
     out = []
@@ -114,6 +150,22 @@ def pins(root):
         out.append(("bootstrap.ps1 aqua %s windows/%s" % (av, arch), url, b_pinned,
                     (BOOTSTRAP, r'(^\s*%s\s*=\s*")%s(")' % (arch, HEX))))
 
+    ble = read(root, BLE)
+    bt = find(r'^\s*tag:\s*"?(v[^"\s#]+)', ble, "ble.sh tag")
+    pinned = find(r'^\s*sha256:\s*"(%s)"' % HEX, ble, "ble.sh sha256")
+    url = "https://github.com/akinomyoga/ble.sh/releases/download/%s/ble-%s.tar.xz" % (bt, bt[1:])
+    out.append(("ble.sh %s" % bt, url, pinned, (BLE, r'(^\s*sha256:\s*")%s(")' % HEX)))
+
+    av = aqua_fzf_version(root)
+    if av is not None:
+        fzf = read(root, FZF)
+        fv = find(r'^\s*version:\s*"?(v[^"\s#]+)', fzf, "fzf version")
+        if fv != av:
+            sys.exit("pins.py: %s pins fzf %s but %s pins %s (run: .github/scripts/pins.py update)" % (FZF, fv, AQUA_YAML, av))
+        pinned = find(r'^\s*sha256:\s*"(%s)"' % HEX, fzf, "fzf sha256")
+        url = "https://github.com/junegunn/fzf/archive/refs/tags/%s.tar.gz" % fv
+        out.append(("fzf %s shell scripts" % fv, url, pinned, (FZF, r'(^\s*sha256:\s*")%s(")' % HEX)))
+
     inst = read(root, INSTALLER)
     iv = find(r'AQUA_INSTALLER_VERSION="(v[^"]+)"', inst, "AQUA_INSTALLER_VERSION")
     isha = find(r'AQUA_INSTALLER_SHA256="(%s)"' % HEX, inst, "AQUA_INSTALLER_SHA256")
@@ -130,6 +182,7 @@ def main():
 
     if args.mode == "update":
         sync_bootstrap_version(args.root)
+        sync_fzf_version(args.root)
 
     cache = {}  # the same URL appears twice (data file + bootstrap.ps1): download once
     bad = 0

@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+# lazydocker (`lazydocker --help`). carapace-bin ships no lazydocker
+# completer; the lzd alias (home/.chezmoidata/aliases.yaml) bridges here.
+name: lazydocker
+description: The lazier way to manage everything docker
+flags:
+  --version: display the program version string
+  -h, --help: display help
+  -c, --config: print the current default config
+  -d, --debug: enable debug logging
+  -f, --file*=: specify alternate compose files
+  -p, --project=: specify a docker compose project name
+completion:
+  flag:
+    file: ["$files([.yaml, .yml])"]

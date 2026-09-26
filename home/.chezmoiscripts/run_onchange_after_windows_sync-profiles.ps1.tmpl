@@ -1,6 +1,15 @@
 {{- if eq .chezmoi.os "windows" -}}
 # chezmoi run_onchange_after Windows hook — ensures PowerShell profiles in redirected Documents (e.g. OneDrive or SMB) are linked/loaded.
-# windows.yaml hash: {{ include ".chezmoidata/windows.yaml" | sha256sum }}
+#
+# No input hash on purpose. This used to embed the hash of .chezmoidata/windows.yaml,
+# which it never reads, so editing an unrelated Windows toggle re-ran it. Its real
+# inputs are the machine's Documents location and this script's own text, and
+# chezmoi already re-runs a run_onchange_ script when its text changes. run_after_
+# was rejected: NREDF-DailySync applies every morning with no one watching, so a user
+# on redirected SMB Documents who declined elevation would get a UAC prompt daily,
+# and every apply would re-check and possibly re-back-up the profile folders. After
+# moving Documents (e.g. enabling OneDrive Known Folder Move), re-run it with
+# `chezmoi state delete-bucket --bucket=entryState && chezmoi apply`.
 
 $ErrorActionPreference = 'Continue'
 

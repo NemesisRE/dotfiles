@@ -12,31 +12,51 @@ Write-Host "==> Applying Windows system developer tweaks (Admin required)..."
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
-$commands = @'
-reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d 1
-reg add "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem" /v LongPathsEnabled /t REG_DWORD /d 1 /f
-reg add "HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\TimeZoneInformation" /v RealTimeIsUniversal /d 1 /t REG_DWORD /f
-'@
+# One reg.exe argument list per tweak. Each is checked on its own: this used to run
+# all three through Invoke-Expression and report success whatever reg.exe returned.
+$tweaks = @(
+    , @('add', 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock', '/v', 'AllowDevelopmentWithoutDevLicense', '/t', 'REG_DWORD', '/d', '1', '/f')
+    , @('add', 'HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\FileSystem', '/v', 'LongPathsEnabled', '/t', 'REG_DWORD', '/d', '1', '/f')
+    , @('add', 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\TimeZoneInformation', '/v', 'RealTimeIsUniversal', '/t', 'REG_DWORD', '/d', '1', '/f')
+)
+# PowerShell source for the same commands, used for the elevated run and the manual hint.
+$commandLines = $tweaks | ForEach-Object { '& reg.exe ' + (($_ | ForEach-Object { "'$_'" }) -join ' ') }
 
 if ($isAdmin) {
-    Invoke-Expression $commands
-    Write-Host "    System developer tweaks applied successfully." -ForegroundColor Green
+    $failed = 0
+    foreach ($regArgs in $tweaks) {
+        & reg.exe @regArgs | Out-Null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "reg.exe $($regArgs[0]) $($regArgs[1]) /v $($regArgs[3]) failed with exit code $LASTEXITCODE."
+            $failed++
+        }
+    }
+    if ($failed -eq 0) {
+        Write-Host "    System developer tweaks applied successfully." -ForegroundColor Green
+    } else {
+        Write-Warning "$failed of $($tweaks.Count) system tweaks failed."
+    }
 } else {
     Write-Host "    Requesting UAC elevation to apply system registry tweaks..."
+    # The elevated script counts failed reg.exe calls and exits with that count, so
+    # its exit code means something (a -File script otherwise exits 0 regardless).
+    $elevatedScript = (@('$failed = 0') + ($commandLines | ForEach-Object { "$_ | Out-Null; if (`$LASTEXITCODE -ne 0) { `$failed++ }" }) + @('exit $failed')) -join "`r`n"
+    $tmpScript = Join-Path ([System.IO.Path]::GetTempPath()) "nredf_system_tweaks.ps1"
     try {
-        $tmpScript = Join-Path ([System.IO.Path]::GetTempPath()) "nredf_system_tweaks.ps1"
-        Set-Content -Path $tmpScript -Value $commands -Encoding UTF8
-        $proc = Start-Process -FilePath "powershell.exe" -ArgumentList "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$tmpScript`"" -Verb RunAs -Wait -PassThru
-        Remove-Item -Path $tmpScript -Force -ErrorAction SilentlyContinue
+        Set-Content -Path $tmpScript -Value $elevatedScript -Encoding UTF8 -ErrorAction Stop
+        $proc = Start-Process -FilePath "powershell.exe" -ArgumentList "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "`"$tmpScript`"" -Verb RunAs -Wait -PassThru -ErrorAction Stop
         if ($proc.ExitCode -eq 0) {
             Write-Host "    System developer tweaks applied successfully." -ForegroundColor Green
         } else {
-            Write-Warning "    System developer tweaks returned exit code $($proc.ExitCode)."
+            Write-Warning "$($proc.ExitCode) of $($tweaks.Count) system tweaks failed in the elevated prompt."
         }
     } catch {
-        Write-Warning "    Elevation was cancelled or failed: $_"
+        Write-Warning "Elevation was cancelled or failed: $_"
         Write-Host "    You can run these commands manually in an elevated PowerShell prompt:"
-        Write-Host $commands
+        $commandLines | ForEach-Object { Write-Host "    $_" }
+    } finally {
+        Remove-Item -Path $tmpScript -Force -ErrorAction SilentlyContinue
     }
 }
+exit 0
 {{- end }}

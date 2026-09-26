@@ -1,12 +1,8 @@
 # yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+# Alias for kubectx (home/.chezmoidata/aliases.yaml): hands the whole
+# command line to kubectx's completer.
 name: kctx
-description: Fast way to switch between clusters in kubectl (kubectx alias)
-flags:
-  -c, --current: show current context
-  -u, --unset: unset current context
-  -d=: delete context
+description: Alias for kubectx
+parsing: disabled
 completion:
-  flag:
-    d: ["$carapace.tools.kubectl.Contexts"]
-  positional:
-    - ["$carapace.tools.kubectl.Contexts"]
+  positionalany: ["$carapace.bridge.CarapaceBin([kubectx])"]

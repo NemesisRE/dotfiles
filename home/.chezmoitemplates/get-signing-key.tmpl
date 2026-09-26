@@ -4,7 +4,8 @@
 {{- end -}}
 {{- if and (not $signingKey) (hasKey . "secrets") (hasKey .secrets "git_signing_key") -}}
   {{- $ref := .secrets.git_signing_key -}}
-  {{- if and $ref (not (env "CI")) (ne (env "NREDF_NO_BOOTSTRAP") "1") -}}
+  {{- /* Any non-empty NREDF_NO_BOOTSTRAP skips the vault, same as the hooks. */ -}}
+  {{- if and $ref (not (env "CI")) (eq (env "NREDF_NO_BOOTSTRAP") "") -}}
     {{- if or (hasPrefix "bitwarden:" $ref) (hasPrefix "bw:" $ref) -}}
       {{- if lookPath "bw" -}}
         {{- $itemName := $ref | trimPrefix "bitwarden:" | trimPrefix "bw:" -}}
@@ -17,10 +18,12 @@
           {{- $signingKey = $publicKey -}}
         {{- else if regexMatch "^(ssh-|ecdsa-)" $notes -}}
           {{- $signingKey = $notes -}}
-        {{- else if hasKey $item "fields" -}}
-          {{- range $item.fields -}}
-            {{- if and (or (eq .name "publicKey") (eq .name "public_key") (eq .name "git_signing_key")) .value -}}
-              {{- $signingKey = .value -}}
+        {{- else -}}
+          {{- range (index $item "fields" | default (list)) -}}
+            {{- $name := index . "name" | default "" -}}
+            {{- $value := index . "value" | default "" -}}
+            {{- if and (or (eq $name "publicKey") (eq $name "public_key") (eq $name "git_signing_key")) (ne $value "") -}}
+              {{- $signingKey = $value -}}
             {{- end -}}
           {{- end -}}
         {{- end -}}
@@ -29,22 +32,45 @@
       {{- if lookPath "keepassxc-cli" -}}
         {{- $entry := trimPrefix "keepassxc:" $ref -}}
         {{- $item := keepassxc $entry -}}
-        {{- if and (hasKey $item "Notes") (regexMatch "^(ssh-|ecdsa-)" $item.Notes) -}}
-          {{- $signingKey = $item.Notes -}}
-        {{- else -}}
+        {{- /* The entry is a map[string]string: `hasKey` rejects that type (it
+               only takes map[string]interface{}), `index` does not. */ -}}
+        {{- $notes := index $item "Notes" | default "" -}}
+        {{- $attr := index $item "public_key" | default "" -}}
+        {{- if regexMatch "^(ssh-|ecdsa-)" $notes -}}
+          {{- $signingKey = $notes -}}
+        {{- else if ne $attr "" -}}
+          {{- /* keepassxc.mode = "builtin" returns custom attributes in the map. */ -}}
+          {{- $signingKey = $attr -}}
+        {{- else if ne (.chezmoi.config.keepassxc.mode | toString) "builtin" -}}
+          {{- /* keepassxc-cli's `show` lists only the standard attributes, so a
+                 custom one can only be read with keepassxcAttribute, which fails
+                 the apply ("unknown attribute public_key") if the entry has no
+                 such attribute. There is no way to test for it first; that error
+                 only happens when the entry holds no key in either place. In
+                 builtin mode the map above is already complete, so skip it. */ -}}
           {{- $signingKey = keepassxcAttribute $entry "public_key" -}}
         {{- end -}}
       {{- end -}}
     {{- else if or (hasPrefix "onepassword:" $ref) (hasPrefix "op:" $ref) -}}
       {{- if lookPath "op" -}}
         {{- $itemName := $ref | trimPrefix "onepassword:" | trimPrefix "op:" -}}
-        {{- $item := onepassword "item" $itemName -}}
-        {{- if hasKey $item "fields" -}}
-          {{- range $item.fields -}}
-            {{- if or (eq .id "public_key") (eq .label "public key") (eq .label "public_key") -}}
-              {{- $signingKey = .value -}}
+        {{- /* Item name first, and notes are a field: see get-github-token.tmpl */ -}}
+        {{- $item := onepassword $itemName -}}
+        {{- $notes := "" -}}
+        {{- range (index $item "fields" | default (list)) -}}
+          {{- $id := index . "id" | default "" -}}
+          {{- $label := index . "label" | default "" -}}
+          {{- $value := index . "value" | default "" -}}
+          {{- if ne $value "" -}}
+            {{- if or (eq $id "public_key") (eq $label "public key") (eq $label "public_key") -}}
+              {{- $signingKey = $value -}}
+            {{- else if or (eq $id "notesPlain") (eq (index . "purpose" | default "") "NOTES") -}}
+              {{- $notes = $value -}}
             {{- end -}}
           {{- end -}}
+        {{- end -}}
+        {{- if and (eq $signingKey "") (regexMatch "^(ssh-|ecdsa-)" $notes) -}}
+          {{- $signingKey = $notes -}}
         {{- end -}}
       {{- end -}}
     {{- else -}}
@@ -53,4 +79,3 @@
   {{- end -}}
 {{- end -}}
 {{- $signingKey | trim -}}
-

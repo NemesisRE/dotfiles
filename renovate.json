@@ -56,15 +56,36 @@
       "allowedVersions": "!/[-.](?:alpha|beta|dev|rc)[0-9A-Za-z.-]*/i"
     },
     {
-      "description": "Kitty and the Windows aqua bootstrap are pinned by SHA-256 as well as by version. The refresh-pins workflow recomputes the hashes on the PR branch and re-runs CI, so these automerge on green. The 3-day wait is what keeps a just-published, possibly tampered release from being hashed, pinned and merged unreviewed.",
+      "description": "Downloads pinned by SHA-256 as well as by version: kitty, the aqua bootstrap (and aqua_version in workflows), ble.sh, fzf (shell scripts external) and the aqua-installer script. The refresh-pins workflow recomputes the hashes on the PR branch and re-runs CI, so these automerge on green. The 3-day wait is what keeps a just-published, possibly tampered release from being hashed, pinned and merged unreviewed. Limited to custom.regex so the aqua-installer GitHub Action (github-actions manager) is not matched.",
+      "matchManagers": [
+        "custom.regex"
+      ],
       "matchDepNames": [
         "kovidgoyal/kitty",
-        "aquaproj/aqua"
+        "aquaproj/aqua",
+        "akinomyoga/ble.sh",
+        "junegunn/fzf",
+        "aquaproj/aqua-installer"
       ],
       "prBodyNotes": [
         "The pinned SHA-256 values are refreshed automatically by the `Refresh pinned checksums` workflow (a `chore(pins)` commit on this branch); CI re-runs after that. If it did not, run `.github/scripts/pins.py update` and push."
       ],
       "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "ble.sh only ships -develN tags for 0.4 (v0.4.0-devel3; stable v0.3.4 is older), and the default ignoreUnstable would only ever offer another v0.4.0 prerelease or v0.4.0 itself. Allow unstable tags so a v0.5.0-devel1 is proposed too; the non-semver `nightly` tag is still ignored.",
+      "matchDepNames": [
+        "akinomyoga/ble.sh"
+      ],
+      "ignoreUnstable": false
+    },
+    {
+      "description": "Keep the markdownlint-cli2 CLI used in CI and the markdownlint config-schema URL moving together.",
+      "matchDepNames": [
+        "markdownlint-cli2",
+        "DavidAnson/markdownlint"
+      ],
+      "groupName": "markdownlint"
     }
   ],
   "customManagers": [
@@ -113,6 +134,55 @@
       "matchStrings": [
         "version:\\s*\"?(?<currentValue>v[0-9][^\\s#\"]*)\"?\\s*#\\s*renovate:\\s*depName=(?<depName>[^\\s]+)"
       ],
+      "datasourceTemplate": "github-tags"
+    },
+    {
+      "customType": "regex",
+      "description": "Generic `# renovate: datasource=<ds> depName=<name> [registryUrl=<url>] [versioning=<v>]` comment on a *_VERSION assignment, either trailing it on the same line or on the line directly above (shell `X_VERSION=\"...\"`, workflow `env: X_VERSION: ...`).",
+      "managerFilePatterns": [
+        "/^\\.github\\/(workflows|scripts)\\/[^/]+$/",
+        "/^(home\\/)?\\.chezmoiscripts\\/[^/]+$/"
+      ],
+      "matchStrings": [
+        "_VERSION[\"']?\\s*[:=]\\s*[\"']?(?<currentValue>[^\\s\"'#]+)[\"']?[ \\t]*#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+)\\s+depName=(?<depName>[^\\s]+)(?:[ \\t]+registryUrl=(?<registryUrl>[^\\s]+))?(?:[ \\t]+versioning=(?<versioning>[^\\s]+))?",
+        "\\n[ \\t]*#\\s*renovate:\\s*datasource=(?<datasource>[^\\s]+)\\s+depName=(?<depName>[^\\s]+)(?:[ \\t]+registryUrl=(?<registryUrl>[^\\s]+))?(?:[ \\t]+versioning=(?<versioning>[^\\s]+))?[ \\t]*\\r?\\n[^\\n]*?_VERSION[\"']?\\s*[:=]\\s*[\"']?(?<currentValue>[^\\s\"'#]+)"
+      ]
+    },
+    {
+      "customType": "regex",
+      "description": "aqua CLI version passed to aquaproj/aqua-installer (`aqua_version:`) in workflows; same depName and datasource as .chezmoidata/aqua-bootstrap.yaml, so both land in one branch.",
+      "managerFilePatterns": [
+        "/^\\.github\\/workflows\\/[^/]+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        " +aqua_version *: +[\"']?(?<currentValue>v[0-9][^\"'\\s#]*)[\"']?"
+      ],
+      "depNameTemplate": "aquaproj/aqua",
+      "datasourceTemplate": "github-tags"
+    },
+    {
+      "customType": "regex",
+      "description": "markdownlint-cli2 pinned as `markdownlint-cli2@<version>` (npx) in workflows and CI scripts.",
+      "managerFilePatterns": [
+        "/^\\.github\\/workflows\\/[^/]+\\.ya?ml$/",
+        "/^\\.github\\/scripts\\/[^/]+$/"
+      ],
+      "matchStrings": [
+        "markdownlint-cli2@(?<currentValue>[0-9][^\\s\"'@]*)"
+      ],
+      "depNameTemplate": "markdownlint-cli2",
+      "datasourceTemplate": "npm"
+    },
+    {
+      "customType": "regex",
+      "description": "markdownlint config-schema URL in .markdownlint.yaml (editor validation only).",
+      "managerFilePatterns": [
+        "/^\\.markdownlint\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "DavidAnson/markdownlint/(?<currentValue>v[0-9][^/\\s]*)/schema/"
+      ],
+      "depNameTemplate": "DavidAnson/markdownlint",
       "datasourceTemplate": "github-tags"
     }
   ],

@@ -1,7 +1,8 @@
 {{- $token := "" -}}
 {{- if and (hasKey . "secrets") (hasKey .secrets "aqua_github_token") -}}
   {{- $ref := .secrets.aqua_github_token -}}
-  {{- if and $ref (not (env "CI")) (ne (env "NREDF_NO_BOOTSTRAP") "1") -}}
+  {{- /* Any non-empty NREDF_NO_BOOTSTRAP skips the vault, same as the hooks. */ -}}
+  {{- if and $ref (not (env "CI")) (eq (env "NREDF_NO_BOOTSTRAP") "") -}}
     {{- if or (hasPrefix "bitwarden:" $ref) (hasPrefix "bw:" $ref) -}}
       {{- if lookPath "bw" -}}
         {{- $itemName := $ref | trimPrefix "bitwarden:" | trimPrefix "bw:" -}}
@@ -11,16 +12,18 @@
                reaches `trim` below and aborts the whole apply, so read every
                value through `index | default` instead. */ -}}
         {{- $login := index $item "login" | default (dict) -}}
-        {{- $password := index $login "password" | default "" -}}
-        {{- if ne $password "" -}}
-          {{- $token = $password -}}
-        {{- else if hasKey $item "fields" -}}
-          {{- range $item.fields -}}
-            {{- if and (or (eq .name "token") (eq .name "aqua_github_token") (eq .name "password")) .value -}}
-              {{- $token = .value -}}
+        {{- $token = index $login "password" | default "" -}}
+        {{- if eq $token "" -}}
+          {{- range (index $item "fields" | default (list)) -}}
+            {{- $name := index . "name" | default "" -}}
+            {{- $value := index . "value" | default "" -}}
+            {{- if and (or (eq $name "token") (eq $name "aqua_github_token") (eq $name "password")) (ne $value "") -}}
+              {{- $token = $value -}}
             {{- end -}}
           {{- end -}}
-        {{- else if hasKey $item "notes" -}}
+        {{- end -}}
+        {{- /* Also when fields exist but none of them holds a token. */ -}}
+        {{- if eq $token "" -}}
           {{- $token = index $item "notes" | default "" -}}
         {{- end -}}
       {{- end -}}
@@ -28,24 +31,31 @@
       {{- if lookPath "keepassxc-cli" -}}
         {{- $entry := trimPrefix "keepassxc:" $ref -}}
         {{- $item := keepassxc $entry -}}
-        {{- if and (hasKey $item "Password") (ne $item.Password "") -}}
-          {{- $token = $item.Password -}}
-        {{- else if and (hasKey $item "Notes") (ne $item.Notes "") -}}
-          {{- $token = $item.Notes -}}
-        {{- end -}}
+        {{- $token = index $item "Password" | default (index $item "Notes") | default "" -}}
       {{- end -}}
     {{- else if or (hasPrefix "onepassword:" $ref) (hasPrefix "op:" $ref) -}}
       {{- if lookPath "op" -}}
         {{- $itemName := $ref | trimPrefix "onepassword:" | trimPrefix "op:" -}}
-        {{- $item := onepassword "item" $itemName -}}
-        {{- if and (hasKey $item "password") (ne $item.password "") -}}
-          {{- $token = $item.password -}}
-        {{- else if hasKey $item "fields" -}}
-          {{- range $item.fields -}}
-            {{- if or (eq .id "password") (eq .id "token") (eq .label "password") (eq .label "token") -}}
-              {{- $token = .value -}}
+        {{- /* chezmoi's signature is `onepassword <item> [vault [account]]`, so the
+               item name goes first. `op item get` JSON has no top-level password
+               or notes: both are fields (notes: id "notesPlain", purpose "NOTES"),
+               and a field left empty has no "value" key at all. */ -}}
+        {{- $item := onepassword $itemName -}}
+        {{- $notes := "" -}}
+        {{- range (index $item "fields" | default (list)) -}}
+          {{- $id := index . "id" | default "" -}}
+          {{- $label := index . "label" | default "" -}}
+          {{- $value := index . "value" | default "" -}}
+          {{- if ne $value "" -}}
+            {{- if or (eq $id "password") (eq $id "token") (eq $label "password") (eq $label "token") -}}
+              {{- $token = $value -}}
+            {{- else if or (eq $id "notesPlain") (eq (index . "purpose" | default "") "NOTES") -}}
+              {{- $notes = $value -}}
             {{- end -}}
           {{- end -}}
+        {{- end -}}
+        {{- if eq $token "" -}}
+          {{- $token = $notes -}}
         {{- end -}}
       {{- end -}}
     {{- else -}}
@@ -54,4 +64,3 @@
   {{- end -}}
 {{- end -}}
 {{- $token | trim -}}
-

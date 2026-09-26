@@ -14,7 +14,14 @@ def nredf-aqua-keyring-available []: nothing -> bool {
 
     mut bus = ($env.DBUS_SESSION_BUS_ADDRESS? | default "")
     if ($bus | is-empty) {
-        let sock = ($"($env.XDG_RUNTIME_DIR? | default $"/run/user/(^id -u | str trim)")" | path join "bus")
+        # Not `default $"/run/user/(^id -u)"`: `default` evaluates its
+        # argument eagerly, which would run `id` even with the var set.
+        let runtime_dir = if ($env.XDG_RUNTIME_DIR? | default "" | is-empty) {
+            $"/run/user/(^id -u | str trim)"
+        } else {
+            $env.XDG_RUNTIME_DIR
+        }
+        let sock = ($runtime_dir | path join "bus")
         if ($sock | path type) == "socket" {
             $bus = $"unix:path=($sock)"
         } else {
@@ -153,7 +160,9 @@ def nredf-prompt-yes-no [prompt: string] {
         print --no-newline $"($prompt) [y/N]: "
         mut reply = ""
         if not ($timeout_bin | is-empty) {
-            let result = (^$timeout_bin $timeout_secs nu -c "input") | complete
+            # `-n` (no config files): the child only needs `input`, not the
+            # user's whole env.nu/config.nu startup.
+            let result = (^$timeout_bin $timeout_secs nu -n -c "input") | complete
             if $result.exit_code != 0 {
                 print ""
                 return 2
@@ -185,9 +194,11 @@ def --env nredf-aqua-token-setup [action: string = "--set"] {
             print --stderr "Use 'nredf-aqua-token-setup --env' to store the token in local aqua.env instead."
             return
         }
-        if (^aqua token set | complete | get exit_code) != 0 {
-            return
-        }
+        # No `| complete`: aqua prompts for the token on the terminal, which
+        # capturing its output would hide. A non-zero exit raises an error in
+        # nu, so `try` turns a failed or cancelled entry into a quiet return
+        # (the `--set` caller then falls back to file-based storage).
+        try { ^aqua token set } catch { return }
         nredf-write-aqua-auth-config "keyring"
         $env.AQUA_KEYRING_ENABLED = "true"
         $env.NREDF_AQUA_GITHUB_TOKEN_SETUP = "keyring"
@@ -321,7 +332,6 @@ def --env nredf-ensure-aqua-github-token [] {
                 nredf-aqua-token-setup "--env"
             } else if $answer2 == 1 {
                 nredf-aqua-token-setup "--skip"
-                print "Skipping aqua GitHub token setup for now."
             }
         }
     } else {
@@ -331,7 +341,7 @@ def --env nredf-ensure-aqua-github-token [] {
             nredf-aqua-token-setup "--env"
         } else if $answer == 1 {
             nredf-aqua-token-setup "--skip"
-            print "Skipping aqua GitHub token setup for now. Run 'nredf-aqua-token-setup' later to configure."
+            print "Run 'nredf-aqua-token-setup' later to configure aqua's GitHub token."
         }
     }
 }

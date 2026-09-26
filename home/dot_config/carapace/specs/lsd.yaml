@@ -1,0 +1,76 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+# lsd 1.x (`lsd --help`). carapace-bin ships no lsd completer, and the
+# ls/ll/la/tree aliases (home/.chezmoidata/aliases.yaml) all resolve to lsd.
+name: lsd
+description: An ls command with a lot of pretty colors and some other stuff
+flags:
+  -a, --all: do not ignore entries starting with .
+  -A, --almost-all: do not list implied . and ..
+  --color=: when to use terminal colours
+  --icon=: when to print the icons
+  --icon-theme=: whether to use fancy or unicode icons
+  -F, --classify: append indicator (one of */=>@|) at the end of the file names
+  -l, --long: display extended file metadata as a table
+  --ignore-config: ignore the configuration file
+  --config-file=: provide a custom lsd configuration file
+  -1, --oneline: display one entry per line
+  -R, --recursive: recurse into directories
+  -h, --human-readable: for ls compatibility purposes only, set by default
+  --tree: recurse into directories and present the result as a tree
+  --depth=: stop recursing into directories after reaching specified depth
+  -d, --directory-only: display directories themselves, and not their contents
+  --permission=: how to display permissions
+  --size=: how to display size
+  --total-size: display the total size of directories
+  --date=: how to display date
+  -t, --timesort: sort by time modified
+  -S, --sizesort: sort by size
+  -X, --extensionsort: sort by file extension
+  -G, --gitsort: sort by git status
+  -v, --versionsort: natural sort of (version) numbers within text
+  --sort=: sort by TYPE instead of name
+  -U, --no-sort: do not sort, list entries in directory order
+  -r, --reverse: reverse the order of the sort
+  --group-dirs=: sort the directories then the files
+  --group-directories-first: same as --group-dirs=first
+  --blocks=: blocks to display and in what order
+  --classic: enable classic mode (display output similar to ls)
+  --no-symlink: do not display symlink target
+  -I, --ignore-glob*=: do not display entries matching the glob pattern
+  -i, --inode: display the index number of each file
+  -g, --git: show git status (only with --long)
+  -L, --dereference: show information for the file a symlink references
+  -Z, --context: print security context (label) of each file
+  --hyperlink=: attach hyperlink to filenames
+  --header: display block headers
+  --truncate-owner-after=: truncate user and group names after NUM characters
+  --truncate-owner-marker=: marker appended to a truncated user or group name
+  -N, --literal: print entry names without quoting
+  --help: print help information
+  -V, --version: print version
+completion:
+  flag:
+    color: [always, auto, never]
+    icon: [always, auto, never]
+    icon-theme: [fancy, unicode]
+    config-file: ["$files([.yaml, .yml])"]
+    permission: [rwx, octal, attributes, disable]
+    size: [default, short, bytes]
+    # A custom `+FORMAT` (strftime) is accepted too; typed by hand.
+    date: [date, locale, relative]
+    sort: [size, time, version, extension, git, none]
+    group-dirs: [none, first, last]
+    blocks:
+      - permission
+      - user
+      - group
+      - context
+      - size
+      - date
+      - name
+      - inode
+      - links
+      - git
+      - "$uniquelist(,)"
+    hyperlink: [always, auto, never]
+  positionalany: ["$files"]

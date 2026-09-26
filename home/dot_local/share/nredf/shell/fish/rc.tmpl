@@ -195,8 +195,27 @@ _nredf_step "carapace completions"
 _nredf_tool_fzf_source
 _nredf_step "fzf source"
 if type -q fzf
-    bind \co _nredf_fzf_tab_complete 2>/dev/null
-    bind -M insert \co _nredf_fzf_tab_complete 2>/dev/null
+    # Ctrl+Space, like bash/zsh/pwsh. Fish 4 names the key; fish 3 only sees
+    # the NUL byte the terminal sends for it.
+    if string match -qr -- '^[4-9]|^\d\d' $version
+        bind ctrl-space _nredf_fzf_tab_complete 2>/dev/null
+        bind -M insert ctrl-space _nredf_fzf_tab_complete 2>/dev/null
+    else
+        bind -k nul _nredf_fzf_tab_complete 2>/dev/null
+        bind -M insert -k nul _nredf_fzf_tab_complete 2>/dev/null
+    end
+{{- if eq .chezmoi.os "darwin" }}
+    # macOS Option+c types ç or © unless the terminal sends it as Meta, so
+    # alias both to fzf's Alt+C cd widget, as bash/zsh/pwsh do (skipped when
+    # FZF_ALT_C_COMMAND is set empty to disable Alt+C, matching fzf itself).
+    # macOS-only, so a real ç key on other keyboards still types ç.
+    if functions -q fzf-cd-widget; and begin; not set -q FZF_ALT_C_COMMAND; or test -n "$FZF_ALT_C_COMMAND"; end
+        for key in ç ©
+            bind $key fzf-cd-widget 2>/dev/null
+            bind -M insert $key fzf-cd-widget 2>/dev/null
+        end
+    end
+{{- end }}
 end
 
 _nredf_init_kitty_shell_integration

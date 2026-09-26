@@ -25,12 +25,16 @@ def --env nredf-init-paths [] {
     }
 {{- end }}
 
-    if not ($env.NREDF_SHELL_NAME? | default "" | is-empty) {
-        $env.NREDF_RC_LOCAL = ($env.HOME | path join ".config" $env.NREDF_SHELL_NAME)
-    }
+    # NREDF_SHELL_NAME is "nu" (the binary name, which `reload` execs), but
+    # every nu directory in this repo is named "nushell": the local overrides
+    # live in ~/.config/nushell (env.local.nu/config.local.nu) and the
+    # framework in shell/nushell. Deriving these from NREDF_SHELL_NAME, as
+    # bash/fish do, pointed at ~/.config/nu, which ensure_dirs below then
+    # recreated on every shell start.
+    $env.NREDF_RC_LOCAL = ($env.HOME | path join ".config" "nushell")
 
-    if (not ($env.NREDF_DOT_PATH? | default "" | is-empty)) and (not ($env.NREDF_SHELL_NAME? | default "" | is-empty)) {
-        $env.NREDF_RC_PATH = ($env.NREDF_DOT_PATH | path join "shell" $env.NREDF_SHELL_NAME)
+    if not ($env.NREDF_DOT_PATH? | default "" | is-empty) {
+        $env.NREDF_RC_PATH = ($env.NREDF_DOT_PATH | path join "shell" "nushell")
     }
 
     # Fast path: only ensure the directory tree once per shell session.

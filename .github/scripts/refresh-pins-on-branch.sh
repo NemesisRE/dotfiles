@@ -6,11 +6,12 @@
 # bare bump fails the `pins` CI job. This recomputes the hashes, commits them to the
 # same branch and re-runs CI on the new head commit.
 #
-# Why CI has to be re-run explicitly: a push made with the default GITHUB_TOKEN does
-# not trigger workflows, so without this the new commit would have NO checks -- and
-# Renovate could then automerge a commit CI never looked at. `workflow_dispatch` is
-# one of the events exempt from that rule; check runs attach to the head SHA, so the
-# PR sees them like any other.
+# Why CI has to be re-run explicitly and why [skip ci] is used: pushing to a PR
+# branch with the default GITHUB_TOKEN triggers `pull_request` workflows in an
+# `action_required` (approval required) state. `[skip ci]` suppresses those parked
+# runs. `workflow_dispatch` is exempt from both skip keywords and approval requirements;
+# it runs CI immediately and attaches check runs to the head SHA so Renovate can
+# automerge on green.
 #
 # The commit is authored as github-actions[bot] with the exact address listed in
 # renovate.json `gitIgnoredAuthors`, so Renovate does not treat the PR as hand-edited
@@ -37,7 +38,7 @@ git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
 # Only tracked files that pins.py rewrites can have changed.
 git add -u
-git commit -m "chore(pins): refresh SHA-256 pins for the bumped version"
+git commit -m "chore(pins): refresh SHA-256 pins for the bumped version [skip ci]"
 git push origin "HEAD:refs/heads/${branch}"
 echo "Pushed refreshed pins to ${branch}."
 

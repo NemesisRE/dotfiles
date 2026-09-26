@@ -2,6 +2,10 @@
 #!/usr/bin/env bash
 # chezmoi run_onchange_before — installs Homebrew and prerequisite packages on macOS.
 # packages.yaml hash: {{ include ".chezmoidata/packages.yaml" | sha256sum }}
+# Named 10-* so it sorts (and runs) before install-tools.sh, which needs curl.
+# Command Line Tools present at render time: {{ if or (stat "/Library/Developer/CommandLineTools/usr/bin/clang") (stat "/Applications/Xcode.app") }}yes{{ else }}no{{ end }}
+# (That line flips once they are installed, so this hook re-runs one more time
+# and brew gets a compiler for anything it has to build from source.)
 
 set -euo pipefail
 
@@ -21,19 +25,14 @@ warn() {
 # ── Xcode Command Line Tools (Apple Clang compiler for Tree-sitter) ───────────
 if ! xcode-select -p >/dev/null 2>&1; then
   echo "==> Installing Xcode Command Line Tools (required for C/C++ compiler and Tree-sitter)"
-  # `xcode-select --install` only opens the GUI installer and returns at once, so
-  # brew below would run with no compiler. Wait for it -- but only if the
-  # installer actually launched (it fails fast over ssh / without a GUI), and not
-  # forever if the dialog is ignored.
+  # `xcode-select --install` only opens the GUI installer and returns at once.
+  # Do not wait for it: blocking an apply on a dialog nobody may be watching
+  # (up to 15 minutes, previously) is worse than a first pass without a
+  # compiler. The render-time marker above re-runs this hook once they exist.
   if xcode-select --install >/dev/null 2>&1; then
-    waited=0
-    until xcode-select -p >/dev/null 2>&1 || (( waited >= 900 )); do
-      sleep 5
-      waited=$((waited + 5))
-    done
-    xcode-select -p >/dev/null 2>&1 || warn "Command Line Tools not installed after 15 min; continuing"
+    warn "Command Line Tools installer started; finish it, then run chezmoi apply again"
   else
-    warn "could not launch the Command Line Tools installer; continuing"
+    warn "could not launch the Command Line Tools installer (no GUI session?); run 'xcode-select --install' yourself"
   fi
 fi
 
