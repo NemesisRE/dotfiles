@@ -8,14 +8,8 @@ if ($env:CI -or $env:NREDF_NO_BOOTSTRAP) {
     exit 0
 }
 
-$localBin = Join-Path $HOME ".local\bin"
-$aquaBin = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA "aquaproj-aqua\bin" } else { Join-Path $HOME ".local\share\aquaproj-aqua\bin" }
+{{ includeTemplate "hook-env.ps1" . }}
 
-foreach ($p in @($localBin, $aquaBin)) {
-    if ($env:PATH -notlike "*$p*") {
-        $env:PATH = "$p;$env:PATH"
-    }
-}
 function NREDF_ReadDotenv {
     param([string]$Path)
     if (-not (Test-Path $Path)) { return }
@@ -36,36 +30,69 @@ $nredfConfigDir = Join-Path $HOME ".config\nredf"
 NREDF_ReadDotenv (Join-Path $nredfConfigDir "aqua-vault.env")
 NREDF_ReadDotenv (Join-Path $nredfConfigDir "aqua.env")
 
-if (Get-Command aqua -ErrorAction SilentlyContinue) {
-    $aquaConfig = Join-Path $HOME ".config\aquaproj-aqua\aqua.yaml"
-    $aquaPolicy = Join-Path $HOME ".config\aquaproj-aqua\aqua-policy.yaml"
-    if (Test-Path $aquaConfig) {
-        $env:AQUA_GLOBAL_CONFIG = $aquaConfig
-        $env:AQUA_CONFIG = $aquaConfig
+# Persist aqua's bin dir and config to the User environment, so tools resolve from
+# shells that never load the NREDF profile (cmd, Explorer, IDEs). This used to live
+# only in bootstrap.ps1, so a machine set up with a plain `chezmoi init --apply`
+# never got it.
+$aquaBin = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA "aquaproj-aqua\bin" } else { Join-Path $HOME ".local\share\aquaproj-aqua\bin" }
+$userPath = [System.Environment]::GetEnvironmentVariable("PATH", [System.EnvironmentVariableTarget]::User)
+if (-not (($userPath -split ';') -contains $aquaBin)) {
+    $newUserPath = if ($userPath) { "$aquaBin;$userPath" } else { $aquaBin }
+    [System.Environment]::SetEnvironmentVariable("PATH", $newUserPath, [System.EnvironmentVariableTarget]::User)
+    Write-Host "    Added $aquaBin to the User PATH"
+}
+foreach ($name in @('AQUA_GLOBAL_CONFIG', 'AQUA_POLICY_CONFIG')) {
+    $value = [System.Environment]::GetEnvironmentVariable($name, [System.EnvironmentVariableTarget]::Process)
+    if ($value -and [System.Environment]::GetEnvironmentVariable($name, [System.EnvironmentVariableTarget]::User) -ne $value) {
+        [System.Environment]::SetEnvironmentVariable($name, $value, [System.EnvironmentVariableTarget]::User)
     }
-    if (Test-Path $aquaPolicy) {
-        $env:AQUA_POLICY_CONFIG = $aquaPolicy
-    }
+}
 
-    Write-Host "==> Linking aqua managed tools"
+# Microsoft Defender scans every freshly unpacked binary in %TEMP% and holds it open,
+# so aqua's cleanup hits sharing violations (docs/windows.md, Troubleshooting). Only
+# possible when elevated; an unelevated apply leaves Defender untouched.
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if ($isAdmin -and (Get-Command Add-MpPreference -ErrorAction SilentlyContinue)) {
+    $aquaRoot = Split-Path -Parent $aquaBin
     try {
-        & aqua install -a -l
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "    Aqua tools linked successfully."
-        } else {
-            Write-Warning "aqua install exited with code $LASTEXITCODE; tools may be missing or stale."
+        $mpPref = Get-MpPreference -ErrorAction Stop
+        if (@($mpPref.ExclusionProcess) -notcontains 'aqua.exe') {
+            Add-MpPreference -ExclusionProcess 'aqua.exe' -ErrorAction Stop
+            Write-Host "    Added Microsoft Defender process exclusion: aqua.exe"
+        }
+        if (@($mpPref.ExclusionPath) -notcontains $aquaRoot) {
+            Add-MpPreference -ExclusionPath $aquaRoot -ErrorAction Stop
+            Write-Host "    Added Microsoft Defender path exclusion: $aquaRoot"
         }
     } catch {
-        Write-Warning "Failed to link aqua tools: $_"
+        Write-Warning "Could not configure Microsoft Defender exclusions for aqua: $_"
+    }
+}
+
+if (Get-Command aqua -ErrorAction SilentlyContinue) {
+    Write-Host "==> Linking aqua managed tools"
+    & aqua install -a -l
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "    Aqua tools linked successfully."
+    } else {
+        Write-Warning "aqua install exited with code $LASTEXITCODE; tools may be missing or stale."
     }
 
+    # aqua may have just linked uv; pick up the refreshed bin dir.
+    NREDF_HookEnv
     if (Get-Command uv -ErrorAction SilentlyContinue) {
         Write-Host "==> Ensuring standalone Python via uv"
         # A native non-zero exit does not throw, so fall back on $LASTEXITCODE.
         & uv python install --default 2>$null
         if ($LASTEXITCODE -ne 0) {
             & uv python install 2>$null
+            if ($LASTEXITCODE -ne 0) {
+                Write-Warning "uv python install exited with code $LASTEXITCODE; no standalone Python was installed."
+            }
         }
     }
+} else {
+    Write-Warning "aqua is not installed; managed tools were not linked."
 }
+exit 0
 {{- end }}

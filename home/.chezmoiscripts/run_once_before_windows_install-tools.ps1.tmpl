@@ -10,24 +10,45 @@ if ($env:CI -or $env:NREDF_NO_BOOTSTRAP) {
     exit 0
 }
 
+{{ includeTemplate "hook-env.ps1" . }}
+
 $localBin = Join-Path $HOME ".local\bin"
 if (-not (Test-Path $localBin)) {
     New-Item -ItemType Directory -Path $localBin -Force | Out-Null
 }
-if ($env:PATH -notlike "*$localBin*") {
-    $env:PATH = "$localBin;$env:PATH"
-}
+
+# Pinned in .chezmoidata/aqua-bootstrap.yaml, for winget and the zip fallback alike;
+# winget used to install whatever release was newest.
+$aquaVersion = "{{ .aquaBootstrap.version }}"
+
+# winget exits non-zero when there is simply nothing to do. Same list as
+# run_onchange_before_windows_install-packages.ps1.tmpl and bootstrap.ps1's
+# Test-WingetSuccess, kept in sync by hand since a run_once_before hook can't
+# includeTemplate a helper function usably before it is defined at this point.
+$wingetBenignCodes = @(
+    -1978335189 # 0x8A15002B UPDATE_NOT_APPLICABLE
+    -1978335135 # 0x8A150061 PACKAGE_ALREADY_INSTALLED
+    -1978334963 # 0x8A15010D INSTALL_ALREADY_INSTALLED
+    -1978334967 # 0x8A150109 INSTALL_REBOOT_REQUIRED_TO_FINISH
+)
 
 # Install aqua if missing
 if (-not (Get-Command aqua -ErrorAction SilentlyContinue)) {
-    Write-Host "==> Installing aqua for Windows"
+    Write-Host "==> Installing aqua $aquaVersion for Windows"
     if (Get-Command winget -ErrorAction SilentlyContinue) {
-        winget install --id aquaproj.aqua --silent --accept-source-agreements --accept-package-agreements
-    } else {
-        # Fallback when winget is unavailable. This used to download `releases/latest`
-        # and execute whatever came back. Now: a pinned release whose zip must match a
-        # pinned SHA-256 (.chezmoidata/aqua-bootstrap.yaml), otherwise it is rejected.
-        $aquaVersion = "{{ .aquaBootstrap.version }}"
+        & winget install --id aquaproj.aqua --exact --version "{{ trimPrefix "v" .aquaBootstrap.version }}" --silent --accept-source-agreements --accept-package-agreements
+        $wingetCode = $LASTEXITCODE
+        if ($wingetCode -ne 0 -and $wingetBenignCodes -notcontains $wingetCode) {
+            Write-Warning ("winget install aquaproj.aqua exited with code {0} (0x{0:X8}); trying the pinned GitHub release." -f $wingetCode)
+        }
+        # winget's portable-package link dir is added to the User PATH, not this process's.
+        NREDF_HookEnv
+    }
+    if (-not (Get-Command aqua -ErrorAction SilentlyContinue)) {
+        # Fallback when winget is unavailable or failed. This used to download
+        # `releases/latest` and execute whatever came back. Now: a pinned release whose
+        # zip must match a pinned SHA-256 (.chezmoidata/aqua-bootstrap.yaml), otherwise
+        # it is rejected.
         $arch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64' -or $env:PROCESSOR_ARCHITEW6432 -eq 'ARM64') { 'arm64' } else { 'amd64' }
         $aquaSha256 = if ($arch -eq 'arm64') { "{{ .aquaBootstrap.windows.arm64 }}" } else { "{{ .aquaBootstrap.windows.amd64 }}" }
         $aquaReleaseUrl = "https://github.com/aquaproj/aqua/releases/download/${aquaVersion}/aqua_windows_${arch}.zip"
@@ -49,34 +70,25 @@ if (-not (Get-Command aqua -ErrorAction SilentlyContinue)) {
     }
 }
 
-$aquaBin = if ($env:LOCALAPPDATA) { Join-Path $env:LOCALAPPDATA "aquaproj-aqua\bin" } else { Join-Path $HOME ".local\share\aquaproj-aqua\bin" }
-if ($env:PATH -notlike "*$aquaBin*") {
-    $env:PATH = "$aquaBin;$env:PATH"
-}
-
 if (Get-Command aqua -ErrorAction SilentlyContinue) {
     Write-Host "==> aqua install -a -l (link managed tools)"
-    $aquaConfig = Join-Path $HOME ".config\aquaproj-aqua\aqua.yaml"
-    $aquaPolicy = Join-Path $HOME ".config\aquaproj-aqua\aqua-policy.yaml"
-    if (-not (Test-Path $aquaConfig)) {
-        $sourceAqua = Join-Path "{{ .chezmoi.sourceDir }}" "dot_config\aquaproj-aqua\aqua.yaml"
-        if (Test-Path $sourceAqua) {
-            $aquaConfig = $sourceAqua
+    # A before-hook runs before chezmoi has written ~/.config, so on the first apply
+    # point aqua at the source-state copy of aqua.yaml instead.
+    if (-not ($env:AQUA_CONFIG -and (Test-Path -LiteralPath $env:AQUA_CONFIG))) {
+        $sourceAqua = Join-Path '{{ .chezmoi.sourceDir | replace "'" "''" }}' "dot_config\aquaproj-aqua\aqua.yaml"
+        if (Test-Path -LiteralPath $sourceAqua) {
+            $env:AQUA_GLOBAL_CONFIG = $sourceAqua
+            $env:AQUA_CONFIG = $sourceAqua
         }
     }
-    if (Test-Path $aquaConfig) {
-        $env:AQUA_GLOBAL_CONFIG = $aquaConfig
-        $env:AQUA_CONFIG = $aquaConfig
-    }
-    if (Test-Path $aquaPolicy) {
-        $env:AQUA_POLICY_CONFIG = $aquaPolicy
-    }
     & aqua install -a -l
-}
-
-if (-not (Get-Command aqua -ErrorAction SilentlyContinue)) {
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "==> Windows bootstrap hook done."
+    } else {
+        Write-Warning "aqua install exited with code $LASTEXITCODE; tools may be missing or stale."
+    }
+} else {
     Write-Warning "aqua is not installed; managed tools were not linked."
 }
-
-Write-Host "==> Windows bootstrap hook done."
+exit 0
 {{- end }}

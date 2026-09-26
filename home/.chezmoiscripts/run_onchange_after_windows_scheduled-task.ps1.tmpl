@@ -2,54 +2,79 @@
 # chezmoi run_onchange_after — registers NREDF daily maintenance task on Windows
 # NREDF_DailySync function hash: {{ include "dot_local/share/nredf/shell/pwsh/Functions/NREDF_DailySync.ps1" | sha256sum }}
 
-$ErrorActionPreference = 'SilentlyContinue'
+# Was 'SilentlyContinue' plus an empty catch, so a failed registration looked like
+# success. Failures are now reported; the hook still never fails the apply.
+$ErrorActionPreference = 'Continue'
 
-if ($ENV:CI -or $ENV:NREDF_NO_BOOTSTRAP) {
-  exit 0
+if ($env:CI -or $env:NREDF_NO_BOOTSTRAP) {
+    exit 0
 }
 
 $taskName = 'NREDF-DailySync'
-$pwshExe = (Get-Command pwsh -CommandType Application -ErrorAction SilentlyContinue)?.Source
+$pwshExe = (Get-Command pwsh -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1).Source
 if (-not $pwshExe) {
-  $pwshExe = (Get-Command powershell -CommandType Application -ErrorAction SilentlyContinue)?.Source
+    $pwshExe = (Get-Command powershell -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1).Source
 }
 
 if (-not $pwshExe) {
-  exit 0
+    Write-Warning "Neither pwsh nor powershell found; scheduled task '$taskName' was not registered."
+    exit 0
 }
 
+# The task's payload. Everything it prints goes to the transcript that
+# docs/windows.md documents: $env:LOCALAPPDATA\nredf\daily-sync.log (one rotated
+# copy kept at 1 MB). Must stay Windows PowerShell 5.1 compatible, since it falls
+# back to powershell.exe when pwsh is missing.
 $scriptBlock = @'
-$ErrorActionPreference = 'SilentlyContinue'
-$nredfShellPwsh = Join-Path $HOME '.local/share/nredf/shell/pwsh'
-if (Test-Path $nredfShellPwsh) {
-  $env:NREDF_PATH = $nredfShellPwsh
-} else {
-  $profileDir = Split-Path $PROFILE
-  $env:PROFILE_PATH = $profileDir
-  $env:NREDF_PATH = Join-Path $profileDir 'NREDF-POSH'
+$ErrorActionPreference = 'Continue'
+$logDir = Join-Path $env:LOCALAPPDATA 'nredf'
+$logFile = Join-Path $logDir 'daily-sync.log'
+New-Item -ItemType Directory -Path $logDir -Force -ErrorAction SilentlyContinue | Out-Null
+if ((Test-Path -LiteralPath $logFile) -and (Get-Item -LiteralPath $logFile).Length -gt 1MB) {
+  Move-Item -LiteralPath $logFile -Destination "$logFile.1" -Force -ErrorAction SilentlyContinue
 }
-function global:NREDF_Step ([string]$label) {}
-$bundlePath = Join-Path $env:NREDF_PATH 'Functions.bundle.ps1'
-if (Test-Path -LiteralPath $bundlePath) {
-  . $bundlePath
-} else {
-  $functionsDir = Join-Path $env:NREDF_PATH 'Functions'
-  if (-not (Test-Path $functionsDir)) {
-    $functionsDir = Join-Path $env:NREDF_PATH 'functions'
+Start-Transcript -LiteralPath $logFile -Append | Out-Null
+try {
+  $env:NREDF_PATH = Join-Path $HOME '.local/share/nredf/shell/pwsh'
+  function global:NREDF_Step ([string]$label) {}
+  $bundlePath = Join-Path $env:NREDF_PATH 'Functions.bundle.ps1'
+  if (Test-Path -LiteralPath $bundlePath) {
+    . $bundlePath
+  } else {
+    Get-ChildItem -Path (Join-Path $env:NREDF_PATH 'Functions') -Filter '*.ps1' | ForEach-Object { . $_.FullName }
   }
-  Get-ChildItem -Path $functionsDir -Filter '*.ps1' | ForEach-Object { . $_.FullName }
-}
-if (Test-Path function:\NREDF_DailySync) {
-  NREDF_DailySync -Force
+  if (Test-Path function:\NREDF_DailySync) {
+    NREDF_DailySync -Force
+  } else {
+    Write-Warning "NREDF_DailySync not found under $env:NREDF_PATH; nothing to do."
+  }
+} finally {
+  Stop-Transcript | Out-Null
 }
 '@
 
 $encodedCommand = [System.Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($scriptBlock))
-$action = New-ScheduledTaskAction -Execute $pwshExe -Argument "-NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand $encodedCommand"
-$trigger = New-ScheduledTaskTrigger -Daily -At 7:00AM
-$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Hours 2)
+$pwshArgs = "-NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand $encodedCommand"
 
+# -WindowStyle Hidden can still let a console flash up for an instant when Task
+# Scheduler starts it at 07:00. `conhost.exe --headless "pwsh.exe" ...` would remove
+# that, but it is undocumented, and "headless conhost launching an -EncodedCommand
+# PowerShell" is the exact signature several EDR products and public Sigma/Splunk
+# detections watch for as a sign of hidden malicious execution (searched: "Headless
+# Process Launched Via Conhost.EXE", "Powershell Executed From Headless ConHost
+# Process"). Tripping that on a monitored corporate machine, once every morning, is
+# worse than the flash it would remove, so this stays on -WindowStyle Hidden alone.
+# Also rejected: a VBScript/wscript wrapper (VBScript is being removed from Windows)
+# and an S4U "run whether logged on or not" task (no access to the user's DPAPI
+# secrets, which the vault unlock needs).
 try {
-  Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -Force | Out-Null
-} catch {}
+    $action = New-ScheduledTaskAction -Execute $pwshExe -Argument $pwshArgs -ErrorAction Stop
+    $trigger = New-ScheduledTaskTrigger -Daily -At 7:00AM -ErrorAction Stop
+    $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Hours 2) -ErrorAction Stop
+    Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Settings $settings -Force -ErrorAction Stop | Out-Null
+    Write-Host "==> Registered scheduled task '$taskName' (daily at 07:00, log: $env:LOCALAPPDATA\nredf\daily-sync.log)"
+} catch {
+    Write-Warning "Could not register scheduled task '$taskName': $_"
+}
+exit 0
 {{- end }}
