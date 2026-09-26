@@ -322,7 +322,7 @@ NREDF decouples all periodic maintenance and network-heavy upgrade tasks from in
 Daily maintenance is scheduled natively per operating system via chezmoi:
 
 - **macOS (`launchd`)**: `com.nredf.daily-sync.plist` (managed via `home/private_Library/private_LaunchAgents/com.nredf.daily-sync.plist.tmpl`).
-- **Linux (`systemd --user`)**: `nredf-daily-sync.timer` & `nredf-daily-sync.service` in `~/.config/systemd/user/`.
+- **Linux (`systemd --user`)**: `nredf-daily-sync.timer` & `nredf-daily-sync.service` in `~/.config/systemd/user/`. The timer is `Persistent=true`, so a run missed while the machine was off happens at the next boot.
 - **Windows (Task Scheduler)**: `NREDF-DailySync` registered with `StartWhenAvailable` to catch up after sleep.
 
 ### 2. What Daily Maintenance Executes
@@ -331,9 +331,11 @@ The unified payload (`nredf-daily-sync` on POSIX, `NREDF_DailySync` on PowerShel
 
 1. **Package Upgrades**: Homebrew (`brew update && brew upgrade && brew cleanup -s` on macOS).
 2. **Chezmoi Upgrade**: Upgrades the chezmoi binary.
-3. **Dotfiles Remote Sync**: Fetches upstream dotfiles changes, fast-forwards Git, and runs `chezmoi apply --refresh-externals` (skipping secret templates when the password safe is locked).
+3. **Dotfiles Remote Sync**: Fetches upstream dotfiles changes, fast-forwards Git, and runs `chezmoi apply --refresh-externals --force`. A scheduled run has no terminal to unlock a password safe, so it first checks the one your secrets reference: Bitwarden must report `unlocked` from `bw status` (after restoring `BW_SESSION` from the keychain, as shell startup does), 1Password must pass `op whoami`, and a KeePassXC reference always needs its database password. If that check fails, the apply is skipped with a log line and the other steps still run. Run `bwu` and then `reload -f` to catch up. PowerShell only pre-checks Bitwarden; for the other two it detects a locked safe from the failed apply's output.
 4. **Aqua Tools**: Updates Aqua (`aqua update-aqua`), ensures tool links (`aqua install -a -l`), and vacuums packages unused for >30 days (`aqua vacuum -d 30`).
-5. **Zsh Plugins**: Updates Sheldon plugin locks (`sheldon lock --update`).
+5. **Zsh Plugins**: Updates Sheldon plugin locks (`sheldon lock --update`). Not on PowerShell.
+6. **tldr Pages**: Refreshes the tldr page cache (`tldr --update`).
+7. **oh-my-posh Session Caches**: Deletes `*.omp.cache` files older than 7 days from the oh-my-posh cache directory. Every shell gets a new `POSH_SESSION_ID`, so these files otherwise pile up forever.
 
 All runs are logged to `${XDG_STATE_HOME:-~/.local/state}/nredf/daily-sync.log` (macOS/Linux) and `$LOCALAPPDATA\nredf\daily-sync.log` (Windows). `reload -f` (or `nredf-daily-sync --verbose`) also prints that output to the terminal.
 
