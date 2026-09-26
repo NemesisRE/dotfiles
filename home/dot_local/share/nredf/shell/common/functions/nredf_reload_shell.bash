@@ -3,9 +3,15 @@
 # vim: ts=2 sw=2 et ff=unix ft=bash syntax=sh
 
 _nredf_reload_shell () {
+  # Without this, zsh prints "no matches found" for the sheldon/zcompdump
+  # globs below whenever those caches do not exist yet.
+  if [[ -n "${ZSH_VERSION:-}" ]]; then
+    setopt localoptions nullglob
+  fi
   _nredf_init_paths
 
   local LRCACHE=false
+  local INITCACHE=false
   local DOWNLOADS=false
   local FULL_RELOAD=false
   local PROFILE=false
@@ -14,6 +20,7 @@ _nredf_reload_shell () {
     case "$1" in
       -c | --cache)
         LRCACHE=true
+        INITCACHE=true
         HAS_OTHER_OPTIONS=true
         shift 1
       ;;
@@ -24,6 +31,7 @@ _nredf_reload_shell () {
       ;;
       -f | --full)
         LRCACHE=true
+        INITCACHE=true
         FULL_RELOAD=true
         HAS_OTHER_OPTIONS=true
         shift 1
@@ -43,7 +51,7 @@ _nredf_reload_shell () {
 Usage: reload [options]
 
 Options:
--c, [--cache]               # Delete 'Last Run Cache'
+-c, [--cache]               # Delete 'Last Run Cache' and init script snippets
 -d, [--downloads]           # Delete aqua pkgs (archives + binaries, keeps bin/ symlinks)
 -f, [--full]                # Full refresh: clear caches + chezmoi/aqua/(zsh:sheldon)
 -l, [--last-run]            # Delete only 'Last Run Cache'
@@ -72,7 +80,24 @@ Options:
   done
   if ${LRCACHE}; then
     rm -rf "${NREDF_LRCACHE:?}"
-    rm -rf "${XDG_CACHE_HOME:-${HOME}/.cache}/nredf/init"
+  fi
+  if ${INITCACHE}; then
+    local _init_cache="${XDG_CACHE_HOME:-${HOME}/.cache}/nredf/init"
+    if [[ -d "${_init_cache}" ]]; then
+      # Truncate Nushell's *.nu snippets instead of deleting them: nu's
+      # `source` needs each file to exist when config.nu is parsed, and the
+      # empty placeholders chezmoi seeds are only recreated by the next
+      # `chezmoi apply`. A *.nu symlink is left alone. Everything else in
+      # the directory is removed.
+      find "${_init_cache}" -mindepth 1 -maxdepth 1 ! -name '*.nu' -exec rm -rf {} +
+      local _init_snippet
+      for _init_snippet in "${_init_cache}"/*.nu; do
+        if [[ -f "${_init_snippet}" && ! -L "${_init_snippet}" ]]; then
+          : >| "${_init_snippet}"
+        fi
+      done
+    fi
+    unset _init_cache _init_snippet
     rm -f "${XDG_CACHE_HOME:-${HOME}/.cache}/sheldon/sheldon.zsh"*
     rm -f "${XDG_CACHE_HOME:-${HOME}/.cache}/zsh/.zcompdump"*
   fi
@@ -87,7 +112,6 @@ Options:
 
   if ${FULL_RELOAD}; then
     printf "\033[1mStarting full reload\033[0m\n"
-    rm -f "${XDG_CACHE_HOME:-${HOME}/.cache}/sheldon/sheldon.zsh"
     if command -v nredf-daily-sync >/dev/null 2>&1; then
       nredf-daily-sync --verbose || true
     fi

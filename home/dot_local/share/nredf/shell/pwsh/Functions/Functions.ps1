@@ -40,7 +40,7 @@ function reload {
   .DESCRIPTION
       Mirrors the reload command in bash/zsh.
   .PARAMETER Cache
-      Delete 'Last Run Cache'.
+      Delete 'Last Run Cache' and init script snippets.
   .PARAMETER Downloads
       Delete aqua pkgs (archives + binaries, keeps bin/ symlinks).
   .PARAMETER Full
@@ -89,7 +89,7 @@ NREDF Reload
 Usage: reload [options]
 
 Options:
--c, [--cache]               # Delete 'Last Run Cache'
+-c, [--cache]               # Delete 'Last Run Cache' and init script snippets
 -d, [--downloads]           # Delete aqua pkgs (archives + binaries, keeps bin/ symlinks)
 -f, [--full]                # Full refresh: clear caches + chezmoi/aqua
 -l, [--last-run]            # Delete only 'Last Run Cache'
@@ -109,8 +109,25 @@ Options:
       Remove-Item -Path $ENV:NREDF_LRCACHE -Recurse -Force -ErrorAction SilentlyContinue
     }
     if ($Cache -or $Full) {
-      if (-not [string]::IsNullOrEmpty($ENV:NREDF_INITCACHE) -and (Test-Path -Path $ENV:NREDF_INITCACHE)) {
-        Remove-Item -Path $ENV:NREDF_INITCACHE -Recurse -Force -ErrorAction SilentlyContinue
+      if (-not [string]::IsNullOrEmpty($ENV:NREDF_INITCACHE) -and (Test-Path -LiteralPath $ENV:NREDF_INITCACHE)) {
+        # Truncate Nushell's *.nu snippets instead of deleting them: nu's
+        # `source` needs each file to exist when config.nu is parsed, and the
+        # empty placeholders chezmoi seeds are only recreated by the next
+        # `chezmoi apply`. A *.nu symlink is left alone. Everything else in
+        # the directory is removed.
+        Get-ChildItem -LiteralPath $ENV:NREDF_INITCACHE -Force -ErrorAction SilentlyContinue | ForEach-Object {
+          if ($_.Extension -eq '.nu') {
+            if (-not $_.PSIsContainer -and -not $_.LinkType) {
+              Clear-Content -LiteralPath $_.FullName -Force -ErrorAction SilentlyContinue
+            }
+          } else {
+            Remove-Item -LiteralPath $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
+          }
+        }
+      }
+      if (-not $IsWindows -and -not [string]::IsNullOrEmpty($ENV:XDG_CACHE_HOME)) {
+        Remove-Item -Path (Join-Path $ENV:XDG_CACHE_HOME 'sheldon/sheldon.zsh*') -Force -ErrorAction SilentlyContinue
+        Remove-Item -Path (Join-Path $ENV:XDG_CACHE_HOME 'zsh/.zcompdump*') -Force -ErrorAction SilentlyContinue
       }
     }
   }
