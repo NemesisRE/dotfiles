@@ -4,15 +4,16 @@
 # Style name or path: "dark", "light", "auto"
 style: "dark"
 
-# Show all files including non-markdown
-showAllFiles: false
+# Show all files, including hidden and ignored ones (TUI mode only)
+all: false
 
 # Mouse support in pager
 mouse: true
 
-# Use pager to display markdown
+# Use pager to display markdown. yazi's markdown previewer runs glow with
+# PAGER=cat so this does not affect its preview pane (glow 3.0 cannot turn
+# the pager back off with --pager=false once this is true).
 pager: true
 
 # Word-wrap at specified number of columns
 width: 100
-

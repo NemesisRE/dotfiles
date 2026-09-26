@@ -3,7 +3,9 @@
 
 [mgr]
 cwd = { fg = "#56b6c2" }
-syntect_theme = "{{ .chezmoi.homeDir }}/.config/yazi/OneDarkPro.tmTheme"
+# Shared with bat (dot_config/bat/themes), which deploys to ~/.config/bat on every
+# OS. Literal (single-quoted) string so a Windows home path needs no escaping.
+syntect_theme = '{{ .chezmoi.homeDir }}/.config/bat/themes/OneDarkPro.tmTheme'
 
 # Find
 find_keyword  = { fg = "#e5c07b", bold = true, italic = true, underline = true }

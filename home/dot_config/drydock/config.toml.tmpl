@@ -2,11 +2,7 @@ roots = [{{ .dev.projects | replace "~" .chezmoi.homeDir | quote }}]
 max_depth = 4
 follow_nested_repos = false
 follow_symlinks = false
-exclude = [
-    "riffle-testbed/**",
-    "riffle-pr-testbed/**",
-    "riffle-merge-test/**",
-]
+exclude = []
 prune = []
 
 [refresh]
@@ -45,23 +41,50 @@ changelog_files = [
 default_filters = []
 default_sort = "activity"
 default_since = ""
+{{- /*
+The launch commands spawn a separate window, so a TUI app never fights drydock
+for its terminal. There is no Windows branch here: drydock has no Windows
+launch story (no winget/aqua asset gates it out today, and .chezmoiignore
+should add one — see the PR body). kitty is installed on both macOS (Homebrew
+cask) and Linux (kitty hook). On macOS `kitty --detach` is unsupported, so
+start it through `open -na` instead (see `kitty --help`).
+*/}}
+{{- if eq .chezmoi.os "darwin" }}
 editor_command = [
-    "zed",
-    "{path}",
+    "open", "-na", "kitty", "--args",
+    "--directory", "{path}",
+    "sh", "-c", "exec \"${EDITOR:-nvim}\" .",
 ]
 git_client_command = [
-    "open",
-    "-a",
-    "Tower",
-    "{path}",
+    "open", "-na", "kitty", "--args",
+    "--directory", "{path}",
+    "lazygit",
 ]
 terminal_command = [
-    "open",
-    "-a",
-    "Terminal",
-    "{path}",
+    "open", "-na", "kitty", "--args",
+    "--directory", "{path}",
 ]
 file_manager_command = [
     "open",
     "{path}",
 ]
+{{- else }}
+editor_command = [
+    "kitty", "--detach",
+    "--directory", "{path}",
+    "sh", "-c", "exec \"${EDITOR:-nvim}\" .",
+]
+git_client_command = [
+    "kitty", "--detach",
+    "--directory", "{path}",
+    "lazygit",
+]
+terminal_command = [
+    "kitty", "--detach",
+    "--directory", "{path}",
+]
+file_manager_command = [
+    "xdg-open",
+    "{path}",
+]
+{{- end }}

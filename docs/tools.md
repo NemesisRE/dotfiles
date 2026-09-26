@@ -20,7 +20,8 @@ All core CLI tools are declared centrally in [`home/dot_config/aquaproj-aqua/aqu
 | **System Monitoring** | `bottom` (`btm`) | Real-time interactive system resource & process monitor |
 | **Kubernetes** | `kubectl`, `kubectx`, `kubens`, `k9s`, `helm` | Container orchestration, context switching, and TUI |
 | **Network & Transfers** | `curl`, `wget` | Hardened, XDG-compliant network transfer clients |
-| **Developer Ecosystem** | `gh`, `uv`, `ruff`, `mise` | GitHub CLI, Python toolchain, and runtime manager |
+| **Developer Ecosystem** | `gh`, `uv`, `ruff`, `mise`, `tealdeer` (`tldr`) | GitHub CLI, Python toolchain, runtime manager, and community-maintained man-page summaries |
+| **Repo Fleet Dashboard** | `drydock` | What's uncommitted, unpushed, and unreleased across every repo under `roots` |
 
 ---
 
@@ -34,7 +35,7 @@ Zellij uses a modal interface where a shortcut switches you into a specific mode
 
 ```text
 Normal Mode ──┬──► Ctrl + p : Pane Mode (split, focus, float, fullscreen)
-              ├──► Ctrl + t : Tab Mode (new tab, close tab, rename, sync)
+              ├──► Alt  + t : Tab Mode (new tab, close tab, rename, sync)
               ├──► Ctrl + n : Resize Mode (increase/decrease dimensions)
               ├──► Ctrl + s : Scroll & Search Mode (search buffer, edit scrollback)
               ├──► Ctrl + o : Session Mode (detach, manage sessions)
@@ -62,7 +63,9 @@ Enter pane mode, then press:
 - <kbd>h</kbd> / <kbd>j</kbd> / <kbd>k</kbd> / <kbd>l</kbd> (or Arrows): Move focus Left / Down / Up / Right
 - <kbd>Esc</kbd> or <kbd>Enter</kbd>: Return to Normal mode
 
-#### 2. Tab Mode (<kbd>Ctrl</kbd> + <kbd>t</kbd>)
+#### 2. Tab Mode (<kbd>Alt</kbd> + <kbd>t</kbd>)
+
+> Rebound from zellij's default <kbd>Ctrl</kbd> + <kbd>t</kbd>, which clashes with fzf's Ctrl-T file-search widget in every shell here. <kbd>Ctrl</kbd> + <kbd>p</kbd>/<kbd>n</kbd>/<kbd>s</kbd>/<kbd>h</kbd>/<kbd>b</kbd>/<kbd>q</kbd> (Pane/Resize/Scroll/Move/Tmux mode, Quit) also collide with Neovim and readline defaults; those are left as-is since <kbd>Ctrl</kbd> + <kbd>g</kbd> (Locked Mode) passes keys straight through to the inner app when that matters.
 
 Enter tab mode, then press:
 
@@ -440,7 +443,15 @@ Configured via `$GH_CONFIG_DIR` pointing to [`home/dot_config/private_gh/config.
 
 ### `mise`
 
-Configured in [`home/dot_config/mise/config.toml.tmpl`](../home/dot_config/mise/config.toml.tmpl) to automatically detect legacy version files (`.nvmrc`, `.python-version`, etc.) and auto-install missing tool runtimes. Also manages default global runtimes and tools (such as Node.js, Microsoft's `apm`, and Microsoft's `inshellisense` / `is` on-demand autocomplete).
+Configured in [`home/dot_config/mise/config.toml.tmpl`](../home/dot_config/mise/config.toml.tmpl) to read idiomatic version files (`.nvmrc` for `node`, `.python-version` for `python`) and auto-install missing tool runtimes. Also manages default global runtimes and tools (such as Node.js, Microsoft's `apm`, and Microsoft's `inshellisense` / `is` on-demand autocomplete).
+
+### `tealdeer` (`tldr`)
+
+Configured in [`home/dot_config/tealdeer/config.toml`](../home/dot_config/tealdeer/config.toml): auto-updates its community-maintained page cache weekly in the background (`auto_update_interval_hours = 168`) so `tldr <command>` works without a manual `tldr --update` on a fresh machine, and prints pages straight to the terminal instead of a pager.
+
+### `drydock`
+
+Configured in [`home/dot_config/drydock/config.toml.tmpl`](../home/dot_config/drydock/config.toml.tmpl): scans the repos under `~/Projects` (from `dev.projects`) for uncommitted, unpushed, or unreleased work. Its `editor_command` / `git_client_command` / `terminal_command` open a detached **kitty** window (`open -na kitty --args ...` on macOS, `kitty --detach ...` on Linux) running `$EDITOR`/`lazygit`/an interactive shell respectively; `file_manager_command` uses `open` (macOS) or `xdg-open` (Linux).
 
 ---
 

@@ -1,0 +1,13 @@
+# tealdeer (tldr) configuration — managed by chezmoi
+# https://tealdeer-rs.github.io/tealdeer/config.html
+
+[updates]
+# Download the tldr-pages cache on first use and refresh it when it is older
+# than a week, instead of requiring a manual `tldr --update` (the cache is
+# empty on a fresh machine, so tldr otherwise prints nothing useful).
+auto_update = true
+auto_update_interval_hours = 168
+
+[display]
+# tldr pages are short; print straight to the terminal
+use_pager = false

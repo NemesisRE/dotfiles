@@ -5,3 +5,17 @@ filter_mode_shell_up_key_binding = "session"
 enter_accept = false
 inline_height = 0
 style="auto"
+
+# Built-in filter for well-known secret formats (AWS keys, GitHub/Slack
+# tokens, ...). On by default; pinned so it cannot silently regress.
+secrets_filter = true
+
+# Never record commands that carry vault credentials or tokens inline. Rust
+# regexes, unanchored: a match anywhere in the command line drops it. Literal
+# (single-quoted) TOML strings, so backslashes reach the regex engine as-is.
+history_filter = [
+    '^\s*bw\s+(unlock|login|get)\b',
+    '\bBW_(SESSION|PASSWORD|CLIENTSECRET)=',
+    '\b(GITHUB|GH)_TOKEN=',
+    '--password([=\s]|$)',
+]

@@ -13,6 +13,12 @@ th.git.untracked_sign = "U"
 th.git.ignored_sign = "I"
 require("git"):setup()
 
+-- mime-ext fetcher (registered in yazi.toml): fall back to file(1) for names
+-- and extensions missing from its database instead of guessing octet-stream
+require("mime-ext.local"):setup({
+	fallback_file1 = true,
+})
+
 
 Status:children_add(function()
 	local h = cx.active.current.hovered
