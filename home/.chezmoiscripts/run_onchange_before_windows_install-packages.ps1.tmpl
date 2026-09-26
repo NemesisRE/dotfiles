@@ -2,7 +2,9 @@
 # chezmoi run_onchange_before — installs prerequisite packages on Windows via winget.
 # packages.yaml hash: {{ include ".chezmoidata/packages.yaml" | sha256sum }}
 
-$ErrorActionPreference = 'SilentlyContinue'
+# Was 'SilentlyContinue', which hid every failure. A before-hook must still never
+# abort the apply, so failures are warned about and the script always exits 0.
+$ErrorActionPreference = 'Continue'
 
 # Skip in CI or when the user explicitly opts out.
 if ($env:CI -or $env:NREDF_NO_BOOTSTRAP) {
@@ -10,9 +12,19 @@ if ($env:CI -or $env:NREDF_NO_BOOTSTRAP) {
 }
 
 if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-    Write-Host "==> Warning: winget is not available on this system. Skipping OS package installation."
+    Write-Warning "winget is not available on this system. Skipping OS package installation."
     exit 0
 }
+
+# winget exits non-zero when there is simply nothing to do. Codes from
+# https://github.com/microsoft/winget-cli/blob/master/doc/windows/package-manager/winget/returnCodes.md
+$wingetNothingToDo = @(
+    -1978335189 # 0x8A15002B APPINSTALLER_CLI_ERROR_UPDATE_NOT_APPLICABLE
+    -1978335135 # 0x8A150061 APPINSTALLER_CLI_ERROR_PACKAGE_ALREADY_INSTALLED
+    -1978334963 # 0x8A15010D APPINSTALLER_CLI_ERROR_INSTALL_ALREADY_INSTALLED
+    -1978335095 # 0x8A150089 APPINSTALLER_CLI_ERROR_FONT_ALREADY_INSTALLED
+)
+$wingetRebootToFinish = -1978334967 # 0x8A150109 APPINSTALLER_CLI_ERROR_INSTALL_REBOOT_REQUIRED_TO_FINISH
 
 Write-Host "==> Installing prerequisite packages via winget"
 $packages = @(
@@ -21,54 +33,27 @@ $packages = @(
 {{ end -}}
 )
 
+$failed = @()
 foreach ($pkg in $packages) {
     if (-not $pkg) { continue }
     Write-Host "    Ensuring winget package: $pkg"
     & winget install --id $pkg --exact --silent --accept-source-agreements --accept-package-agreements
-}
-
-# Configure Yazi's required 'file' MIME-type detector on Windows (shipped with Git for Windows)
-$yaziFileCandidates = @(
-    $env:YAZI_FILE_ONE
-    (Join-Path $env:ProgramFiles "Git\usr\bin\file.exe")
-    (Join-Path ${env:ProgramFiles(x86)} "Git\usr\bin\file.exe")
-    (Join-Path $env:LOCALAPPDATA "Programs\Git\usr\bin\file.exe")
-    "C:\Program Files\Git\usr\bin\file.exe"
-)
-if (Get-Command git -ErrorAction SilentlyContinue) {
-    try {
-        $gitDir = Split-Path (Split-Path (Get-Command git).Source)
-        $yaziFileCandidates += (Join-Path $gitDir "usr\bin\file.exe")
-    } catch {}
-}
-foreach ($candidate in $yaziFileCandidates) {
-    if ($candidate -and (Test-Path $candidate)) {
-        $env:YAZI_FILE_ONE = $candidate
-        [System.Environment]::SetEnvironmentVariable("YAZI_FILE_ONE", $candidate, [System.EnvironmentVariableTarget]::User)
-        Write-Host "    Configured YAZI_FILE_ONE: $candidate"
-        break
+    $code = $LASTEXITCODE
+    if ($code -eq 0 -or $wingetNothingToDo -contains $code) {
+        continue
     }
-}
-
-# Configure Yazi's configuration directory and AppData junction on Windows
-$yaziConfigDir = "$HOME\.config\yazi"
-$env:YAZI_CONFIG_HOME = $yaziConfigDir
-[System.Environment]::SetEnvironmentVariable("YAZI_CONFIG_HOME", $yaziConfigDir, [System.EnvironmentVariableTarget]::User)
-Write-Host "    Configured YAZI_CONFIG_HOME: $yaziConfigDir"
-
-$yaziAppDataDir = Join-Path $env:APPDATA "yazi"
-$yaziAppDataConfig = Join-Path $yaziAppDataDir "config"
-if (-not (Test-Path $yaziAppDataConfig)) {
-    if (-not (Test-Path $yaziAppDataDir)) {
-        New-Item -ItemType Directory -Path $yaziAppDataDir -Force -ErrorAction SilentlyContinue | Out-Null
+    if ($code -eq $wingetRebootToFinish) {
+        Write-Host "    $pkg installed; restart Windows to finish the installation." -ForegroundColor Yellow
+        continue
     }
-    New-Item -ItemType Junction -Path $yaziAppDataConfig -Target $yaziConfigDir -Force -ErrorAction SilentlyContinue | Out-Null
+    Write-Warning ("winget install {0} failed with exit code {1} (0x{1:X8})." -f $pkg, $code)
+    $failed += $pkg
 }
 
-# Normalize HOME environment variable on Windows
-if (-not $env:HOME) { $env:HOME = $HOME }
-[System.Environment]::SetEnvironmentVariable("HOME", $HOME, [System.EnvironmentVariableTarget]::User)
-Write-Host "    Configured HOME: $HOME"
-
-Write-Host "==> Windows prerequisites installed successfully."
+if ($failed.Count -eq 0) {
+    Write-Host "==> Windows prerequisites installed successfully."
+} else {
+    Write-Warning "Some winget packages failed to install: $($failed -join ', '). Continuing with the apply."
+}
+exit 0
 {{- end }}

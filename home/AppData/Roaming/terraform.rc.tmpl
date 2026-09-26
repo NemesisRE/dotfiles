@@ -1,0 +1,2 @@
+{{- /* Terraform on Windows reads %APPDATA%\terraform.rc, not ~/.terraformrc. */ -}}
+{{ includeTemplate "dot_terraformrc.tmpl" . | trimSuffix "\n" }}

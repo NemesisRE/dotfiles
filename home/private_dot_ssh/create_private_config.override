@@ -7,7 +7,7 @@
 # NEVER overwrite your local edits here.
 #
 # Evaluation Order:
-#   1. Specific host configurations in ~/.ssh/config.d/*.conf
+#   1. Specific host configurations in ~/.ssh/config.d/* (dotfiles excluded)
 #   2. This file (~/.ssh/config.override)
 #   3. Global defaults in ~/.ssh/config (Host *)
 #

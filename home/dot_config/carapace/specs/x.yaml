@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+# `aliases:` on extract.yaml doesn't register a separate top-level command in
+# carapace 1.7.3 (confirmed empirically), so this is its own thin duplicate
+# rather than a declared alias — see extract.yaml.
+name: x
+description: Universal archive extraction via ouch (alias for extract)
+completion:
+  positionalany: ["$files"]

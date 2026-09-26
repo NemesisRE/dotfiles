@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/DavidAnson/markdownlint/v0.34.0/schema/markdownlint-config-schema.json
+# yaml-language-server: $schema=https://raw.githubusercontent.com/DavidAnson/markdownlint/v0.41.1/schema/markdownlint-config-schema.json
 default: true
 
 # MD013/line-length: relaxed for documentation with wide tables and URLs

@@ -9,19 +9,15 @@
 .config/completion/zsh/_nova
 
 # Deprecated config files removed (b45edfa)
-.agignore
-.ctags
 .puppet-lint.rc
 .config/task/taskrc
 .config/tilda/config_0
 
 # Deprecated config files removed (77919c8)
-.config/.curlrc
 .config/flake8
 .config/lf/lfrc
 .config/screen/screenrc
 .config/terminator/config
-.config/tmux/tmux.conf
 .local/bin/setup_git_identity.sh
 .local/share/nredf/shell/common/tmux/layout_monitor
 .local/share/nredf/shell/common/tmux/plugins.conf
@@ -29,30 +25,29 @@
 # Legacy PowerShell framework directory moved to ~/.local/share/nredf/shell/pwsh
 Documents/PowerShell/NREDF-POSH
 
-# Legacy shell local override directory moved to per-shell config dirs (b95d80b)
+# Legacy shell local override directory moved to per-shell config dirs
+# (b95d80b). Any override a user actually had under here is migrated to its
+# new home by run_once_before_migrate-legacy-shell-overrides.sh.tmpl before
+# this removal runs — never delete this entry without that script covering
+# it, or a real local customization is lost silently instead of just going
+# unread.
 .config/nredf/shell
 
-# Legacy Nushell directories consolidated to nushell (f0fe6ca)
+# Legacy Nushell directories consolidated to nushell (f0fe6ca). Same
+# caveat as above: run_once_before_migrate-legacy-shell-overrides.sh.tmpl
+# (and its Windows twin, run_once_before_windows_migrate-legacy-nu-overrides.ps1.tmpl)
+# migrate config.local.nu/env.local.nu out of here first.
 .config/nu
 .local/share/nredf/shell/nu
 
+# k9s skin replaced by OneDark, then the custom skin dropped for k9s's
+# upstream skins (30aa385, 32237bd)
+.config/k9s/skin.yml
+.config/k9s/one-dark.yaml
+
 {{- if eq .chezmoi.os "windows" }}
-# Windows-only files removed (aac56b9)
+# Windows-only file removed (aac56b9). Its former siblings under
+# Documents/PowerShell/NREDF-POSH/ need no separate entries here: the whole
+# directory is already removed above, for every OS.
 Documents/PowerShell/.editorconfig
-Documents/PowerShell/NREDF-POSH/.editorconfig
-Documents/PowerShell/NREDF-POSH/WindowsTerminal/settings.json
-
-# PowerShell completions replaced by Carapace / native tooling (a610c59)
-Documents/PowerShell/NREDF-POSH/Completions/Completions.ps1
-Documents/PowerShell/NREDF-POSH/Completions/_kubectl.ps1
-Documents/PowerShell/NREDF-POSH/Completions/_yazi.ps1
-
-# Windows deprecated files removed (77919c8)
-Documents/PowerShell/NREDF-POSH/NREDF-POSH.sst
-Documents/PowerShell/NREDF-POSH/README.md
-Documents/PowerShell/NREDF-POSH/Scripts/EnableSSHAgent.ps1
 {{- end }}
-
-# Linux/Windows shell compatibility files removed (77919c8)
-.minttyrc
-.Xresources

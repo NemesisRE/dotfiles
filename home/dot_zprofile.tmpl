@@ -7,6 +7,13 @@
 #
 ################################################
 
+# zsh loads .zshrc right after this file for every interactive shell
+# (login or not) — that already runs the full common/rc profile, so sourcing
+# it here too would run mise activate, ssh-agent setup, etc. a second time in
+# the same shell. Only non-interactive login shells (which never see .zshrc)
+# need the minimal PATH/env pass below.
+[[ $- == *i* ]] && return
+
 export XDG_DATA_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}"
 export NREDF_SHELL_NAME="zsh"
 export NREDF_DOT_PATH="${XDG_DATA_HOME}/nredf"

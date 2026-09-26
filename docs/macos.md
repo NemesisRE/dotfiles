@@ -165,13 +165,14 @@ Inspect the exact startup breakdown in milliseconds across Homebrew, Oh-My-Posh,
 
 ### 4. Automated Daily Maintenance (`launchd`)
 
-NREDF installs a native user LaunchAgent (`com.nredf.daily-sync.plist`) that runs daily at 7:00 AM (or immediately upon wake/boot if asleep) in the background (`LowPriorityIO` and `Nice: 10`):
+NREDF installs a native user LaunchAgent (`com.nredf.daily-sync.plist`) that runs daily at 7:00 AM in the background (`LowPriorityIO` and `Nice: 10`). If the Mac is asleep at 7:00, launchd runs it on wake. If the Mac is shut down at 7:00, that day's run is skipped; run `nredf-daily-sync` or `reload -f` by hand to catch up.
 
 - Upgrades Homebrew formulae and casks (`brew update && brew upgrade && brew cleanup -s`).
-- Upgrades `chezmoi` and runs `chezmoi apply --refresh-externals`.
+- Upgrades `chezmoi` and runs `chezmoi apply --refresh-externals --force`. If your secrets use a password safe that is locked (Bitwarden must be unlocked, for example with `bwu`), it skips the apply and logs why.
 - Updates `aqua` and vacuums packages unused for >30 days.
-- Updates Sheldon Zsh plugin locks.
-- Logs full output to `~/.local/state/nredf/daily-sync.log`.
+- Updates Sheldon Zsh plugin locks and the tldr page cache.
+- Deletes oh-my-posh session caches older than 7 days.
+- Logs full output to `~/.local/state/nredf/daily-sync.log`. Anything printed before the script opens that log goes to `~/Library/Logs/nredf-daily-sync.log`.
 
 Check agent status anytime:
 
@@ -207,4 +208,4 @@ sudo chown -R $(whoami):admin /opt/homebrew
 **Resolution**:
 
 - Use **Kitty** (installed automatically via Homebrew cask in `.chezmoidata/packages.yaml`).
-- Or open Apple Terminal &rarr; **Settings** &rarr; **Profiles** &rarr; **Font** and select **FiraMono Nerd Font Mono**.
+- Or open Apple Terminal &rarr; **Settings** &rarr; **Profiles** &rarr; **Font** and select **FiraCode Nerd Font Mono**.

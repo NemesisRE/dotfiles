@@ -1,12 +1,6 @@
 {{- $syncTerminalSettings := false -}}
 {{- if and (hasKey . "windows") (hasKey .windows "microsoftTerminal") (hasKey .windows.microsoftTerminal "sync_settings") -}}
 {{-   $syncTerminalSettings = .windows.microsoftTerminal.sync_settings -}}
-{{- else if and (hasKey . "windows") (hasKey .windows "microsoft_terminal") (hasKey .windows.microsoft_terminal "sync_settings") -}}
-{{-   $syncTerminalSettings = .windows.microsoft_terminal.sync_settings -}}
-{{- else if and (hasKey . "windows") (hasKey .windows "windowsTerminal") (hasKey .windows.windowsTerminal "sync_settings") -}}
-{{-   $syncTerminalSettings = .windows.windowsTerminal.sync_settings -}}
-{{- else if and (hasKey . "windows") (hasKey .windows "sync_terminal_settings") -}}
-{{-   $syncTerminalSettings = .windows.sync_terminal_settings -}}
 {{- end -}}
 
 {{- $syncWslConfig := false -}}
@@ -37,6 +31,8 @@ Library
 # VS Code only reads ~/.config/Code on Linux (macOS: ~/Library/Application Support,
 # Windows: %APPDATA%). Elsewhere it is a never-read extra copy of the MCP secrets.
 .config/Code
+# Konsole is KDE's terminal emulator; it has no macOS or Windows build.
+.local/share/konsole
 {{- end }}
 
 {{- /*
@@ -57,17 +53,28 @@ stub, to cover whichever path nu actually picks. See docs/shells.md.
 
 {{- if eq .chezmoi.os "windows" }}
 .chezmoiscripts/*.sh
-.Xresources
-.minttyrc
 .hushlogin
-.config/terminator
-.config/tilda
-.config/screen
 .config/powershell
 # fish has no Windows build at all (not even via WSL-less native Windows), so
 # unlike PowerShell's cross-platform tree, deploying its config there is pure
 # dead weight with no runtime-branch payoff.
 .config/fish
+# zsh itself (and the zsh-only tools around it: sheldon is a zsh plugin
+# manager, .blerc configures ble.sh, a bash line editor irrelevant without a
+# POSIX interactive shell) has no Windows build.
+.config/zsh
+.zshrc
+.zshenv
+.zprofile
+.blerc
+.config/sheldon
+# kitty and drydock (its quake-mode/session-launch tooling) have no Windows
+# build.
+.config/kitty
+.config/drydock
+# Windows has its own daily-sync entry point (NREDF_DailySync.ps1); the POSIX
+# script is dead weight there.
+.local/bin/nredf-daily-sync
 {{-   if not $syncTerminalSettings }}
 AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe
 {{-   end }}

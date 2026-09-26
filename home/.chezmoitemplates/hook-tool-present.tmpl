@@ -1,0 +1,14 @@
+{{- /*
+  Renders "yes" or "no": whether .tool exists, at render time, in aqua's bin dir
+  or on chezmoi's own PATH. POSIX hooks embed it in a comment, because a hook
+  that skips a missing tool still exits 0 and is recorded as done. With the
+  marker, the rendered hook changes once the tool appears (typically on the apply
+  after the one that installed aqua), so chezmoi runs it once more.
+  Usage: {{ includeTemplate "hook-tool-present.tmpl" (dict "tool" "sheldon" "chezmoi" .chezmoi) }}
+*/ -}}
+{{- $aquaRoot := env "AQUA_ROOT_DIR" | default (joinPath (env "XDG_DATA_HOME" | default (joinPath .chezmoi.homeDir ".local" "share")) "aquaproj-aqua") -}}
+{{- if or (stat (joinPath $aquaRoot "bin" .tool)) (lookPath .tool) -}}
+yes
+{{- else -}}
+no
+{{- end -}}

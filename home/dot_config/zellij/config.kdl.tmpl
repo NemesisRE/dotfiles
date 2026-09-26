@@ -47,7 +47,7 @@ keybinds {
         bind "l" "Right" { MovePane "Right"; }
     }
     tab {
-        bind "Ctrl t" { SwitchToMode "Normal"; }
+        bind "Alt t" { SwitchToMode "Normal"; }
         bind "r" { SwitchToMode "RenameTab"; TabNameInput 0; }
         bind "h" "Left" "Up" "k" { GoToPreviousTab; }
         bind "l" "Right" "Down" "j" { GoToNextTab; }
@@ -172,8 +172,11 @@ keybinds {
     shared_except "session" "locked" {
         bind "Ctrl o" { SwitchToMode "Session"; }
     }
+    // Alt t, not zellij's default Ctrl t: every shell here binds fzf's
+    // file-search widget to Ctrl t, which zellij would otherwise swallow.
+    // Alt is already this config's modifier for direct actions (Alt n/h/j/k/l).
     shared_except "tab" "locked" {
-        bind "Ctrl t" { SwitchToMode "Tab"; }
+        bind "Alt t" { SwitchToMode "Tab"; }
     }
     shared_except "move" "locked" {
         bind "Ctrl h" { SwitchToMode "Move"; }
@@ -183,13 +186,35 @@ keybinds {
     }
 }
 
+// Plugin aliases - can be used to change the implementation of Zellij
+// changing these requires a restart to take effect
+// (matches `zellij setup --dump-config` for 0.45)
 plugins {
-    tab-bar { path "tab-bar"; }
-    status-bar { path "status-bar"; }
-    strider { path "strider"; }
-    compact-bar { path "compact-bar"; }
-    session-manager { path "session-manager"; }
+    tab-bar location="zellij:tab-bar"
+    status-bar location="zellij:status-bar"
+    strider location="zellij:strider"
+    compact-bar location="zellij:compact-bar"
+    session-manager location="zellij:session-manager"
+    welcome-screen location="zellij:session-manager" {
+        welcome_screen true
+    }
+    filepicker location="zellij:strider" {
+        cwd "/"
+    }
+    configuration location="zellij:configuration"
+    plugin-manager location="zellij:plugin-manager"
+    about location="zellij:about"
 }
+
+// Plugins to load in the background when a new session starts
+load_plugins {
+    "zellij:link"
+}
+
+// zellij is installed and bumped by aqua (Renovate); skip the release-notes
+// and startup-tips popups that would otherwise open on every version bump
+show_release_notes false
+show_startup_tips false
 
 // Choose what to do when zellij receives SIGTERM, SIGINT, SIGQUIT or SIGHUP
 // eg. when terminal window with an active zellij session is closed

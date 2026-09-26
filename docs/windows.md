@@ -15,15 +15,15 @@ irm https://raw.githubusercontent.com/NemesisRE/dotfiles/main/bootstrap.ps1 | ie
 Or using chezmoi directly:
 
 ```powershell
-# 1. Install chezmoi
+# 1. Install PowerShell 7 and chezmoi (chezmoi runs every Windows hook under pwsh)
+winget install Microsoft.PowerShell
 winget install twpayne.chezmoi
 
-# 2. Initialize and apply dotfiles
+# 2. Open a new terminal so both are on PATH, then initialize and apply dotfiles
 chezmoi init --apply NemesisRE/dotfiles
-
-# 3. Link managed CLI tools
-aqua install -a -l
 ```
+
+`bootstrap.ps1` does the same, installing PowerShell 7 first when it is missing, because the hook that installs the other prerequisites is itself a PowerShell 7 script. The first apply installs aqua (the version pinned in [`aqua-bootstrap.yaml`](../home/.chezmoidata/aqua-bootstrap.yaml)) and links its tools.
 
 ---
 
@@ -41,9 +41,6 @@ winget install Microsoft.WindowsTerminal
 # Version Control
 winget install Git.Git
 
-# Recommended Default Font: FiraMono / FiraCode Nerd Font
-winget install DEVCOM.FiraCodeFont
-
 # C/C++ Compiler for Neovim Tree-sitter
 winget install LLVM.LLVM
 
@@ -52,7 +49,7 @@ winget install albertony.npiperelay
 ```
 
 > [!TIP]
-> In Windows Terminal Settings (`Ctrl+,`) &rarr; **Defaults** &rarr; **Appearance** &rarr; **Font face**, set the font to **FiraMono Nerd Font Mono** (or **FiraMono Nerd Font**) to match kitty terminal.
+> **Font**: this repo standardizes on **FiraCode Nerd Font Mono** everywhere (kitty, Konsole, Windows Terminal). On Linux and macOS it's installed automatically — Linux from a pinned, checksummed [ryanoasis/nerd-fonts](https://github.com/ryanoasis/nerd-fonts) release archive, macOS from the `font-fira-code-nerd-font` Homebrew cask — but there is no `winget` package for it (`DEVCOM.FiraCodeFont` no longer exists in the winget-pkgs manifest tree). Install it by hand: download the `FiraCode.zip` asset from the [pinned release](https://github.com/ryanoasis/nerd-fonts/releases) (the version chezmoi installs on Linux/macOS is in [`.chezmoidata/nerd-fonts.yaml`](../home/.chezmoidata/nerd-fonts.yaml)), extract it, select all the `.ttf` files, right-click &rarr; **Install for all users**. Then in Windows Terminal Settings (`Ctrl+,`) &rarr; **Defaults** &rarr; **Appearance** &rarr; **Font face**, set it to **FiraCode Nerd Font Mono**.
 
 ### Windows Optional Features & Synchronization
 
@@ -70,7 +67,7 @@ By default, NREDF uses safe defaults (`false`) and will **not** overwrite pre-ex
     memory = "16GB"
     processors = 8
     networking_mode = "mirrored"
-    nested_virtualization = true # Enable nested virtualization (true/false)
+    nested_virtualization = false # Enable Hyper-V-based VMs inside WSL (true/false)
 
 [data.windows.explorer]
     apply_tweaks = true      # Show file extensions, hidden files, compact mode
@@ -90,6 +87,7 @@ NREDF supports multiple shells on Windows with shared aliases, history, and mode
 - **PowerShell 7+**: `Documents\PowerShell\Microsoft.PowerShell_profile.ps1`
 - **Windows PowerShell 5.1**: `Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` (dot-sources PowerShell 7 profile)
 - 100% native CLI tooling: `fzf` (<kbd>Ctrl</kbd>+<kbd>t</kbd>, <kbd>Alt</kbd>+<kbd>c</kbd>), `lsd`, `bat`, `Atuin` history search, and `MenuComplete`.
+- **5.1 limitation**: the NREDF function library (Bitwarden session restore, `reload`, `NREDF_DailySync`, etc.) needs PowerShell 7+ — one of its files uses the `??` operator, a parse error on 5.1 — so it is skipped there with a one-line warning. Everything else (aliases, prompt theme, tool init) still loads.
 
 ### 2. Bash & Zsh on Windows
 
@@ -114,9 +112,9 @@ Chezmoi automatically registers a scheduled task in Windows Task Scheduler:
 - **Task Name**: `NREDF-DailySync`
 - **Trigger**: Daily at 7:00 AM with `-StartWhenAvailable` (automatically catches up when your PC turns on or wakes from sleep).
 - **Settings**: `-AllowStartIfOnBatteries -DontStopIfGoingOnBatteries`.
-- **Payload**: Runs `NREDF_DailySync` in a hidden, non-interactive PowerShell process.
+- **Payload**: Runs `NREDF_DailySync` in a non-interactive, `-WindowStyle Hidden` PowerShell process.
 - **Tasks**: Upgrades `chezmoi`, pulls dotfiles updates, applies external templates, updates `aqua` tools, and vacuums old packages.
-- **Log**: Written to `$env:LOCALAPPDATA\nredf\daily-sync.log`.
+- **Log**: Everything the run prints is appended to `$env:LOCALAPPDATA\nredf\daily-sync.log` (a PowerShell transcript; rotated to `daily-sync.log.1` at 1 MB).
 
 To check the task in PowerShell:
 
@@ -284,6 +282,7 @@ In Windows environments, your `Documents` folder may be redirected away from `$H
 1. **OneDrive Known Folder Move** (e.g. `C:\Users\<user>\OneDrive\Documents`):
    - PowerShell resolves `$PROFILE` to the OneDrive path.
    - Chezmoi's post-apply hook (`.chezmoiscripts/run_onchange_after_windows_sync-profiles.ps1.tmpl`) automatically creates NTFS directory junctions (`PowerShell` and `WindowsPowerShell`) pointing from OneDrive's Documents folder to `$HOME\Documents\PowerShell`. `bootstrap.ps1` runs `chezmoi init --apply`, which triggers this same hook — it no longer carries its own separate copy of this logic.
+   - The hook runs on the first apply and again only when the hook itself changes. If you move Documents later (e.g. turn on OneDrive Known Folder Move), re-run it with `chezmoi state delete-bucket --bucket=entryState` followed by `chezmoi apply`.
    - Directory junctions are local NTFS reparse points that do not require Administrator privileges.
 
 2. **Corporate Network / SMB Shares** (e.g. `\\server\home$\<user>\Documents` or mapped drive `H:\...`):
@@ -346,7 +345,7 @@ Add-MpPreference -ExclusionPath "$env:LOCALAPPDATA\aquaproj-aqua"
 **1. Chezmoi Pack: "attempt to concatenate a nil value"**
 
 - **Root Cause**: `astrocommunity.pack.chezmoi` concatenates `os.getenv "HOME" .. "/.local/share/chezmoi"`. Because Windows defaults to `USERPROFILE` rather than `HOME`, `HOME` was unset (`nil`), causing a Lua runtime failure during lazy spec loading.
-- **Resolution**: NREDF automatically normalizes `vim.env.HOME = vim.env.USERPROFILE` at the top of Neovim's `init.lua`, persists `$env:HOME = $HOME` to Windows User environment variables, and configures Windows-compatible source paths (`%LOCALAPPDATA%\chezmoi`) in [`lua/plugins/chezmoi.lua`](../home/dot_config/nvim/lua/plugins/chezmoi.lua).
+- **Resolution**: NREDF automatically normalizes `vim.env.HOME = vim.env.USERPROFILE` at the top of Neovim's `init.lua`, persists `$env:HOME = $HOME` to Windows User environment variables, and points the chezmoi plugins at the source directory chezmoi itself renders (`.chezmoi.sourceDir`) in [`lua/plugins/chezmoi.lua.tmpl`](../home/dot_config/nvim/lua/plugins/chezmoi.lua.tmpl).
 
 **2. Mason: "Installation failed for ansible-lint: Platform not supported"**
 

@@ -1,0 +1,79 @@
+{{- if eq .chezmoi.os "darwin" -}}
+#!/usr/bin/env bash
+# chezmoi run_onchange_before — installs Homebrew and prerequisite packages on macOS.
+# packages.yaml hash: {{ include ".chezmoidata/packages.yaml" | sha256sum }}
+# Named 10-* so it sorts (and runs) before install-tools.sh, which needs curl.
+# Command Line Tools present at render time: {{ if or (stat "/Library/Developer/CommandLineTools/usr/bin/clang") (stat "/Applications/Xcode.app") }}yes{{ else }}no{{ end }}
+# (That line flips once they are installed, so this hook re-runs one more time
+# and brew gets a compiler for anything it has to build from source.)
+
+set -euo pipefail
+
+# Skip in CI or when the user explicitly opts out.
+[[ -n "${CI:-}" ]] && exit 0
+[[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
+
+# This is a `before` script, so a non-zero exit aborts `chezmoi apply` before a
+# single dotfile is written. A failing formula, an offline machine or a declined
+# installer must therefore degrade to a warning, not an abort.
+WARNINGS=0
+warn() {
+  echo "==> Warning: $*" >&2
+  WARNINGS=$((WARNINGS + 1))
+}
+
+# ── Xcode Command Line Tools (Apple Clang compiler for Tree-sitter) ───────────
+if ! xcode-select -p >/dev/null 2>&1; then
+  echo "==> Installing Xcode Command Line Tools (required for C/C++ compiler and Tree-sitter)"
+  # `xcode-select --install` only opens the GUI installer and returns at once.
+  # Do not wait for it: blocking an apply on a dialog nobody may be watching
+  # (up to 15 minutes, previously) is worse than a first pass without a
+  # compiler. The render-time marker above re-runs this hook once they exist.
+  if xcode-select --install >/dev/null 2>&1; then
+    warn "Command Line Tools installer started; finish it, then run chezmoi apply again"
+  else
+    warn "could not launch the Command Line Tools installer (no GUI session?); run 'xcode-select --install' yourself"
+  fi
+fi
+
+# ── Homebrew ──────────────────────────────────────────────────────────────────
+if ! command -v brew >/dev/null 2>&1 && [[ ! -x /opt/homebrew/bin/brew && ! -x /usr/local/bin/brew ]]; then
+  echo "==> Installing Homebrew"
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || true
+fi
+
+if [[ -x /opt/homebrew/bin/brew ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [[ -x /usr/local/bin/brew ]]; then
+  eval "$(/usr/local/bin/brew shellenv)"
+fi
+
+if ! command -v brew >/dev/null 2>&1; then
+  echo "==> Warning: Homebrew could not be located; skipping brew bundle"
+  exit 0
+fi
+
+# Homebrew environment variables to keep execution clean
+export HOMEBREW_NO_ANALYTICS=1
+export HOMEBREW_NO_INSTALL_CLEANUP=1
+export HOMEBREW_QUIET=1
+
+echo "==> Installing and upgrading prerequisite packages via Homebrew bundle"
+brew bundle install --force --file=- <<BREW_BUNDLE_EOF || warn "brew bundle reported failures; continuing"
+{{ range .packages.darwin.brews -}}
+brew {{ . | quote }}
+{{ end -}}
+{{ range .packages.darwin.casks -}}
+cask {{ . | quote }}
+{{ end -}}
+BREW_BUNDLE_EOF
+
+echo "==> Cleaning up Homebrew cache"
+brew cleanup >/dev/null 2>&1 || true
+
+if (( WARNINGS > 0 )); then
+  echo "==> macOS prerequisites finished with ${WARNINGS} warning(s); see above."
+else
+  echo "==> macOS prerequisites installed and updated successfully."
+fi
+{{- end }}

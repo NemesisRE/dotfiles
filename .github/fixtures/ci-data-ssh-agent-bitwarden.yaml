@@ -1,0 +1,7 @@
+# CI-only fixture data. shell.ssh.agent's "bitwarden"/"pipe"/"gpg" branches are
+# mutually exclusive with each other (a real machine only ever picks one), so
+# each gets its own fixture rather than folding into ci-data-full.yaml. Not
+# used outside CI.
+shell:
+  ssh:
+    agent: "bitwarden"

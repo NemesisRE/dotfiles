@@ -23,6 +23,9 @@ All five shells share a unified experience designed around modern developer ergo
 | **Plugin Manager** | [Sheldon](https://sheldon.cli.rs) | Git-cloned `ble.sh` | None required | None required | None required (100% native CLI tooling) |
 | **Environment Sync** | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) | `reload` (supports `-c`, `-d`, `-f`, `-p`, `-s`) |
 | **Startup Profiling** | `reload -p` / `NREDF_PROFILE_STARTUP=1` | `reload -p` / `NREDF_PROFILE_STARTUP=1` | `reload -p` / `NREDF_PROFILE_STARTUP=1` | `reload -p` / `NREDF_PROFILE_STARTUP=1` | `reload -p` / `NREDF_PROFILE_STARTUP=1` |
+| **SSH TOTP wrapper** (`nredf_ssh`) | `nredf_ssh` (shares bash's implementation via `common/`) — full ssh-getopt destination parsing (grouped flags, `-p`/`-F` attached or separate, `--`), `-F` honored, first-hop `ProxyJump` lookup | `nredf_ssh` — see Zsh | `nredf_ssh` — first-argument destination only (no getopt clustering or `-F` support yet) | `nredf-ssh` — same simpler destination detection as Fish | `nredf_ssh` — full ssh-getopt parsing + `-F` + `ProxyJump` (matches Bash/Zsh); falls back to plain `ssh` with a stderr note when `sshpass` isn't installed (the common case on Windows — no first-party build) |
+| **Aqua GitHub-token wizard** (`nredf_aqua_token_setup`) | `--set`/`--keyring`/`--env`/`--skip`/`--reset`/`--status` + startup prompt, timed via `read -t` | Same as Zsh (shares `common/`) | Same flags; prompt timeout shells out to `timeout`/`gtimeout` if installed (see exceptions) | Same flags; same `timeout`/`gtimeout` fallback as Fish | Same flags; prompt timeout via `[Console]::KeyAvailable` polling — no external `timeout` binary needed |
+| **Remote multiplexer auto-attach** (zellij) | Attaches over SSH/WSL per `shell.yaml`, skips inside zellij/VS Code/non-interactive (shares `common/`) | Same as Zsh | Same behavior, own port | Same behavior, own port | Same behavior; reads `WSL_DISTRO_NAME`/`WSL_INTEROP` live instead of a chezmoi-baked `NREDF_WSL` (no chezmoi template in that part of pwsh's load chain — see `Aliases.ps1.tmpl`) |
 | **Local overrides** | `~/.config/zsh/{aliases,rc,functions/}` | `~/.config/bash/{aliases,rc,functions/}` | `~/.config/fish/{aliases,rc}` + fish's own native `functions/` autoload | `~/.config/nushell/`: **two files only**, `env.local.nu`, `config.local.nu` (see exceptions) | `~/.config/pwsh/{aliases.ps1,modules.ps1,functions/}` |
 
 ---
@@ -77,6 +80,13 @@ All five shells share a unified experience designed around modern developer ergo
   - `PSReadLine.ps1`: Keybindings, prediction source (`HistoryAndPlugin`), native `fzf` integration, smart auto-pairing quotes.
   - `Functions/`: one file per function (glob-bundled into `Functions.bundle.ps1.tmpl`, same mechanism as the other shells' `functions/`) — `Functions.ps1` itself holds `reload`, `sudo`, `md5`, `sha256`; `NREDF_DailySync.ps1`, `NREDF_Bw.ps1` and the rest are their own files.
   - `Profile.ps1`: High-performance startup orchestration with snippet caching (`NREDF_RefreshCachedShellSnippet`) for Oh-My-Posh, Atuin, Zoxide, and **Carapace** completions (including custom specs in `~/.config/carapace/specs/`).
+
+### 6. Custom Completions (Carapace)
+
+- **Specs**: [`home/dot_config/carapace/specs/`](../home/dot_config/carapace/specs/) holds one YAML spec per command carapace-bin doesn't know: the NREDF functions (`reload`, `yy`, `nredf_ssh`, `nredf_aqua_token_setup`, `nredf-daily-sync`) and aqua tools without a completer (`kubectx`, `kubens`, `lsd`, `lazydocker`, `lazyjournal`).
+- **Aliases**: bash can't complete an alias through its target, so every alias in `home/.chezmoidata/aliases.yaml` whose target needs it (`k`, `kctx`/`ctx`, `kns`/`ns`, `lzg`/`lg`, `lzd`, `lzj`/`lj`, `ll`/`la`/`tree`, `pst`) has its own thin spec that bridges to the target with `$carapace.bridge.CarapaceBin([target])`. A spec's `aliases:` field does not help here: it only names subcommand aliases and never registers a top-level command.
+- **Cobra bridges**: [`home/dot_config/carapace/choices/`](../home/dot_config/carapace/choices/) makes carapace ask `flux`, `oras`, `stern`, `velero` and `yq` for their own completions (the same files `carapace --choice flux/cobra@bridge` writes).
+- **Cache lag**: bash, zsh, fish and PowerShell only complete command names that were listed in carapace's init snippet, which is cached for 24 hours. A **new** spec or choice therefore appears only after `reload -c` (or the next daily refresh); edits to an existing spec apply immediately. Nushell's snippet is a generic external completer, so it picks up new specs at once.
 
 ---
 
@@ -178,34 +188,67 @@ NREDF guarantees that common development commands behave identically regardless 
 
 | Command | Target Tool | Description |
 | :--- | :--- | :--- |
-| `ls` | `lsd` | Modern file listing with icons and colors |
+| `ls` | `lsd` | Modern file listing with icons and colors — **shadows Nushell's own structured `ls` builtin**, see below |
 | `ll` | `lsd -lFh --git` | Long format listing with Git status flags and human-readable sizes |
 | `la` | `lsd -lAFh --git` | Detailed listing including hidden files and Git status |
 | `tree` | `lsd --tree` | Recursive tree view with icons |
-| `cat` | `bat` | Syntax-highlighted output with OneDark-Pro theme |
+| `cat` | `bat --paging=never` | Syntax-highlighted output with OneDark-Pro theme, gated on `bat` |
+| `vim` / `vi` | `nvim` | Neovim editor, gated on `nvim` |
+| `du` | `dust` | Modern disk usage analyzer, gated on `dust` — **not aliased in Nushell**, see below |
+| `df` | `duf` | Modern disk free space viewer, gated on `duf` |
 | `lzg` / `lg` | `lazygit` | Terminal UI for Git |
 | `lzd` | `lazydocker` | Terminal UI for Docker and Docker Compose |
 | `lzj` / `lj` | `lazyjournal` | Terminal UI for multi-source log viewing & filtering |
 | `k` | `kubectl` | Kubernetes CLI shorthand |
 | `kctx` / `ctx` | `kubectx` | Fast Kubernetes context switcher |
 | `kns` / `ns` | `kubens` | Fast Kubernetes namespace switcher |
+| `..` | `cd ..` | Go up one directory |
+| `...` | `cd ../..` | Go up two directories |
+| `....` | `cd ../../..` | Go up three directories |
+| `root` | `sudo -E "HOME=$HOME" su -m` | Root shell that preserves your `$HOME` — gated on `su`, so **not on Windows** |
+| `aptall` | `apt update`/`full-upgrade`/`autoremove`/`autoclean` | One-shot Debian/Ubuntu system update — gated on `apt`, so only where it exists |
 | `yy` | Custom Function | Open **Yazi** file manager; changes terminal working directory on exit |
 | `cd <path>` | `zoxide` | Smart jump (falls back to standard `cd` if path exists) — **not in Nushell**, see below |
 | `z <query>` | `zoxide query` | Jump directly to highest ranked directory matching query |
 | `zi` | `zoxide query -i` | Interactive fuzzy search directory selection |
 
 > [!NOTE]
-> Nushell's `cd` is never replaced by zoxide (zoxide has no `nushell`-target `cd` integration upstream) — `z`/`zi` still work identically to every other shell here.
+> Nushell's `cd` is never replaced by zoxide (zoxide has no `nushell`-target `cd` integration upstream) — `z`/`zi` still work identically to every other shell here. Nushell's own `ls`/`du`/`help` are structured builtins (they return tables consumed in pipelines); `ls` is shadowed by the `lsd` alias here anyway, same as every other shell, but `du` deliberately is not — see "Known Parity Exceptions" below. `help` isn't aliased to `tldr` in *any* shell here (not just Nushell): it's a real, actively-used builtin/function in bash, fish and PowerShell too, not only nu's structured-table case, so aliasing it would shadow all three — run `tldr <command>` directly instead. `cat`/`vim`/`vi`/`df` are not nu builtins, so they get the same requires-gated behavior as every other shell (hand-written `def --wrapped` fallbacks in Nushell's case, since a `requires`-gated group can't be plain data-driven there — see `.chezmoidata/aliases.yaml`).
+>
+> PowerShell also has its own `which`/`touch` fallback functions (filling a real Windows gap: neither binary exists there) and `md5`/`sha1`/`sha256` convenience wrappers around `Get-FileHash` (`Functions/Functions.ps1`). These aren't in the table above because they're functions, not aliases to another tool, and Unix shells already have real `touch`/hashing tools natively — see "Known Parity Exceptions" below.
+
+---
+
+## 🧰 Helper Functions
+
+Real functions (not aliases to another binary), implemented once with identical names and behavior in bash/zsh, fish, Nushell and PowerShell. Each one checks its own tool dependency at call time and prints a clear message on stderr instead of failing silently if it's missing — none of them do any work at shell startup.
+
+| Function | Requires | Does |
+| :--- | :--- | :--- |
+| `mkcd <dir>` | — | `mkdir -p` a directory, then `cd` into it |
+| `extract <archive>...` / `x` | `ouch` | Extract any archive format `ouch` recognizes (zip/tar/tar.gz/tar.zst/7z/rar/...) |
+| `compress <out> <files...>` | `ouch` | Compress files into an archive, format inferred from `<out>`'s extension |
+| `fif <pattern>` | `rg`, `fzf` | ripgrep for a pattern, fzf to pick a match (bat preview centered on the line), open `$EDITOR` there |
+| `fe [query]` | `fd`, `fzf` | fd for files, fzf (bat preview) to pick one, open in `$EDITOR` |
+| `fbr` | `git`, `fzf` | fzf-pick a local or remote branch, `git switch` to it |
+| `flog` | `git`, `fzf` | Browse `git log --oneline --graph`, previewing the selected commit with delta (falls back to plain `git show`) |
+| `fkill [signal]` | `fzf` | fzf-pick one or more processes (via `procs`, falling back to `ps`/`Get-Process`), kill them |
+| `path` | — | Print `$PATH`, one entry per line |
+| `ports` | — | List listening TCP ports (`ss`/`lsof`/`netstat` on Unix, `Get-NetTCPConnection` on Windows) |
+| `nredf_bench_startup` (`nredf-bench-startup` in Nu, `NREDF_BenchStartup` in PowerShell) | `hyperfine` | Benchmark interactive startup time of every installed shell |
+
+> [!NOTE]
+> In zsh, oh-my-zsh's `extract`/`x` (sheldon, lazy-loaded on the first `precmd`) and its `systemadmin` plugin's `path` alias are defined *after* this file loads, so they win for interactive zsh sessions instead of the versions above — same output for `path`, but zsh's `extract`/`x` is OMZ's own implementation rather than the `ouch`-based one every other shell gets. Fixing this would mean editing sheldon's plugin list or its lazy-load hook, both existing files outside this change — see "Known Parity Exceptions" below. `fif`/`fe`/`fbr`/`flog`/`fkill`/`mkcd`/`compress`/`ports`/`nredf_bench_startup` are unaffected (OMZ defines none of them).
 
 ---
 
 ## 🏠 Local, Machine-Specific Overrides
 
-None of the following files are chezmoi-managed or committed to this repo — they live only on your machine, are yours to create, and `chezmoi apply` never touches or overwrites them. [`~/.config/nredf/README.md`](../home/dot_config/nredf/README.md) is a shorter, on-disk version of this same section.
+None of the following files are chezmoi-managed or committed to this repo — they live only on your machine, are yours to create, and `chezmoi apply` never touches or overwrites them. [`~/.config/nredf/README.md`](../home/dot_config/private_nredf/README.md) is a shorter, on-disk version of this same section.
 
 ### `~/.config/nredf/local.yaml` — paths and simple aliases
 
-The same declarative format `.chezmoidata/paths.yaml` and `.chezmoidata/aliases.yaml` use internally. If this file exists, every shell reads and merges it in at `chezmoi apply` time (it is re-read on every apply, so editing it and re-applying picks up changes immediately). chezmoi deploys a copy-and-edit starting point at [`~/.config/nredf/local.yaml.example`](../home/dot_config/nredf/local.yaml.example) — copy it to `local.yaml` in the same directory:
+The same declarative format `.chezmoidata/paths.yaml` and `.chezmoidata/aliases.yaml` use internally. If this file exists, every shell reads and merges it in at `chezmoi apply` time (it is re-read on every apply, so editing it and re-applying picks up changes immediately). chezmoi deploys a copy-and-edit starting point at [`~/.config/nredf/local.yaml.example`](../home/dot_config/private_nredf/local.yaml.example) — copy it to `local.yaml` in the same directory:
 
 ```yaml
 # ~/.config/nredf/local.yaml
@@ -269,6 +312,8 @@ Options:
   -h, --help        Show usage help
 ```
 
+`-l` removes only the last-run stamps and keeps the cached init snippets, the sheldon cache and the zsh completion dump. `-c` and `-f` clear those as well; use one of them to pick up a tool upgrade immediately. Nushell's `*.nu` snippets are truncated rather than deleted, because nu's `source` needs each file to exist when `config.nu` is parsed.
+
 ### Examples
 
 - **Fast shell refresh**:
@@ -320,7 +365,7 @@ NREDF decouples all periodic maintenance and network-heavy upgrade tasks from in
 Daily maintenance is scheduled natively per operating system via chezmoi:
 
 - **macOS (`launchd`)**: `com.nredf.daily-sync.plist` (managed via `home/private_Library/private_LaunchAgents/com.nredf.daily-sync.plist.tmpl`).
-- **Linux (`systemd --user`)**: `nredf-daily-sync.timer` & `nredf-daily-sync.service` in `~/.config/systemd/user/`.
+- **Linux (`systemd --user`)**: `nredf-daily-sync.timer` & `nredf-daily-sync.service` in `~/.config/systemd/user/`. The timer is `Persistent=true`, so a run missed while the machine was off happens at the next boot.
 - **Windows (Task Scheduler)**: `NREDF-DailySync` registered with `StartWhenAvailable` to catch up after sleep.
 
 ### 2. What Daily Maintenance Executes
@@ -329,9 +374,11 @@ The unified payload (`nredf-daily-sync` on POSIX, `NREDF_DailySync` on PowerShel
 
 1. **Package Upgrades**: Homebrew (`brew update && brew upgrade && brew cleanup -s` on macOS).
 2. **Chezmoi Upgrade**: Upgrades the chezmoi binary.
-3. **Dotfiles Remote Sync**: Fetches upstream dotfiles changes, fast-forwards Git, and runs `chezmoi apply --refresh-externals` (skipping secret templates when the password safe is locked).
+3. **Dotfiles Remote Sync**: Fetches upstream dotfiles changes, fast-forwards Git, and runs `chezmoi apply --refresh-externals --force`. A scheduled run has no terminal to unlock a password safe, so it first checks the one your secrets reference: Bitwarden must report `unlocked` from `bw status` (after restoring `BW_SESSION` from the keychain, as shell startup does), 1Password must pass `op whoami`, and a KeePassXC reference always needs its database password. If that check fails, the apply is skipped with a log line and the other steps still run. Run `bwu` and then `reload -f` to catch up. PowerShell only pre-checks Bitwarden; for the other two it detects a locked safe from the failed apply's output.
 4. **Aqua Tools**: Updates Aqua (`aqua update-aqua`), ensures tool links (`aqua install -a -l`), and vacuums packages unused for >30 days (`aqua vacuum -d 30`).
-5. **Zsh Plugins**: Updates Sheldon plugin locks (`sheldon lock --update`).
+5. **Zsh Plugins**: Updates Sheldon plugin locks (`sheldon lock --update`). Not on PowerShell.
+6. **tldr Pages**: Refreshes the tldr page cache (`tldr --update`).
+7. **oh-my-posh Session Caches**: Deletes `*.omp.cache` files older than 7 days from the oh-my-posh cache directory. Every shell gets a new `POSH_SESSION_ID`, so these files otherwise pile up forever.
 
 All runs are logged to `${XDG_STATE_HOME:-~/.local/state}/nredf/daily-sync.log` (macOS/Linux) and `$LOCALAPPDATA\nredf\daily-sync.log` (Windows). `reload -f` (or `nredf-daily-sync --verbose`) also prints that output to the terminal.
 
@@ -351,6 +398,10 @@ If you have open terminals when the background sync completes:
 
 | Item | Affected shell(s) | Why | Resolution |
 | :--- | :--- | :--- | :--- |
+| `ls` aliased to `lsd` | Nushell | Every other shell here aliases `ls` to `lsd`, and nu gets the same alias for muscle-memory parity — but nu's own `ls` is a structured builtin returning a table, and the `lsd`-backed wrapper returns plain text instead, same as the external-`ls`-based shells. | Accepted trade-off; scripts/pipelines inside nu that need structured output use `^ls` (or another structured command) explicitly instead of the shadowed `ls`. |
+| `du` not aliased to dust | Nushell | Unlike `ls`, nu's own `du` is a structured builtin actively used in pipelines (returns a directory-size table) — aliasing over it would break that, not just change formatting. | Not implemented; bash/zsh/fish/PowerShell get `du`→dust, nu users run `dust` directly. |
+| `help` never aliased to tldr | All five shells | Not just nu's case: bash's `help` builtin, fish's doc-browser `help` function, and PowerShell's Get-Help-wrapping `help` function are all real, actively-used commands, not dead weight to shadow. | Not implemented anywhere; run `tldr <command>` directly instead of `help <command>`. |
+| `which`/`touch` fallback functions, `md5`/`sha1`/`sha256` hash wrappers | Only in PowerShell | `which`/`touch` fill a genuine Windows gap (neither binary exists there); `md5`/`sha1`/`sha256` are convenience wrappers around `Get-FileHash` for verifying legacy vendor checksums. Unix shells already have real `touch` (and usually `which`) natively, and these are functions, not aliases to another CLI tool. | Not ported; out of scope for the alias table (see the "New helper functions" carve-out — these are functions, tracked separately from alias parity). |
 | Ctrl+Space fzf-tab completion widget | Nushell | Reedline (nu's line editor) has no primitive to replace the edit buffer with an external filter's output — every other shell's widget depends on exactly that. | Not implemented. Carapace's native Reedline completion menu (Tab) is nu's substitute. |
 | `zoxide --cmd cd` (replacing `cd` itself) | Nushell | zoxide itself has no nushell `cd` integration — an upstream gap, not this repo's. | `z`/`zi` aliases only; `cd` is never overridden in nu. |
 | Same-session cached tool-init refresh (atuin/zoxide/mise/carapace/fzf) | Nushell | nu's `source` requires the target file to exist on disk *before the file that sources it is even parsed* — true even inside a runtime `if path exists` guard. A cache regenerated this session can only be `source`d starting the *next* shell start. | Chezmoi seeds an empty placeholder (`create_`/`empty_`) for each cache file so a cold `source` never fails outright; a stale-but-present cache is used for the rest of the current session and refreshes for the next one. |
@@ -359,11 +410,11 @@ If you have open terminals when the background sync completes:
 | Directory-glob fallback when the function bundle is absent | Nushell | The fallback loop would itself need to `source` a runtime-determined file list — same restriction again. | The generated bundle is nu's only load path, not a fast path with a fallback the way bash/zsh/fish have. |
 | Caller-name auto-detection for the throttle gate and mkdir-based lock (`_nredf_last_run`, `_nredf_create_lock`) | Fish, Nushell | Neither has an equivalent of bash's `FUNCNAME`/zsh's `funcstack`. | Both take an explicit `key` argument at every call site instead of inferring one. |
 | Kitty terminal shell-integration | Nushell | Kitty ships integration scripts for bash/zsh/fish only — no nushell target exists upstream. | Not implemented; not something this repo can fix. |
-| pyenv shell integration | Nushell | pyenv has no nushell integration upstream (bash/zsh/fish only). | Not implemented; `pyenv exec`/`pyenv which` still work as plain external commands. |
 | `dircolors`/`LS_COLORS` integration | Nushell | nu's own `ls` builtin has its own color theming (`$env.config.color_config`) and never reads `LS_COLORS`, unlike the external-`ls`-based `ls`/`ll`/`la` aliases every other shell here uses. | Not implemented; low value for nu specifically, not a gap in the external-`ls` sense the other shells have. |
 | Prompt-with-timeout for the aqua GitHub-token setup wizard | Fish, Nushell | Neither fish's `read` nor nu's `input` has a timeout flag at all (unlike bash's `read -t`). | Shells out to `timeout`/`gtimeout` if one is installed; otherwise falls back to an untimed prompt, still gated on being a real interactive tty so it can never block a non-interactive shell. |
 | `zcompile`-equivalent bundle byte-caching | Fish, Nushell | Neither has a bytecode-cache mechanism comparable to zsh's `zcompile`. | Accepted as a minor, unavoidable cold-start cost; the cached-snippet mechanism still covers the genuinely expensive parts (tool inits). |
-| PowerShell automatically restoring `$env:SSH_AUTH_SOCK` | PowerShell | Pre-existing gap, unrelated to the fish/nu work above — flagged here so it isn't mistaken for a new one. | Out of scope for this document; PowerShell users configure SSH agent forwarding another way for now. |
+| oh-my-posh tooltips (git details while typing `git`/`lg`/`lzg`/`lazygit`) | Bash, Nushell | oh-my-posh only implements tooltips for zsh, fish and PowerShell; bash and nu's line editors have no hook for re-rendering the right prompt on each keystroke. | Not implemented. The tooltip only adds detail: branch and status stay in the main prompt in every shell, and the kube context stays on line two instead of becoming a tooltip for the same reason. |
+| PowerShell automatically restoring `$env:SSH_AUTH_SOCK` | PowerShell, Nushell on native Windows | Pre-existing gap, unrelated to the fish/nu work above — flagged here so it isn't mistaken for a new one. On native Windows, `nredf-set-ssh-agent` returns immediately: its Unix-socket logic (`id`, `chmod`, `ssh-agent -a`) cannot run there, and a Unix `SSH_AUTH_SOCK` would override the OpenSSH named pipe. WSL is unaffected. | Out of scope for this document; PowerShell users configure SSH agent forwarding another way for now. With `SSH_AUTH_SOCK` unset, Windows OpenSSH uses its `\\.\pipe\openssh-ssh-agent` pipe. |
 
 ---
 

@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+# Alias for lazyjournal (home/.chezmoidata/aliases.yaml): hands the whole
+# command line to lazyjournal's completer.
+name: lzj
+description: Alias for lazyjournal
+parsing: disabled
+completion:
+  positionalany: ["$carapace.bridge.CarapaceBin([lazyjournal])"]

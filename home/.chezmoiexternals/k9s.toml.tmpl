@@ -6,38 +6,32 @@
 {{-   end }}
 {{- end }}
 {{- if $k9sVersion }}
+{{- /* Only plugins whose tools this repo installs (see aqua.yaml). exact =
+       true prunes plugins dropped from this list on the next apply, so put
+       personal plugins in plugins.yaml, not this directory. The URL is pinned
+       to the aqua k9s tag, so a version bump re-fetches; no refreshPeriod. */}}
 [".config/k9s/plugins"]
 type = "archive"
 url = "{{ printf "https://github.com/derailed/k9s/archive/refs/tags/%s.tar.gz" $k9sVersion }}"
-exact = false
+exact = true
 stripComponents = 2
 include = [
-  "*/plugins/blame.yaml",
-  "*/plugins/cert-manager.yaml",
   "*/plugins/crd-wizard.yaml",
   "*/plugins/debug-container.yaml",
   "*/plugins/external-secrets.yaml",
   "*/plugins/flux.yaml",
   "*/plugins/get-all-namespace-resources.yaml",
-  "*/plugins/get-all.yaml",
   "*/plugins/helm-default-values.yaml",
-  "*/plugins/helm-diff.yaml",
-  "*/plugins/helm-purge.yaml",
   "*/plugins/helm-values.yaml",
   "*/plugins/job-suspend.yaml",
-  "*/plugins/log-jq.yaml",
-  "*/plugins/log-loki.yaml",
   "*/plugins/log-stern.yaml",
   "*/plugins/node-root-shell.yaml",
   "*/plugins/openssl.yaml",
   "*/plugins/pvc-debug-container.yaml",
   "*/plugins/pvc-resize.yaml",
   "*/plugins/remove-finalizers.yaml",
-  "*/plugins/resource-recommendations.yaml",
-  "*/plugins/trace-dns.yaml",
   "*/plugins/watch-events.yaml"
 ]
-refreshPeriod = "168h"
 
 [".config/k9s/skins"]
 type = "archive"
@@ -47,15 +41,4 @@ stripComponents = 2
 include = [
   "*/skins/*.yaml"
 ]
-refreshPeriod = "168h"
-
-[".config/k9s/jumps"]
-type = "archive"
-url = "{{ printf "https://github.com/derailed/k9s/archive/refs/tags/%s.tar.gz" $k9sVersion }}"
-exact = false
-stripComponents = 2
-include = [
-  "*/jumps/*.yaml"
-]
-refreshPeriod = "168h"
 {{- end }}

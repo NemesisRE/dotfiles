@@ -1,4 +1,4 @@
-{{- /* Generated from .chezmoidata/aliases.yaml's nredf_aliases — keep bash/fish/nu/PS in sync. */}}
+{{- /* Generated from .chezmoidata/aliases.yaml's nredf_aliases and nredf_commands — keep bash/fish/nu/PS in sync. */}}
 {{ range .nredf_aliases.groups -}}
 {{- $requires := .requires }}
 {{- if $requires }}
@@ -31,6 +31,21 @@ if (Get-Command {{ first (splitList " " $cmd) }} -ErrorAction SilentlyContinue) 
 {{- end -}}
 {{ end -}}
 {{- end }}
+{{- range .nredf_commands }}
+{{- $ps := .ps }}
+{{- $name := index .names 0 }}
+{{- if and (hasKey . "ps_requires") .ps_requires }}
+if (Get-Command {{ .ps_requires }} -ErrorAction SilentlyContinue) {
+function {{ $name }} {
+{{ $ps | trimSuffix "\n" | indent 2 }}
+}
+}
+{{ else -}}
+function {{ $name }} {
+{{ $ps | trimSuffix "\n" | indent 2 }}
+}
+{{ end -}}
+{{- end }}
 {{- /* User-local additions: ~/.config/nredf/local.yaml, not chezmoi-managed — see docs/shells.md. */}}
 {{- $localFile := joinPath .chezmoi.homeDir ".config" "nredf" "local.yaml" }}
 {{- $local := dict }}
@@ -47,17 +62,6 @@ if (Get-Command {{ first (splitList " " $cmd) }} -ErrorAction SilentlyContinue) 
 {{- end }}
 }
 {{ end -}}
-# Neovim aliases
-if (Get-Command nvim -ErrorAction SilentlyContinue) {
-  Set-Alias -Name vim -Value nvim -Option AllScope -Force
-  Set-Alias -Name vi -Value nvim -Option AllScope -Force
-}
-
-# bat alias (syntax-highlighted cat)
-if (Get-Command bat -ErrorAction SilentlyContinue) {
-  function cat { bat --paging=never @args }
-}
-
 # Utility command parity (which, touch)
 if (-not (Get-Command which -ErrorAction SilentlyContinue)) {
   function which { Get-Command @args }
@@ -74,3 +78,10 @@ if (-not (Get-Command touch -ErrorAction SilentlyContinue)) {
   }
 }
 
+# Shell-behavior toggles from .chezmoidata/shell.yaml, fixed at chezmoi-apply
+# time — same pattern common/rc.tmpl (bash/zsh/fish) and nu's env.nu.tmpl
+# use. Profile.ps1/Sources.ps1 aren't chezmoi templates, so this is the
+# first place in the pwsh load chain that can render them; consumed by
+# NREDF_RemoteMultiplexer in Functions/NREDF_Multiplexer.ps1.
+$ENV:NREDF_SHELL_MULTIPLEXER = '{{ .shell.multiplexer }}'
+$ENV:NREDF_SHELL_WSL_MULTIPLEXER = '{{ if hasKey .shell "wsl_multiplexer" }}{{ .shell.wsl_multiplexer }}{{ else }}false{{ end }}'

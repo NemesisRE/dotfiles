@@ -1,8 +1,10 @@
+{{- /* Tag and SHA-256 are pinned in .chezmoidata/ble.yaml. A fixed tag needs no
+       refreshPeriod: chezmoi downloads again whenever the URL changes. */ -}}
 {{- if ne .chezmoi.os "windows" }}
 [".local/share/blesh"]
 type = "archive"
 url = "{{ printf "https://github.com/akinomyoga/ble.sh/releases/download/%s/ble-%s.tar.xz" .ble.tag (trimPrefix "v" .ble.tag) }}"
+checksum.sha256 = "{{ .ble.sha256 }}"
 exact = true
 stripComponents = 1
-refreshPeriod = "24h"
 {{- end }}

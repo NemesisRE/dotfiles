@@ -12,6 +12,16 @@ def --env nredf-set-krew-path [] {
     }
 }
 
+# Prepend each directory to PATH, in argument order, unless it is already on
+# PATH, so re-running the defaults (nested shells, `reload`) never grows PATH
+# and keeps the parent's order — same helper as bash/zsh/fish.
+def --env nredf-path-prepend [...dirs: string] {
+    let new_dirs = ($dirs | where {|d| ($d | is-not-empty) and not ($d in $env.PATH) } | uniq)
+    if ($new_dirs | is-not-empty) {
+        $env.PATH = ($env.PATH | prepend $new_dirs)
+    }
+}
+
 def --env nredf-set-defaults [] {
     nredf-set-aqua-path
     nredf-set-aqua-env
@@ -22,16 +32,13 @@ def --env nredf-set-defaults [] {
         nredf-read-dotenv $proxy_local
     }
 
-    $env.NREDF_RC_PATH = ($env.NREDF_DOT_PATH | path join "shell" $env.NREDF_SHELL_NAME)
-    $env.NREDF_RC_LOCAL = ($env.HOME | path join ".config" $env.NREDF_SHELL_NAME)
-
     # Set the language environment if not already configured with a UTF-8 locale.
     if ($env.LANG? | default "" | is-empty) or ($env.LANG? == "C") {
         mut nredf_locale = "C"
-        let locales = (^locale -a | complete | get stdout)
-        if ($locales | str lowercase | str contains "en_us.utf") {
+        let locales = (^locale -a | complete | get stdout | str lowercase | lines)
+        if ($locales | any {|l| $l =~ '^en_us\.utf-?8$' }) {
             $nredf_locale = "en_US.UTF-8"
-        } else if ($locales | str lowercase | str contains "c.utf") {
+        } else if ($locales | any {|l| $l =~ '^c\.utf-?8$' }) {
             $nredf_locale = "C.UTF-8"
         }
         $env.LANG = $nredf_locale
@@ -41,15 +48,12 @@ def --env nredf-set-defaults [] {
 
     nredf-init-paths
 
-    $env.PATH = ($env.PATH | prepend [($env.HOME | path join "bin") $env.XDG_BIN_HOME "/usr/local/bin"])
-    if ("/snap/bin" | path exists) {
+    nredf-path-prepend ($env.HOME | path join "bin") $env.XDG_BIN_HOME "/usr/local/bin"
+    if ("/snap/bin" | path exists) and not ("/snap/bin" in $env.PATH) {
         $env.PATH = ($env.PATH | append "/snap/bin")
     }
     $env.GOPATH = ($env.HOME | path join ".local")
     $env.RLWRAP_HOME = ($env.XDG_CACHE_HOME | path join "RLWRAP")
-    let rvm = ($env.HOME | path join ".rvm" "scripts" "rvm")
-    # rvm's script is bash/sh code, not nu — nu has no nu-specific rvm
-    # integration upstream, so this is intentionally not sourced here.
 
     # Set the default editor (nvim -> hx -> vi).
     if not (which nvim | is-empty) {
@@ -66,12 +70,15 @@ def --env nredf-set-defaults [] {
         $env.GIT_EDITOR = "vi"
     }
 
-    # pyenv has no nu integration upstream (bash/zsh/fish only) — documented
-    # gap, not something this repo can fix; `pyenv exec`/`pyenv which` still
-    # work fine as plain external commands without shell integration.
-
     # Bat defaults.
     $env.BAT_THEME = "OneDarkPro"
+    # Render man pages through bat (bat's documented recipe). MANROFFOPT=-c makes
+    # groff emit the overstrike output `col -bx` expects. A MANPAGER set by the
+    # user or inherited from a parent shell wins.
+    if ($env.MANPAGER? | default "" | is-empty) and not (which bat | is-empty) {
+        $env.MANPAGER = "sh -c 'col -bx | bat -l man -p'"
+        $env.MANROFFOPT = "-c"
+    }
 
     # FZF defaults.
     $env.FZF_DEFAULT_OPTS = "--bind tab:down --bind btab:up --cycle --ansi --color=dark,bg+:#2c313c,bg:#282c34,gutter:#282c34,spinner:#e5c07b,hl:#e06c75,fg:#abb2bf,header:#61afef,info:#56b6c2,pointer:#c678dd,marker:#98c379,fg+:#abb2bf,prompt:#61afef,hl+:#98c379,border:#4f5666"
@@ -116,28 +123,34 @@ def --env nredf-set-defaults [] {
     # readline config (used by tools that still shell out to GNU readline).
     $env.INPUTRC = ($env.XDG_CONFIG_HOME | path join "readline" "inputrc")
 
-    if not ($env.XDG_RUNTIME_DIR? | default "" | is-empty) {
-        $env.XAUTHORITY = ($env.XDG_RUNTIME_DIR | path join "Xauthority")
+    # Only point X clients at the XDG runtime copy when nothing (display manager,
+    # `ssh -X`) set XAUTHORITY already and that file actually exists. Exporting it
+    # unconditionally broke X forwarding and yielded `/Xauthority` on macOS.
+    let runtime_dir = ($env.XDG_RUNTIME_DIR? | default "")
+    if ($env.XAUTHORITY? | default "" | is-empty) and ($runtime_dir | is-not-empty) and (($runtime_dir | path join "Xauthority") | path exists) {
+        $env.XAUTHORITY = ($runtime_dir | path join "Xauthority")
     }
 
-    $env._Z_DATA = ($env.XDG_DATA_HOME | path join "z")
+    # Let carapace fall back to other shells' completions for commands it has no
+    # spec for. A user-set value wins.
+    if ($env.CARAPACE_BRIDGES? | default "" | is-empty) {
+        $env.CARAPACE_BRIDGES = "zsh,fish,bash"
+    }
 
-    # asdf config.
-    $env.ASDF_DATA_DIR = ($env.XDG_DATA_HOME | path join "asdf")
-    $env.ASDF_CONFIG_FILE = ($env.XDG_CONFIG_HOME | path join "asdf" "asdfrc")
-    $env.ADSF_DEFAULT_TOOL_VERSIONS_FILENAME = ($env.XDG_CONFIG_HOME | path join "asdf" "tool-versions")
-    $env.PATH = ($env.PATH | prepend ($env.ASDF_DATA_DIR | path join "shims"))
-
-    # lesspipe(1) — parse its simple `LESSOPEN="..."; export LESSOPEN;`
+    # lesspipe(1) — parse its simple `export LESSOPEN="..."; export LESSCLOSE="...";`
     # output as data (same approach as the shared aqua.env dotenv reader)
-    # rather than trying to `source` foreign sh syntax.
+    # rather than trying to `source` foreign sh syntax. Not cached like the
+    # other shells: a nu cache only takes effect a shell start later, and nu
+    # child shells already skip this (NREDF_COMMON_DEFAULTS_DONE is inherited).
     if ("/usr/bin/lesspipe" | path exists) {
-        let lesspipe_out = (with-env {SHELL: "/bin/sh"} { ^lesspipe } | complete | get stdout)
+        let lesspipe_out = (with-env {SHELL: "/bin/sh"} { ^/usr/bin/lesspipe } | complete | get stdout)
         # \x27 = ' — a literal single quote can't appear inside a single-quoted
         # nu string, so it's hex-escaped for the (Rust-regex) pattern instead.
-        let lessopen_match = ($lesspipe_out | parse --regex 'LESSOPEN=[\x27"]?([^\x27";\n]*)[\x27"]?')
-        if ($lessopen_match | is-not-empty) {
-            $env.LESSOPEN = ($lessopen_match | get 0.capture0)
+        for var in [LESSOPEN LESSCLOSE] {
+            let match = ($lesspipe_out | parse --regex ($var + '=[\x27"]?([^\x27";\n]*)[\x27"]?'))
+            if ($match | is-not-empty) {
+                load-env ({} | insert $var ($match | get 0.capture0))
+            }
         }
     }
 
@@ -155,12 +168,4 @@ def --env nredf-set-defaults [] {
     $env.RIPGREP_CONFIG_PATH = ($env.XDG_CONFIG_HOME | path join "ripgrep" "config")
     $env.GH_CONFIG_DIR = ($env.XDG_CONFIG_HOME | path join "gh")
     $env.POWERSHELL_UPDATECHECK = "Off"
-
-    let github_auth = ($env.NREDF_CONFIG | path join "GITHUB.AUTH")
-    if ($github_auth | path exists) {
-        nredf-read-dotenv $github_auth
-        if (not ($env.NREDF_GITHUB_USERNAME? | default "" | is-empty)) and (not ($env.NREDF_GITHUB_TOKEN? | default "" | is-empty)) {
-            $env.NREDF_CURL_GITHUB_AUTH = $"-u ($env.NREDF_GITHUB_USERNAME):($env.NREDF_GITHUB_TOKEN)"
-        }
-    }
 }

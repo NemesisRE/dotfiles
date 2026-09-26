@@ -1,0 +1,7 @@
+# stern defaults. Keys are stern's long flag names; a flag on the command
+# line always wins. stern reads ~/.config/stern/config.yaml on every OS.
+#
+# Start from the last 50 lines of each container instead of stern's default
+# of every line from the past 48h, which floods the terminal on busy pods.
+# Pass --tail=-1 to get the full history back.
+tail: 50

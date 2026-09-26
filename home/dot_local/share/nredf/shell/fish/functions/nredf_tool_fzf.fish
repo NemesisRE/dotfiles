@@ -38,28 +38,39 @@ end
 function _nredf_fzf_tab_complete
     type -q fzf; or return 0
 
-    set -l line (commandline -b)
-    set -l point (commandline -C)
-    set -l prefix (string sub -l "$point" -- "$line")
+    # The current process up to the cursor (so `foo | git ch<C-Space>`
+    # completes git, not foo), as one string even if it spans several lines.
+    set -l prefix (commandline -cp | string collect)
     set -l cur_word (commandline -t)
-    set -l cmd_name (string split " " -- "$prefix")[1]
+
+    # carapace takes the words as separate argv entries (bash/zsh get there
+    # via `xargs`, which fish can't rely on for unquoting). A trailing space
+    # means "complete a new, empty word", which carapace needs as an
+    # explicit empty last argument.
+    set -l words (string split --no-empty " " -- "$prefix")
+    string match -q -- '* ' "$prefix"; and set -a words ""
+    set -l cmd_name $words[1]
 
     set -l candidates
     if test -n "$cmd_name"; and type -q carapace
-        set -l compline (string replace -r ' $' " ''" -- "$prefix")
-        for c in (carapace "$cmd_name" fish (string split " " -- $compline) 2>/dev/null)
+        for c in (carapace "$cmd_name" fish $words 2>/dev/null)
             test -z "$c"; and continue
             string match -qr '^ERR[[:space:]]' -- "$c"; and continue
-            set candidates $candidates "$c"
+            # carapace's fish format is "value<TAB>description"; show both in
+            # fzf (field 2) and keep the bare value as field 1 to insert.
+            set -l parts (string split -m1 \t -- "$c")
+            set -l display $parts[1]
+            test -n "$parts[2]"; and set display "$parts[1]  $parts[2]"
+            set -a candidates "$parts[1]"\t"$display"
         end
     end
 
     # Fallback if no carapace candidates: fish's own completion engine.
     if test (count $candidates) -eq 0
-        for r in (complete -C"$cur_word")
+        for r in (complete -C "$prefix")
             test -z "$r"; and continue
-            set -l tok (string split \t -- "$r")[1]
-            set candidates $candidates "$tok\t$tok"
+            set -l tok (string split -m1 \t -- "$r")[1]
+            set -a candidates "$tok"\t"$tok"
         end
     end
 
@@ -76,6 +87,8 @@ function _nredf_fzf_tab_complete
         set selected (printf '%s\n' $candidates | fzf \
             --reverse --height=40% --ansi --delimiter=\t --with-nth=2 \
             --bind="tab:down,btab:up" --query="$cur_word")
+        # fzf drew over the prompt; have fish redraw it.
+        commandline -f repaint
     end
 
     test -z "$selected"; and return 0

@@ -17,6 +17,14 @@ step()  { printf '\033[1m==> %s\033[0m\n' "$*"; }
 info()  { printf '    %s\n' "$*"; }
 warn()  { printf '\033[33m    WARNING: %s\033[0m\n' "$*"; }
 
+# sudo is only needed when not already root, and only used when it exists;
+# a missing prerequisite package manager install must warn, not crash the
+# whole bootstrap under `set -e`.
+SUDO=""
+if [[ "$(id -u)" -ne 0 ]] && command -v sudo &>/dev/null; then
+  SUDO="sudo"
+fi
+
 # ── Prerequisites ──────────────────────────────────────────────────────────────
 if [[ "$(uname -s)" == "Darwin" ]]; then
   if [[ -x /opt/homebrew/bin/brew ]] && [[ ":$PATH:" != *":/opt/homebrew/bin:"* ]]; then
@@ -39,8 +47,29 @@ elif command -v apt-get &>/dev/null; then
   command -v git  &>/dev/null || MISSING+=(git)
   if [[ ${#MISSING[@]} -gt 0 ]]; then
     step "Installing prerequisites: ${MISSING[*]}"
-    sudo apt-get update -qq
-    sudo apt-get install -y -qq "${MISSING[@]}"
+    if ! { ${SUDO} apt-get update -qq && ${SUDO} apt-get install -y -qq "${MISSING[@]}"; }; then
+      warn "apt-get install failed; continuing without: ${MISSING[*]}"
+    fi
+  fi
+elif command -v dnf &>/dev/null; then
+  MISSING=()
+  command -v curl &>/dev/null || MISSING+=(curl)
+  command -v git  &>/dev/null || MISSING+=(git)
+  if [[ ${#MISSING[@]} -gt 0 ]]; then
+    step "Installing prerequisites: ${MISSING[*]}"
+    if ! ${SUDO} dnf install -y -q "${MISSING[@]}"; then
+      warn "dnf install failed; continuing without: ${MISSING[*]}"
+    fi
+  fi
+elif command -v pacman &>/dev/null; then
+  MISSING=()
+  command -v curl &>/dev/null || MISSING+=(curl)
+  command -v git  &>/dev/null || MISSING+=(git)
+  if [[ ${#MISSING[@]} -gt 0 ]]; then
+    step "Installing prerequisites: ${MISSING[*]}"
+    if ! ${SUDO} pacman -Sy --needed --noconfirm "${MISSING[@]}"; then
+      warn "pacman install failed; continuing without: ${MISSING[*]}"
+    fi
   fi
 fi
 

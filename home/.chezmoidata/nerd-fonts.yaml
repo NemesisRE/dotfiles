@@ -1,0 +1,15 @@
+# FiraCode Nerd Font (ryanoasis/nerd-fonts) pin for chezmoi
+#
+# home/.chezmoiexternals/fonts.toml.tmpl unpacks the release archive's .ttf
+# files into ~/.local/share/fonts/NerdFonts/FiraCode on Linux (macOS gets the
+# same family from the font-fira-code-nerd-font cask in packages.yaml
+# instead), so the archive is pinned by SHA-256 as well as by tag; chezmoi
+# rejects a download that does not match.
+#
+# This pin is not yet covered by .github/scripts/pins.py — see the PR body for
+# the addition needed to verify it in CI the way ble.yaml/fzf.yaml are. Until
+# then, bump `tag` by hand and recompute `sha256` (shasum -a 256 on the
+# downloaded FiraCode.tar.xz for the new tag).
+nerdFontsFiraCode:
+  tag: v3.5.1 # renovate: depName=ryanoasis/nerd-fonts
+  sha256: "68e3bd6164864b8b514605bc34e3a87ac401c8c48682fcce6478c70263340207"
