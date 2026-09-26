@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+# Nushell's name for nredf_ssh (shell/nushell/functions/nredf_ssh.nu), a
+# `def --wrapped`; see nredf_ssh.yaml.
+name: nredf-ssh
+description: ssh with automatic TOTP from Bitwarden/1Password
+parsing: disabled
+completion:
+  positionalany: ["$carapace.bridge.CarapaceBin([ssh])"]

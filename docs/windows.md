@@ -15,15 +15,15 @@ irm https://raw.githubusercontent.com/NemesisRE/chezmoi/main/bootstrap.ps1 | iex
 Or using chezmoi directly:
 
 ```powershell
-# 1. Install chezmoi
+# 1. Install PowerShell 7 and chezmoi (chezmoi runs every Windows hook under pwsh)
+winget install Microsoft.PowerShell
 winget install twpayne.chezmoi
 
-# 2. Initialize and apply dotfiles
+# 2. Open a new terminal so both are on PATH, then initialize and apply dotfiles
 chezmoi init --apply NemesisRE/chezmoi
-
-# 3. Link managed CLI tools
-aqua install -a -l
 ```
+
+`bootstrap.ps1` does the same, installing PowerShell 7 first when it is missing, because the hook that installs the other prerequisites is itself a PowerShell 7 script. The first apply installs aqua (the version pinned in [`aqua-bootstrap.yaml`](../home/.chezmoidata/aqua-bootstrap.yaml)) and links its tools.
 
 ---
 
@@ -90,6 +90,7 @@ NREDF supports multiple shells on Windows with shared aliases, history, and mode
 - **PowerShell 7+**: `Documents\PowerShell\Microsoft.PowerShell_profile.ps1`
 - **Windows PowerShell 5.1**: `Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1` (dot-sources PowerShell 7 profile)
 - 100% native CLI tooling: `fzf` (<kbd>Ctrl</kbd>+<kbd>t</kbd>, <kbd>Alt</kbd>+<kbd>c</kbd>), `lsd`, `bat`, `Atuin` history search, and `MenuComplete`.
+- **5.1 limitation**: the NREDF function library (Bitwarden session restore, `reload`, `NREDF_DailySync`, etc.) needs PowerShell 7+ — one of its files uses the `??` operator, a parse error on 5.1 — so it is skipped there with a one-line warning. Everything else (aliases, prompt theme, tool init) still loads.
 
 ### 2. Bash & Zsh on Windows
 
@@ -114,9 +115,9 @@ Chezmoi automatically registers a scheduled task in Windows Task Scheduler:
 - **Task Name**: `NREDF-DailySync`
 - **Trigger**: Daily at 7:00 AM with `-StartWhenAvailable` (automatically catches up when your PC turns on or wakes from sleep).
 - **Settings**: `-AllowStartIfOnBatteries -DontStopIfGoingOnBatteries`.
-- **Payload**: Runs `NREDF_DailySync` in a hidden, non-interactive PowerShell process.
+- **Payload**: Runs `NREDF_DailySync` in a non-interactive, `-WindowStyle Hidden` PowerShell process.
 - **Tasks**: Upgrades `chezmoi`, pulls dotfiles updates, applies external templates, updates `aqua` tools, and vacuums old packages.
-- **Log**: Written to `$env:LOCALAPPDATA\nredf\daily-sync.log`.
+- **Log**: Everything the run prints is appended to `$env:LOCALAPPDATA\nredf\daily-sync.log` (a PowerShell transcript; rotated to `daily-sync.log.1` at 1 MB).
 
 To check the task in PowerShell:
 
@@ -197,7 +198,7 @@ Aqua manages cross-platform developer tools on Windows without needing separate 
 | **lazydocker** | Terminal Docker & Compose UI | `lazydocker` / `lzd` |
 | **lazyjournal** | Multi-source log viewer & TUI | `lazyjournal` / `lzj` / `lj` |
 | **lnav** | Advanced log file navigator & SQL analyzer | `lnav` |
-| **btop** | System resource monitor | `btop` |
+| **bottom** | System resource monitor | `btm` |
 | **zellij** | Builtin terminal workspace multiplexer | `zellij` |
 
 Aqua tools are linked to `%LOCALAPPDATA%\aquaproj-aqua\bin` which is automatically added to `PATH`.
@@ -283,7 +284,8 @@ In Windows environments, your `Documents` folder may be redirected away from `$H
 
 1. **OneDrive Known Folder Move** (e.g. `C:\Users\<user>\OneDrive\Documents`):
    - PowerShell resolves `$PROFILE` to the OneDrive path.
-   - `bootstrap.ps1` and chezmoi's post-apply hook (`.chezmoiscripts/run_after_windows_sync-profiles.ps1.tmpl`) automatically create NTFS directory junctions (`PowerShell` and `WindowsPowerShell`) pointing from OneDrive's Documents folder to `$HOME\Documents\PowerShell`.
+   - chezmoi's post-apply hook (`.chezmoiscripts/run_onchange_after_windows_sync-profiles.ps1.tmpl`) automatically creates NTFS directory junctions (`PowerShell` and `WindowsPowerShell`) pointing from OneDrive's Documents folder to `$HOME\Documents\PowerShell`.
+   - The hook runs on the first apply and again only when the hook itself changes. If you move Documents later (e.g. turn on OneDrive Known Folder Move), re-run it with `chezmoi state delete-bucket --bucket=entryState` followed by `chezmoi apply`.
    - Directory junctions are local NTFS reparse points that do not require Administrator privileges.
 
 2. **Corporate Network / SMB Shares** (e.g. `\\server\home$\<user>\Documents` or mapped drive `H:\...`):

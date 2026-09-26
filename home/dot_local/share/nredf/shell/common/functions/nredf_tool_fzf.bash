@@ -8,20 +8,10 @@ function _nredf_tool_fzf_source() {
   if command -v fzf &>/dev/null; then
     if [[ "${NREDF_SHELL_NAME}" =~ ^(bash|zsh)$ ]]; then
       local fzf_cache="${XDG_CACHE_HOME:-${HOME}/.cache}/nredf/init/fzf.${NREDF_SHELL_NAME}.sh"
-      if command -v _nredf_refresh_cached_shell_snippet &>/dev/null; then
-        _nredf_refresh_cached_shell_snippet \
-          "_nredf_fzf_init_${NREDF_SHELL_NAME}" \
-          "${fzf_cache}" \
-          fzf "--${NREDF_SHELL_NAME}"
-      elif fzf "--${NREDF_SHELL_NAME}" &>/dev/null; then
-        eval "$(fzf "--${NREDF_SHELL_NAME}")"
-      fi
-
-      if [[ ! -s "${fzf_cache}" ]]; then
-        [[ -f "${HOME}/.config/fzf/completion.${NREDF_SHELL_NAME}" ]] && source "${HOME}/.config/fzf/completion.${NREDF_SHELL_NAME}"
-        [[ -f "${HOME}/.config/fzf/key-bindings.${NREDF_SHELL_NAME}" ]] && source "${HOME}/.config/fzf/key-bindings.${NREDF_SHELL_NAME}"
-      fi
-
+      _nredf_refresh_cached_shell_snippet \
+        "_nredf_fzf_init_${NREDF_SHELL_NAME}" \
+        "${fzf_cache}" \
+        fzf "--${NREDF_SHELL_NAME}"
 
       if [[ "${NREDF_SHELL_NAME}" == "bash" ]]; then
         # Prevent fzf's complete -D fallback from intercepting command-name completion
@@ -31,16 +21,15 @@ function _nredf_tool_fzf_source() {
         bind '"ç": "\ec"' 2>/dev/null || true
         bind '"\xC2\xA9": "\ec"' 2>/dev/null || true
         bind '"©": "\ec"' 2>/dev/null || true
-        # Readline binding for fzf tab completion
-        bind -x '"\C-@": _nredf_fzf_tab_complete' 2>/dev/null || true
-        bind -x '"\C- ": _nredf_fzf_tab_complete' 2>/dev/null || true
       elif [[ "${NREDF_SHELL_NAME}" == "zsh" ]]; then
         # On macOS, Option+c can send ç or © instead of \ec
         if (( ${+widgets[fzf-cd-widget]} )); then
-          bindkey 'ç' fzf-cd-widget 2>/dev/null || true
-          bindkey '©' fzf-cd-widget 2>/dev/null || true
-          bindkey -M vicmd 'ç' fzf-cd-widget 2>/dev/null || true
+          bindkey -M emacs 'ç' fzf-cd-widget 2>/dev/null || true
           bindkey -M viins 'ç' fzf-cd-widget 2>/dev/null || true
+          bindkey -M vicmd 'ç' fzf-cd-widget 2>/dev/null || true
+          bindkey -M emacs '©' fzf-cd-widget 2>/dev/null || true
+          bindkey -M viins '©' fzf-cd-widget 2>/dev/null || true
+          bindkey -M vicmd '©' fzf-cd-widget 2>/dev/null || true
         fi
       fi
     fi
@@ -74,6 +63,7 @@ function _nredf_fzf_tab_complete() {
   if [[ -n "$cmd_name" ]] && command -v carapace &>/dev/null; then
     mapfile -t candidates < <(echo "$compline" | sed -e "s/ \$/ ''/" | xargs carapace "$cmd_name" bash-ble 2>/dev/null)
     local -a valid=()
+    local c
     for c in "${candidates[@]}"; do
       [[ -z "$c" || "$c" =~ ^ERR[[:space:]] ]] && continue
       valid+=("$c")
@@ -89,6 +79,7 @@ function _nredf_fzf_tab_complete() {
     else
       mapfile -t raw < <(compgen -f -- "$cur_word" 2>/dev/null)
     fi
+    local r
     for r in "${raw[@]}"; do
       [[ -n "$r" ]] && candidates+=("$r"$'\t'"$r")
     done

@@ -1,0 +1,30 @@
+# Global gitignore (git reads ~/.config/git/ignore by default).
+# Managed by chezmoi. Only OS/editor junk that never belongs in any repository;
+# project-specific patterns go in the project's own .gitignore.
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.directory
+.Trash-*
+.nfs*
+
+# Editors
+*.swp
+*.swo
+*~
+.idea/
+*.sublime-workspace
+
+# Tool-local state
+.direnv/

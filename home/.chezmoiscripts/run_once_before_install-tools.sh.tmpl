@@ -1,9 +1,21 @@
 {{- if ne .chezmoi.os "windows" -}}
+{{- $aquaPresent := includeTemplate "hook-tool-present.tmpl" (dict "tool" "aqua" "chezmoi" .chezmoi) -}}
 #!/usr/bin/env bash
-# chezmoi run_once_before — installs Aqua once and links managed tools (incl. Sheldon).
-# Runs before managed files are applied so that the tools are available
-# when the rest of the dotfiles are activated.
+# chezmoi run_once_before — installs aqua once, from its pinned, checksum-verified
+# upstream installer.
 # https://www.chezmoi.io/user-guide/use-scripts-to-perform-actions/
+#
+# Linking aqua's tools and locking sheldon's plugins is NOT done here: a before
+# hook runs before aqua.yaml and plugins.toml are deployed, so on a first apply
+# there is nothing to link or lock yet. run_onchange_after_aqua.sh and
+# run_onchange_after_sheldon.sh do that. The package hooks are named 10-* so
+# they sort (and run) before this one and provide curl first.
+#
+# run_once_ is keyed by content, and this hook must exit 0 even when the install
+# fails (a non-zero `before` hook aborts the whole apply). So while aqua is
+# missing at render time, the line below embeds a timestamp: the content changes
+# on every apply and the install is retried until it succeeds.
+# aqua present: {{ $aquaPresent }}{{ if ne $aquaPresent "yes" }} (retry {{ now.Unix }}){{ end }}
 #
 # To force a re-run: chezmoi state delete-bucket --bucket=scriptState
 # and then chezmoi apply.
@@ -14,46 +26,53 @@ set -euo pipefail
 [[ -n "${CI:-}" ]] && exit 0
 [[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
 
+# This is a `before` hook: a non-zero exit aborts `chezmoi apply` before a single
+# dotfile is written, so being offline, having no curl or getting a checksum
+# mismatch must warn and continue, never abort.
 LOCAL_BIN="${HOME}/.local/bin"
-mkdir -p "${LOCAL_BIN}"
-export PATH="${LOCAL_BIN}:${PATH}"
+mkdir -p "${LOCAL_BIN}" || true
+# aqua's own bin dir too, so an aqua installed by an earlier run is found even
+# when chezmoi was started from a shell without the NREDF framework.
+AQUA_BIN="${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-${HOME}/.local/share}/aquaproj-aqua}/bin"
+export PATH="${LOCAL_BIN}:${AQUA_BIN}:${PATH}"
 
 # ── Aqua ─────────────────────────────────────────────────────────────────────
 if ! command -v aqua >/dev/null 2>&1; then
   echo "==> Installing aqua via upstream installer"
   # Official installer: https://github.com/aquaproj/aqua-installer
-  AQUA_INSTALLER_VERSION="v4.0.2"
+  AQUA_INSTALLER_VERSION="v4.0.2" # renovate: datasource=github-tags depName=aquaproj/aqua-installer
   AQUA_INSTALLER_SHA256="98b883756cdd0a6807a8c7623404bfc3bc169275ad9064dc23a6e24ad398f43d"
-  TMPDIR_AQUA="$(mktemp -d)"
-  curl -sSfL \
-    "https://raw.githubusercontent.com/aquaproj/aqua-installer/${AQUA_INSTALLER_VERSION}/aqua-installer" \
-    -o "${TMPDIR_AQUA}/aqua-installer"
-  if command -v sha256sum >/dev/null 2>&1; then
-    echo "${AQUA_INSTALLER_SHA256}  ${TMPDIR_AQUA}/aqua-installer" | sha256sum -c -
+  install_aqua() (
+    tmp="$(mktemp -d)" || exit 1
+    trap 'rm -rf "${tmp}"' EXIT
+    command -v curl >/dev/null 2>&1 || {
+      echo "==> Warning: curl not found" >&2
+      exit 1
+    }
+    curl --proto '=https' --tlsv1.2 -sSfL \
+      "https://raw.githubusercontent.com/aquaproj/aqua-installer/${AQUA_INSTALLER_VERSION}/aqua-installer" \
+      -o "${tmp}/aqua-installer" || exit 1
+    if command -v sha256sum >/dev/null 2>&1; then
+      actual="$(sha256sum "${tmp}/aqua-installer" | awk '{print $1}')" || exit 1
+    else
+      actual="$(shasum -a 256 "${tmp}/aqua-installer" | awk '{print $1}')" || exit 1
+    fi
+    if [[ "${actual}" != "${AQUA_INSTALLER_SHA256}" ]]; then
+      echo "==> Error: aqua-installer ${AQUA_INSTALLER_VERSION} checksum mismatch; refusing to run it." >&2
+      echo "    expected ${AQUA_INSTALLER_SHA256}" >&2
+      echo "    actual   ${actual}" >&2
+      exit 1
+    fi
+    chmod +x "${tmp}/aqua-installer" || exit 1
+    "${tmp}/aqua-installer" || exit 1
+  )
+  if install_aqua; then
+    echo "    aqua installed."
   else
-    echo "${AQUA_INSTALLER_SHA256}  ${TMPDIR_AQUA}/aqua-installer" | shasum -a 256 -c -
+    echo "==> Warning: aqua was not installed (offline? checksum mismatch?); continuing without it." >&2
+    echo "    This hook runs again on the next chezmoi apply while aqua is missing." >&2
   fi
-  chmod +x "${TMPDIR_AQUA}/aqua-installer"
-  "${TMPDIR_AQUA}/aqua-installer"
-  rm -rf "${TMPDIR_AQUA}"
 else
   echo "==> aqua already installed ($(aqua --version 2>/dev/null || true))"
 fi
-
-# Ensure aqua bin dir is in PATH for the rest of this script.
-AQUA_BIN="${AQUA_ROOT_DIR:-${XDG_DATA_HOME:-${HOME}/.local/share}/aquaproj-aqua}/bin"
-export PATH="${AQUA_BIN}:${PATH}"
-
-# Link tools configured in aqua (including sheldon) without forcing downloads.
-if command -v aqua >/dev/null 2>&1; then
-  echo "==> aqua install -a -l (link managed tools)"
-  aqua install -a -l >/dev/null 2>&1 || true
-fi
-
-if command -v sheldon >/dev/null 2>&1 && [[ -f "${XDG_CONFIG_HOME:-${HOME}/.config}/sheldon/plugins.toml" ]]; then
-  echo "==> updating shell plugins"
-  sheldon --color never lock --update >/dev/null 2>&1 || true
-fi
-
-echo "==> Bootstrap done."
 {{- end }}

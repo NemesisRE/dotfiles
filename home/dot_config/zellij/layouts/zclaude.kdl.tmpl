@@ -1,0 +1,76 @@
+layout {
+  default_tab_template {
+    pane size=2 borderless=true {
+      plugin location="zellij:status-bar"
+    }
+    pane size=1 borderless=true {
+      plugin location="file:{{ .chezmoi.homeDir }}/.config/zellij/plugins/zjstatus.wasm" {
+        format_left   "#[fg=#282C34,bg=#4AA5F0,bold] 󰚩 Claude #[fg=#4AA5F0,bg=#3F4451]{command_status}#[fg=#3F4451,bg=#282C34]"
+        format_right  "#[fg=#3F4451,bg=#282C34]{datetime}#[fg=#4AA5F0,bg=#3F4451]#[fg=#282C34,bg=#4AA5F0,bold] zclaude "
+        format_space  "#[bg=#282C34]"
+
+        command_status_command     "bash -c 'printf \"%s\" \"$(cat ~/.local/state/zclaude/status 2>/dev/null || echo Idle)\"'"
+        command_status_format      "#[fg=#ABB2BF,bg=#3F4451] {stdout} "
+        command_status_interval    "2"
+        command_status_rendermode  "static"
+
+        datetime          "#[fg=#ABB2BF,bg=#3F4451] {format} "
+        datetime_format   "%H:%M"
+        datetime_timezone "Europe/Berlin"
+      }
+    }
+    children
+    pane size=1 borderless=true {
+      plugin location="zellij:tab-bar"
+    }
+  }
+
+  tab name="Claude" focus=true {
+    pane name="Claude Code" focus=true
+  }
+
+  tab name="Dev" split_direction="horizontal" {
+    pane name="Editor" focus=true
+    pane split_direction="vertical" size="40%" {
+      pane name="Terminal"
+{{- if lookPath "lazygit" }}
+      pane name="Git" command="lazygit"
+{{- else }}
+      pane name="Git"
+{{- end }}
+    }
+  }
+
+{{- if lookPath "btm" }}
+
+  tab name="Monitor" {
+    pane command="btm" borderless=true
+  }
+{{- end }}
+
+  swap_tiled_layout name="vertical-split" {
+    tab max_panes=3 {
+      pane focus=true size="72%"
+      pane split_direction="horizontal" size="28%" {
+        pane
+        pane
+      }
+    }
+  }
+
+  swap_tiled_layout name="horizontal-split" {
+    tab max_panes=3 {
+      pane focus=true size="70%"
+      pane split_direction="vertical" size="30%" {
+        pane
+        pane
+      }
+    }
+  }
+
+  swap_tiled_layout name="fullscreen" {
+    tab max_panes=1 {
+      pane focus=true
+    }
+  }
+}

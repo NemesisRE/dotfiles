@@ -2,12 +2,15 @@
 #!/usr/bin/env bash
 # chezmoi run_onchange_after hook — installs mise tools when config.toml changes.
 # config.toml.tmpl hash: {{ include "dot_config/mise/config.toml.tmpl" | sha256sum }}
+# mise present at render time: {{ includeTemplate "hook-tool-present.tmpl" (dict "tool" "mise" "chezmoi" .chezmoi) }}
+# (re-runs this hook once mise appears; see .chezmoitemplates/hook-tool-present.tmpl)
 
 set -euo pipefail
 
 [[ -n "${CI:-}" ]] && exit 0
 [[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
 
+{{ template "hook-env.sh" . }}
 if command -v mise >/dev/null 2>&1; then
   echo "==> Installing mise managed tools"
   if out="$(mise install --yes 2>&1)"; then

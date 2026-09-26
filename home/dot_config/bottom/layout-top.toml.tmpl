@@ -1,0 +1,24 @@
+# Top monitor pane: CPU (70%) and Memory (30%) on top, focused Processes below
+
+[flags]
+rate = "1s"
+hide_time = false
+temperature_type = "c"
+default_widget_type = "proc"
+
+[[row]]
+  ratio = 1
+  [[row.child]]
+    type = "cpu"
+    ratio = 7
+  [[row.child]]
+    type = "mem"
+    ratio = 3
+
+[[row]]
+  ratio = 1
+  [[row.child]]
+    type = "proc"
+    default = true
+
+{{ template "bottom-styles.tmpl" . }}

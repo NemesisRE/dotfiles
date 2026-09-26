@@ -33,7 +33,7 @@ NREDF manages native prerequisite packages automatically via [`home/.chezmoidata
 | **Fedora / RHEL** | `dnf` | `git`, `curl`, `zsh`, `fira-code-fonts`, `gcc`, `gcc-c++`, `make` (for Tree-sitter), `socat` |
 | **Linuxbrew** | `brew` | Standalone Homebrew packages located at `/home/linuxbrew/.linuxbrew` |
 
-All developer CLI tools (such as `neovim`, `zellij`, `atuin`, `fzf`, `zoxide`, `lsd`, `bat`, `yazi`, `lazygit`, `lazydocker`, `lazyjournal`, `lnav`, `btop`, `uv`, `ruff`, `ouch`) are managed declaratively by **aqua** in `~/.config/aquaproj-aqua/aqua.yaml`, keeping system package manager pollution to a minimum (Python is managed standalone via `uv`, and all archive compression/decompression via `ouch`).
+All developer CLI tools (such as `neovim`, `zellij`, `atuin`, `fzf`, `zoxide`, `lsd`, `bat`, `yazi`, `lazygit`, `lazydocker`, `lazyjournal`, `lnav`, `bottom`, `uv`, `ruff`, `ouch`) are managed declaratively by **aqua** in `~/.config/aquaproj-aqua/aqua.yaml`, keeping system package manager pollution to a minimum (Python is managed standalone via `uv`, and all archive compression/decompression via `ouch`).
 
 ---
 

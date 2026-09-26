@@ -54,21 +54,49 @@ function NREDF_DailySync {
       } catch {}
     }
 
-    Write-Host "${bold}Syncing dotfiles and externals${reset}"
-    try {
-      # Run non-interactively (--no-tty) with null stdin so startup dotfile
-      # sync never hangs if a password safe (Bitwarden, KeePassXC, 1Password)
-      # requires master password authentication.
-      $syncErr = ($null | & chezmoi apply --refresh-externals --force --no-tty 2>&1 | Out-String)
-      if ($LASTEXITCODE -ne 0) {
-        if ($syncErr -match '(locked|unlock|password|session|authentication|unauthorized)') {
-          Write-Host "${yellow}ℹ chezmoi apply skipped: password safe is locked (unlock to sync dotfiles)${reset}"
-        } else {
-          Write-Warning "chezmoi apply failed: $syncErr"
-        }
+    # The scheduled task runs with -NoProfile and no terminal, so restore
+    # BW_SESSION from the keychain the way the profile does, then skip the
+    # apply up front when Bitwarden is in use but locked: its template call
+    # would otherwise fail and abort the apply half-way.
+    # Only the get-*.tmpl helpers read a vault, and only for a `bitwarden:`/`bw:`
+    # reference in these three secrets, so look at those (like the POSIX
+    # script) rather than at the [bitwarden] section, which the personal
+    # profile writes even when no secret uses it.
+    $usesBitwarden = $false
+    $chezmoiConfig = Join-Path (Join-Path ($ENV:XDG_CONFIG_HOME ?? (Join-Path $HOME '.config')) 'chezmoi') 'chezmoi.toml'
+    if (Test-Path -LiteralPath $chezmoiConfig) {
+      $usesBitwarden = [bool](Select-String -LiteralPath $chezmoiConfig -Quiet `
+          -Pattern '^\s*(aqua_github_token|git_signing_key|mcp_servers)\s*=\s*["''](bitwarden|bw):')
+    }
+    $vaultLocked = $false
+    if ($usesBitwarden -and (Get-Command bw -CommandType Application -ErrorAction SilentlyContinue)) {
+      if (Get-Command NREDF_BwRestoreSession -ErrorAction SilentlyContinue) {
+        NREDF_BwRestoreSession
       }
-    } catch {
-      Write-Warning "chezmoi apply failed: $_"
+      $bwStatus = ($null | & bw status 2>$null | Out-String)
+      if ($bwStatus -notmatch '"status":\s*"unlocked"') {
+        $vaultLocked = $true
+        Write-Host "${yellow}ℹ chezmoi apply skipped: Bitwarden vault is locked (run bwu, then reload -f)${reset}"
+      }
+    }
+
+    if (-not $vaultLocked) {
+      Write-Host "${bold}Syncing dotfiles and externals${reset}"
+      try {
+        # Run non-interactively (--no-tty) with null stdin so startup dotfile
+        # sync never hangs if a password safe (Bitwarden, KeePassXC, 1Password)
+        # requires master password authentication.
+        $syncErr = ($null | & chezmoi apply --refresh-externals --force --no-tty 2>&1 | Out-String)
+        if ($LASTEXITCODE -ne 0) {
+          if ($syncErr -match '(locked|unlock|password|session|authentication|unauthorized)') {
+            Write-Host "${yellow}ℹ chezmoi apply skipped: password safe is locked (unlock to sync dotfiles)${reset}"
+          } else {
+            Write-Warning "chezmoi apply failed: $syncErr"
+          }
+        }
+      } catch {
+        Write-Warning "chezmoi apply failed: $_"
+      }
     }
     NREDF_Step "chezmoi dotfiles sync"
   }
@@ -104,4 +132,23 @@ function NREDF_DailySync {
     } catch {}
     NREDF_Step "tldr pages sync"
   }
+
+  # ── oh-my-posh Session Cache Prune ─────────────────────────────────────────
+  # Every shell mints a new POSH_SESSION_ID, so <shell>.<id>.omp.cache files
+  # pile up forever. The shared omp.cache and init.* scripts are kept. The
+  # scheduled task runs -NoProfile, so XDG_CACHE_HOME may be unset there.
+  $ompCacheDirs = @(
+    if ($ENV:XDG_CACHE_HOME) { Join-Path $ENV:XDG_CACHE_HOME 'oh-my-posh' }
+    if ($IsWindows -and $ENV:LOCALAPPDATA) { Join-Path $ENV:LOCALAPPDATA 'oh-my-posh' }
+    Join-Path (Join-Path $HOME '.cache') 'oh-my-posh'
+  ) | Select-Object -Unique
+  $ompCutoff = (Get-Date).AddDays(-7)
+  foreach ($ompCacheDir in $ompCacheDirs) {
+    if (Test-Path -LiteralPath $ompCacheDir -PathType Container) {
+      Get-ChildItem -LiteralPath $ompCacheDir -Filter '*.omp.cache' -File -ErrorAction SilentlyContinue |
+        Where-Object { $_.Name -like '*.omp.cache' -and $_.LastWriteTime -lt $ompCutoff } |
+        Remove-Item -Force -ErrorAction SilentlyContinue
+    }
+  }
+  NREDF_Step "oh-my-posh cache prune"
 }

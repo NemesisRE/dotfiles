@@ -30,16 +30,20 @@ def --env nredf-profile-finish [] {
     if (($env.NREDF_PROFILE_STARTUP? | default "0") != "1") {
         return
     }
-    if (($env.NREDF_PROFILE_FINISHED? | default "0") == "1") {
-        return
-    }
-    $env.NREDF_PROFILE_FINISHED = "1"
-
+    # nu exports every $env var to child processes, so no "finished" flag or
+    # timer may outlive this call: a leaked flag made the next shell (e.g.
+    # after `reload`, which execs nu) skip its own total, and leaked timers
+    # would be measured against the parent's start. Hiding NREDF_T0 is also
+    # what makes a second call in the same session a no-op. The
+    # NREDF_PROFILE_FINISHED hide only clears a value inherited from a shell
+    # started before this change.
+    hide-env --ignore-errors NREDF_PROFILE_FINISHED
     if not ($env.NREDF_T0? | is-empty) {
         let now = (nredf-now-ns)
         let total_ms = (($now - $env.NREDF_T0) / 1_000_000)
         print --stderr $"\e[1;36m  [+(($total_ms | into int) | fill --alignment right --character ' ' --width 4)ms] Total shell startup time\e[0m"
     }
+    hide-env --ignore-errors NREDF_T0 NREDF_T_LAST
 
     if (($env.NREDF_PROFILE_STARTUP_ONESHOT? | default "0") == "1") {
         hide-env NREDF_PROFILE_STARTUP

@@ -119,11 +119,14 @@ if ($isWindows) {
 
 
 if ($isLinux -or $IsMacOS) {
-  $ENV:XDG_BIN_HOME = "$HOME/.local/bin"
-  $ENV:XDG_CONFIG_HOME = "$HOME/.config"
-  $ENV:XDG_CACHE_HOME = "$HOME/.cache"
-  $ENV:XDG_DATA_HOME = "$HOME/.local/share"
-  $ENV:XDG_STATE_HOME = "$HOME/.local/state"
+  # Respect a value already preset (e.g. by the user's environment or a parent shell),
+  # same as bash/zsh/fish/nu's `"${VAR:-default}"` pattern for these — see
+  # _nredf_init_paths in nredf_init_paths.bash.tmpl.
+  if (-not $ENV:XDG_BIN_HOME) { $ENV:XDG_BIN_HOME = "$HOME/.local/bin" }
+  if (-not $ENV:XDG_CONFIG_HOME) { $ENV:XDG_CONFIG_HOME = "$HOME/.config" }
+  if (-not $ENV:XDG_CACHE_HOME) { $ENV:XDG_CACHE_HOME = "$HOME/.cache" }
+  if (-not $ENV:XDG_DATA_HOME) { $ENV:XDG_DATA_HOME = "$HOME/.local/share" }
+  if (-not $ENV:XDG_STATE_HOME) { $ENV:XDG_STATE_HOME = "$HOME/.local/state" }
   $ENV:NREDF_CACHE = "$ENV:XDG_CACHE_HOME/nredf"
   $ENV:NREDF_LRCACHE = "$ENV:NREDF_CACHE/LRCache"
   $ENV:NREDF_INITCACHE = "$ENV:NREDF_CACHE/init"
@@ -140,18 +143,6 @@ if ($isLinux -or $IsMacOS) {
     }
   }
 
-  if ($isLinux) {
-    $ENV:POSH_THEMES_PATH = "$ENV:XDG_CACHE_HOME/oh-my-posh/themes"
-  }
-  if ($IsMacOS) {
-    if (Test-Path "/opt/homebrew/opt/oh-my-posh/themes") {
-      $ENV:POSH_THEMES_PATH = "/opt/homebrew/opt/oh-my-posh/themes"
-    } elseif (Test-Path "/usr/local/opt/oh-my-posh/themes") {
-      $ENV:POSH_THEMES_PATH = "/usr/local/opt/oh-my-posh/themes"
-    } else {
-      $ENV:POSH_THEMES_PATH = "$ENV:XDG_CACHE_HOME/oh-my-posh/themes"
-    }
-  }
 }
 
 # Aqua environment configuration (cross-platform)
@@ -211,6 +202,15 @@ if (Get-Command nvim -ErrorAction SilentlyContinue) {
 # Bat defaults (cross-platform)
 $ENV:BAT_THEME = "OneDarkPro"
 
+# Render man pages through bat (bat's documented recipe). MANROFFOPT=-c makes groff
+# emit the overstrike output `col -bx` expects. A MANPAGER set by the user or
+# inherited from a parent shell wins. Parity with bash/zsh/fish/nu (see rc.tmpl /
+# config.nu.tmpl); harmless where `man`/`col` do not exist (native Windows).
+if ([string]::IsNullOrEmpty($ENV:MANPAGER) -and (Get-Command bat -ErrorAction SilentlyContinue)) {
+  $ENV:MANPAGER = "sh -c 'col -bx | bat -l man -p'"
+  $ENV:MANROFFOPT = "-c"
+}
+
 # FZF defaults (cross-platform)
 $ENV:FZF_DEFAULT_OPTS = "--bind tab:down --bind btab:up --cycle --ansi --color=dark,bg+:#2c313c,bg:#282c34,gutter:#282c34,spinner:#e5c07b,hl:#e06c75,fg:#abb2bf,header:#61afef,info:#56b6c2,pointer:#c678dd,marker:#98c379,fg+:#abb2bf,prompt:#61afef,hl+:#98c379,border:#4f5666"
 if (Get-Command bat -ErrorAction SilentlyContinue) {
@@ -226,6 +226,12 @@ if ($isWindows) {
   $ENV:LESSHISTFILE = Join-Path $ENV:LOCALAPPDATA 'less\history'
 } elseif ($ENV:XDG_STATE_HOME) {
   $ENV:LESSHISTFILE = Join-Path $ENV:XDG_STATE_HOME 'less/history'
+}
+
+# Let carapace fall back to other shells' completions for commands it has no spec
+# for. A user-set value wins. Parity with bash/zsh/fish/nu.
+if ([string]::IsNullOrEmpty($ENV:CARAPACE_BRIDGES)) {
+  $ENV:CARAPACE_BRIDGES = "zsh,fish,bash"
 }
 
 # Tool config paths (cross-platform)

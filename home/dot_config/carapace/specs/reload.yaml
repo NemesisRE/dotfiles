@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+# reload (bash/zsh/fish; shell/*/functions/nredf_reload_shell.*). Nu's
+# `reload` is a `def` and PowerShell's has an ArgumentCompleter, so both
+# complete from their own signatures instead.
+name: reload
+description: Reload the shell, optionally clearing NREDF caches first
+flags:
+  -c, --cache: delete the last-run cache and cached init snippets
+  -d, --downloads: delete aqua pkgs (archives + binaries, keeps bin/ symlinks)
+  -f, --full: full refresh, clear caches and run nredf-daily-sync
+  -l, --last-run: delete only the last-run cache
+  -p, --profile: toggle startup profiling (one-shot with other options)
+  -s, --shell=: reload with a different shell
+  -h, --help: show help
+completion:
+  flag:
+    shell:
+      - "bash\tBourne Again SHell"
+      - "zsh\tZ shell"
+      - "fish\tfriendly interactive shell"
+      - "nu\tNushell"
+      - "pwsh\tPowerShell"

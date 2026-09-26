@@ -17,10 +17,11 @@ All core CLI tools are declared centrally in [`home/dot_config/aquaproj-aqua/aqu
 | **File Management** | `yazi` (`yy`) | Fast async terminal file manager with custom plugins |
 | **Git UI** | `lazygit` (`lzg` / `lg`) | Interactive terminal Git management |
 | **Containers & Logs** | `lazydocker` (`lzd`), `lazyjournal` (`lzj` / `lj`), `lnav` | Terminal UIs for Docker management, log aggregation, and SQL log analysis |
-| **System Monitoring** | `btop` | Real-time interactive system resource & process monitor |
+| **System Monitoring** | `bottom` (`btm`) | Real-time interactive system resource & process monitor |
 | **Kubernetes** | `kubectl`, `kubectx`, `kubens`, `k9s`, `helm`, `stern` | Container orchestration, context switching, and TUI |
 | **Network & Transfers** | `curl`, `wget` | Hardened, XDG-compliant network transfer clients |
-| **Developer Ecosystem** | `gh`, `uv`, `ruff`, `mise` | GitHub CLI, Python toolchain, and runtime manager |
+| **Developer Ecosystem** | `gh`, `uv`, `ruff`, `mise`, `tealdeer` (`tldr`) | GitHub CLI, Python toolchain, runtime manager, and community-maintained man-page summaries |
+| **Repo Fleet Dashboard** | `drydock` | What's uncommitted, unpushed, and unreleased across every repo under `roots` |
 
 ---
 
@@ -34,7 +35,7 @@ Zellij uses a modal interface where a shortcut switches you into a specific mode
 
 ```text
 Normal Mode ──┬──► Ctrl + p : Pane Mode (split, focus, float, fullscreen)
-              ├──► Ctrl + t : Tab Mode (new tab, close tab, rename, sync)
+              ├──► Alt  + t : Tab Mode (new tab, close tab, rename, sync)
               ├──► Ctrl + n : Resize Mode (increase/decrease dimensions)
               ├──► Ctrl + s : Scroll & Search Mode (search buffer, edit scrollback)
               ├──► Ctrl + o : Session Mode (detach, manage sessions)
@@ -62,7 +63,9 @@ Enter pane mode, then press:
 - <kbd>h</kbd> / <kbd>j</kbd> / <kbd>k</kbd> / <kbd>l</kbd> (or Arrows): Move focus Left / Down / Up / Right
 - <kbd>Esc</kbd> or <kbd>Enter</kbd>: Return to Normal mode
 
-#### 2. Tab Mode (<kbd>Ctrl</kbd> + <kbd>t</kbd>)
+#### 2. Tab Mode (<kbd>Alt</kbd> + <kbd>t</kbd>)
+
+> Rebound from zellij's default <kbd>Ctrl</kbd> + <kbd>t</kbd>, which clashes with fzf's Ctrl-T file-search widget in every shell here. <kbd>Ctrl</kbd> + <kbd>p</kbd>/<kbd>n</kbd>/<kbd>s</kbd>/<kbd>h</kbd>/<kbd>b</kbd>/<kbd>q</kbd> (Pane/Resize/Scroll/Move/Tmux mode, Quit) also collide with Neovim and readline defaults; those are left as-is since <kbd>Ctrl</kbd> + <kbd>g</kbd> (Locked Mode) passes keys straight through to the inner app when that matters.
 
 Enter tab mode, then press:
 
@@ -107,6 +110,19 @@ Press <kbd>Ctrl</kbd> + <kbd>g</kbd> to lock Zellij. All keystrokes pass directl
 - **WSL Sessions**: On Windows Subsystem for Linux (WSL), automatic multiplexer attachment is **disabled by default** so terminal tabs behave as independent native shells. You can opt in by:
   - Running `chezmoi init --prompt && chezmoi apply` and enabling the WSL multiplexer prompt (or setting `wsl_multiplexer = true` under `[data.shell]` in `~/.config/chezmoi/chezmoi.toml`).
   - Exporting `export NREDF_SHELL_WSL_MULTIPLEXER=true` in `~/.config/bash/rc` or `~/.config/zsh/rc`.
+
+---
+
+## 💲 Prompt: Oh-My-Posh
+
+All five shells render the same theme, [`home/dot_config/oh-my-posh/config.json`](../home/dot_config/oh-my-posh/config.json). Every segment below appears only when it has something to say:
+
+- **Left, line one**: OS icon, a red root indicator, `user@host` (only over SSH), the shell, the path, and git. The git segment shows `*` stashes, `~` conflicts, `+` staged, `!` unstaged, `✘` deleted and `?` untracked files. Submodule worktrees are not scanned (`ignore_submodules: dirty`), which keeps large repositories fast.
+- **Right, line one**: exit status, the duration of commands that ran longer than 3s, versions of Node, Go, Python and Rust in matching projects, the Terraform workspace, the Helm version inside a chart or helmfile directory, the Docker context when it points somewhere other than a local daemon, and the time.
+- **Line two**: the Kubernetes context and namespace, always visible so that you can see which cluster you are working against.
+- **Tooltips** (zsh, fish and PowerShell only): while you type `git`, `lg`, `lzg` or `lazygit`, the right prompt shows the upstream branch and the last commit.
+
+Shells cache their oh-my-posh init script for 24 hours, and tooltip, transient and secondary prompt settings are part of that script. After changing those settings, run `reload -c` so the script is regenerated.
 
 ---
 
@@ -275,6 +291,17 @@ Configured with the **OneDark-Pro** color scheme and integrates with `delta` for
 
 ---
 
+## 🔧 Git & SSH Configuration
+
+Git reads [`home/dot_config/git/config.tmpl`](../home/dot_config/git/config.tmpl) from `~/.config/git/config`. It sets `delta` as the pager, `zdiff3` conflicts, histogram diffs, `rerere`, `fetch.prune`, `push.autoSetupRemote`, rebase-on-pull and a set of short aliases (`git st`, `git lg`, `git gone`, ...).
+
+- **Local overrides**: chezmoi rewrites `~/.config/git/config` on every apply, so a `git config --global` edit does not last. Put machine-local settings in `~/.config/git/config.local` (for example `git config --file ~/.config/git/config.local user.email work@example.com`). It is included last, so it overrides everything, and git skips it if it does not exist.
+- **Commit & tag signing**: with a signing key configured (see the [Secrets Guide](secrets.md)), commits are signed. Tags are signed only on request (`git tag -s`), so a scripted `git tag <name>` still makes a lightweight tag instead of opening an editor. For `gpg.format = ssh`, `~/.config/git/allowed_signers` is rendered from your email and public key so `git log --show-signature` and `git verify-commit` can verify your own signatures.
+- **Global ignore**: [`~/.config/git/ignore`](../home/dot_config/git/ignore) ignores OS and editor junk (`.DS_Store`, `Thumbs.db`, `*.swp`, `.idea/`, `.direnv/`, ...) in every repository.
+- **SSH**: [`~/.ssh/config`](../home/private_dot_ssh/private_config.tmpl) loads `~/.ssh/config.d/*` first, then `~/.ssh/config.override` (created once, never overwritten), then the `Host *` defaults (agent, keep-alive, connection multiplexing). OpenSSH uses the first value it finds for each option, so the earlier files win.
+
+---
+
 ## 🐳 Container Management: lazydocker (`lzd`)
 
 [lazydocker](https://github.com/jesseduffield/lazydocker) is an interactive terminal UI for both Docker and Docker Compose environments, aliased to `lzd`:
@@ -330,16 +357,17 @@ Configured with the **OneDark-Pro** color scheme and integrates with `delta` for
 
 ---
 
-## 📊 System Resource Monitoring: btop
+## 📊 System Resource Monitoring: bottom (btm)
 
-[btop](https://github.com/aristocratos/btop) is an interactive real-time system monitor displaying CPU cores, memory, disk I/O, network bandwidth, and a process tree:
+[bottom](https://github.com/ClementTsang/bottom) is an interactive, cross-platform graphical system and process monitor displaying CPU cores, memory, disk I/O, network bandwidth, and a process tree themed with **OneDark-Pro**:
 
-- <kbd>m</kbd>: Open main menu / settings
-- <kbd>e</kbd>: Toggle process tree view
-- <kbd>f</kbd>: Filter processes by name
-- <kbd>k</kbd>: Send terminate/kill signal to selected process
-- <kbd>1</kbd> &ndash; <kbd>4</kbd>: Change sort criteria
-- <kbd>q</kbd>: Quit
+- <kbd>?</kbd>: Open help / keybindings
+- <kbd>Tab</kbd>: Cycle through active widgets
+- <kbd>/</kbd>: Search and filter processes
+- <kbd>t</kbd>: Toggle process tree view
+- <kbd>d</kbd> / <kbd>k</kbd>: Send terminate/kill signal to selected process
+- <kbd>s</kbd>: Change process sort criteria
+- <kbd>q</kbd> / <kbd>Ctrl</kbd> + <kbd>c</kbd>: Quit
 
 ---
 
@@ -413,7 +441,7 @@ Configured in [`home/dot_config/k9s/`](../home/dot_config/k9s/):
 
 ### `gh` (GitHub CLI)
 
-Configured via `$GH_CONFIG_DIR` pointing to [`home/dot_config/gh/config.yml.tmpl`](../home/dot_config/gh/config.yml.tmpl):
+Configured via `$GH_CONFIG_DIR` pointing to [`home/dot_config/private_gh/config.yml.tmpl`](../home/dot_config/private_gh/config.yml.tmpl):
 
 - Configured to use SSH Git protocol, Neovim (`editor: nvim`), and `delta` as the default diff pager.
 
@@ -424,7 +452,15 @@ Configured via `$GH_CONFIG_DIR` pointing to [`home/dot_config/gh/config.yml.tmpl
 
 ### `mise`
 
-Configured in [`home/dot_config/mise/config.toml.tmpl`](../home/dot_config/mise/config.toml.tmpl) to automatically detect legacy version files (`.nvmrc`, `.python-version`, etc.) and auto-install missing tool runtimes. Also manages default global runtimes and tools (such as Node.js, Microsoft's `apm`, and Microsoft's `inshellisense` / `is` on-demand autocomplete).
+Configured in [`home/dot_config/mise/config.toml.tmpl`](../home/dot_config/mise/config.toml.tmpl) to read idiomatic version files (`.nvmrc` for `node`, `.python-version` for `python`) and auto-install missing tool runtimes. Also manages default global runtimes and tools (such as Node.js, Microsoft's `apm`, and Microsoft's `inshellisense` / `is` on-demand autocomplete).
+
+### `tealdeer` (`tldr`)
+
+Configured in [`home/dot_config/tealdeer/config.toml`](../home/dot_config/tealdeer/config.toml): auto-updates its community-maintained page cache weekly in the background (`auto_update_interval_hours = 168`) so `tldr <command>` works without a manual `tldr --update` on a fresh machine, and prints pages straight to the terminal instead of a pager.
+
+### `drydock`
+
+Configured in [`home/dot_config/drydock/config.toml.tmpl`](../home/dot_config/drydock/config.toml.tmpl): scans the repos under `~/Projects` (from `dev.projects`) for uncommitted, unpushed, or unreleased work. Its `editor_command` / `git_client_command` / `terminal_command` open a detached **kitty** window (`open -na kitty --args ...` on macOS, `kitty --detach ...` on Linux) running `$EDITOR`/`lazygit`/an interactive shell respectively; `file_manager_command` uses `open` (macOS) or `xdg-open` (Linux).
 
 ---
 
@@ -448,6 +484,26 @@ Each data file has up to three sections:
 Everything else in the file (allow rules, hooks, model, ...) is left alone. Invalid JSON aborts the apply instead of being overwritten.
 
 What Claude Code gets by default: background auto-update off (aqua owns the version; `claude update` still works), no survey or spinner tips, and deny rules for secrets. The deny rules cover `.env` files, `~/.ssh`, the vault-fed `~/.config/nredf/mcp.json`, and `bw get`/`list`/`export`/`unlock`, since `BW_SESSION` is present in every child process. To drop a deny rule, remove it from `claude.yaml` **and** from `~/.claude/settings.json`.
+
+### `zclaude`: Persistent Claude Supervisor with Keep-Alive & Auto-Retry
+
+`zclaude` is a cross-platform supervisor for Claude Code that integrates natively with Zellij, keeping sessions active across system idle sleep and automatically resuming long-running tasks when rate limits reset:
+
+- **Multiplexer Integration**: Uses Zellij's native CLI (`dump-screen`, `write-chars`, `send-keys`) instead of `tmux`, working identically on Linux, macOS, and Windows.
+- **Dedicated AI Layout (`zclaude`)**: Features a 72% primary Claude pane flanked by a command terminal and suspended `lazygit`, secondary tabs for code editing and `bottom` monitoring, and dynamic swap layouts.
+- **System Keep-Alive**: Prevents system and idle sleep while Claude is active and while waiting out limits (`caffeinate` on macOS, Win32 `SetThreadExecutionState` on Windows, and `systemd-inhibit` on Linux).
+- **Auto-Resumption**: Accurately parses limit reset times (e.g. `resets 3:15 PM` or relative duration) from viewport dumps and transcripts, safely dismisses any interactive `/rate-limit-options` dialog with `Esc`, and injects `continue` once the reset time (+ safety margin) arrives. Handles transient 529/503 overloads with progressive backoff.
+- **Claude CLI Option Parity**: Forwards common Claude Code flags seamlessly:
+  - `-r, --resume [ID]`: Resume an existing session or open the interactive picker.
+  - `-c, --continue`: Continue the latest session in the directory.
+  - `-p, --print`: Run non-interactively and stream response.
+  - `-m, --model <MODEL>`: Switch model (`sonnet`, `opus`, `haiku`).
+  - `--dangerously-skip-permissions`: Bypass permission prompts for unattended execution.
+  - `--effort <low|medium|high|max>`: Control reasoning effort depth.
+  - `-w, --worktree [NAME]`: Branch off into an isolated git worktree.
+- **Dual Execution Modes**:
+  - **Integrated run**: `zclaude [args...]` wraps Claude directly in the current Zellij pane (or starts a Zellij session if run outside).
+  - **Watcher mode**: `zclaude -W/--watch [pane_id]` monitors an existing Claude pane in Zellij as a sidecar or companion pane.
 
 ---
 

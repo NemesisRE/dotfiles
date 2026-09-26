@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+# nredf-daily-sync (home/dot_local/bin/executable_nredf-daily-sync.tmpl).
+name: nredf-daily-sync
+description: Run the NREDF daily maintenance (packages, aqua, chezmoi)
+flags:
+  -v, --verbose: also show the log output on the terminal

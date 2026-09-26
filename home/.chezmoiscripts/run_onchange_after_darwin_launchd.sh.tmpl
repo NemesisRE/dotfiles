@@ -1,17 +1,38 @@
 {{- if eq .chezmoi.os "darwin" -}}
 #!/usr/bin/env bash
 # chezmoi run_onchange_after — reloads launchd agents on macOS when plists change.
-# com.nredf.daily-sync.plist hash: {{ include "private_Library/private_LaunchAgents/com.nredf.daily-sync.plist.tmpl" | sha256sum }}
+# com.nredf.daily-sync.plist hash: {{ includeTemplate "private_Library/private_LaunchAgents/com.nredf.daily-sync.plist.tmpl" . | sha256sum }}
 
 set -euo pipefail
 
 [[ -n "${CI:-}" ]] && exit 0
 [[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
 
-AGENT_PLIST="${HOME}/Library/LaunchAgents/com.nredf.daily-sync.plist"
+AGENT_LABEL="com.nredf.daily-sync"
+AGENT_PLIST="${HOME}/Library/LaunchAgents/${AGENT_LABEL}.plist"
+DOMAIN="gui/$(id -u)"
 
-if [[ -f "${AGENT_PLIST}" ]]; then
-  launchctl unload "${AGENT_PLIST}" 2>/dev/null || true
-  launchctl load -w "${AGENT_PLIST}" 2>/dev/null || true
+[[ -f "${AGENT_PLIST}" ]] || exit 0
+
+# `launchctl load/unload` are deprecated; bootout + bootstrap is the supported
+# pair. bootout fails when the agent is not loaded yet, which is fine. `enable`
+# clears a "disabled" override, as `load -w` used to.
+launchctl bootout "${DOMAIN}/${AGENT_LABEL}" >/dev/null 2>&1 || true
+launchctl enable "${DOMAIN}/${AGENT_LABEL}" >/dev/null 2>&1 || true
+# bootstrap can briefly fail with an I/O error while the bootout is still being
+# processed, so retry a few times before giving up.
+loaded=0
+for _ in 1 2 3; do
+  if launchctl bootstrap "${DOMAIN}" "${AGENT_PLIST}" >/dev/null 2>&1; then
+    loaded=1
+    break
+  fi
+  sleep 1
+done
+if (( loaded )); then
+  echo "==> Loaded launchd agent ${AGENT_LABEL}"
+else
+  echo "==> Warning: could not load launchd agent ${AGENT_LABEL} (no GUI session, e.g. over ssh?)." >&2
+  echo "    Load it later with: launchctl bootstrap ${DOMAIN} ${AGENT_PLIST}" >&2
 fi
 {{- end }}

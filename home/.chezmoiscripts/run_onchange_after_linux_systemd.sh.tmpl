@@ -1,7 +1,7 @@
 {{- if eq .chezmoi.os "linux" -}}
 #!/usr/bin/env bash
 # chezmoi run_onchange_after — reloads and enables user systemd timers on Linux.
-# nredf-daily-sync.service hash: {{ include "dot_config/systemd/user/nredf-daily-sync.service.tmpl" | sha256sum }}
+# nredf-daily-sync.service hash: {{ includeTemplate "dot_config/systemd/user/nredf-daily-sync.service.tmpl" . | sha256sum }}
 # nredf-daily-sync.timer hash: {{ include "dot_config/systemd/user/nredf-daily-sync.timer" | sha256sum }}
 
 set -euo pipefail
@@ -10,8 +10,12 @@ set -euo pipefail
 [[ -n "${NREDF_NO_BOOTSTRAP:-}" ]] && exit 0
 
 # Check if systemd user manager is active
-if systemctl --user is-system-running >/dev/null 2>&1 || [[ -d /run/user/$(id -u)/systemd ]]; then
+if systemctl --user is-system-running >/dev/null 2>&1 || [[ -d "/run/user/$(id -u)/systemd" ]]; then
   systemctl --user daemon-reload || true
-  systemctl --user enable --now nredf-daily-sync.timer || true
+  if systemctl --user enable --now nredf-daily-sync.timer; then
+    echo "==> Enabled nredf-daily-sync.timer"
+  else
+    echo "==> Warning: could not enable nredf-daily-sync.timer" >&2
+  fi
 fi
 {{- end }}

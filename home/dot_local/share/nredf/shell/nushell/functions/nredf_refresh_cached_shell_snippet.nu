@@ -14,7 +14,9 @@
 
 def nredf-cache-refresh [key: string, file: string, generator: closure] {
     mut needs_refresh = true
-    if ($file | path exists) and ((open $file | into string | str length) > 0) {
+    # Stat the file rather than reading it: only "is it non-empty" matters,
+    # and some tool-init caches are large.
+    if ($file | path exists) and ((ls $file | get 0.size) > 0b) {
         if (nredf-last-run $key) {
             $needs_refresh = false
         }

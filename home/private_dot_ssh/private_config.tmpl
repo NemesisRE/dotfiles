@@ -29,6 +29,11 @@ Host *
   # Agent & Socket Management
   AddKeysToAgent yes
 {{- if eq .chezmoi.os "darwin" }}
+  # UseKeychain is Apple-only; non-Apple OpenSSH builds (Homebrew, aqua) reject
+  # it as a "Bad configuration option" unless told to skip it. IgnoreUnknown is
+  # first-match-wins: if you set it in config.d/ or config.override, list
+  # UseKeychain there too.
+  IgnoreUnknown UseKeychain
   UseKeychain yes
 {{- end }}
   StreamLocalBindUnlink yes

@@ -1,0 +1,9 @@
+# CI-only fixture data. kitty.quake_key "none" and git.format "openpgp" are
+# each mutually exclusive with their own default ("F12" / "ssh"), but not with
+# each other, so they share one fixture instead of a file apiece. Not used
+# outside CI.
+kitty:
+  quake_key: "none"
+
+git:
+  format: "openpgp"

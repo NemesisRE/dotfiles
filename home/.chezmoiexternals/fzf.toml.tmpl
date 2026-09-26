@@ -1,16 +1,20 @@
-{{- $fzfVersion := "" }}
+{{- /* Deployed only when aqua installs fzf. The archive's version and SHA-256 are
+       pinned in .chezmoidata/fzf.yaml, which `.github/scripts/pins.py` keeps equal
+       to aqua.yaml's junegunn/fzf version. A fixed tag needs no refreshPeriod:
+       chezmoi downloads again whenever the URL changes. */ -}}
+{{- $fzfInAqua := false }}
 {{- $aqua := include "dot_config/aquaproj-aqua/aqua.yaml" | fromYaml }}
 {{- range $aqua.packages }}
 {{-   if hasPrefix "junegunn/fzf@" .name }}
-{{-     $fzfVersion = trimPrefix "junegunn/fzf@" .name }}
+{{-     $fzfInAqua = true }}
 {{-   end }}
 {{- end }}
-{{- if $fzfVersion }}
+{{- if $fzfInAqua }}
 [".config/fzf"]
 type = "archive"
-url = "{{ printf "https://github.com/junegunn/fzf/archive/refs/tags/%s.tar.gz" $fzfVersion }}"
+url = "{{ printf "https://github.com/junegunn/fzf/archive/refs/tags/%s.tar.gz" .fzf.version }}"
+checksum.sha256 = "{{ .fzf.sha256 }}"
 exact = false
 stripComponents = 2
 include = ["*/shell/**"]
-refreshPeriod = "168h"
 {{- end }}

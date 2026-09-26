@@ -19,6 +19,15 @@ if (-not (Test-Path $mcpPath)) {
     exit 0
 }
 
+# -AsHashtable, not the default PSCustomObject: ~/.claude.json is written by Claude
+# Code and may contain keys that differ only in case (project paths on a
+# case-insensitive filesystem). ConvertFrom-Json's default PSCustomObject conversion
+# throws outright on those ("... contains keys with different casing. Use the
+# -AsHashTable switch instead."); -AsHashtable is what it tells you to use, and
+# verified here to keep "a" and "A" as distinct keys (System.Management.Automation.
+# OrderedHashtable, not the case-insensitive comparer a plain @{} gets). If a future
+# PowerShell version makes -AsHashtable throw here too, the catch below still leaves
+# the file untouched rather than risk writing a bad merge.
 try {
     $servers = (Get-Content $mcpPath -Raw | ConvertFrom-Json -AsHashtable).mcpServers
 
@@ -29,34 +38,75 @@ try {
         exit 0
     }
 
-    $data = @{}
+    $data = [ordered]@{}
     if (Test-Path $claudePath) {
         try {
             $data = Get-Content $claudePath -Raw | ConvertFrom-Json -AsHashtable
         } catch {
-            Write-Warning "Could not parse $claudePath; refusing to overwrite it."
+            Write-Warning "Could not parse ${claudePath}; refusing to overwrite it: $_"
+            exit 0
+        }
+        # An empty file parses to $null; anything else that is not a JSON object is
+        # not something this script understands, so leave it alone.
+        if ($null -eq $data) {
+            $data = [ordered]@{}
+        } elseif ($data -isnot [System.Collections.IDictionary]) {
+            Write-Warning "$claudePath is not a JSON object; refusing to overwrite it."
             exit 0
         }
     }
-    if ($data -isnot [hashtable]) { $data = @{} }
 
     $existing = $data["mcpServers"]
-    if ($existing -isnot [hashtable]) { $existing = @{} }
+    if ($existing -isnot [System.Collections.IDictionary]) { $existing = [ordered]@{} }
 
     # Merge rather than replace, so servers added outside chezmoi survive. The vault
     # wins on name conflicts; removing a server from the vault does not remove it
     # here, which is the deliberate trade for never destroying local state.
-    $merged = @{}
+    # Case-insensitive, matching the plain @{} this used before: a server name
+    # differing from an existing one only in case is treated as the same server
+    # (overwritten), not duplicated as a second entry. Ordered, so a re-run without
+    # any real change reproduces the same file byte for byte.
+    $merged = [System.Collections.Specialized.OrderedDictionary]::new([System.StringComparer]::OrdinalIgnoreCase)
     foreach ($k in $existing.Keys) { $merged[$k] = $existing[$k] }
     foreach ($k in $servers.Keys) { $merged[$k] = $servers[$k] }
-    $data["mcpServers"] = $merged
+
+    # Sort by key before comparing or writing. $existing/$servers are Hashtables
+    # (ConvertFrom-Json -AsHashtable), whose enumeration order is not guaranteed to
+    # match JSON document order between calls; comparing them unsorted could see a
+    # pure reordering as a change and rewrite the file for nothing. Sorting also
+    # makes the written file's server order deterministic across runs, for a
+    # cleaner diff when someone looks at it.
+    function NREDF_SortedDict {
+        param([System.Collections.IDictionary]$Dict)
+        $sorted = [ordered]@{}
+        foreach ($k in ($Dict.Keys | Sort-Object -Culture 'invariant')) { $sorted[$k] = $Dict[$k] }
+        return $sorted
+    }
+    $existingSorted = NREDF_SortedDict $existing
+    $mergedSorted = NREDF_SortedDict $merged
+
+    # Nothing to do when the vault adds or changes no server: skip the rewrite,
+    # which would otherwise race Claude Code's own writes to the file for nothing.
+    $before = ConvertTo-Json -InputObject $existingSorted -Depth 100 -Compress -WarningAction Stop
+    $after = ConvertTo-Json -InputObject $mergedSorted -Depth 100 -Compress -WarningAction Stop
+    if ($before -ceq $after) {
+        exit 0
+    }
+    $data["mcpServers"] = $mergedSorted
 
     # Temp file + atomic replace: ~/.claude.json also holds project and session
     # state, and an interrupt during an in-place rewrite would lose all of it.
+    # -Depth 100 is ConvertTo-Json's maximum (the old 10 flattened deeper project
+    # state to strings); -WarningAction Stop turns its "truncated" warning into an
+    # error, so a still-deeper file is left alone instead of being truncated.
+    $json = ConvertTo-Json -InputObject $data -Depth 100 -WarningAction Stop
     $tmpPath = "$claudePath.tmp"
-    ($data | ConvertTo-Json -Depth 10) + "`n" | Set-Content $tmpPath -NoNewline -Encoding utf8
-    Move-Item -Path $tmpPath -Destination $claudePath -Force
+    $json + "`n" | Set-Content $tmpPath -NoNewline -Encoding utf8 -ErrorAction Stop
+    Move-Item -Path $tmpPath -Destination $claudePath -Force -ErrorAction Stop
+    Write-Host "==> Synced MCP servers into $claudePath"
 } catch {
-    Write-Warning "Failed to sync MCP configuration to .claude.json: $_"
+    Write-Warning "Failed to sync MCP configuration to .claude.json; left it unchanged: $_"
+    Remove-Item -Path "$claudePath.tmp" -Force -ErrorAction SilentlyContinue
 }
+exit 0
 {{- end }}
