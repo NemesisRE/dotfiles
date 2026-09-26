@@ -306,7 +306,6 @@ LIMIT_PATTERNS = [
         r"\brate_limit_error\b",
         r"\bhttp 429\b|\bstatus[: ]+429\b|\b429 too many requests\b",
         r"stop and wait for limit to reset",
-        r"resets?\s*(?:in|at|tomorrow|\d)",
         r"nutzungslimit erreicht",
         r"limite d'utilisation atteinte",
         r"límite de uso alcanzado",
@@ -444,6 +443,10 @@ IGNORE_PATTERNS = [
         r"not your usage limit",
         r"temporarily limiting requests",
         r"approaching (?:your )?.{0,16}limit",
+        r"you are currently using your subscription",
+        r"what's contributing to your limits usage\?",
+        r"current session:\s*\d+%\s*used",
+        r"current week[^:]*:\s*\d+%\s*used",
     ]
 ]
 
@@ -593,6 +596,9 @@ def is_rate_limited(text: str) -> bool:
             return False
     if has_rate_limit_menu(tail):
         return True
+    # If Claude is waiting at the prompt and no rate-limit menu is open, it is not rate-limited
+    if is_at_prompt(text):
+        return False
     for pat in LIMIT_PATTERNS:
         if pat.search(tail):
             return True
@@ -684,6 +690,28 @@ def parse_reset_time(text: str, now: datetime.datetime | None = None) -> datetim
             if target < now - datetime.timedelta(minutes=30):
                 days_ahead = 7
         target = (now + datetime.timedelta(days=days_ahead)).replace(hour=hr, minute=mn, second=0, microsecond=0)
+        return target
+
+    # 2c. Month and day: 'resets Sep 26 at 6:10am' / 'resets on Oct 2 at 7am'
+    m = re.search(
+        r"resets?[\s:]*(?:on\s+)?(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+(\d{1,2})(?:st|nd|rd|th)?(?:[\s,]*(?:at\s+)?)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?",
+        cleaned,
+    )
+    if m:
+        months = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
+        mon_idx = months.index(m.group(1)[:3].lower()) + 1
+        day = int(m.group(2))
+        hr = int(m.group(3))
+        mn = int(m.group(4)) if m.group(4) else 0
+        ampm = m.group(5).lower() if m.group(5) else None
+        if ampm == "pm" and hr < 12:
+            hr += 12
+        elif ampm == "am" and hr == 12:
+            hr = 0
+        year = now.year
+        target = datetime.datetime(year, mon_idx, day, hr, mn, 0, 0)
+        if target < now - datetime.timedelta(days=30):
+            target = datetime.datetime(year + 1, mon_idx, day, hr, mn, 0, 0)
         return target
 
     # 3. 12-hour: 'resets at 3:15 pm' / 'resets 3pm' / 'resets: 11:30am' / 'resets 4:00 pm'
@@ -941,6 +969,8 @@ class Supervisor(threading.Thread):
             if tag.startswith("wait:"):
                 rem = tag.replace("wait:", "").strip()
                 display_msg = f"Rate limit active · Resets at {rem}"
+            elif tag == "working":
+                display_msg = "Working..."
             elif tag == "sessions":
                 display_msg = "Session overview active"
             elif tag == "needs approval":
@@ -1085,10 +1115,21 @@ class Supervisor(threading.Thread):
                                 self._notify("Switched to session overview; pausing countdown.", pane_status="claude [sessions]")
                                 break
 
-                            # Early exit if user resumed and rate limit cleared
-                            if not is_rate_limited(fresh_screen) and is_working(fresh_screen):
+                            # Early exit if Claude resumed working
+                            if is_working(fresh_screen):
                                 interrupted_reason = "working"
-                                self._notify("Claude resumed; resuming monitor.", pane_status="claude")
+                                self._notify("Claude resumed; resuming monitor.", pane_status="claude [working]")
+                                break
+
+                            # Early exit if user returned to prompt or rate limit cleared
+                            if is_at_prompt(fresh_screen) and not is_rate_limited(fresh_screen):
+                                interrupted_reason = "prompt"
+                                self._notify("Ready at prompt.", pane_status="claude")
+                                break
+
+                            if not is_rate_limited(fresh_screen) and not has_rate_limit_menu(fresh_screen):
+                                interrupted_reason = "cleared"
+                                self._notify("Rate limit cleared.", pane_status="claude")
                                 break
 
                             # Check if a new or updated reset time appeared on screen
@@ -1129,6 +1170,8 @@ class Supervisor(threading.Thread):
             if is_working(screen):
                 # Claude is active and working; reset transient stall counters
                 self.stall_attempts = 0
+                if self._last_pane_title != "claude [working]":
+                    self._notify("Claude is working...", pane_status="claude [working]")
                 continue
 
             # Check 9: Transient server overload / capacity stall
@@ -1145,6 +1188,12 @@ class Supervisor(threading.Thread):
 
                 if self._running.is_set():
                     self._resume_session()
+                continue
+
+            # Check 10: Ready at interactive prompt
+            if is_at_prompt(screen):
+                if self._last_pane_title != "claude":
+                    self._notify("Ready at prompt.", pane_status="claude")
                 continue
 
     def _resume_session(self) -> None:
