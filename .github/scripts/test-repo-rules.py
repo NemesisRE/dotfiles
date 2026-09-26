@@ -104,15 +104,33 @@ def has_change_trigger(text):
     return False
 
 
+# Deliberately unhashed: the script's own header comment explains why (it has
+# no real external input to hash — chezmoi.homeDir and the OS are read at
+# apply time, not baked in — and hashing an unrelated file, as an earlier
+# version did with windows.yaml, made unrelated Windows toggles re-trigger a
+# UAC-prompting script). chezmoi already re-runs a run_onchange_ script when
+# its own rendered text changes, which is this file's real trigger.
+HASH_ALLOWLIST = {
+    "home/.chezmoiscripts/run_onchange_after_windows_sync-profiles.ps1.tmpl":
+        "documented in the script's own header: no real external input to "
+        "hash, and chezmoi's own re-render-on-text-change already covers it.",
+}
+
+
 def check_run_onchange_hash():
-    problems = []
+    problems, allowlisted = [], []
     for name in sorted(os.listdir(SCRIPTS_DIR)):
         if not name.startswith("run_onchange_"):
             continue
         path = os.path.join(SCRIPTS_DIR, name)
-        if not has_change_trigger(read(path)):
-            problems.append(rel(path))
-    return problems
+        if has_change_trigger(read(path)):
+            continue
+        entry = rel(path)
+        if entry in HASH_ALLOWLIST:
+            allowlisted.append((entry, HASH_ALLOWLIST[entry]))
+        else:
+            problems.append(entry)
+    return problems, allowlisted
 
 
 # ── check 2: every hook is guarded so it can never abort `chezmoi apply` ────
@@ -209,6 +227,12 @@ PRIVATE_TEMPLATE_ALLOWLIST = {
     "home/dot_config/git/config.tmpl":
         "TODO(batch/14 note, not a fix): uses get-signing-key.tmpl but only ever "
         "receives the public key — see .chezmoitemplates/get-signing-key.tmpl.",
+    # Same reasoning as git/config.tmpl above: the template only ever writes an
+    # ssh-*/ecdsa-*/sk-ssh-*/sk-ecdsa-* key or a *.pub file's contents — see the
+    # guard in allowed_signers.tmpl itself, which never reads a private key file.
+    "home/dot_config/git/allowed_signers.tmpl":
+        "batch/25 follow-up: only ever writes the public half of the signing "
+        "key (ssh-*/ecdsa-*/sk-*-prefixed or a *.pub file) — see the file's own guard.",
 }
 
 
@@ -238,13 +262,15 @@ def main():
     failures = 0
 
     print("run_onchange_ scripts re-run on their own input changes")
-    bad = check_run_onchange_hash()
+    bad, allowlisted = check_run_onchange_hash()
     if bad:
         failures += len(bad)
         for entry in bad:
             print("  FAIL  %s -- no sha256sum hash and no embedded data value" % entry)
     else:
-        print("  PASS  every run_onchange_ script hashes or embeds its trigger")
+        print("  PASS  every non-allowlisted run_onchange_ script hashes or embeds its trigger")
+    for entry, note in allowlisted:
+        print("  WARN  %s (allowlisted) -- %s" % (entry, note))
 
     print("hooks are guarded with CI and NREDF_NO_BOOTSTRAP")
     bad, allowlisted = check_hook_guards()
