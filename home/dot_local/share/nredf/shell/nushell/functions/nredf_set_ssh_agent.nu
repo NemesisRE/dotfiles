@@ -71,7 +71,13 @@ def --env nredf-set-ssh-agent-1password [] {
 }
 
 def --env nredf-set-ssh-agent-system [] {
-    let runtime_dir = ($env.XDG_RUNTIME_DIR? | default $"/run/user/(^id -u | str trim)")
+    # `default` evaluates its argument eagerly, so `^id -u` only runs when
+    # XDG_RUNTIME_DIR is actually unset, rather than on every call.
+    let runtime_dir = if ($env.XDG_RUNTIME_DIR? | default "" | is-empty) {
+        $"/run/user/(^id -u | str trim)"
+    } else {
+        $env.XDG_RUNTIME_DIR
+    }
     for sock in [
         ($runtime_dir | path join "ssh-agent.socket")
         ($runtime_dir | path join "gcr" "ssh")
@@ -142,6 +148,16 @@ def nredf-configured-ssh-agent-mode []: nothing -> string {
 }
 
 def --env nredf-set-ssh-agent [] {
+    # Native Windows uses OpenSSH's own ssh-agent service over a named pipe
+    # (\\.\pipe\openssh-ssh-agent), which ssh.exe finds with SSH_AUTH_SOCK
+    # unset. Everything below is Unix-socket logic (`id`, `chmod`, `ssh-agent
+    # -a <socket>`) that would either fail outright or export a Unix path that
+    # overrides the pipe — same documented gap as PowerShell (docs/shells.md).
+    # WSL reports NREDF_OS == "linux", so its npiperelay bridge is unaffected.
+    if ($env.NREDF_OS? | default "") == "windows" {
+        return
+    }
+
     let agent_mode = (nredf-configured-ssh-agent-mode)
     let prefer_external_provider = ($agent_mode != "default")
 
