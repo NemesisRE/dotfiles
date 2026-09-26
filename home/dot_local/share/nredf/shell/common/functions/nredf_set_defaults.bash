@@ -17,6 +17,25 @@ function _nredf_set_krew_path() {
   unset _nredf_krew_root _nredf_krew_bin
 }
 
+# Prepend each directory to PATH, in argument order, unless it is already on
+# PATH. The rc files re-run _nredf_set_defaults in every nested shell
+# (NREDF_COMMON_DEFAULTS_DONE is not exported, so a child still gets its
+# aliases and functions), and a blind prepend grew PATH at every level.
+# Skipping entries that are already present also keeps the parent's order.
+function _nredf_path_prepend() {
+  local _nredf_dir _nredf_prefix=""
+  for _nredf_dir in "$@"; do
+    [[ -n "${_nredf_dir}" ]] || continue
+    case ":${_nredf_prefix}${PATH}:" in
+    *":${_nredf_dir}:"*) ;;
+    *) _nredf_prefix="${_nredf_prefix}${_nredf_dir}:" ;;
+    esac
+  done
+  if [[ -n "${_nredf_prefix}" ]]; then
+    export PATH="${_nredf_prefix%:}${PATH:+:${PATH}}"
+  fi
+}
+
 function _nredf_set_defaults() {
   _nredf_set_aqua_path
   _nredf_set_aqua_env
@@ -24,15 +43,13 @@ function _nredf_set_defaults() {
 
   [[ -f "${HOME}/.proxy.local" ]] && source "${HOME}/.proxy.local"
 
-  export NREDF_RC_PATH="${NREDF_DOT_PATH}/shell/${NREDF_SHELL_NAME}"
-  export NREDF_RC_LOCAL="${HOME}/.config/${NREDF_SHELL_NAME}"
-
   # Set language environment if not already configured with a UTF-8 locale
   if [[ -z "${LANG:-}" || "${LANG:-}" == "C" ]]; then
-    local _nredf_locale="C"
-    if locale -a 2>/dev/null | grep -qiE '^en_US\.UTF-?8$'; then
+    local _nredf_locale="C" _nredf_locales
+    _nredf_locales="$(locale -a 2>/dev/null)"
+    if grep -qiE '^en_US\.UTF-?8$' <<<"${_nredf_locales}"; then
       _nredf_locale="en_US.UTF-8"
-    elif locale -a 2>/dev/null | grep -qiE '^C\.UTF-?8$'; then
+    elif grep -qiE '^C\.UTF-?8$' <<<"${_nredf_locales}"; then
       _nredf_locale="C.UTF-8"
     fi
     export LANG="${_nredf_locale}"
@@ -40,14 +57,17 @@ function _nredf_set_defaults() {
     export LC_ALL="${_nredf_locale}"
   fi
 
-
   _nredf_init_paths
 
-  export PATH="${HOME}/bin:${XDG_BIN_HOME}:/usr/local/bin:${PATH}"
-  [[ -d /snap/bin ]] && export PATH="${PATH}:/snap/bin"
+  _nredf_path_prepend "${HOME}/bin" "${XDG_BIN_HOME}" /usr/local/bin
+  if [[ -d /snap/bin ]]; then
+    case ":${PATH}:" in
+    *":/snap/bin:"*) ;;
+    *) export PATH="${PATH}:/snap/bin" ;;
+    esac
+  fi
   export GOPATH="${HOME}/.local"
   export RLWRAP_HOME="${XDG_CACHE_HOME}/RLWRAP"
-  [[ -s "${HOME}/.rvm/scripts/rvm" ]] && source "${HOME}/.rvm/scripts/rvm"
 
   # Set default editor (nvim -> hx -> vi)
   if command -v nvim &>/dev/null; then
@@ -64,15 +84,15 @@ function _nredf_set_defaults() {
     export GIT_EDITOR="vi"
   fi
 
-  # Load PYENV if you are using it
-  if [[ -s ${HOME}/.pyenv ]]; then
-    export PYENV_ROOT="${HOME}/.pyenv"
-    export PATH="${PYENV_ROOT}/bin:${PATH}"
-    eval "$(pyenv init -)"
-  fi
-
   # Bat Defaults
   export BAT_THEME="OneDarkPro"
+  # Render man pages through bat (bat's documented recipe). MANROFFOPT=-c makes
+  # groff emit the overstrike output `col -bx` expects. A MANPAGER set by the
+  # user or inherited from a parent shell wins.
+  if [[ -z "${MANPAGER:-}" ]] && command -v bat &>/dev/null; then
+    export MANPAGER="sh -c 'col -bx | bat -l man -p'"
+    export MANROFFOPT="-c"
+  fi
 
   # FZF Defaults
   export FZF_DEFAULT_OPTS='--bind tab:down --bind btab:up --cycle --ansi --color=dark,bg+:#2c313c,bg:#282c34,gutter:#282c34,spinner:#e5c07b,hl:#e06c75,fg:#abb2bf,header:#61afef,info:#56b6c2,pointer:#c678dd,marker:#98c379,fg+:#abb2bf,prompt:#61afef,hl+:#98c379,border:#4f5666'
@@ -119,22 +139,38 @@ function _nredf_set_defaults() {
   # readline config
   export INPUTRC="${XDG_CONFIG_HOME}/readline/inputrc"
 
-  export XAUTHORITY="${XDG_RUNTIME_DIR}/Xauthority"
+  # Only point X clients at the XDG runtime copy when nothing (display manager,
+  # `ssh -X`) set XAUTHORITY already and that file actually exists. Exporting it
+  # unconditionally broke X forwarding and yielded `/Xauthority` on macOS.
+  if [[ -z "${XAUTHORITY:-}" && -n "${XDG_RUNTIME_DIR:-}" && -f "${XDG_RUNTIME_DIR}/Xauthority" ]]; then
+    export XAUTHORITY="${XDG_RUNTIME_DIR}/Xauthority"
+  fi
 
-  export _Z_DATA="${XDG_DATA_HOME}/z"
+  # Let carapace fall back to other shells' completions for commands it has no
+  # spec for. A user-set value wins.
+  export CARAPACE_BRIDGES="${CARAPACE_BRIDGES:-zsh,fish,bash}"
 
-  # asdf config
-  export ASDF_DATA_DIR="${XDG_DATA_HOME}/asdf"
-  export ASDF_CONFIG_FILE="${XDG_CONFIG_HOME}/asdf/asdfrc"
-  export ADSF_DEFAULT_TOOL_VERSIONS_FILENAME="${XDG_CONFIG_HOME}/asdf/tool-versions"
-  export PATH="${ASDF_DATA_DIR}/shims:${PATH}"
+  # make less more friendly for non-text input files, see lesspipe(1).
+  # Cached like the other tool-init snippets (cleared by `reload -c`), so
+  # nested shells do not fork lesspipe/dircolors again.
+  if [[ -x /usr/bin/lesspipe ]]; then
+    _nredf_refresh_cached_shell_snippet \
+      "_nredf_lesspipe_${NREDF_SHELL_NAME}" \
+      "${XDG_CACHE_HOME}/nredf/init/lesspipe.${NREDF_SHELL_NAME}.sh" \
+      env SHELL=/bin/sh /usr/bin/lesspipe
+  fi
 
-
-  # make less more friendly for non-text input files, see lesspipe(1)
-  if [ -x /usr/bin/lesspipe ]; then eval "$(SHELL=/bin/sh lesspipe)"; fi
-
-  if command -v dircolors &>/dev/null; then
-    if [[ -e "${XDG_CONFIG_HOME}/dircolors" ]]; then eval "$(dircolors "${XDG_CONFIG_HOME}/dircolors")"; fi
+  if command -v dircolors &>/dev/null && [[ -e "${XDG_CONFIG_HOME}/dircolors" ]]; then
+    local _nredf_dircolors_cache="${XDG_CACHE_HOME}/nredf/init/dircolors.${NREDF_SHELL_NAME}.sh"
+    # An edited (or re-applied) dircolors file invalidates the cache right away
+    # instead of waiting out the 24h stamp.
+    if [[ -e "${_nredf_dircolors_cache}" && "${XDG_CONFIG_HOME}/dircolors" -nt "${_nredf_dircolors_cache}" ]]; then
+      rm -f "${_nredf_dircolors_cache}" "${_nredf_dircolors_cache}.zwc"
+    fi
+    _nredf_refresh_cached_shell_snippet \
+      "_nredf_dircolors_${NREDF_SHELL_NAME}" \
+      "${_nredf_dircolors_cache}" \
+      dircolors -b "${XDG_CONFIG_HOME}/dircolors"
   fi
 
   # Less pager defaults & history hygiene
@@ -146,11 +182,4 @@ function _nredf_set_defaults() {
   export RIPGREP_CONFIG_PATH="${XDG_CONFIG_HOME}/ripgrep/config"
   export GH_CONFIG_DIR="${XDG_CONFIG_HOME}/gh"
   export POWERSHELL_UPDATECHECK="Off"
-
-  if [[ -f "${NREDF_CONFIG}/GITHUB.AUTH" ]]; then
-    eval "$(< "${NREDF_CONFIG}/GITHUB.AUTH")"
-    if [[ -n ${NREDF_GITHUB_USERNAME} && -n ${NREDF_GITHUB_TOKEN} ]]; then
-      export NREDF_CURL_GITHUB_AUTH="-u ${NREDF_GITHUB_USERNAME}:${NREDF_GITHUB_TOKEN}"
-    fi
-  fi
 }
