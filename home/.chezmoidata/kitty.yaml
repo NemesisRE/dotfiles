@@ -9,5 +9,5 @@ kitty:
   version: "v0.49.1" # renovate: depName=kovidgoyal/kitty
   quake_key: "F12"
   sha256:
-    x86_64: "ed2c015dcdea52bad5cb70461944e487af6c3f79eff4a6542717fcd315feaec2"
-    arm64: "e7a0b9187f160d88a6dd9d836e523a24d7d35502e0afb46645c757c9974d26b7"
+    x86_64: "8cfd68ed484d9a32e4e389abffe1a0ec6e0fbd7be5c9ea1c4fa41b9ead4af791"
+    arm64: "828fcfe3e165c84d830f82545b6d568655b2620d77b7d5a4360e082bd9ba744b"
