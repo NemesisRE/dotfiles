@@ -23,7 +23,7 @@ packages:
   - name: fish-shell/fish-shell@4.9.3 # renovate: depName=fish-shell/fish-shell
     tags:
       - default
-  - name: nushell/nushell@0.115.1 # renovate: depName=nushell/nushell
+  - name: nushell/nushell@0.116.0 # renovate: depName=nushell/nushell
     tags:
       - default
       # Lets the render-lint CI job install just this one package (aqua has
@@ -122,7 +122,7 @@ packages:
   - name: anthropics/claude-code@v2.1.283 # renovate: depName=anthropics/claude-code
     tags:
       - default
-  - name: google-antigravity/antigravity-cli@1.2.11 # renovate: depName=google-antigravity/antigravity-cli
+  - name: google-antigravity/antigravity-cli@1.2.12 # renovate: depName=google-antigravity/antigravity-cli
     tags:
       - default
   - name: jqlang/jq@jq-1.8.1 # renovate: depName=jqlang/jq
@@ -173,7 +173,7 @@ packages:
   - name: sharkdp/hyperfine@v1.20.0 # renovate: depName=sharkdp/hyperfine
     tags:
       - default
-  - name: jdx/mise@v2026.9.14 # renovate: depName=jdx/mise
+  - name: jdx/mise@v2026.9.15 # renovate: depName=jdx/mise
     tags:
       - default
       - required
@@ -201,7 +201,7 @@ packages:
   - name: derailed/k9s@v0.51.0 # renovate: depName=derailed/k9s
     tags:
       - k8s
-  - name: nklmilojevic/sofka@v0.29.2 # renovate: depName=nklmilojevic/sofka
+  - name: nklmilojevic/sofka@v0.29.3 # renovate: depName=nklmilojevic/sofka
     tags:
       - k8s
   - name: kubernetes-sigs/kustomize@kustomize/v5.8.1 # renovate: depName=kubernetes-sigs/kustomize
