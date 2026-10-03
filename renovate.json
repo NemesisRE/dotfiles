@@ -43,10 +43,12 @@
       "groupName": "mise tools"
     },
     {
+      "description": "aqua packages stay in one grouped PR. A 1-day wait gives the upstream release time to finish uploading its assets and the aqua registry time to catch up, so a just-published release is not proposed before aqua can install it.",
       "matchDepTypes": [
         "aqua-package"
       ],
-      "groupName": "aqua packages"
+      "groupName": "aqua packages",
+      "minimumReleaseAge": "1 day"
     },
     {
       "matchDepTypes": [
@@ -102,7 +104,7 @@
     },
     {
       "customType": "regex",
-      "description": "Update aqua package versions in aqua.yaml",
+      "description": "Update aqua package versions in aqua.yaml. github-releases, not github-tags: aqua installs release assets, and a tag pushed before its release is published (or a release without assets yet) otherwise gets proposed and fails aqua-validate with a 404.",
       "managerFilePatterns": [
         "/^(home\\/)?dot_config\\/aquaproj-aqua\\/aqua\\.yaml$/"
       ],
@@ -111,7 +113,7 @@
       ],
       "depNameTemplate": "{{{fullName}}}",
       "depTypeTemplate": "aqua-package",
-      "datasourceTemplate": "github-tags",
+      "datasourceTemplate": "github-releases",
       "versioningTemplate": "loose"
     },
     {
