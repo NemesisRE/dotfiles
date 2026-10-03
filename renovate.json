@@ -104,7 +104,7 @@
     },
     {
       "customType": "regex",
-      "description": "Update aqua package versions in aqua.yaml. github-releases, not github-tags: aqua installs release assets, and a tag pushed before its release is published (jdx/mise v2026.10.1) otherwise gets proposed and fails aqua-validate with a 404.",
+      "description": "Update aqua package versions in aqua.yaml. github-releases, not github-tags: aqua installs release assets, and a tag pushed before its release is published (or a release without assets yet) otherwise gets proposed and fails aqua-validate with a 404.",
       "managerFilePatterns": [
         "/^(home\\/)?dot_config\\/aquaproj-aqua\\/aqua\\.yaml$/"
       ],
