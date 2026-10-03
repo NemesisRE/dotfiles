@@ -43,10 +43,11 @@
       "groupName": "mise tools"
     },
     {
-      "description": "aqua packages get one PR each, not one group: a single update that fails the aqua-validate CI job (asset not built yet, registry not caught up) then only blocks its own PR, and every passing update still automerges. A 1-day wait gives the upstream release time to finish uploading its assets and the aqua registry time to catch up.",
+      "description": "aqua packages stay in one grouped PR. A 1-day wait gives the upstream release time to finish uploading its assets and the aqua registry time to catch up, so a just-published release is not proposed before aqua can install it.",
       "matchDepTypes": [
         "aqua-package"
       ],
+      "groupName": "aqua packages",
       "minimumReleaseAge": "1 day"
     },
     {
