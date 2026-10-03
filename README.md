@@ -198,7 +198,7 @@ Every `.chezmoiscripts/` hook and `get-*.tmpl` vault lookup checks `$CI` (in add
 
 - **GitHub Actions**: grouped, with a 3-day release wait (they run third-party code in CI).
 - **mise tool versions**: parsed out of [`home/dot_config/mise/config.toml.tmpl`](home/dot_config/mise/config.toml.tmpl).
-- **aqua packages**: both the registry `ref:` and each package's `version:` in [`home/dot_config/aquaproj-aqua/aqua.yaml`](home/dot_config/aquaproj-aqua/aqua.yaml), via custom regex managers (grouped as "aqua packages").
+- **aqua packages**: both the registry `ref:` and each package's `version:` in [`home/dot_config/aquaproj-aqua/aqua.yaml`](home/dot_config/aquaproj-aqua/aqua.yaml), via custom regex managers. Each package gets its own PR, proposed only once its GitHub release (not just the tag) is a day old, so one update that fails the `aqua install` CI job stays open on its own instead of blocking the rest.
 - **`ble.sh`** (`home/.chezmoidata/ble.yaml`) and **Kitty** (`home/.chezmoidata/kitty.yaml`): release-tag/version bumps.
 - **The Windows aqua bootstrap** (`home/.chezmoidata/aqua-bootstrap.yaml`).
 

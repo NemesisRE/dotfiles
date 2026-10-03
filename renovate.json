@@ -43,10 +43,11 @@
       "groupName": "mise tools"
     },
     {
+      "description": "aqua packages get one PR each, not one group: a single update that fails the aqua-validate CI job (asset not built yet, registry not caught up) then only blocks its own PR, and every passing update still automerges. A 1-day wait gives the upstream release time to finish uploading its assets and the aqua registry time to catch up.",
       "matchDepTypes": [
         "aqua-package"
       ],
-      "groupName": "aqua packages"
+      "minimumReleaseAge": "1 day"
     },
     {
       "matchDepTypes": [
@@ -102,7 +103,7 @@
     },
     {
       "customType": "regex",
-      "description": "Update aqua package versions in aqua.yaml",
+      "description": "Update aqua package versions in aqua.yaml. github-releases, not github-tags: aqua installs release assets, and a tag pushed before its release is published (jdx/mise v2026.10.1) otherwise gets proposed and fails aqua-validate with a 404.",
       "managerFilePatterns": [
         "/^(home\\/)?dot_config\\/aquaproj-aqua\\/aqua\\.yaml$/"
       ],
@@ -111,7 +112,7 @@
       ],
       "depNameTemplate": "{{{fullName}}}",
       "depTypeTemplate": "aqua-package",
-      "datasourceTemplate": "github-tags",
+      "datasourceTemplate": "github-releases",
       "versioningTemplate": "loose"
     },
     {
