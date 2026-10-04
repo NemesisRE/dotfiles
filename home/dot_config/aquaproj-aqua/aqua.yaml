@@ -122,7 +122,7 @@ packages:
   - name: anthropics/claude-code@v2.1.288 # renovate: depName=anthropics/claude-code
     tags:
       - default
-  - name: google-antigravity/antigravity-cli@1.2.15 # renovate: depName=google-antigravity/antigravity-cli
+  - name: google-antigravity/antigravity-cli@1.2.16 # renovate: depName=google-antigravity/antigravity-cli
     tags:
       - default
   - name: jqlang/jq@jq-1.8.1 # renovate: depName=jqlang/jq
@@ -152,7 +152,7 @@ packages:
   - name: tstack/lnav@v0.14.1 # renovate: depName=tstack/lnav
     tags:
       - default
-  - name: JanDeDobbeleer/oh-my-posh@v31.4.0 # renovate: depName=JanDeDobbeleer/oh-my-posh
+  - name: JanDeDobbeleer/oh-my-posh@v31.4.1 # renovate: depName=JanDeDobbeleer/oh-my-posh
     tags:
       - default
       - required
@@ -163,7 +163,7 @@ packages:
     registry: local
     tags:
       - default
-  - name: heymaikol/network-doctor@v1.19.0 # renovate: depName=heymaikol/network-doctor
+  - name: heymaikol/network-doctor@v1.19.1 # renovate: depName=heymaikol/network-doctor
     registry: local
     command_aliases:
       - command: network-doctor
