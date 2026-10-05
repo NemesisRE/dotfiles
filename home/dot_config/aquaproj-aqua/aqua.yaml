@@ -23,7 +23,7 @@ packages:
   - name: fish-shell/fish-shell@4.9.3 # renovate: depName=fish-shell/fish-shell
     tags:
       - default
-  - name: nushell/nushell@0.116.0 # renovate: depName=nushell/nushell
+  - name: nushell/nushell@0.116.1 # renovate: depName=nushell/nushell
     tags:
       - default
       # Lets the render-lint CI job install just this one package (aqua has
@@ -68,7 +68,7 @@ packages:
     tags:
       - default
       - required
-  - name: dandavison/delta@0.19.2 # renovate: depName=dandavison/delta
+  - name: dandavison/delta@0.20.1 # renovate: depName=dandavison/delta
     tags:
       - default
       - required
@@ -173,7 +173,7 @@ packages:
   - name: sharkdp/hyperfine@v1.20.0 # renovate: depName=sharkdp/hyperfine
     tags:
       - default
-  - name: jdx/mise@v2026.10.1 # renovate: depName=jdx/mise
+  - name: jdx/mise@v2026.10.2 # renovate: depName=jdx/mise
     tags:
       - default
       - required
@@ -201,7 +201,7 @@ packages:
   - name: derailed/k9s@v0.51.0 # renovate: depName=derailed/k9s
     tags:
       - k8s
-  - name: nklmilojevic/sofka@v0.29.8 # renovate: depName=nklmilojevic/sofka
+  - name: nklmilojevic/sofka@v0.29.9 # renovate: depName=nklmilojevic/sofka
     tags:
       - k8s
   - name: kubernetes-sigs/kustomize@kustomize/v5.8.1 # renovate: depName=kubernetes-sigs/kustomize
