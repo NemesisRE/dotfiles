@@ -122,7 +122,7 @@ packages:
   - name: anthropics/claude-code@v2.1.289 # renovate: depName=anthropics/claude-code
     tags:
       - default
-  - name: google-antigravity/antigravity-cli@1.2.16 # renovate: depName=google-antigravity/antigravity-cli
+  - name: google-antigravity/antigravity-cli@1.2.17 # renovate: depName=google-antigravity/antigravity-cli
     tags:
       - default
   - name: jqlang/jq@jq-1.8.1 # renovate: depName=jqlang/jq
@@ -131,7 +131,7 @@ packages:
   - name: mikefarah/yq@v4.54.1 # renovate: depName=mikefarah/yq
     tags:
       - default
-  - name: jesseduffield/lazygit@v0.65.1 # renovate: depName=jesseduffield/lazygit
+  - name: jesseduffield/lazygit@v0.66.0 # renovate: depName=jesseduffield/lazygit
     tags:
       - default
   - name: neovim/neovim@v0.12.5 # renovate: depName=neovim/neovim
@@ -170,10 +170,10 @@ packages:
         alias: netdoc
     tags:
       - default
-  - name: sharkdp/hyperfine@v1.20.0 # renovate: depName=sharkdp/hyperfine
+  - name: sharkdp/hyperfine@v1.21.0 # renovate: depName=sharkdp/hyperfine
     tags:
       - default
-  - name: jdx/mise@v2026.10.2 # renovate: depName=jdx/mise
+  - name: jdx/mise@v2026.10.3 # renovate: depName=jdx/mise
     tags:
       - default
       - required
