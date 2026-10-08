@@ -170,7 +170,7 @@ packages:
         alias: netdoc
     tags:
       - default
-  - name: sharkdp/hyperfine@v1.21.0 # renovate: depName=sharkdp/hyperfine
+  - name: sharkdp/hyperfine@v2.0.0 # renovate: depName=sharkdp/hyperfine
     tags:
       - default
   - name: jdx/mise@v2026.10.4 # renovate: depName=jdx/mise
