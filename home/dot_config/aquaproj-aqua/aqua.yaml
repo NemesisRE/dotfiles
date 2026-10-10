@@ -116,13 +116,13 @@ packages:
   - name: cli/cli@v2.102.0 # renovate: depName=cli/cli
     tags:
       - default
-  - name: github/copilot-cli@v1.0.93 # renovate: depName=github/copilot-cli
+  - name: github/copilot-cli@v1.0.94 # renovate: depName=github/copilot-cli
     tags:
       - default
-  - name: anthropics/claude-code@v2.1.294 # renovate: depName=anthropics/claude-code
+  - name: anthropics/claude-code@v2.1.295 # renovate: depName=anthropics/claude-code
     tags:
       - default
-  - name: google-antigravity/antigravity-cli@1.3.1 # renovate: depName=google-antigravity/antigravity-cli
+  - name: google-antigravity/antigravity-cli@1.3.2 # renovate: depName=google-antigravity/antigravity-cli
     tags:
       - default
   - name: jqlang/jq@jq-1.8.1 # renovate: depName=jqlang/jq
@@ -137,7 +137,7 @@ packages:
   - name: neovim/neovim@v0.12.5 # renovate: depName=neovim/neovim
     tags:
       - default
-  - name: tree-sitter/tree-sitter@v0.27.0 # renovate: depName=tree-sitter/tree-sitter
+  - name: tree-sitter/tree-sitter@v0.27.1 # renovate: depName=tree-sitter/tree-sitter
     tags:
       - default
   - name: ClementTsang/bottom@0.14.9 # renovate: depName=ClementTsang/bottom
@@ -152,7 +152,7 @@ packages:
   - name: tstack/lnav@v0.14.1 # renovate: depName=tstack/lnav
     tags:
       - default
-  - name: JanDeDobbeleer/oh-my-posh@v31.5.0 # renovate: depName=JanDeDobbeleer/oh-my-posh
+  - name: JanDeDobbeleer/oh-my-posh@v31.6.0 # renovate: depName=JanDeDobbeleer/oh-my-posh
     tags:
       - default
       - required
@@ -163,7 +163,7 @@ packages:
     registry: local
     tags:
       - default
-  - name: heymaikol/network-doctor@v1.19.3 # renovate: depName=heymaikol/network-doctor
+  - name: heymaikol/network-doctor@v1.19.4 # renovate: depName=heymaikol/network-doctor
     registry: local
     command_aliases:
       - command: network-doctor
@@ -173,11 +173,11 @@ packages:
   - name: sharkdp/hyperfine@v1.21.0 # renovate: depName=sharkdp/hyperfine
     tags:
       - default
-  - name: jdx/mise@v2026.10.4 # renovate: depName=jdx/mise
+  - name: jdx/mise@v2026.10.5 # renovate: depName=jdx/mise
     tags:
       - default
       - required
-  - name: astral-sh/uv@0.12.23 # renovate: depName=astral-sh/uv
+  - name: astral-sh/uv@0.12.24 # renovate: depName=astral-sh/uv
     tags:
       - default
       - required
@@ -201,7 +201,7 @@ packages:
   - name: derailed/k9s@v0.51.0 # renovate: depName=derailed/k9s
     tags:
       - k8s
-  - name: nklmilojevic/sofka@v0.31.3 # renovate: depName=nklmilojevic/sofka
+  - name: nklmilojevic/sofka@v0.31.4 # renovate: depName=nklmilojevic/sofka
     tags:
       - k8s
   - name: kubernetes-sigs/kustomize@kustomize/v5.8.1 # renovate: depName=kubernetes-sigs/kustomize
