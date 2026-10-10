@@ -40,7 +40,7 @@ export PATH="${LOCAL_BIN}:${AQUA_BIN}:${PATH}"
 if ! command -v aqua >/dev/null 2>&1; then
   echo "==> Installing aqua via upstream installer"
   # Official installer: https://github.com/aquaproj/aqua-installer
-  AQUA_INSTALLER_VERSION="v4.0.5" # renovate: datasource=github-tags depName=aquaproj/aqua-installer
+  AQUA_INSTALLER_VERSION="v4.1.0" # renovate: datasource=github-tags depName=aquaproj/aqua-installer
   AQUA_INSTALLER_SHA256="451028d56959cc738564885b1dbebc2691ea038ffde04e2472e4d486a3591146"
   install_aqua() (
     tmp="$(mktemp -d)" || exit 1
