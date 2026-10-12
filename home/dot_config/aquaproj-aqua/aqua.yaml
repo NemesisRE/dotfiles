@@ -131,7 +131,7 @@ packages:
   - name: mikefarah/yq@v4.54.1 # renovate: depName=mikefarah/yq
     tags:
       - default
-  - name: jesseduffield/lazygit@v0.66.0 # renovate: depName=jesseduffield/lazygit
+  - name: jesseduffield/lazygit@v0.66.1 # renovate: depName=jesseduffield/lazygit
     tags:
       - default
   - name: neovim/neovim@v0.12.6 # renovate: depName=neovim/neovim
@@ -173,7 +173,7 @@ packages:
   - name: sharkdp/hyperfine@v2.0.0 # renovate: depName=sharkdp/hyperfine
     tags:
       - default
-  - name: jdx/mise@v2026.10.7 # renovate: depName=jdx/mise
+  - name: jdx/mise@v2026.10.8 # renovate: depName=jdx/mise
     tags:
       - default
       - required
@@ -201,7 +201,7 @@ packages:
   - name: derailed/k9s@v0.51.0 # renovate: depName=derailed/k9s
     tags:
       - k8s
-  - name: nklmilojevic/sofka@v0.31.6 # renovate: depName=nklmilojevic/sofka
+  - name: nklmilojevic/sofka@v0.31.7 # renovate: depName=nklmilojevic/sofka
     tags:
       - k8s
   - name: kubernetes-sigs/kustomize@kustomize/v5.8.1 # renovate: depName=kubernetes-sigs/kustomize
