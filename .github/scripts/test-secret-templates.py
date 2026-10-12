@@ -153,7 +153,7 @@ def render(tmp, template, key, vault, item, extra_env):
     with open(cfg, "w") as f:
         f.write('[data.secrets]\n  %s = "%s"\n' % (key, REFS[vault]))
         f.write('[keepassxc]\n  database = "%s"\n  prompt = false\n'
-                % os.path.join(tmp, "stub.kdbx"))
+                % os.path.join(tmp, "stub.kdbx").replace("\\", "/"))
         f.write('[onepassword]\n  prompt = false\n')
     env = dict(os.environ, PATH=bindir + os.pathsep + os.environ["PATH"])
     # CI / NREDF_NO_BOOTSTRAP make the templates skip the vault entirely.

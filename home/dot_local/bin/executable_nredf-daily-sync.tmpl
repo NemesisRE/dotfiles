@@ -164,19 +164,26 @@ if command -v aqua >/dev/null 2>&1; then
   aqua vacuum -d 30 || true
 fi
 
-# 5. Sheldon Plugin Lock Update (if installed)
+# 5. Mise Tools Install (if installed)
+if command -v mise >/dev/null 2>&1; then
+  echo "==> Installing mise managed tools"
+  mise install --yes || echo "Mise install exited with warnings: $?"
+fi
+
+# 6. Sheldon Plugin Lock Update (if installed)
 if command -v sheldon >/dev/null 2>&1; then
   echo "==> Updating sheldon plugins lock"
   sheldon lock --update || true
 fi
 
-# 6. TLDR Pages Update (if installed)
+# 7. TLDR Pages Update (if installed)
 if command -v tldr >/dev/null 2>&1; then
   echo "==> Updating tldr cache"
   tldr --update || true
 fi
 
-# 7. Prune stale oh-my-posh session caches: every shell mints a new
+# 8. Prune stale oh-my-posh session caches: every shell mints a new
+
 #    POSH_SESSION_ID, so <shell>.<id>.omp.cache files pile up forever. The shared
 #    omp.cache and the init.* scripts do not match this pattern and are kept.
 OMP_CACHE_DIR="${XDG_CACHE_HOME:-${HOME}/.cache}/oh-my-posh"

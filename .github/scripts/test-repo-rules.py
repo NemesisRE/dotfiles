@@ -37,7 +37,7 @@ def read(path):
 
 
 def rel(path):
-    return os.path.relpath(path, ROOT)
+    return os.path.relpath(path, ROOT).replace("\\", "/")
 
 
 def walk_home():

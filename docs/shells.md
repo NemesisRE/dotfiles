@@ -83,7 +83,7 @@ All five shells share a unified experience designed around modern developer ergo
 
 ### 6. Custom Completions (Carapace)
 
-- **Specs**: [`home/dot_config/carapace/specs/`](../home/dot_config/carapace/specs/) holds one YAML spec per command carapace-bin doesn't know: the NREDF functions (`reload`, `yy`, `nredf_ssh`, `nredf_aqua_token_setup`, `nredf-daily-sync`) and aqua tools without a completer (`kubectx`, `kubens`, `lsd`, `lazydocker`, `lazyjournal`, `zellij`).
+- **Specs**: [`home/dot_config/carapace/specs/`](../home/dot_config/carapace/specs/) holds one YAML spec per command carapace-bin doesn't know: the NREDF functions (`reload`, `yy`, `nredf_ssh`, `nredf_aqua_token_setup`, `nredf-daily-sync`) and CLI tools without a builtin completer (`mise`, `kubectx`, `kubens`, `lsd`, `lazydocker`, `lazyjournal`, `zellij`).
 - **Aliases**: bash can't complete an alias through its target, so every alias in `home/.chezmoidata/aliases.yaml` whose target needs it (`k`, `kctx`/`ctx`, `kns`/`ns`, `lzg`/`lg`, `lzd`, `lzj`/`lj`, `ll`/`la`/`tree`, `pst`) has its own thin spec that bridges to the target with `$carapace.bridge.CarapaceBin([target])`. A spec's `aliases:` field does not help here: it only names subcommand aliases and never registers a top-level command.
 - **Cobra bridges**: [`home/dot_config/carapace/choices/`](../home/dot_config/carapace/choices/) makes carapace ask `flux`, `oras`, `stern`, `velero` and `yq` for their own completions (the same files `carapace --choice flux/cobra@bridge` writes).
 - **Cache lag**: bash, zsh, fish and PowerShell only complete command names that were listed in carapace's init snippet, which is cached for 24 hours. A **new** spec or choice therefore appears only after `reload -c` (or the next daily refresh); edits to an existing spec apply immediately. Nushell's snippet is a generic external completer, so it picks up new specs at once.
@@ -376,9 +376,10 @@ The unified payload (`nredf-daily-sync` on POSIX, `NREDF_DailySync` on PowerShel
 2. **Chezmoi Upgrade**: Upgrades the chezmoi binary.
 3. **Dotfiles Remote Sync**: Fetches upstream dotfiles changes, fast-forwards Git, and runs `chezmoi apply --refresh-externals --force`. A scheduled run has no terminal to unlock a password safe, so it first checks the one your secrets reference: Bitwarden must report `unlocked` from `bw status` (after restoring `BW_SESSION` from the keychain, as shell startup does), 1Password must pass `op whoami`, and a KeePassXC reference always needs its database password. If that check fails, the apply is skipped with a log line and the other steps still run. Run `bwu` and then `reload -f` to catch up. PowerShell only pre-checks Bitwarden; for the other two it detects a locked safe from the failed apply's output.
 4. **Aqua Tools**: Updates Aqua (`aqua update-aqua`), ensures tool links (`aqua install -a -l`), and vacuums packages unused for >30 days (`aqua vacuum -d 30`).
-5. **Zsh Plugins**: Updates Sheldon plugin locks (`sheldon lock --update`). Not on PowerShell.
-6. **tldr Pages**: Refreshes the tldr page cache (`tldr --update`).
-7. **oh-my-posh Session Caches**: Deletes `*.omp.cache` files older than 7 days from the oh-my-posh cache directory. Every shell gets a new `POSH_SESSION_ID`, so these files otherwise pile up forever.
+5. **Mise Tools**: Installs missing or newly-pinned mise tools (`mise install --yes`).
+6. **Zsh Plugins**: Updates Sheldon plugin locks (`sheldon lock --update`). Not on PowerShell.
+7. **tldr Pages**: Refreshes the tldr page cache (`tldr --update`).
+8. **oh-my-posh Session Caches**: Deletes `*.omp.cache` files older than 7 days from the oh-my-posh cache directory. Every shell gets a new `POSH_SESSION_ID`, so these files otherwise pile up forever.
 
 All runs are logged to `${XDG_STATE_HOME:-~/.local/state}/nredf/daily-sync.log` (macOS/Linux) and `$LOCALAPPDATA\nredf\daily-sync.log` (Windows). `reload -f` (or `nredf-daily-sync --verbose`) also prints that output to the terminal.
 

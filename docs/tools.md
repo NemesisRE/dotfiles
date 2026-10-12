@@ -452,7 +452,7 @@ Configured via `$GH_CONFIG_DIR` pointing to [`home/dot_config/private_gh/config.
 
 ### `mise`
 
-Configured in [`home/dot_config/mise/config.toml.tmpl`](../home/dot_config/mise/config.toml.tmpl) to read idiomatic version files (`.nvmrc` for `node`, `.python-version` for `python`) and auto-install missing tool runtimes. Also manages default global runtimes and tools (such as Node.js, Microsoft's `apm`, and Microsoft's `inshellisense` / `is` on-demand autocomplete).
+Configured in [`home/dot_config/mise/config.toml.tmpl`](../home/dot_config/mise/config.toml.tmpl) to read idiomatic version files (`.nvmrc` for `node`, `.python-version` for `python`) and auto-install missing tool runtimes. Also manages default global runtimes and tools (such as Node.js, Microsoft's `apm`, and Microsoft's `inshellisense` / `is` on-demand autocomplete). Tab completions across all five shells are provided by a custom Carapace spec in [`home/dot_config/carapace/specs/mise.yaml`](../home/dot_config/carapace/specs/mise.yaml). Tool installations and upgrades are kept silent at prompt time (`status.missing_tools = "never"`) and automatically synchronized via `reload` (whenever `config.toml` or `config.local.toml` changes) and the daily sync scheduler (`reload -f`).
 
 ### `tealdeer` (`tldr`)
 

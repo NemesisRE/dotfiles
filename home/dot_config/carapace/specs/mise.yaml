@@ -1,0 +1,1448 @@
+# yaml-language-server: $schema=https://carapace.sh/schemas/command.json
+name: mise
+description: Dev tools, env vars, and tasks in one CLI
+flags:
+  -C, --cd=: Change directory before running command
+  -E, --env=: Set the environment for loading mise.<ENV>.toml
+  -j, --jobs=: 'How many jobs to run in parallel [default: 8]'
+  -q, --quiet: Suppress non-error messages
+  -v, --verbose: Show extra output (use -vv for even more)
+  -y, --yes: Answer yes to all confirmation prompts
+  --no-config: Do not load any config files
+  --no-env: Do not load environment variables from config files
+  --no-hooks: Do not execute hooks from config files
+  --raw: Read/write directly to stdin/stdout/stderr instead of by line
+  --locked: Require lockfile URLs to be present during installation
+  --silent: Suppress all task output and mise non-error messages
+  -h, --help: Print help
+  -V, --version: Print version
+commands:
+  - name: activate
+    description: Print the script to activate mise in an
+    flags:
+      -q, --quiet: Suppress non-error messages
+      --no-hook-env: Do not automatically call hook-env
+      --shims: Use shims instead of modifying PATH
+      -h, --help: Print help
+    completion:
+      positional:
+        - - bash
+          - fish
+          - nu
+          - powershell
+          - pwsh
+          - zsh
+  - name: backends
+    description: 'Manage backends [aliases: b, backend,'
+    aliases:
+      - b
+      - backend
+      - backend-list
+    flags:
+      -h, --help: Print help
+    commands:
+      - name: ls
+        description: 'List built-in backends [aliases: list]'
+        flags:
+          -h, --help: Print help
+      - name: switch
+        description: Switch tools to the backend the registry now installs them from
+        flags:
+          -n, --dry-run: Show what would switch without changing the lockfile or
+          -g, --global: Switch tools in the global config's lockfile instead of the
+          -h, --help: Print help
+  - name: bin-paths
+    description: List all the active runtime bin paths
+    flags:
+      --bin-names: Output executable names instead of bin directories
+      -J, --json: Output executable entries in JSON format (implies
+      -h, --help: Print help
+  - name: bootstrap
+    description: Set up a machine from the current configuration
+    aliases:
+      - bs
+    flags:
+      --from=: Clone a git repository and bootstrap from its configuration
+      --replace-history: Replace local dotfile history while adopting a setup repository
+      --from-dir=: Directory used for the repository cloned by --from
+      -n, --dry-run: Print what would happen without installing anything
+      -y, --yes: Skip confirmation prompts
+      --skip-dirty: Skip configured repos with local changes instead of failing
+      --force-dotfiles: Overwrite existing files that conflict with whole-file dotfile entries
+      --only=: Run only one or more bootstrap parts
+      --prompt-secrets: Prompt securely for missing bootstrap secret inputs
+      --skip=: Skip one or more bootstrap parts
+      --update: Refresh package manager metadata and update configured repos
+      -h, --help: Print help
+    commands:
+      - name: accounts
+        description: Manage Linux users and groups from `[bootstrap.users]`
+        flags:
+          -h, --help: Print help
+      - name: compose
+        description: Manage Docker Compose projects from `[bootstrap.compose]`
+        flags:
+          -h, --help: Print help
+      - name: dotfiles
+        description: Manage dotfiles from `[dotfiles]`
+        flags:
+          -h, --help: Print help
+      - name: files
+        description: Manage privileged files and directories from
+        flags:
+          -h, --help: Print help
+      - name: firewall
+        description: Manage the Linux host firewall from
+        flags:
+          -h, --help: Print help
+      - name: linux
+        description: Manage Linux bootstrap config from `[bootstrap.linux]`
+        flags:
+          -h, --help: Print help
+      - name: macos
+        description: Manage macOS bootstrap config from `[bootstrap.macos]`
+        flags:
+          -h, --help: Print help
+      - name: mise-shell-activate
+        description: Manage mise shell activation from
+        flags:
+          -h, --help: Print help
+      - name: packages
+        description: Manage bootstrap system packages from
+        flags:
+          -h, --help: Print help
+      - name: plan
+        description: Show the changes declarative bootstrap resources would
+        flags:
+          -J, --json: Output a stable machine-readable plan in JSON format
+          --detailed-exitcode: Exit 2 when the plan contains changes, 0 when
+          --prompt-secrets: Prompt securely for missing bootstrap secret inputs
+          -h, --help: Print help
+      - name: plugins
+        description: Manage package manager plugins declared in
+        flags:
+          -h, --help: Print help
+      - name: remote
+        description: Bootstrap one or more machines over OpenSSH
+        flags:
+          --github-relay-read-only: Borrow read-only GitHub access for this invocation multiple repositories
+          --github-relay-all-repos: Explicitly authorize all repositories accessible locally
+          --github-relay-log-requests: Log sanitized relay requests on local stderr
+          --github-relay-no-log-requests: Disable request logging, overriding the saved preference
+          --github-relay-log-format=: 'Relay log and summary format: text or jsonl'
+          --github-relay-max-duration=: 'Expire borrowed access after a duration such as 1h (0s: session lifetime)'
+          --all: Select every configured inventory host
+          --bootstrap-command=: Explicit remote shell command that installs mise and places it on PATH
+          --connect-timeout=: 'SSH connection timeout in seconds (default: 10)'
+          --copy-link=: Dereference one source-relative symbolic link; repeat for multiple links
+          --copy-links: Dereference every symbolic link in the source archive
+          --exclude=: Additional archive pattern to exclude; repeat for multiple patterns
+          --fail-fast: Stop after the first failed target
+          --force-dotfiles: Allow remote dotfile conflicts to be replaced for multiple hosts
+          -i, --identity-file=: SSH identity file override
+          -n, --dry-run: Print the remote bootstrap changes without applying them instead of only staging it
+          --keep-staging: Keep the remote staging directory for debugging
+          --mise-bin=: Local mise binary to upload (escape hatch for custom architectures)
+          --no-install-mise: Do not install mise on the host, even when the selected hosts configure it
+          --only=: 'Run only one or more remote bootstrap parts [possible values: plugins, packages, accounts, files, services, firewall,...'
+          --port=: SSH port override
+          --prompt-secrets: Prompt securely for missing secret inputs on the remote host
+          --remote-env=: Config environments to load on the remote host; repeat or delimit with commas (for example, ci,dotfiles)
+          --remote-mise=: Existing mise executable name or path; relative paths use the staged project
+          --skip=: 'Skip one or more remote bootstrap parts [possible values: plugins, packages, accounts, files, services, firewall, com...'
+          --source=: Local directory archived and sent to each target
+          --ssh-option=: OpenSSH `-o` option; repeat for multiple options
+          --tag=: Select configured hosts with this tag; repeat to match any tag
+          --update: Refresh package manager metadata and update configured repos remotely
+          -y, --yes: Skip remote confirmation prompts
+          -h, --help: Print help
+      - name: repos
+        description: Manage git repo checkouts from `[bootstrap.repos]`
+        flags:
+          -h, --help: Print help
+      - name: secrets
+        description: Inspect bootstrap secret inputs without revealing their
+        flags:
+          -h, --help: Print help
+      - name: services
+        description: Manage services from `[bootstrap.services]`
+        flags:
+          -h, --help: Print help
+      - name: status
+        description: 'Show the aggregate bootstrap status [aliases: ls]'
+        flags:
+          -J, --json: Output in JSON format
+          --missing: Exit with code 1 if any configured bootstrap state is
+          --prompt-secrets: Prompt securely for missing bootstrap secret inputs
+          -h, --help: Print help
+      - name: unapply
+        description: Remove the resources a config environment contributes
+        flags:
+          -f, --force: Remove targets that changed since they were applied
+          -n, --dry-run: Print what would be removed without removing anything
+          -y, --yes: Skip the confirmation prompt
+          --prompt-secrets: Prompt securely for missing bootstrap secret inputs
+          -h, --help: Print help
+      - name: user
+        description: Manage current-user bootstrap settings from
+        flags:
+          -h, --help: Print help
+  - name: cache
+    description: Manage the mise cache
+    flags:
+      -h, --help: Print help
+    commands:
+      - name: clear
+        description: 'Delete all cache files [aliases: c, clean]'
+        flags:
+          --task=: Clear output cache entries for a task name or pattern
+          -h, --help: Print help
+      - name: path
+        description: 'Show the cache directory path [aliases: dir]'
+        flags:
+          -h, --help: Print help
+      - name: prune
+        description: 'Remove stale cache files [aliases: p]'
+        flags:
+          -v, --verbose: Show pruned files
+          --dry-run: Show what would be pruned without deleting anything
+          -h, --help: Print help
+      - name: task
+        description: Inspect output cache entries for a task
+        flags:
+          -J, --json: Output in JSON format
+          -h, --help: Print help
+  - name: completion
+    description: 'Generate shell completions [aliases: complete,'
+    aliases:
+      - complete
+      - completions
+    flags:
+      --include-bash-completion-lib: Retained for compatibility with older completion generators.
+      --install: Install the script where this shell looks for it, instead of printing it
+      --force: Replace a file at the target path that mise did not write
+      --tool=: A tool's completion instead of mise's own, from the packslip it was installed from
+      -h, --help: Print help
+    completion:
+      positional:
+        - - bash
+          - fish
+          - powershell
+          - pwsh
+          - zsh
+  - name: config
+    description: 'Manage config files [aliases: cfg, toml]'
+    aliases:
+      - cfg
+      - toml
+    flags:
+      -J, --json: Output in JSON format
+      --no-header: Do not print table header
+      --tracked-configs: List all tracked config files
+      -h, --help: Print help
+    commands:
+      - name: get
+        description: Display a value from one mise TOML file
+        flags:
+          -f, --file=: The path to the mise.toml file to read
+          -g, --global: Read the global config file.
+          --system: Read the system config file.
+          -h, --help: Print help
+      - name: ls
+        description: 'List config files currently in use [aliases: list]'
+        flags:
+          -J, --json: Output in JSON format
+          --no-header: Do not print table header
+          --tracked-configs: List all tracked config files
+          -h, --help: Print help
+      - name: set
+        description: Set a value in one mise TOML file
+        flags:
+          -f, --file=: The path to the mise.toml file to edit
+          -g, --global: Edit the global config file.
+          --system: Edit the system config file.
+          --append: Append the value without duplicating an existing entry.
+          --remove: Remove the value from an existing collection.
+          -t, --type=: TOML type to store the value as; inferred from the value by
+          -h, --help: Print help
+  - name: daemons
+    description: '[experimental] Manage project daemons with'
+    aliases:
+      - daemon
+    flags:
+      -h, --help: Print help
+    commands:
+      - name: logs
+        description: Arguments passed to pitchfork; daemon names may be short or
+        flags:
+          -h, --help: Print help
+      - name: ls
+        description: List project daemons without starting a supervisor or registering
+        flags:
+          -h, --help: Print help
+      - name: providers
+        description: Manage shared servers defined in global [daemon_providers].
+        flags:
+          -h, --help: Print help
+      - name: prune
+        description: Remove daemon state left behind by deleted project directories.
+        flags:
+          -n, --dry-run: Show what would be removed without deleting anything
+          -h, --help: Print help
+      - name: register
+        description: Prepare all project daemons for on-demand startup without starting
+        flags:
+          -h, --help: Print help
+      - name: restart
+        description: Arguments passed to pitchfork; daemon names may be short or
+        flags:
+          -h, --help: Print help
+      - name: start
+        description: Arguments passed to pitchfork; daemon names may be short or
+        flags:
+          -h, --help: Print help
+      - name: status
+        description: Arguments passed to pitchfork; daemon names may be short or
+        flags:
+          -h, --help: Print help
+      - name: stop
+        description: Arguments passed to pitchfork; daemon names may be short or
+        flags:
+          -h, --help: Print help
+      - name: tui
+        description: Open pitchfork's dashboard with optional pitchfork TUI flags.
+        flags:
+          -h, --help: Print help
+      - name: urls
+        description: Show each project daemon's port and its proxy hostname URL.
+        flags:
+          -h, --help: Print help
+  - name: deactivate
+    description: Print the script to disable mise in the current
+    flags:
+      -h, --help: Print help
+    completion:
+      positional:
+        - - bash
+          - fish
+          - nu
+          - powershell
+          - pwsh
+          - zsh
+  - name: deps
+    description: '[experimental] Manage project dependencies'
+    aliases:
+      - dep
+      - prepare
+    flags:
+      --explain: Show why a provider is fresh or stale (requires a provider
+      -f, --force: Force run all deps steps even if outputs are fresh
+      -n, --dry-run: Only check if deps install is needed, don't run commands
+      --list: Show what deps providers are available
+      --monorepo: Install dependencies from every [monorepo].config_roots
+      --only=: Run specific deps rule(s) only
+      --skip=: Skip specific deps rule(s)
+      -h, --help: Print help
+    commands:
+      - name: add
+        description: Add a dependency
+        flags:
+          -D, --dev: Add as a development dependency
+          -h, --help: Print help
+      - name: install
+        description: Install all project dependencies
+        flags:
+          --explain: Show why a provider is fresh or stale (requires a provider
+          -f, --force: Force run all deps steps even if outputs are fresh
+          -n, --dry-run: Only check if deps install is needed, don't run commands
+          --list: Show what deps providers are available
+          --monorepo: Install dependencies from every [monorepo].config_roots
+          --only=: Run specific deps rule(s) only
+          --skip=: Skip specific deps rule(s)
+          -h, --help: Print help
+      - name: remove
+        description: Remove a dependency
+        flags:
+          -h, --help: Print help
+  - name: doctor
+    description: Check mise installation for possible problems
+    aliases:
+      - dr
+    flags:
+      -J, --json: Output in JSON format
+      -h, --help: Print help
+    commands:
+      - name: path
+        description: 'Print the current PATH entries mise is providing [aliases: paths]'
+        flags:
+          -f, --full: Print all entries including those not provided by mise
+          -h, --help: Print help
+      - name: project
+        description: Run the project's diagnostic checks
+        flags:
+          -J, --json: Output the complete report as JSON
+          -h, --help: Print help
+  - name: dotfiles
+    description: 'Manage dotfiles from `[dotfiles]` [aliases: dot]'
+    aliases:
+      - dot
+    flags:
+      -h, --help: Print help
+    commands:
+      - name: add
+        description: Add or update dotfiles in `[dotfiles]`
+        flags:
+          --changed: Update the sources of every changed file managed in copy
+          -f, --force: Overwrite existing sources without prompting
+          -g, --global: Write to the global config
+          -l, --local: Write to the local config instead of the global config
+          -m, --mode=: Dotfile mode to write
+          -n, --dry-run: Print the config/source updates without writing anything
+          --no-apply: Add the entry without applying it
+          -p, --path=: Write to this config file or directory
+          -s, --source=: Source path to use for a single target
+          -y, --yes: Skip the confirmation prompt
+          --prompt-secrets: Prompt securely for missing bootstrap secret inputs
+          --group=: Capture into the tree of this dotfile group
+          -h, --help: Print help
+      - name: apply
+        description: Apply dotfiles from `[dotfiles]`
+        flags:
+          -f, --force: Overwrite existing files that conflict with whole-file
+          -n, --dry-run: Print the actions that would run without writing
+          -y, --yes: Skip the confirmation prompt
+          --prune: Also remove files deployed by dotfile groups that are no
+          --prompt-secrets: Prompt securely for missing bootstrap secret inputs
+          -h, --help: Print help
+      - name: capture
+        description: Record tracked files before and after an external command
+        flags:
+          --label=: Describe this operation in history
+          -h, --help: Print help
+      - name: conflicts
+        description: Inspect the local and remote sides of sharing conflicts
+        flags:
+          --difftool: Open the comparison in Git's configured diff or merge tool
+          --tool=: Use this Git diff tool instead of the configured default
+          -h, --help: Print help
+      - name: diff
+        description: Show the changes needed to apply dotfiles from `[dotfiles]`
+        flags:
+          --prompt-secrets: Prompt securely for missing bootstrap secret inputs
+          -h, --help: Print help
+      - name: edit
+        description: Edit a managed dotfile source
+        flags:
+          --apply: Apply this target after the editor exits
+          -m, --mode=: Dotfile mode to use if the target is not yet managed
+          -s, --source=: Source path to use if the target is not yet managed
+          -y, --yes: Skip the confirmation prompt when adding an unmanaged
+          --group=: Dotfile group whose tree holds the target, when several
+          --prompt-secrets: Prompt securely for missing bootstrap secret inputs
+          -h, --help: Print help
+      - name: exclude
+        description: Never capture paths matching a glob
+        flags:
+          -h, --help: Print help
+      - name: history
+        description: Browse the checkpoints of your dotfiles
+        flags:
+          -J, --json: Output in JSON format
+          -n, --limit=: Show at most this many checkpoints (0 for all)
+          --path=: Only checkpoints where this path (or something under
+          --trigger=: Only checkpoints with this trigger (edit, save,
+          --label=: Only checkpoints with this label
+          --pending: Only checkpoints recorded by operations that did not
+          -h, --help: Print help
+      - name: include
+        description: Stop excluding paths matching a glob
+        flags:
+          -h, --help: Print help
+      - name: origin
+        description: Connect or disconnect the setup repository
+        flags:
+          --remove: 'Disconnect: remove `[history.origin]` (local checkpoints'
+          -h, --help: Print help
+      - name: paths
+        description: Show what history tracks and under which policies
+        flags:
+          -J, --json: Output in JSON format
+          --preview=: Show what tracking this path would capture
+          --noisy: List the paths the watcher found changing constantly
+          -h, --help: Print help
+      - name: pull
+        description: Pull incoming shared changes into the live files
+        flags:
+          -n, --dry-run: Show the plan without changing anything
+          -y, --yes: Pull without prompting
+          --take-remote=: Resolve a conflict with the repository's version
+          --keep-local=: Resolve a conflict by keeping this machine's version
+          --take-remote-all: Resolve every remaining conflict with the
+          --keep-local-all: Resolve every remaining conflict by keeping this
+          -h, --help: Print help
+      - name: recover
+        description: Recover an interrupted dotfile operation
+        flags:
+          --keep-current: Accept live files instead of restoring temporary recovery
+          -y, --yes: Confirm discarding the selected operation's temporary
+          -h, --help: Print help
+      - name: rollback
+        description: Return files to the version a checkpoint holds
+        flags:
+          --to=: 'The checkpoint to roll back to: numeric ID, `latest`,'
+          --all: 'With --to: everything the checkpoint covers'
+          -n, --dry-run: Show the plan without changing anything
+          -y, --yes: Apply without prompting
+          --force: Replace a path whose type changed (file, symlink,
+          -h, --help: Print help
+      - name: save
+        description: Save a checkpoint of the tracked files now
+        flags:
+          -d, --description=: A description for the checkpoint
+          --trigger=: 'What is saving: save (the default), agent, or update'
+          --task=: The task an agent is working on
+          --label=: A label to find the checkpoint by later
+          --best-effort: Warn instead of failing when history cannot save
+          -h, --help: Print help
+      - name: status
+        description: 'Show the status of dotfiles from `[dotfiles]` [aliases: ls]'
+        flags:
+          -J, --json: Output in JSON format
+          --missing: Exit with code 1 if any configured dotfiles are not in their desired state (missing, source missing, differs)
+          --prompt-secrets: Prompt securely for missing bootstrap secret inputs
+          -h, --help: Print help
+      - name: sync
+        description: Publish, fetch, and record what is pending now
+        flags:
+          --fetch-only: Fetch without publishing
+          --allow-plaintext-history: Allow publishing older unencrypted versions of encrypted files
+          --best-effort: Warn instead of failing when the origin is unreachable
+          -h, --help: Print help
+      - name: track
+        description: Track a file or directory in place
+        flags:
+          --os=: Declare a variant for this platform (macos, linux,
+          --profile=: Declare a variant for this mise environment
+          --no-autosave: Save only on `mise dot save <path>`, never
+          --encrypt: Encrypt contents before saving them to history
+          --allow-plaintext: Save an explicitly tracked credential-named file in
+          -y, --yes: Accept without prompting
+          -n, --dry-run: Show what each path expands to (files, size, what is
+          -h, --help: Print help
+      - name: unapply
+        description: Remove dotfiles applied from `[dotfiles]`
+        flags:
+          -f, --force: Remove modified or otherwise ambiguous managed files and
+          -n, --dry-run: Print the actions that would run without writing
+          -y, --yes: Skip the confirmation prompt
+          --group=: Only unapply the files of this dotfile group, even one
+          --prompt-secrets: Prompt securely for missing bootstrap secret inputs
+          -h, --help: Print help
+      - name: undo
+        description: Reverse the tracked-file changes from an operation
+        flags:
+          -n, --dry-run: Show the plan without changing anything
+          -y, --yes: Apply without prompting
+          -h, --help: Print help
+      - name: untrack
+        description: Stop tracking a file or directory
+        flags:
+          -h, --help: Print help
+      - name: watch
+        description: Save tracked files as they change
+        flags:
+          --once: Reconcile and synchronize once and exit (for timers and
+          -J, --json: One JSON object per line instead of log lines
+          -h, --help: Print help
+  - name: edit
+    description: Edit mise.toml interactively
+    flags:
+      -g, --global: Edit the global config file (~/.config/mise/config.toml)
+      -n, --dry-run: Show what would be generated without writing to file
+      -t, --tool-versions=: Path to a .tool-versions file to import tools from
+      -h, --help: Print help
+  - name: en
+    description: Start a new shell with the mise environment
+    flags:
+      -s, --shell=: Shell to start
+      -h, --help: Print help
+  - name: env
+    description: Print the environment for the current
+    aliases:
+      - e
+    flags:
+      -D, --dotenv: Output in dotenv format
+      -J, --json: Output in JSON format
+      -s, --shell=: Shell type to generate environment variables for
+      --json-extended: Output in JSON format with additional information
+      --redacted: Only include variables marked for redaction; their values
+      --values: Only show values of environment variables
+      -h, --help: Print help
+  - name: exec
+    description: 'Execute a command with tool(s) set [aliases: x]'
+    aliases:
+      - x
+    flags:
+      -c, --command=: Command string to execute through a shell (supports
+      -j, --jobs=: Number of jobs to run in parallel
+      --allow-env=: Allow specific env var through (implies --deny-env
+      --allow-net=: Allow network to specific host (implies --deny-net
+      --allow-read=: Allow reads from specific path (implies --deny-read
+      --allow-write=: Allow writes to specific path (implies --deny-write
+      --deny-all: Block reads, writes, network, and env vars
+      --deny-env: Block env var inheritance except PATH, HOME, USER,
+      --deny-net: Block all network access
+      --deny-read: Block filesystem reads (system libs and tool dirs
+      --deny-write: Block all filesystem writes
+      --fresh-env: Bypass the environment cache and recompute the
+      --no-deps: Skip automatic dependency preparation
+      --raw: Connect backend install command stdin/stdout/stderr
+      -h, --help: Print help
+  - name: fmt
+    description: Format mise TOML configuration
+    flags:
+      -a, --all: Format every config file mise currently loads, not just
+      -c, --check: Check whether the configs are formatted without rewriting
+      -s, --stdin: Read config from stdin and write its formatted version into
+      -h, --help: Print help
+  - name: generate
+    description: Generate files for various tools/services
+    aliases:
+      - gen
+      - g
+    flags:
+      -h, --help: Print help
+    commands:
+      - name: config
+        description: Generate a mise.toml file
+        flags:
+          -g, --global: Generate the global config file (~/.config/mise/config.toml)
+          -n, --dry-run: Show what would be generated without writing to file
+          -t, --tool-versions=: Path to a .tool-versions file to import tools from
+          -h, --help: Print help
+      - name: devcontainer
+        description: Generate devcontainer configuration for mise
+        flags:
+          -i, --image=: The image to use for the devcontainer
+          -m, --mount-mise-data: Bind the mise-data-volume to the devcontainer
+          -n, --name=: The name of the devcontainer
+          -w, --write: Write to .devcontainer/devcontainer.json
+          -h, --help: Print help
+      - name: git-pre-commit
+        description: 'Generate a git pre-commit hook [aliases: pre-commit]'
+        flags:
+          -t, --task=: The task to run when the pre-commit hook is triggered
+          -w, --write: Write to .git/hooks/pre-commit and make it executable
+          --hook=: Which hook to generate (saves to .git/hooks/$hook)
+          -h, --help: Print help
+      - name: github-action
+        description: Generate a GitHub Action workflow file
+        flags:
+          -t, --task=: The task to run when the workflow is triggered
+          -w, --write: Write to .github/workflows/$name.yml
+          --name=: The name of the workflow to generate
+          -h, --help: Print help
+      - name: install-script
+        description: Generate a script to download+execute mise
+        flags:
+          -l, --localize: Keep mise data and cache in a project-local directory (`.mise` by default)
+          -V, --version=: Specify mise version to fetch executable instead of printing it to stdout
+          --localized-dir=: 'Directory to put localized data into (default: .mise)'
+          --windows: Also write a Windows launcher, `<WRITE>.cmd`
+          -h, --help: Print help
+      - name: task-docs
+        description: Generate Markdown documentation for project tasks
+        flags:
+          -i, --inject: Insert the documentation into an existing file
+          -I, --index: Write only an index of tasks, intended for use with
+          -m, --multi: Render each task as a separate document; requires
+          -o, --output=: Write the generated docs to a file or directory
+          -r, --root=: Root directory to search for tasks
+          -s, --style=: 'Documentation style: `simple` lists tasks, `detailed`'
+          -h, --help: Print help
+      - name: task-stubs
+        description: Generate shims to run mise tasks
+        flags:
+          -d, --dir=: 'Directory to create task stubs inside of (default: bin)'
+          -m, --mise-bin=: Path to a mise bin to use when running the task stub.
+          --windows-launcher=: What to write beside each stub for Windows to launch
+          -h, --help: Print help
+      - name: tool-stub
+        description: Generate a tool stub for HTTP-based tools
+        flags:
+          -b, --bin=: Binary path within the extracted archive
+          --bootstrap: Wrap stub in a bootstrap script that installs mise if not already present
+          --bootstrap-version=: Specify mise version for the bootstrap script
+          --checksum-algorithm=: Checksum algorithm to use when downloading artifacts
+          --fetch: Fetch checksums and sizes for an existing tool stub file
+          --http=: 'HTTP backend type to use (default: http)'
+          --lock: Resolve and record lock data (exact version, platform URLs and checksums) for an existing stub
+          --platform-bin=: Platform-specific binary paths in the format platform:path
+          --platform-url=: Platform-specific URLs in the format platform:url or just url (auto-detect platform)
+          --skip-download: Skip downloading for checksum and binary path detection (faster but less informative)
+          -u, --url=: URL for downloading the tool
+          --version=: 'Version of the tool (default: latest)'
+          -h, --help: Print help
+  - name: implode
+    description: Remove the mise CLI and all related data
+    flags:
+      -n, --dry-run: List directories that would be removed without actually
+      --config: Also remove config directory
+      -h, --help: Print help
+  - name: install
+    description: 'Install a tool version [aliases: i]'
+    aliases:
+      - i
+    flags:
+      -f, --force: Force reinstall even if already installed With no tools specified, reinstall all configured tools
+      -j, --jobs=: 'Number of jobs to run in parallel Values below 1 are treated as 1 Defaults to the `jobs` setting [env: MISE_JOBS]'
+      -n, --dry-run: Show what would be installed without actually installing
+      -v, --verbose: Show installation output
+      --dry-run-code: Like --dry-run but exits with code 1 if there are tools to install
+      --include-task-tools: Also install tools required by tasks in the current scope
+      --include-lazy: Also install tools configured with `lazy = true`
+      --monorepo: Install tools from every [monorepo].config_roots config root
+      --raw: Connect backend install command stdin/stdout/stderr directly to the terminal. Implies `--jobs=1`
+      --shared=: Install tool(s) to a shared directory
+      --system: Install tool(s) to the system-wide shared directory
+      -h, --help: Print help
+  - name: install-into
+    description: Install a tool version to a specific path
+    flags:
+      -h, --help: Print help
+  - name: latest
+    description: Resolve the latest matching version request for
+    flags:
+      -i, --installed: Show latest installed instead of available version Only consider versions released before this date or older than thi...
+      -h, --help: Print help
+  - name: link
+    description: 'Symlink a tool version into mise [aliases: ln]'
+    aliases:
+      - ln
+    flags:
+      -f, --force: Overwrite an existing tool version if it exists
+      -h, --help: Print help
+  - name: lock
+    description: Create or refresh lockfile versions, checksums,
+    flags:
+      -g, --global: Target only global config lockfiles (~/.config/mise/mise.lock and system config) By default, only the active project ...
+      -j, --jobs=: 'Number of jobs to run in parallel Values below 1 are treated as 1 [env: MISE_JOBS]'
+      -n, --dry-run: Show what would be updated without making changes
+      -p, --platform=: 'Comma-separated list of platforms to target e.g.: linux-x64,macos-arm64,windows-x64 If omitted, use lockfile_platform...'
+      --bump: Re-resolve fuzzy version selectors against the latest available versions
+      --json: Output version changes as JSON
+      --local: Update mise.local.lock instead of mise.lock Use for tools defined in .local.toml configs Only lock versions released ...
+      --upgrade: Upgrade legacy lockfiles to the latest format
+      --sidecars: List native dependency sidecars instead of updating lockfiles
+      -h, --help: Print help
+  - name: ls
+    description: List installed and active tool versions
+    aliases:
+      - list
+    flags:
+      -b, --backend=: Only show tools from this backend, e.g. aqua, cargo, core, go
+      -c, --current: Only show tool versions currently specified in a mise.toml
+      -g, --global: Only show tool versions currently specified in the global mise.toml
+      -i, --installed: Only show tool versions that are installed (Hides tools defined in mise.toml but not installed)
+      --grouped: List tools in a separate section for each backend
+      -J, --json: Output in JSON format
+      -l, --local: Only show tool versions currently specified in the local mise.toml
+      -m, --missing: Display missing tool versions
+      --all-sources: Display all tracked config sources for tools
+      --monorepo: List tools from every [monorepo].config_roots config root
+      --no-header: Don't display headers
+      --outdated: Display whether a version is outdated
+      --prefix=: Display versions matching this prefix
+      --prunable: List only tools that can be pruned with `mise prune`
+      -h, --help: Print help
+  - name: ls-remote
+    description: List tool versions available to install
+    aliases:
+      - list-all
+      - list-remote
+    flags:
+      --all: List available versions for every backend/tool currently known to mise Only show versions released before this age or...
+      -J, --json: Output in JSON format (includes version metadata like created_at timestamps when available)
+      --no-versions-host: Disable checking the mise-versions host
+      --prerelease: Include pre-release versions in the output for backends that report upstream prerelease metadata or opt in to regex-b...
+      --strict-metadata: Fail if release metadata fetches fail
+      -h, --help: Print help
+  - name: mcp
+    description: Run the Model Context Protocol server over
+    flags:
+      -h, --help: Print help
+  - name: oci
+    description: '[experimental] Build OCI container images from a'
+    flags:
+      -h, --help: Print help
+    commands:
+      - name: build
+        description: '[experimental] Build an OCI image from the current mise.toml'
+        flags:
+          -o, --output=: 'Output directory for the OCI image layout (default: ./mise-oci)'
+          --from=: Base image reference (overrides [oci].from and the oci.default_from setting)
+          --include-global: 'Also include tools from the global / system config (default: project-only)'
+          -t, --tag=: Tag to record in the image index (the org.opencontainers.image.ref.name annotation)
+          --mount-point=: 'Where to place tool installs inside the image (default: /mise)'
+          --no-mise: Do not embed the currently-running mise binary at /usr/local/bin/mise
+          --no-cache: Rebuild tool layers without reading or writing the local layer cache generated layers
+          -h, --help: Print help
+      - name: push
+        description: '[experimental] Build an OCI image and push it to a registry'
+        flags:
+          --cache-from=: Reuse unchanged tool layers from this image instead of the destination ref
+          --from=: Base image for the build (ignored with --image-dir)
+          --image-dir=: Push an already-built OCI image layout (skip the build step)
+          --include-global: 'Also include tools from the global / system config (default: project-only)'
+          --mount-point=: Override in-image mount point (ignored with --image-dir)
+          --no-cache: Rebuild tool layers without using the remote or local layer cache
+          --no-mise: Don't embed the mise binary (ignored with --image-dir) building (conflicts with --image-dir)
+          --update-index: Maintain the tag as a multi-arch image index
+          -h, --help: Print help
+      - name: run
+        description: '[experimental] Build an OCI image from the current mise.toml and run a'
+        flags:
+          --engine=: 'Container engine to use (`auto`, `podman`, or `docker`) [possible values: auto, podman, docker] (default: auto)'
+          --from=: Base image reference for the build (ignored with --image-dir)
+          --image-dir=: Use an already-built OCI image layout instead of building fresh
+          --include-global: 'Also include tools from the global / system config (default: project-only)'
+          --keep: Keep the loaded image in the engine's storage after the run
+          --mount-point=: Override in-image mount point (ignored with --image-dir)
+          --no-mise: Don't embed the mise binary (ignored with --image-dir) building (conflicts with --image-dir)
+          -e, --env=: Set environment variable in the container (repeatable, `KEY=VAL`)
+          -i, --interactive: Run interactively (pass `-i` to the engine)
+          -t, --tty: Allocate a TTY (pass `-t` to the engine)
+          -w, --workdir=: Working directory inside the container
+          -h, --help: Print help
+  - name: outdated
+    description: Show outdated tool versions
+    flags:
+      -b, --bump: Compare against the latest versions available, not just
+      -J, --json: Output in JSON format
+      --inactive: Show outdated tools including installed-but-inactive tools
+      --local: Only show outdated tools defined in local config files
+      --monorepo: Placeholder for future monorepo outdated checks; `mise
+      --no-header: Don't show table header
+      -h, --help: Print help
+  - name: packslip
+    description: The signers mise accepts packslips from
+    flags:
+      -h, --help: Print help
+    commands:
+      - name: forget
+        description: Forget a project's pinned signer, so the next release accepted sets it
+        flags:
+          -h, --help: Print help
+      - name: pins
+        description: 'List the signers mise has accepted packslips from [aliases: list]'
+        flags:
+          -J, --json: Output in JSON format
+          -h, --help: Print help
+  - name: patrons
+    description: Show the individuals supporting mise as
+    flags:
+      -J, --json: Output in JSON format
+      --refresh: Bypass the local cache and re-fetch
+      -h, --help: Print help
+  - name: plugins
+    description: 'Manage plugins [aliases: p, plugin, plugin-list]'
+    aliases:
+      - p
+      - plugin
+      - plugin-list
+    flags:
+      -c, --core: Only show built-in (core) plugins
+      -u, --urls: Show the git url for each plugin
+      --user: List installed plugins
+      -h, --help: Print help
+    commands:
+      - name: install
+        description: Install a plugin from a configured source, Git URL, or supported
+        flags:
+          -a, --all: Install all missing plugins
+          -f, --force: Reinstall even if plugin exists
+          -j, --jobs=: Number of jobs to run in parallel
+          -v, --verbose: Show installation output
+          -h, --help: Print help
+      - name: link
+        description: 'Link a local plugin directory into mise for development [aliases:'
+        flags:
+          -f, --force: Overwrite existing plugin
+          -h, --help: Print help
+      - name: ls
+        description: 'List installed external plugins [aliases: list]'
+        flags:
+          -c, --core: Only show built-in (core) plugins
+          -o, --outdated: Show plugins with available updates
+          -u, --urls: Show the git url for each plugin
+          --user: List installed plugins
+          -h, --help: Print help
+      - name: ls-remote
+        description: 'List all available remote plugins [aliases: list-remote, list-all]'
+        flags:
+          -u, --urls: Show the git url for each plugin, e.g.
+          --only-names: Only show the name of each plugin, without the * marking
+          -h, --help: Print help
+      - name: uninstall
+        description: 'Remove an installed plugin [aliases: remove, rm]'
+        flags:
+          -a, --all: Remove all plugins
+          -p, --purge: Also remove the plugin's installs, downloads, and cache
+          -h, --help: Print help
+      - name: update
+        description: 'Update a plugin to the latest version [aliases: up, upgrade]'
+        flags:
+          -j, --jobs=: Number of jobs to run in parallel
+          -h, --help: Print help
+  - name: prune
+    description: Delete unused versions of tools
+    flags:
+      -n, --dry-run: Do not actually delete anything
+      --configs: Prune only tracked and trusted configuration links that
+      --dry-run-code: Like --dry-run but exits with code 1 if there are tools to
+      --monorepo: Placeholder for future monorepo pruning; `mise prune
+      --tools: Prune only unused versions of tools
+      -h, --help: Print help
+  - name: registry
+    description: List registry shorthand names and their backends
+    flags:
+      -b, --backend=: Show only tools for this backend
+      --hide-aliased: Hide aliased tools
+      -J, --json: Output in JSON format
+      --security: Include security features for each tool's backends in
+      -h, --help: Print help
+  - name: reshim
+    description: Create shims for executables provided by
+    flags:
+      -f, --force: Rebuild all mise-owned shims
+      --system: Rebuild the system shim farm
+      -h, --help: Print help
+  - name: run
+    description: 'Run tasks and their dependencies [aliases: r]'
+    aliases:
+      - r
+    flags:
+      --affected: Run matching tasks only for projects affected by Git changes
+      --affected-base=: Git base revision for --affected Defaults to MISE_AFFECTED_BASE, CI metadata, or HEAD~1
+      --affected-explain: Explain why projects and tasks were selected by --affected
+      --affected-head=: Git head revision for --affected Defaults to MISE_AFFECTED_HEAD, CI metadata, or HEAD
+      --affected-json: Output affected projects and tasks as JSON without running tasks
+      --all: Open the interactive selector with all tasks from the entire monorepo
+      -c, --continue-on-error: Continue running tasks even if one fails
+      -C, --cd=: Change to this directory before executing the command
+      -f, --force: Force the tasks to run even if outputs are up to date
+      -j, --jobs=: Number of tasks to run in parallel Values below 1 are treated as 1 Defaults to the `jobs` setting or the `MISE_JOBS` ...
+      -n, --dry-run: Don't actually run the task(s), just print them in order of execution
+      -o, --output=: How task output is displayed
+      -q, --quiet: 'Don''t show extra output [env: MISE_QUIET]'
+      -r, --raw: Read/write directly to stdin/stdout/stderr instead of by line Redactions are not applied with this option Configure w...
+      -s, --shell=: Shell to use to run toml tasks
+      -S, --silent: 'Don''t show any output except for errors [env: MISE_SILENT] mise.toml files e.g.: node@20 python@3.10'
+      --allow-env=: Allow specific env var through (implies --deny-env for everything else) Supports wildcards, e.g. --allow-env='MYAPP_*'
+      --allow-net=: Allow network to specific host (implies --deny-net for everything else) Per-host filtering is unsupported on Linux an...
+      --allow-read=: Allow reads from specific path (implies --deny-read for everything else)
+      --allow-write=: Allow writes to specific path (implies --deny-write for everything else)
+      --deny-all: Block reads, writes, network, and env vars
+      --deny-env: Block env var inheritance except PATH, HOME, USER, SHELL, TERM, COLORTERM, LANG
+      --deny-net: Block all network access
+      --deny-read: Block filesystem reads (system libs and tool dirs still accessible)
+      --deny-write: Block all filesystem writes
+      --fresh-env: Bypass the environment cache and recompute the environment
+      --no-cache: 'Do not use cache on remote tasks [env: MISE_TASK_REMOTE_NO_CACHE]'
+      --no-deps: Skip automatic dependency preparation
+      --no-timings: Hide the elapsed time printed after each task completes
+      --skip-deps: 'Run only the specified tasks skipping all dependencies [env: MISE_TASK_SKIP_DEPENDS]'
+      --skip-tools: Skip installing tools before running tasks
+      --task-cache=: Set task output cache access for this run
+      --task-cache-explain: Explain the inputs that produced each task's output cache key
+      --task-cache-explain-json: Output cache-key input details as JSON Lines without running tasks
+      --task-cache-stats: Report task output cache hits, restored bytes, and time saved
+      --timeout=: 'Timeout for the task to complete e.g.: 30s, 5m'
+  - name: search
+    description: Search for available tools
+    flags:
+      -a, --all: 'Search every backend: the registry, aqua, installed backend plugins, and the npm, cargo, gem, and dotnet package regi...'
+      -i, --interactive: Show an interactive search menu
+      -m, --match-type=: 'Match type: equal, contains, or fuzzy [possible values: equal, contains, fuzzy] (default: fuzzy)'
+      --no-header: Don't display headers
+      -h, --help: Print help
+  - name: self-update
+    description: Update mise itself
+    flags:
+      -f, --force: Update even if already up to date
+      -y, --yes: Skip confirmation prompt
+      --no-plugins: Disable auto-updating plugins
+      -h, --help: Print help
+  - name: set
+    description: 'Set environment variables in mise.toml [aliases:'
+    aliases:
+      - ev
+      - env-vars
+    flags:
+      -E, --env=: Create/modify an environment-specific config file like .mise.<env>.toml
+      -g, --global: Set the environment variable in the global config file
+      --age-encrypt: '[experimental] Encrypt the value with age before storing'
+      --age-key-file=: '[experimental] Age identity file for encryption'
+      --age-recipient=: '[experimental] Age recipient (x25519 public key) for encryption'
+      --age-ssh-recipient=: '[experimental] SSH recipient (public key or path) for age encryption'
+      --file=: The TOML file to update
+      --no-redact: Show raw values instead of redacting secrets
+      --prompt: Prompt for environment variable values
+      --stdin: Read the value from stdin (for multiline input)
+      -h, --help: Print help
+  - name: settings
+    description: Manage settings
+    flags:
+      -a, --all: List all settings
+      -J, --json: Output in JSON format
+      -l, --local: Use the local config file instead of the global one
+      -T, --toml: Output in TOML format
+      --json-extended: Output in JSON format with sources
+      -h, --help: Print help
+    commands:
+      - name: add
+        description: Append a value to an array setting
+        flags:
+          -l, --local: Use the local config file instead of the global one
+          -h, --help: Print help
+      - name: get
+        description: Show the effective value of a setting
+        flags:
+          -l, --local: Use the local config file instead of the global one
+          -h, --help: Print help
+      - name: ls
+        description: 'List configured settings and their sources [aliases: list]'
+        flags:
+          -a, --all: List all settings
+          -J, --json: Output in JSON format
+          -l, --local: Use the local config file instead of the global one
+          -T, --toml: Output in TOML format
+          --json-extended: Output in JSON format with sources
+          -h, --help: Print help
+      - name: set
+        description: 'Add/update a setting [aliases: create]'
+        flags:
+          -l, --local: Use the local config file instead of the global one
+          -h, --help: Print help
+      - name: unset
+        description: 'Clear a setting [aliases: rm, remove, delete, del]'
+        flags:
+          -l, --local: Use the local config file instead of the global one
+          -h, --help: Print help
+  - name: shell
+    description: Set a tool version for the current shell session
+    aliases:
+      - sh
+    flags:
+      -j, --jobs=: Number of jobs to run in parallel
+      -u, --unset: Remove a previously set version
+      --raw: Connect backend install command stdin/stdout/stderr
+      -h, --help: Print help
+  - name: shell-alias
+    description: Manage shell aliases
+    flags:
+      --no-header: Don't show table header
+      -h, --help: Print help
+    commands:
+      - name: get
+        description: Show the command for a shell alias
+        flags:
+          -h, --help: Print help
+      - name: ls
+        description: 'List shell aliases [aliases: list]'
+        flags:
+          --no-header: Don't show table header
+          -h, --help: Print help
+      - name: set
+        description: 'Add/update a shell alias [aliases: add, create]'
+        flags:
+          -h, --help: Print help
+      - name: unset
+        description: 'Remove a shell alias [aliases: rm, remove, delete, del]'
+        flags:
+          -h, --help: Print help
+  - name: skills
+    description: Agent skills the active tools ship, from their
+    aliases:
+      - skill
+    flags:
+      -h, --help: Print help
+    commands:
+      - name: ls
+        description: 'List the skills the active tools declare [aliases: list]'
+        flags:
+          -J, --json: Output in JSON format
+          -h, --help: Print help
+      - name: sync
+        description: Link the active tools' skills where an agent looks for them
+        flags:
+          --dir=: The directory to link skills into
+          -g, --global: Link into ~/.claude/skills instead of the project's
+          --prune: Remove links mise made for skills that are no longer active
+          -h, --help: Print help
+  - name: sponsors
+    description: Show the companies sponsoring mise and the
+    flags:
+      -h, --help: Print help
+  - name: ssh
+    description: Open an SSH session, optionally borrowing
+    flags:
+      -i, --identity-file=: SSH identity file
+      -p, --port=: SSH port
+      -o, --ssh-option=: OpenSSH option; repeat for multiple options
+      --github-relay-read-only: Borrow read-only GitHub access for this session only authorize more repositories
+      --github-relay-all-repos: Explicitly authorize reads of all repositories accessible locally
+      --github-relay-log-requests: Log sanitized relay requests on local stderr
+      --github-relay-no-log-requests: Disable request logging, overriding the saved preference
+      --github-relay-log-format=: 'Relay log and summary format: text or jsonl'
+      --github-relay-max-duration=: 'Expire borrowed access after a duration such as 1h (0s: session lifetime)'
+      -h, --help: Print help
+  - name: sync
+    description: Synchronize tools from other version managers
+    flags:
+      -h, --help: Print help
+    commands:
+      - name: node
+        description: Symlink node versions installed by nvm, nodenv, or Homebrew into mise
+        flags:
+          --brew: Get tool versions from Homebrew
+          --nodenv: Get tool versions from nodenv
+          --nvm: Get tool versions from nvm
+          -h, --help: Print help
+      - name: python
+        description: Symlink python versions installed by pyenv or uv into mise
+        flags:
+          --pyenv: Get tool versions from pyenv
+          --uv: Sync tool versions with uv (2-way sync)
+          -h, --help: Print help
+      - name: ruby
+        description: Symlink ruby versions installed by Homebrew into mise
+        flags:
+          --brew: Get tool versions from Homebrew
+          -h, --help: Print help
+  - name: tasks
+    description: 'Manage tasks [aliases: t, task]'
+    aliases:
+      - t
+      - task
+    flags:
+      -g, --global: Only show global tasks
+      -J, --json: Output in JSON format
+      -l, --local: Only show non-global tasks
+      -x, --extended: Show all columns
+      --all: Load all tasks from the entire monorepo, including sibling directories. By default, only tasks from the current direc...
+      --hidden: Show hidden tasks
+      --name-only: Only show task names, one per line. Useful for piping to fzf and similar tools.
+      --no-header: Do not print table header
+      --sort=: 'Sort by column. Default is name. [possible values: name, alias, description, source]'
+      --sort-order=: 'Sort order. Default is asc. [possible values: asc, desc]'
+      -h, --help: Print help
+    commands:
+      - name: add
+        description: Create a new task
+        flags:
+          -a, --alias=: Other names for the task
+          -d, --depends=: Add dependencies to the task
+          -D, --dir=: Run the task in a specific directory
+          -f, --file: Create a file task instead of a toml task
+          -H, --hide: Hide the task from `mise tasks` and completions
+          -q, --quiet: Do not print the command before running
+          -r, --raw: Directly connect stdin/stdout/stderr
+          -s, --sources=: Glob patterns of files this task uses as input
+          -w, --wait-for=: Wait for these tasks to finish if they are also being run
+          --depends-post=: Dependencies to run after the task runs
+          --description=: Description of the task
+          --outputs=: Glob patterns of files this task creates, used to skip it when they are up to date
+          --run-windows=: Command to run on Windows
+          --shell=: Run the task in a specific shell
+          --silent: Do not print the command or its output
+          -h, --help: Print help
+      - name: deps
+        description: Display a tree visualization of a dependency graph
+        flags:
+          --compact: Collapse repeated dependencies after their first occurrence
+          --dot: Display dependencies in DOT format
+          --hidden: Show hidden tasks
+          -h, --help: Print help
+      - name: edit
+        description: Edit a task with $EDITOR
+        flags:
+          -p, --path: Display the path to the task instead of editing it
+          -h, --help: Print help
+      - name: graph
+        description: '[experimental] Inspect the workspace project graph'
+        flags:
+          -J, --json: Output the project graph as JSON
+          --explain: Explain provider attribution for inferred projects and
+          --no-header: Do not print table headers
+          -h, --help: Print help
+      - name: info
+        description: Get information about a task
+        flags:
+          -J, --json: Output in JSON format
+          -h, --help: Print help
+      - name: ls
+        description: List available tasks
+        flags:
+          -g, --global: Only show global tasks
+          -J, --json: Output in JSON format
+          -l, --local: Only show non-global tasks
+          -x, --extended: Show all columns
+          --all: Load all tasks from the entire monorepo, including sibling directories. By default, only tasks from the current direc...
+          --hidden: Show hidden tasks
+          --name-only: Only show task names, one per line. Useful for piping to fzf and similar tools.
+          --no-header: Do not print table header
+          --sort=: 'Sort by column. Default is name. [possible values: name, alias, description, source]'
+          --sort-order=: 'Sort order. Default is asc. [possible values: asc, desc]'
+          -h, --help: Print help
+      - name: run
+        description: 'Run tasks and their dependencies [aliases: r]'
+        flags:
+          --affected: Run matching tasks only for projects affected by Git changes
+          --affected-base=: Git base revision for --affected Defaults to MISE_AFFECTED_BASE, CI metadata, or HEAD~1
+          --affected-explain: Explain why projects and tasks were selected by --affected
+          --affected-head=: Git head revision for --affected Defaults to MISE_AFFECTED_HEAD, CI metadata, or HEAD
+          --affected-json: Output affected projects and tasks as JSON without running tasks
+          --all: Open the interactive selector with all tasks from the entire monorepo
+          -c, --continue-on-error: Continue running tasks even if one fails
+          -C, --cd=: Change to this directory before executing the command
+          -f, --force: Force the tasks to run even if outputs are up to date
+          -j, --jobs=: Number of tasks to run in parallel Values below 1 are treated as 1 Defaults to the `jobs` setting or the `MISE_JOBS` ...
+          -n, --dry-run: Don't actually run the task(s), just print them in order of execution
+          -o, --output=: How task output is displayed
+          -q, --quiet: 'Don''t show extra output [env: MISE_QUIET]'
+          -r, --raw: Read/write directly to stdin/stdout/stderr instead of by line Redactions are not applied with this option Configure w...
+          -s, --shell=: Shell to use to run toml tasks
+          -S, --silent: 'Don''t show any output except for errors [env: MISE_SILENT] mise.toml files e.g.: node@20 python@3.10'
+          --allow-env=: Allow specific env var through (implies --deny-env for everything else) Supports wildcards, e.g. --allow-env='MYAPP_*'
+          --allow-net=: Allow network to specific host (implies --deny-net for everything else) Per-host filtering is unsupported on Linux an...
+          --allow-read=: Allow reads from specific path (implies --deny-read for everything else)
+          --allow-write=: Allow writes to specific path (implies --deny-write for everything else)
+          --deny-all: Block reads, writes, network, and env vars
+          --deny-env: Block env var inheritance except PATH, HOME, USER, SHELL, TERM, COLORTERM, LANG
+          --deny-net: Block all network access
+          --deny-read: Block filesystem reads (system libs and tool dirs still accessible)
+          --deny-write: Block all filesystem writes
+          --fresh-env: Bypass the environment cache and recompute the environment
+          --no-cache: 'Do not use cache on remote tasks [env: MISE_TASK_REMOTE_NO_CACHE]'
+          --no-deps: Skip automatic dependency preparation
+          --no-timings: Hide the elapsed time printed after each task completes
+          --skip-deps: 'Run only the specified tasks skipping all dependencies [env: MISE_TASK_SKIP_DEPENDS]'
+          --skip-tools: Skip installing tools before running tasks
+          --task-cache=: Set task output cache access for this run
+          --task-cache-explain: Explain the inputs that produced each task's output cache key
+          --task-cache-explain-json: Output cache-key input details as JSON Lines without running tasks
+          --task-cache-stats: Report task output cache hits, restored bytes, and time saved
+          --timeout=: 'Timeout for the task to complete e.g.: 30s, 5m'
+      - name: validate
+        description: Validate tasks for common errors and issues
+        flags:
+          --errors-only: Only show errors (skip warnings)
+          --json: Output validation results in JSON format
+          -h, --help: Print help
+  - name: test-tool
+    description: Test that a tool installs and runs
+    flags:
+      -a, --all: Test every tool specified in registry/
+      -j, --jobs=: Number of tool tests to run in parallel
+      --all-config: Test all tools specified in config files
+      --include-non-defined: Also test tools not defined in registry/, guessing
+      --raw: Connect backend install command stdin/stdout/stderr
+      -h, --help: Print help
+  - name: token
+    description: Display git provider tokens mise will use
+    flags:
+      -h, --help: Print help
+    commands:
+      - name: forgejo
+        description: Show the Forgejo token mise will use
+        flags:
+          --unmask: Show the full unmasked token
+          -h, --help: Print help
+      - name: github
+        description: Show the GitHub token mise will use
+        flags:
+          --oauth: Resolve only via the native GitHub OAuth source (cache,
+          --raw: Print only the token value
+          --refresh: Mint a fresh OAuth token even if the cached one has not
+          --unmask: Show the full unmasked token
+          -h, --help: Print help
+      - name: gitlab
+        description: Show the GitLab token mise will use
+        flags:
+          --unmask: Show the full unmasked token
+          -h, --help: Print help
+  - name: tool
+    description: Show information about a tool
+    flags:
+      -J, --json: Output in JSON format
+      --active: Only show active versions
+      --backend: Only show backend field
+      --config-source: Only show config source
+      --description: Only show description field
+      --installed: Only show installed versions
+      --requested: Only show requested versions
+      --tool-options: Only show tool options
+      --url: Only show the project URL from the registry
+      -h, --help: Print help
+  - name: tool-alias
+    description: 'Manage tool version aliases [aliases: alias,'
+    aliases:
+      - alias
+      - aliases
+    flags:
+      -p, --tool=: Filter aliases by tool
+      --no-header: Don't show table header
+      -h, --help: Print help
+    commands:
+      - name: get
+        description: Show a configured version alias for a tool
+        flags:
+          -h, --help: Print help
+      - name: ls
+        description: 'List tool version aliases [aliases: list]'
+        flags:
+          --no-header: Don't show table header
+          -h, --help: Print help
+      - name: set
+        description: 'Add/update an alias for a tool/backend [aliases: add, create]'
+        flags:
+          -h, --help: Print help
+      - name: unset
+        description: 'Clear an alias for a tool/backend [aliases: rm, remove, delete, del]'
+        flags:
+          -h, --help: Print help
+  - name: tool-stub
+    description: Execute a tool stub
+  - name: trust
+    description: Mark a config file as trusted
+    flags:
+      -a, --all: Trust all config files in the current directory, its
+      --ignore: Do not trust this config and ignore it in the future
+      --show: Show the trusted status of config files from the current
+      --untrust: Remove explicit trust for this config
+      -h, --help: Print help
+  - name: uninstall
+    description: Remove installed tool versions
+    flags:
+      -a, --all: Delete all installed versions
+      -n, --dry-run: Do not actually delete anything
+      --dry-run-code: Like --dry-run but exits with code 1 if there are tools to
+      -h, --help: Print help
+  - name: unset
+    description: Remove environment variable(s) from the config
+    flags:
+      -f, --file=: Specify a file to use instead of `mise.toml`
+      -g, --global: Use the global config file
+      -h, --help: Print help
+  - name: untrust
+    description: Remove explicit trust for a config
+    flags:
+      -h, --help: Print help
+  - name: unuse
+    description: Remove tool requests from configuration and
+    aliases:
+      - rm
+      - remove
+    flags:
+      -e, --env=: Modify `.mise.<env>.toml` when it exists, otherwise
+      -g, --global: Use the global config file (`~/.config/mise/config.toml`)
+      -p, --path=: Specify a path to a config file or directory
+      --no-prune: Do not also prune the installed version
+      -h, --help: Print help
+  - name: upgrade
+    description: 'Upgrade outdated tools [aliases: up]'
+    aliases:
+      - up
+    flags:
+      -b, --bump: Upgrade to the latest version available, bumping the version in mise.toml
+      -i, --interactive: Choose which tools to upgrade from a multiselect menu
+      -j, --jobs=: 'Number of jobs to run in parallel Values below 1 are treated as 1 Defaults to the `jobs` setting [env: MISE_JOBS]'
+      -n, --dry-run: Print what would be done without doing it
+      -x, --exclude=: 'Tool(s) to exclude from upgrading e.g.: go python'
+      --dry-run-code: Like --dry-run but exits with code 1 if there are outdated tools
+      --inactive: Upgrade all tools, including installed-but-inactive tools not present in the current config
+      --local: Only upgrade tools defined in local config files
+      --monorepo: Placeholder for future monorepo upgrades; `mise upgrade --monorepo` is not implemented yet.
+      --no-prune: Do not uninstall the versions that were upgraded away from
+      --prune: Immediately uninstall the versions that were upgraded away from
+      --raw: Connect backend install command stdin/stdout/stderr directly to the terminal. Implies `--jobs=1`
+      -h, --help: Print help
+  - name: use
+    description: Install a tool and add it to configuration
+    aliases:
+      - u
+    flags:
+      --postinstall=: Command to run after installing this tool
+      --tool-option=: Set an option for this tool (repeat for multiple options). Values use inline tool-option types; unquoted text is trea...
+      -e, --env=: Create/modify an environment-specific config file like .mise.<env>.toml
+      -f, --force: Force reinstall even if already installed
+      -g, --global: Use the global config file (`~/.config/mise/config.toml`) instead of the local one
+      -j, --jobs=: 'Number of jobs to run in parallel Values below 1 are treated as 1 Defaults to the `jobs` setting [env: MISE_JOBS]'
+      -n, --dry-run: Perform a dry run, showing what would be installed and modified without making changes
+      -p, --path=: Specify a path to a config file or directory
+      --dry-run-code: Like --dry-run but exits with code 1 if there are changes to make
+      --fuzzy: Save fuzzy version to config file
+      --pin: Save the resolved concrete version to the config file
+      --raw: Connect backend install command stdin/stdout/stderr directly to the terminal. Implies `--jobs=1`
+      --remove=: Remove the tool(s) from config file
+      -h, --help: Print help
+  - name: version
+    description: 'Display the version of mise [aliases: v]'
+    aliases:
+      - v
+    flags:
+      -J, --json: Print the version information in JSON format
+      -h, --help: Print help
+  - name: watch
+    description: Run task(s) and rerun them when files change
+    aliases:
+      - w
+    flags:
+      --skip-deps: Run only the specified tasks skipping all dependencies
+      -o, --on-busy-update=: What to do when receiving events while the command is running
+      -r, --restart: Restart the process if it's still running
+      -s, --signal=: Send a signal to the process when it's still running
+      --stop-signal=: Signal to send to stop the command
+      --stop-timeout=: Time to wait for the command to exit gracefully
+      -d, --debounce=: Time to wait for new events before taking action
+      --stdin-quit: Exit when stdin closes
+      -p, --postpone: Wait until first change before running command
+      --delay-run=: Sleep before running the command
+      --project-origin=: Set the project origin
+      --workdir=: Set the working directory
+      -h, --help: Print help
+      -w, --watch=: Watch a specific file or directory
+      -W, --watch-non-recursive=: Watch a specific directory, non-recursively
+      -F, --watch-file=: Watch files and directories from a file
+      --no-vcs-ignore: Don't load gitignores
+      --no-project-ignore: Don't load project-local ignores
+      --no-global-ignore: Don't load global ignores
+      --no-default-ignore: Don't use internal default ignores
+      --no-discover-ignore: Don't discover ignore files at all
+      --ignore-nothing: Don't ignore anything at all
+      -e, --exts=: Filename extensions to filter to
+      -f, --filter=: Filename patterns to filter to
+      --filter-file=: Files to load filters from
+      -J, --filter-prog=: '[experimental] Filter programs.'
+      -i, --ignore=: Filename patterns to filter out
+      --ignore-file=: Files to load ignores from
+      --fs-events=: Filesystem events to filter to
+      --no-meta: Don't emit fs events for metadata changes
+      --only-emit-events: Only emit events to stdout, run no commands.
+      -N, --notify: Alert when commands start and end
+      --color=: When to use terminal colours
+      --timings: Print how long the command took to run
+      -q, --quiet: Don't print starting and stopping messages
+      --bell: Ring the terminal bell on command completion
+      --shell=: Use a different shell
+  - name: where
+    description: Display the installation path for a tool
+    flags:
+      -h, --help: Print help
+  - name: which
+    description: Show the path a tool's executable resolves to
+    flags:
+      --plugin: Show the plugin name instead of the path
+      --version: Show the version instead of the path
+      -h, --help: Print help
