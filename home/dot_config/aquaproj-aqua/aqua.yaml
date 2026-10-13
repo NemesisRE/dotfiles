@@ -152,7 +152,7 @@ packages:
   - name: tstack/lnav@v0.14.1 # renovate: depName=tstack/lnav
     tags:
       - default
-  - name: JanDeDobbeleer/oh-my-posh@v31.7.0 # renovate: depName=JanDeDobbeleer/oh-my-posh
+  - name: JanDeDobbeleer/oh-my-posh@v31.8.0 # renovate: depName=JanDeDobbeleer/oh-my-posh
     tags:
       - default
       - required
@@ -201,7 +201,7 @@ packages:
   - name: derailed/k9s@v0.51.0 # renovate: depName=derailed/k9s
     tags:
       - k8s
-  - name: nklmilojevic/sofka@v0.31.7 # renovate: depName=nklmilojevic/sofka
+  - name: nklmilojevic/sofka@v0.31.8 # renovate: depName=nklmilojevic/sofka
     tags:
       - k8s
   - name: kubernetes-sigs/kustomize@kustomize/v5.8.1 # renovate: depName=kubernetes-sigs/kustomize
