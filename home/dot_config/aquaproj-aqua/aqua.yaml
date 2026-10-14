@@ -34,7 +34,7 @@ packages:
     tags:
       - default
       - required
-  - name: junegunn/fzf@v0.74.4 # renovate: depName=junegunn/fzf
+  - name: junegunn/fzf@v0.74.5 # renovate: depName=junegunn/fzf
     tags:
       - default
       - required
@@ -122,7 +122,7 @@ packages:
   - name: anthropics/claude-code@v2.1.296 # renovate: depName=anthropics/claude-code
     tags:
       - default
-  - name: google-antigravity/antigravity-cli@1.3.3 # renovate: depName=google-antigravity/antigravity-cli
+  - name: google-antigravity/antigravity-cli@1.3.4 # renovate: depName=google-antigravity/antigravity-cli
     tags:
       - default
   - name: jqlang/jq@jq-1.8.1 # renovate: depName=jqlang/jq
@@ -173,7 +173,7 @@ packages:
   - name: sharkdp/hyperfine@v2.0.0 # renovate: depName=sharkdp/hyperfine
     tags:
       - default
-  - name: jdx/mise@v2026.10.8 # renovate: depName=jdx/mise
+  - name: jdx/mise@v2026.10.9 # renovate: depName=jdx/mise
     tags:
       - default
       - required
