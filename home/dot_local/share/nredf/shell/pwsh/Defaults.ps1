@@ -61,6 +61,28 @@ if ($isWindows) {
     New-Item -ItemType Junction -Path $yaziAppDataConfig -Target $yaziConfigHome -Force -ErrorAction SilentlyContinue | Out-Null
   }
 
+  # Configure Zellij's config directory and AppData junction on Windows.
+  # Zellij ignores XDG_CONFIG_HOME and ~/.config/zellij on Windows: its only
+  # lookups are %APPDATA%\Zellij\config and C:\ProgramData\Zellij (see
+  # zellij-utils/src/home_windows.rs), so without this it runs with built-in
+  # defaults. ZELLIJ_CONFIG_DIR is persisted to the User environment so zellij
+  # started outside PowerShell (Windows Terminal profile, nu) finds it too.
+  $zellijConfigHome = "$HOME\.config\zellij"
+  if ($ENV:ZELLIJ_CONFIG_DIR -ne $zellijConfigHome) {
+    $ENV:ZELLIJ_CONFIG_DIR = $zellijConfigHome
+    if ([System.Environment]::GetEnvironmentVariable("ZELLIJ_CONFIG_DIR", [System.EnvironmentVariableTarget]::User) -ne $zellijConfigHome) {
+      [System.Environment]::SetEnvironmentVariable("ZELLIJ_CONFIG_DIR", $zellijConfigHome, [System.EnvironmentVariableTarget]::User)
+    }
+  }
+  $zellijAppData = Join-Path $ENV:APPDATA "Zellij"
+  $zellijAppDataConfig = Join-Path $zellijAppData "config"
+  if (-not (Test-Path $zellijAppDataConfig)) {
+    if (-not (Test-Path $zellijAppData)) {
+      New-Item -ItemType Directory -Path $zellijAppData -Force -ErrorAction SilentlyContinue | Out-Null
+    }
+    New-Item -ItemType Junction -Path $zellijAppDataConfig -Target $zellijConfigHome -Force -ErrorAction SilentlyContinue | Out-Null
+  }
+
   if (-not $ENV:HOME) {
     $ENV:HOME = $HOME
     if ([System.Environment]::GetEnvironmentVariable("HOME", [System.EnvironmentVariableTarget]::User) -ne $HOME) {
