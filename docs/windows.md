@@ -340,6 +340,11 @@ Add-MpPreference -ExclusionPath "$env:LOCALAPPDATA\aquaproj-aqua"
 - **Root Cause**: On Windows, Yazi looks for configuration in `%APPDATA%\yazi\config\` unless `$env:YAZI_CONFIG_HOME` is set. Without this, Yazi ran with compiled-in preset defaults which map Windows `edit` to `code %s`.
 - **Resolution**: NREDF automatically sets `YAZI_CONFIG_HOME` to `$HOME\.config\yazi`, creates a directory junction from `%APPDATA%\yazi\config` to `$HOME\.config\yazi`, and configures explicit `[open]` prepend rules in [`yazi.toml.tmpl`](../home/dot_config/yazi/yazi.toml.tmpl) so all dotfiles (`.*`), source code, and text files route to `nvim`.
 
+### Zellij: Configuration Not Loaded on Windows
+
+- **Root Cause**: On Windows, Zellij ignores both `~/.config/zellij` and `XDG_CONFIG_HOME`. It only looks in `%APPDATA%\Zellij\config\` and `C:\ProgramData\Zellij\`, so it ran with built-in defaults instead of the deployed `config.kdl`, layouts and themes.
+- **Resolution**: NREDF sets `ZELLIJ_CONFIG_DIR` to `$HOME\.config\zellij` in [`Defaults.ps1`](../home/dot_local/share/nredf/shell/pwsh/Defaults.ps1), persists it to the User environment (so Zellij started from Windows Terminal or Nushell picks it up after a new login), and creates a directory junction from `%APPDATA%\Zellij\config` to `$HOME\.config\zellij` as a fallback. If `%APPDATA%\Zellij\config` already exists as a real directory, it is left untouched; the environment variable still takes precedence. Check with `zellij setup --check`.
+
 ### Neovim: AstroCommunity Packs & Tool Installation on Windows
 
 **1. Chezmoi Pack: "attempt to concatenate a nil value"**
