@@ -72,8 +72,8 @@ markdownlint_all() {
   # download-on-demand paths; a pre-installed `markdownlint-cli2` on PATH is
   # whatever version the developer has and isn't forced.
   if have markdownlint-cli2; then markdownlint-cli2 --config .markdownlint.yaml "**/*.md"
-  elif have bunx; then bunx markdownlint-cli2@0.23.3 --config .markdownlint.yaml "**/*.md"
-  else npx --yes markdownlint-cli2@0.23.3 --config .markdownlint.yaml "**/*.md"; fi
+  elif have bunx; then bunx markdownlint-cli2@0.24.0 --config .markdownlint.yaml "**/*.md"
+  else npx --yes markdownlint-cli2@0.24.0 --config .markdownlint.yaml "**/*.md"; fi
 }
 shellcheck_plain() { # the gate CI's ShellCheck job applies (warning severity)
   { find home/dot_local/share/nredf/shell -type f \( -name '*.bash' -o -name '*.sh' \)
