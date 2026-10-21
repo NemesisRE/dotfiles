@@ -426,7 +426,7 @@ jobs:
       # fall back to `npx`/`bunx` (i.e. markdownlint-cli2 isn't already on
       # PATH) — keep the two in sync.
       - name: markdownlint-cli2
-        run: npx --yes markdownlint-cli2@0.23.3 --config .markdownlint.yaml "**/*.md"
+        run: npx --yes markdownlint-cli2@0.24.0 --config .markdownlint.yaml "**/*.md"
 
       # Relative links must resolve, and absolute file:///Users/... links (dead for
       # everyone but their author) are rejected.
