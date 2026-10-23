@@ -235,6 +235,16 @@ show_startup_tips false
 // Default: $SHELL
 //
 // default_shell "fish"
+{{- if eq .chezmoi.os "windows" }}
+
+// On Windows zellij falls back to $SHELL, then %ComSpec% (cmd.exe), so set
+// PowerShell explicitly. A bare name is resolved via PATH and PATHEXT.
+{{-   if lookPath "pwsh" }}
+default_shell "pwsh"
+{{-   else }}
+default_shell "powershell"
+{{-   end }}
+{{- end }}
 
 // Choose the path to override cwd that zellij will use for opening new panes
 //
