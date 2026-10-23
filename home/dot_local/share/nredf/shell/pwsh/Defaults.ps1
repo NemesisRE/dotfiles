@@ -76,6 +76,13 @@ if ($isWindows) {
   }
   $zellijAppData = Join-Path $ENV:APPDATA "Zellij"
   $zellijAppDataConfig = Join-Path $zellijAppData "config"
+  # Any zellij run without ZELLIJ_CONFIG_DIR creates %APPDATA%\Zellij\config as
+  # an empty real directory (Config::config_file_path -> try_create_home_config_dir),
+  # which would block the junction forever. Replace it only while it is empty.
+  $zellijAppDataItem = Get-Item -LiteralPath $zellijAppDataConfig -Force -ErrorAction SilentlyContinue
+  if ($zellijAppDataItem -and $zellijAppDataItem.PSIsContainer -and -not ($zellijAppDataItem.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -and -not (Get-ChildItem -LiteralPath $zellijAppDataConfig -Force -ErrorAction SilentlyContinue | Select-Object -First 1)) {
+    Remove-Item -LiteralPath $zellijAppDataConfig -Force -ErrorAction SilentlyContinue
+  }
   if (-not (Test-Path $zellijAppDataConfig)) {
     if (-not (Test-Path $zellijAppData)) {
       New-Item -ItemType Directory -Path $zellijAppData -Force -ErrorAction SilentlyContinue | Out-Null
