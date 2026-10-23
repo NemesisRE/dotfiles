@@ -1409,24 +1409,42 @@ class Supervisor(threading.Thread):
 # =============================================================================
 
 def find_layout(layout_name: str) -> str:
-    """Resolve Zellij layout name or file path."""
+    """Resolve a Zellij layout name or file path to an absolute layout file path.
+
+    Always hands Zellij an absolute path when the layout exists locally: a bare
+    name is resolved by Zellij against <config_dir>/layouts, and on Windows that
+    defaults to %APPDATA%\\Zellij\\config unless ZELLIJ_CONFIG_DIR is set, so
+    "zclaude" would not be found even though ~/.config/zellij/layouts/zclaude.kdl
+    exists. A path with an extension is read directly by Zellij.
+    """
     if os.path.isfile(layout_name):
         return os.path.abspath(layout_name)
 
-    user_layout = os.path.expanduser(f"~/.config/zellij/layouts/{layout_name}.kdl")
+    user_layout = os.path.join(zellij_config_dir(), "layouts", f"{layout_name}.kdl")
     if os.path.isfile(user_layout):
-        return layout_name
+        return os.path.abspath(user_layout)
 
-    source_dir = os.path.dirname(os.path.abspath(__file__))
-    candidates = [
-        os.path.join(source_dir, "..", "..", "dot_config", "zellij", "layouts", f"{layout_name}.kdl.tmpl"),
-        os.path.join(source_dir, "..", "..", "dot_config", "zellij", "layouts", f"{layout_name}.kdl"),
-    ]
-    for c in candidates:
-        if os.path.isfile(c):
-            return os.path.normpath(c)
-
+    # Unknown name: let Zellij resolve it (built-in layouts like "compact").
     return layout_name
+
+
+def zellij_config_dir() -> str:
+    """Return the Zellij config dir these dotfiles deploy (~/.config/zellij unless overridden)."""
+    return os.environ.get("ZELLIJ_CONFIG_DIR") or os.path.expanduser(os.path.join("~", ".config", "zellij"))
+
+
+def zellij_env() -> dict[str, str]:
+    """Environment for launching Zellij, pointing it at ~/.config/zellij on Windows.
+
+    Zellij ignores ~/.config/zellij on Windows (only %APPDATA%\\Zellij\\config), so
+    ZELLIJ_CONFIG_DIR is filled in when the calling shell did not set it.
+    """
+    env = os.environ.copy()
+    if os.name == "nt" and not env.get("ZELLIJ_CONFIG_DIR"):
+        config_dir = zellij_config_dir()
+        if os.path.isdir(config_dir):
+            env["ZELLIJ_CONFIG_DIR"] = config_dir
+    return env
 
 
 def parse_args() -> tuple[argparse.Namespace, list[str]]:
@@ -1624,8 +1642,8 @@ def main() -> int:
             print(f"\033[1;36m[zclaude]\033[0m Attaching to active Zellij session '{args.session}'...")
             try:
                 if forwarded_claude_args:
-                    subprocess.run(["zellij", "--session", args.session, "run", "--", *inner_cmd], check=False)
-                res = subprocess.call(["zellij", "attach", args.session])
+                    subprocess.run(["zellij", "--session", args.session, "run", "--", *inner_cmd], check=False, env=zellij_env())
+                res = subprocess.call(["zellij", "attach", args.session], env=zellij_env())
                 return res
             except KeyboardInterrupt:
                 return 0
@@ -1636,7 +1654,7 @@ def main() -> int:
             print(f"\033[1;36m[zclaude]\033[0m Starting Zellij workspace session '{args.session}' (layout: {args.layout})...")
             launch_args = ["zellij", "--layout", layout_target, "attach", "-c", args.session, "--", *inner_cmd]
             try:
-                res = subprocess.call(launch_args)
+                res = subprocess.call(launch_args, env=zellij_env())
                 return res
             except KeyboardInterrupt:
                 return 0
