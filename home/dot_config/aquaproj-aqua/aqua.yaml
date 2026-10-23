@@ -30,7 +30,7 @@ packages:
       # no package-name filter, only `-t`/tag-based filtering) to nu-check
       # the rendered nu templates without pulling in the rest of aqua.yaml.
       - ci-lint
-  - name: atuinsh/atuin@v18.24.1 # renovate: depName=atuinsh/atuin
+  - name: atuinsh/atuin@v18.24.2 # renovate: depName=atuinsh/atuin
     tags:
       - default
       - required
@@ -113,16 +113,16 @@ packages:
       - required
 
   # ── Dev Tools ───────────────────────────────────────────────────────────────
-  - name: cli/cli@v2.102.0 # renovate: depName=cli/cli
+  - name: cli/cli@v2.103.0 # renovate: depName=cli/cli
     tags:
       - default
-  - name: github/copilot-cli@v1.0.98 # renovate: depName=github/copilot-cli
+  - name: github/copilot-cli@v1.0.102 # renovate: depName=github/copilot-cli
     tags:
       - default
-  - name: anthropics/claude-code@v2.1.302 # renovate: depName=anthropics/claude-code
+  - name: anthropics/claude-code@v2.1.308 # renovate: depName=anthropics/claude-code
     tags:
       - default
-  - name: google-antigravity/antigravity-cli@1.4.2 # renovate: depName=google-antigravity/antigravity-cli
+  - name: google-antigravity/antigravity-cli@1.4.5 # renovate: depName=google-antigravity/antigravity-cli
     tags:
       - default
   - name: jqlang/jq@jq-1.8.1 # renovate: depName=jqlang/jq
@@ -152,14 +152,14 @@ packages:
   - name: tstack/lnav@v0.14.1 # renovate: depName=tstack/lnav
     tags:
       - default
-  - name: JanDeDobbeleer/oh-my-posh@v31.8.0 # renovate: depName=JanDeDobbeleer/oh-my-posh
+  - name: JanDeDobbeleer/oh-my-posh@v31.9.1 # renovate: depName=JanDeDobbeleer/oh-my-posh
     tags:
       - default
       - required
   - name: smallstep/cli@v0.31.0 # renovate: depName=smallstep/cli
     tags:
       - default
-  - name: yetidevworks/drydock@v1.2.2 # renovate: depName=yetidevworks/drydock
+  - name: yetidevworks/drydock@v1.3.0 # renovate: depName=yetidevworks/drydock
     registry: local
     tags:
       - default
@@ -173,11 +173,11 @@ packages:
   - name: sharkdp/hyperfine@v2.0.0 # renovate: depName=sharkdp/hyperfine
     tags:
       - default
-  - name: jdx/mise@v2026.10.13 # renovate: depName=jdx/mise
+  - name: jdx/mise@v2026.10.17 # renovate: depName=jdx/mise
     tags:
       - default
       - required
-  - name: astral-sh/uv@0.13.1 # renovate: depName=astral-sh/uv
+  - name: astral-sh/uv@0.13.5 # renovate: depName=astral-sh/uv
     tags:
       - default
       - required
@@ -201,7 +201,7 @@ packages:
   - name: derailed/k9s@v0.51.0 # renovate: depName=derailed/k9s
     tags:
       - k8s
-  - name: nklmilojevic/sofka@v0.31.11 # renovate: depName=nklmilojevic/sofka
+  - name: nklmilojevic/sofka@v0.32.0 # renovate: depName=nklmilojevic/sofka
     tags:
       - k8s
   - name: kubernetes-sigs/kustomize@kustomize/v5.8.1 # renovate: depName=kubernetes-sigs/kustomize
@@ -222,10 +222,10 @@ packages:
   - name: doitintl/kube-no-trouble@0.7.3 # renovate: depName=doitintl/kube-no-trouble
     tags:
       - k8s
-  - name: stern/stern@v1.34.0 # renovate: depName=stern/stern
+  - name: stern/stern@v1.35.0 # renovate: depName=stern/stern
     tags:
       - k8s
-  - name: oras-project/oras@v1.3.4 # renovate: depName=oras-project/oras
+  - name: oras-project/oras@v1.3.5 # renovate: depName=oras-project/oras
     tags:
       - k8s
   - name: fluxcd/flux2@v2.9.6 # renovate: depName=fluxcd/flux2
@@ -258,10 +258,10 @@ packages:
   - name: bitwarden/clients@cli-v2026.8.0 # renovate: depName=bitwarden/clients
     tags:
       - optional
-  - name: hashicorp/terraform@v1.16.6 # renovate: depName=hashicorp/terraform
+  - name: hashicorp/terraform@v1.17.0 # renovate: depName=hashicorp/terraform
     tags:
       - optional
-  - name: hashicorp/packer@v1.16.1 # renovate: depName=hashicorp/packer
+  - name: hashicorp/packer@v1.16.2 # renovate: depName=hashicorp/packer
     tags:
       - optional
   - name: hashicorp/vault@v2.2.0 # renovate: depName=hashicorp/vault
