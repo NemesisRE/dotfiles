@@ -10,7 +10,7 @@
 # hashes (and bootstrap.ps1's copy) on the PR branch and re-runs CI. By hand: change
 # `version` and run `.github/scripts/pins.py update`.
 aquaBootstrap:
-  version: "v2.64.0" # renovate: depName=aquaproj/aqua
+  version: "v2.65.2" # renovate: depName=aquaproj/aqua
   windows:
     amd64: "7f8694f6181a01360633c27f8c9c4140d97f4b9d6fb244bad6b5bdfe8b2b7916"
     arm64: "7fe40a7a6b93cb4494700d39dcc01db9c59c22abd689890e71a6cf88290df3b7"
