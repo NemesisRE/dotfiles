@@ -7,9 +7,10 @@
 # dotenv files, not nu syntax, so nu parses them as data too instead of
 # trying to `source` them as code — this only supports that simple shape,
 # not arbitrary shell logic, which is the assumption those files' own simple
-# contents already make.
+# contents already make. Keys listed in --skip are ignored.
 
-def --env nredf-read-dotenv [file: string] {
+def --env nredf-read-dotenv [file: string, --skip: list<string>] {
+    let skip = ($skip | default [])
     if not ($file | path exists) {
         return
     }
@@ -24,7 +25,7 @@ def --env nredf-read-dotenv [file: string] {
         }
         let parts = ($l | split row --number 2 "=")
         let key = ($parts | get 0 | str trim)
-        if not ($key =~ '^[A-Za-z_][A-Za-z0-9_]*$') {
+        if (not ($key =~ '^[A-Za-z_][A-Za-z0-9_]*$')) or ($key in $skip) {
             continue
         }
         let val = ($parts | get 1 | str trim | str trim --char '"' | str trim --char "'")

@@ -59,8 +59,12 @@ def --env nredf-set-aqua-env [] {
     # owners of two different files on purpose: chezmoi would otherwise delete
     # a manually-configured token on every apply whenever the vault lookup
     # comes back empty (confirmed empirically).
-    nredf-read-dotenv ($aqua_config_dir | path join "aqua-vault.env")
-    nredf-read-dotenv ($aqua_config_dir | path join "aqua.env")
+    #
+    # GITHUB_TOKEN is skipped: older versions also wrote the aqua token under
+    # that name, which gh prefers over its own login. aqua reads
+    # AQUA_GITHUB_TOKEN.
+    nredf-read-dotenv ($aqua_config_dir | path join "aqua-vault.env") --skip [GITHUB_TOKEN]
+    nredf-read-dotenv ($aqua_config_dir | path join "aqua.env") --skip [GITHUB_TOKEN]
 
     # If the keyring is configured but unavailable on this system (e.g.
     # headless/WSL), deactivate AQUA_KEYRING_ENABLED to prevent aqua CLI errors.
@@ -109,7 +113,6 @@ def nredf-write-aqua-auth-config [mode: string, token: string = ""] {
         $lines = ($lines | append $"AQUA_KEYRING_ENABLED=(nredf-posix-quote 'true')")
     } else if ($mode == "env") and (not ($token | is-empty)) {
         $lines = ($lines | append $"export AQUA_GITHUB_TOKEN=(nredf-posix-quote $token)")
-        $lines = ($lines | append $"export GITHUB_TOKEN=(nredf-posix-quote $token)")
     }
 
     ($lines | str join "\n") + "\n" | save --force $tmp_file
@@ -126,7 +129,6 @@ def --env nredf-clear-aqua-auth-config [] {
     hide-env --ignore-errors AQUA_KEYRING_ENABLED
     hide-env --ignore-errors NREDF_AQUA_GITHUB_TOKEN_SETUP
     hide-env --ignore-errors AQUA_GITHUB_TOKEN
-    hide-env --ignore-errors GITHUB_TOKEN
 }
 
 # nu has no builtin for "is /dev/tty readable and writable" the way bash's
@@ -215,7 +217,6 @@ def --env nredf-aqua-token-setup [action: string = "--set"] {
 
         nredf-write-aqua-auth-config "env" $token
         $env.AQUA_GITHUB_TOKEN = $token
-        $env.GITHUB_TOKEN = $token
         $env.NREDF_AQUA_GITHUB_TOKEN_SETUP = "env"
         hide-env --ignore-errors AQUA_KEYRING_ENABLED
         print $"Stored aqua's GitHub token in (nredf-aqua-auth-config-file) \(mode 0600\)."
@@ -294,7 +295,7 @@ def --env nredf-ensure-aqua-github-token [] {
 
     let auth_file = (nredf-aqua-auth-config-file)
     if ($setup_state | is-empty) and ($auth_file | path exists) {
-        nredf-read-dotenv $auth_file
+        nredf-read-dotenv $auth_file --skip [GITHUB_TOKEN]
         $setup_state = ($env.NREDF_AQUA_GITHUB_TOKEN_SETUP? | default "")
     }
 

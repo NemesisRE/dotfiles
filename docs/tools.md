@@ -527,4 +527,4 @@ Aqua queries the GitHub API to download binaries. To eliminate rate limit errors
 
 - **Automatic Secret Store Sync (Recommended)**: Use the builtin [Secrets Management Guide](secrets.md) to automatically resolve and populate `AQUA_GITHUB_TOKEN` from Bitwarden, KeePassXC, or 1Password.
 - **System Keyring / Local File Fallback**: Run `nredf_aqua_token_setup` to store a token in your OS keyring (or in `~/.config/nredf/aqua.env` on headless/WSL systems where no secret service is available).
-- **Manual Environment Variable**: Export `AQUA_GITHUB_TOKEN` or `GITHUB_TOKEN` in your environment.
+- **Manual Environment Variable**: Export `AQUA_GITHUB_TOKEN` in your environment. aqua also falls back to `GITHUB_TOKEN`, but avoid that for an aqua-only token: `gh` prefers `GITHUB_TOKEN` over its own login.

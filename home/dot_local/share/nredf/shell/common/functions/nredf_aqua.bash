@@ -76,9 +76,16 @@ function _nredf_aqua_keyring_probe() {
 # a line never reaches the aqua child process. `set -a` covers files written by
 # any shell without changing the shared format; a caller's own allexport
 # setting is left as it was.
+#
+# GITHUB_TOKEN is kept as it was: older versions also wrote the aqua token as
+# `export GITHUB_TOKEN=...`, which gh prefers over its own login, so an
+# aqua-only token would replace the user's full gh auth. aqua itself reads
+# AQUA_GITHUB_TOKEN first, so it loses nothing.
 function _nredf_source_env_file() {
   local _nredf_env_file="${1:-}"
   local _nredf_had_allexport="false"
+  local _nredf_had_github_token="${GITHUB_TOKEN+set}"
+  local _nredf_github_token="${GITHUB_TOKEN-}"
 
   [[ -n "${_nredf_env_file}" && -f "${_nredf_env_file}" ]] || return 0
 
@@ -89,6 +96,11 @@ function _nredf_source_env_file() {
   source "${_nredf_env_file}"
   if [[ "${_nredf_had_allexport}" != "true" ]]; then
     set +a
+  fi
+  if [[ -n "${_nredf_had_github_token}" ]]; then
+    export GITHUB_TOKEN="${_nredf_github_token}"
+  else
+    unset GITHUB_TOKEN
   fi
   return 0
 }
@@ -181,7 +193,6 @@ function _nredf_write_aqua_auth_config() {
         printf "AQUA_KEYRING_ENABLED=%q\n" "true"
       elif [[ "${_nredf_mode}" == "env" && -n "${_nredf_token}" ]]; then
         printf "export AQUA_GITHUB_TOKEN=%q\n" "${_nredf_token}"
-        printf "export GITHUB_TOKEN=%q\n" "${_nredf_token}"
       fi
     } > "${_nredf_tmp_file}"
   ); then
@@ -200,7 +211,7 @@ function _nredf_clear_aqua_auth_config() {
 
   _nredf_auth_file="$(_nredf_aqua_auth_config_file)"
   rm -f "${_nredf_auth_file}"
-  unset AQUA_KEYRING_ENABLED NREDF_AQUA_GITHUB_TOKEN_SETUP AQUA_GITHUB_TOKEN GITHUB_TOKEN
+  unset AQUA_KEYRING_ENABLED NREDF_AQUA_GITHUB_TOKEN_SETUP AQUA_GITHUB_TOKEN
   unset _nredf_auth_file
 }
 
@@ -295,7 +306,6 @@ function nredf_aqua_token_setup() {
 
       _nredf_write_aqua_auth_config "env" "${_token}"
       export AQUA_GITHUB_TOKEN="${_token}"
-      export GITHUB_TOKEN="${_token}"
       export NREDF_AQUA_GITHUB_TOKEN_SETUP="env"
       unset AQUA_KEYRING_ENABLED
       local _auth_file
