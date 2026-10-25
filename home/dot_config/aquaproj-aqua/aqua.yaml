@@ -113,16 +113,16 @@ packages:
       - required
 
   # ── Dev Tools ───────────────────────────────────────────────────────────────
-  - name: cli/cli@v2.103.0 # renovate: depName=cli/cli
+  - name: cli/cli@v2.103.2 # renovate: depName=cli/cli
     tags:
       - default
   - name: github/copilot-cli@v1.0.103 # renovate: depName=github/copilot-cli
     tags:
       - default
-  - name: anthropics/claude-code@v2.1.309 # renovate: depName=anthropics/claude-code
+  - name: anthropics/claude-code@v2.1.310 # renovate: depName=anthropics/claude-code
     tags:
       - default
-  - name: google-antigravity/antigravity-cli@1.4.5 # renovate: depName=google-antigravity/antigravity-cli
+  - name: google-antigravity/antigravity-cli@1.4.7 # renovate: depName=google-antigravity/antigravity-cli
     tags:
       - default
   - name: jqlang/jq@jq-1.8.1 # renovate: depName=jqlang/jq
@@ -173,7 +173,7 @@ packages:
   - name: sharkdp/hyperfine@v2.0.0 # renovate: depName=sharkdp/hyperfine
     tags:
       - default
-  - name: jdx/mise@v2026.10.17 # renovate: depName=jdx/mise
+  - name: jdx/mise@v2026.10.18 # renovate: depName=jdx/mise
     tags:
       - default
       - required
@@ -216,7 +216,7 @@ packages:
   - name: projectcalico/calico/calicoctl@v3.33.0 # renovate: depName=projectcalico/calico
     tags:
       - k8s
-  - name: bitnami-labs/sealed-secrets@v0.40.0 # renovate: depName=bitnami/sealed-secrets
+  - name: bitnami-labs/sealed-secrets@v0.41.1 # renovate: depName=bitnami/sealed-secrets
     tags:
       - k8s
   - name: doitintl/kube-no-trouble@0.7.3 # renovate: depName=doitintl/kube-no-trouble
