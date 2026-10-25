@@ -64,7 +64,7 @@ packages:
     tags:
       - default
       - required
-  - name: tealdeer-rs/tealdeer@v1.9.0 # renovate: depName=tealdeer-rs/tealdeer
+  - name: tealdeer-rs/tealdeer@v1.9.1 # renovate: depName=tealdeer-rs/tealdeer
     tags:
       - default
       - required
@@ -173,7 +173,7 @@ packages:
   - name: sharkdp/hyperfine@v2.0.0 # renovate: depName=sharkdp/hyperfine
     tags:
       - default
-  - name: jdx/mise@v2026.10.18 # renovate: depName=jdx/mise
+  - name: jdx/mise@v2026.10.19 # renovate: depName=jdx/mise
     tags:
       - default
       - required
@@ -225,7 +225,7 @@ packages:
   - name: stern/stern@v1.35.0 # renovate: depName=stern/stern
     tags:
       - k8s
-  - name: oras-project/oras@v1.3.5 # renovate: depName=oras-project/oras
+  - name: oras-project/oras@v1.3.6 # renovate: depName=oras-project/oras
     tags:
       - k8s
   - name: fluxcd/flux2@v2.9.6 # renovate: depName=fluxcd/flux2
