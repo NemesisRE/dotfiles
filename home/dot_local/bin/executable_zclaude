@@ -250,6 +250,32 @@ class ZellijController:
             logger.debug("rename_tab failed: %s", e)
             return False
 
+    def pipe_status(self, name: str, text: str) -> bool:
+        """Push a value into a zjstatus `pipe_<name>` widget via `zellij pipe`.
+
+        zjstatus splits the payload on '::' and the CLI pipe on newlines, so both are
+        flattened. stdin is detached so the client exits once the plugins unblock it.
+        """
+        payload = f"zjstatus::pipe::pipe_{name}::" + text.replace("::", ":").replace("\n", " ").strip()
+        if "ZELLIJ" in os.environ:
+            cmd = ["zellij", "pipe", "--", payload]
+        else:
+            cmd = ["zellij", "--session", self.session_name, "pipe", "--", payload]
+        try:
+            res = subprocess.run(
+                cmd,
+                stdin=subprocess.DEVNULL,
+                capture_output=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=5,
+                check=False,
+            )
+            return res.returncode == 0
+        except Exception as e:
+            logger.debug("zellij pipe failed: %s", e)
+            return False
+
     def get_tab_info(self, pane_id: str | None = None) -> tuple[int | None, str | None]:
         panes = self.list_panes()
         for p in panes:
@@ -1063,6 +1089,9 @@ class Supervisor(threading.Thread):
         self._was_working: bool = False
         self._last_pane_title: str | None = None
         self.usage_tracker = UsageTracker(interval_sec=120)
+        # Last values pushed to the zjstatus bar, and when they were last re-broadcast
+        self._bar_values: dict[str, str] = {}
+        self._bar_refreshed_at = 0.0
 
     def stop(self) -> None:
         self._running.clear()
@@ -1116,8 +1145,27 @@ class Supervisor(threading.Thread):
 
             with open(status_path, "w", encoding="utf-8") as f:
                 f.write(display_msg + "\n")
+            self._publish_bar("status", display_msg)
         except Exception as e:
             logger.debug("Failed to write status file: %s", e)
+
+    def _publish_bar(self, name: str, value: str) -> None:
+        """Push a status bar value only when it changed (no process per bar refresh)."""
+        if self._bar_values.get(name) == value:
+            return
+        self._bar_values[name] = value
+        self.zellij.pipe_status(name, value)
+
+    def _refresh_bar(self) -> None:
+        """Sync usage into the bar and periodically re-broadcast for newly opened tabs."""
+        usage = self.usage_tracker.snapshot.formatted
+        if usage:
+            self._publish_bar("usage", usage)
+        now = time.monotonic()
+        if now - self._bar_refreshed_at >= 30:
+            self._bar_refreshed_at = now
+            for name, value in self._bar_values.items():
+                self.zellij.pipe_status(name, value)
 
     def _update_title(self, status: str) -> None:
         self._write_status_file(status)
@@ -1150,6 +1198,7 @@ class Supervisor(threading.Thread):
 
         while self._running.is_set():
             time.sleep(3)
+            self._refresh_bar()
             screen = self.zellij.dump_screen(self.pane_id)
             if not screen:
                 continue
