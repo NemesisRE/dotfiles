@@ -26,6 +26,11 @@ __version__ = "1.0.0"
 
 logger = logging.getLogger("zclaude")
 
+# Background helpers (zellij CLI, `claude -p /usage`) get their own hidden console on
+# Windows. Sharing the Claude pane's console lets them change or restore its code page
+# on exit, which garbles Claude Code's UTF-8 output (shown as CP850 mojibake).
+_BG_FLAGS = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+
 # =============================================================================
 # Sleep Prevention (Cross-Platform Keep-Alive)
 # =============================================================================
@@ -142,7 +147,7 @@ class ZellijController:
 
     def has_session(self, session_name: str) -> bool:
         try:
-            res = subprocess.run(["zellij", "list-sessions"], capture_output=True, encoding="utf-8", errors="replace", check=False)
+            res = subprocess.run(["zellij", "list-sessions"], capture_output=True, encoding="utf-8", errors="replace", check=False, creationflags=_BG_FLAGS)
             if res.returncode == 0:
                 for line in res.stdout.splitlines():
                     parts = line.strip().split()
@@ -163,7 +168,7 @@ class ZellijController:
             args.extend(["-p", str(pane_id)])
         cmd = self._cmd(*args)
         try:
-            res = subprocess.run(cmd, capture_output=True, encoding="utf-8", errors="replace", check=False)
+            res = subprocess.run(cmd, capture_output=True, encoding="utf-8", errors="replace", check=False, creationflags=_BG_FLAGS)
             if res.returncode == 0 and res.stdout:
                 return res.stdout
             # Fallback to focused pane if explicit pane_id failed
@@ -171,7 +176,7 @@ class ZellijController:
                 fb_args = ["dump-screen"]
                 if full:
                     fb_args.append("-f")
-                fb_res = subprocess.run(self._cmd(*fb_args), capture_output=True, encoding="utf-8", errors="replace", check=False)
+                fb_res = subprocess.run(self._cmd(*fb_args), capture_output=True, encoding="utf-8", errors="replace", check=False, creationflags=_BG_FLAGS)
                 return fb_res.stdout if fb_res.returncode == 0 else ""
             return ""
         except Exception as e:
@@ -185,11 +190,11 @@ class ZellijController:
         args.append(text)
         cmd = self._cmd(*args)
         try:
-            res = subprocess.run(cmd, capture_output=True, encoding="utf-8", errors="replace", check=False)
+            res = subprocess.run(cmd, capture_output=True, encoding="utf-8", errors="replace", check=False, creationflags=_BG_FLAGS)
             if res.returncode == 0:
                 return True
             if pane_id:
-                fb_res = subprocess.run(self._cmd("write-chars", text), capture_output=True, encoding="utf-8", errors="replace", check=False)
+                fb_res = subprocess.run(self._cmd("write-chars", text), capture_output=True, encoding="utf-8", errors="replace", check=False, creationflags=_BG_FLAGS)
                 return fb_res.returncode == 0
             return False
         except Exception as e:
@@ -203,11 +208,11 @@ class ZellijController:
         args.append(key)
         cmd = self._cmd(*args)
         try:
-            res = subprocess.run(cmd, capture_output=True, encoding="utf-8", errors="replace", check=False)
+            res = subprocess.run(cmd, capture_output=True, encoding="utf-8", errors="replace", check=False, creationflags=_BG_FLAGS)
             if res.returncode == 0:
                 return True
             if pane_id:
-                fb_res = subprocess.run(self._cmd("send-keys", key), capture_output=True, encoding="utf-8", errors="replace", check=False)
+                fb_res = subprocess.run(self._cmd("send-keys", key), capture_output=True, encoding="utf-8", errors="replace", check=False, creationflags=_BG_FLAGS)
                 return fb_res.returncode == 0
             return False
         except Exception as e:
@@ -221,11 +226,11 @@ class ZellijController:
         args.append(name)
         cmd = self._cmd(*args)
         try:
-            res = subprocess.run(cmd, capture_output=True, encoding="utf-8", errors="replace", check=False)
+            res = subprocess.run(cmd, capture_output=True, encoding="utf-8", errors="replace", check=False, creationflags=_BG_FLAGS)
             if res.returncode == 0:
                 return True
             if pane_id:
-                fb_res = subprocess.run(self._cmd("rename-pane", name), capture_output=True, encoding="utf-8", errors="replace", check=False)
+                fb_res = subprocess.run(self._cmd("rename-pane", name), capture_output=True, encoding="utf-8", errors="replace", check=False, creationflags=_BG_FLAGS)
                 return fb_res.returncode == 0
             return False
         except Exception as e:
@@ -239,11 +244,11 @@ class ZellijController:
         args.append(name)
         cmd = self._cmd(*args)
         try:
-            res = subprocess.run(cmd, capture_output=True, encoding="utf-8", errors="replace", check=False)
+            res = subprocess.run(cmd, capture_output=True, encoding="utf-8", errors="replace", check=False, creationflags=_BG_FLAGS)
             if res.returncode == 0:
                 return True
             if tab_id is not None:
-                fb_res = subprocess.run(self._cmd("rename-tab", name), capture_output=True, encoding="utf-8", errors="replace", check=False)
+                fb_res = subprocess.run(self._cmd("rename-tab", name), capture_output=True, encoding="utf-8", errors="replace", check=False, creationflags=_BG_FLAGS)
                 return fb_res.returncode == 0
             return False
         except Exception as e:
@@ -270,6 +275,7 @@ class ZellijController:
                 errors="replace",
                 timeout=5,
                 check=False,
+                creationflags=_BG_FLAGS,
             )
             return res.returncode == 0
         except Exception as e:
@@ -287,7 +293,7 @@ class ZellijController:
     def list_panes(self) -> list[dict]:
         cmd = self._cmd("list-panes", "--json")
         try:
-            res = subprocess.run(cmd, capture_output=True, encoding="utf-8", errors="replace", check=False)
+            res = subprocess.run(cmd, capture_output=True, encoding="utf-8", errors="replace", check=False, creationflags=_BG_FLAGS)
             if res.returncode == 0 and res.stdout.strip():
                 return json.loads(res.stdout)
         except Exception as e:
@@ -934,10 +940,12 @@ def check_and_update_usage(claude_cmd: str = "claude") -> UsageSnapshot:
         claude_bin = shutil.which(claude_cmd) or claude_cmd
         res = subprocess.run(
             [claude_bin, "-p", "/usage", "--output-format", "json"],
+            stdin=subprocess.DEVNULL,
             capture_output=True,
             encoding="utf-8",
             errors="replace",
             timeout=10,
+            creationflags=_BG_FLAGS,
         )
         if res.returncode != 0:
             logger.debug("Claude /usage returned code %d: %s", res.returncode, res.stderr)
@@ -1714,6 +1722,19 @@ def main() -> int:
     # -------------------------------------------------------------------------
     # Case 3: Inside Zellij -> Wrap Claude in Foreground + Background Supervisor
     # -------------------------------------------------------------------------
+    # Claude Code writes UTF-8; a pane console left on the OEM code page shows mojibake
+    restore_cp = None
+    if os.name == "nt":
+        try:
+            import ctypes
+
+            kernel32 = ctypes.windll.kernel32
+            restore_cp = (kernel32.GetConsoleOutputCP(), kernel32.GetConsoleCP())
+            kernel32.SetConsoleOutputCP(65001)
+            kernel32.SetConsoleCP(65001)
+        except Exception as e:
+            logger.debug("Could not switch console to UTF-8: %s", e)
+
     current_pane_id = os.environ.get("ZELLIJ_PANE_ID")
     supervisor = Supervisor(
         zellij=zellij,
@@ -1738,6 +1759,12 @@ def main() -> int:
     finally:
         supervisor.stop()
         sleep_inhibitor.stop()
+        if restore_cp:
+            try:
+                kernel32.SetConsoleOutputCP(restore_cp[0])
+                kernel32.SetConsoleCP(restore_cp[1])
+            except Exception:
+                pass
 
     return exit_code
 

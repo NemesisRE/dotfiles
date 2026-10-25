@@ -16,6 +16,15 @@ if ($isWindows) {
       [System.Environment]::SetEnvironmentVariable("POWERSHELL_UPDATECHECK", 'Off', [System.EnvironmentVariableTarget]::User)
     }
   }
+  # Run the console on UTF-8 (chcp 65001) instead of the OEM code page (e.g. CP850).
+  # Child programs inherit it, so tools that write UTF-8 (Claude Code, zellij panes)
+  # render box drawing and Nerd Font glyphs instead of mojibake.
+  try {
+    $utf8NoBom = [System.Text.UTF8Encoding]::new($false)
+    [Console]::InputEncoding = $utf8NoBom
+    [Console]::OutputEncoding = $utf8NoBom
+    $OutputEncoding = $utf8NoBom
+  } catch {}
   $ENV:NREDF_CACHE = "$ENV:LOCALAPPDATA\nredf"
   $ENV:NREDF_LRCACHE = "$ENV:NREDF_CACHE\LRCache"
   $ENV:NREDF_INITCACHE = "$ENV:NREDF_CACHE\init"
