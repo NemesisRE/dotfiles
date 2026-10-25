@@ -203,7 +203,6 @@ function NREDF_WriteAquaAuthConfig {
     $lines.Add("AQUA_KEYRING_ENABLED=$(NREDF_AquaPosixQuote 'true')")
   } elseif ($Mode -eq 'env' -and $Token) {
     $lines.Add("export AQUA_GITHUB_TOKEN=$(NREDF_AquaPosixQuote $Token)")
-    $lines.Add("export GITHUB_TOKEN=$(NREDF_AquaPosixQuote $Token)")
   }
 
   # The file can hold a GitHub token: write to a temp file in the same
@@ -241,7 +240,6 @@ function NREDF_ClearAquaAuthConfig {
   Remove-Item Env:\AQUA_KEYRING_ENABLED -ErrorAction SilentlyContinue
   Remove-Item Env:\NREDF_AQUA_GITHUB_TOKEN_SETUP -ErrorAction SilentlyContinue
   Remove-Item Env:\AQUA_GITHUB_TOKEN -ErrorAction SilentlyContinue
-  Remove-Item Env:\GITHUB_TOKEN -ErrorAction SilentlyContinue
 }
 
 # Core logic, returning bash's own convention (0 success, 1 failure,
@@ -297,7 +295,6 @@ function NREDF_AquaTokenSetupCore {
 
       [void](NREDF_WriteAquaAuthConfig -Mode 'env' -Token $token)
       $env:AQUA_GITHUB_TOKEN = $token
-      $env:GITHUB_TOKEN = $token
       $env:NREDF_AQUA_GITHUB_TOKEN_SETUP = 'env'
       Remove-Item Env:\AQUA_KEYRING_ENABLED -ErrorAction SilentlyContinue
       $authFile = NREDF_AquaAuthConfigFile

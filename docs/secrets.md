@@ -93,8 +93,9 @@ During `chezmoi apply`:
 
   ```bash
   export AQUA_GITHUB_TOKEN="ghp_xxxxxxxxxxxx"
-  export GITHUB_TOKEN="ghp_xxxxxxxxxxxx"
   ```
+
+* Deliberately **not** exported as `GITHUB_TOKEN`: `gh` and other GitHub tools prefer `GITHUB_TOKEN`/`GH_TOKEN` over their own login, so a low-privilege aqua token under that name would silently replace your full `gh auth login`. aqua reads `AQUA_GITHUB_TOKEN` first anyway. A `GITHUB_TOKEN=` line left in an older `aqua-vault.env`/`aqua.env` is ignored by the shell readers.
 
 * Automatically sourced by:
   * Bash / Zsh (`dot_local/share/nredf/shell/common/functions/nredf_aqua.bash`)

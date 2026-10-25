@@ -56,6 +56,9 @@ end
 # syntax — bash/zsh `source` them as code, but fish (like PowerShell's
 # Defaults.ps1 already does for these same files) parses them as data
 # instead, so it never breaks on a value another shell wrote.
+#
+# GITHUB_TOKEN is skipped: older versions also wrote the aqua token under that
+# name, which gh prefers over its own login. aqua reads AQUA_GITHUB_TOKEN.
 function _nredf_read_dotenv --argument-names file
     test -f "$file"; or return 0
     for line in (string split \n -- (cat "$file"))
@@ -65,6 +68,7 @@ function _nredf_read_dotenv --argument-names file
         set line (string replace -r '^export[[:space:]]+' '' -- "$line")
         string match -qr '^[A-Za-z_][A-Za-z0-9_]*=' -- "$line"; or continue
         set -l key (string split -m1 = -- "$line")[1]
+        test "$key" = GITHUB_TOKEN; and continue
         set -l val (string split -m1 = -- "$line")[2]
         set val (string trim -c '\'"' -- "$val")
         set -gx $key "$val"
@@ -154,7 +158,6 @@ function _nredf_write_aqua_auth_config --argument-names mode token
             printf "AQUA_KEYRING_ENABLED=%s\n" (_nredf_posix_quote true)
         else if test "$mode" = env; and test -n "$token"
             printf "export AQUA_GITHUB_TOKEN=%s\n" (_nredf_posix_quote "$token")
-            printf "export GITHUB_TOKEN=%s\n" (_nredf_posix_quote "$token")
         end
     end >"$tmp_file"
 
@@ -168,7 +171,6 @@ function _nredf_clear_aqua_auth_config
     set -e AQUA_KEYRING_ENABLED
     set -e NREDF_AQUA_GITHUB_TOKEN_SETUP
     set -e AQUA_GITHUB_TOKEN
-    set -e GITHUB_TOKEN
 end
 
 # Returns 0 = yes, 1 = no, 2 = unanswered (no usable terminal, EOF, or no
@@ -268,7 +270,6 @@ function nredf_aqua_token_setup --argument-names action
 
             _nredf_write_aqua_auth_config env "$token"
             set -gx AQUA_GITHUB_TOKEN "$token"
-            set -gx GITHUB_TOKEN "$token"
             set -gx NREDF_AQUA_GITHUB_TOKEN_SETUP env
             set -e AQUA_KEYRING_ENABLED
             echo "Stored aqua's GitHub token in "(_nredf_aqua_auth_config_file)" (mode 0600)."

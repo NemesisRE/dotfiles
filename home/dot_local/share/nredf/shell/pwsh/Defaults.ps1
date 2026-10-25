@@ -202,6 +202,9 @@ if (-not [string]::IsNullOrEmpty($ENV:XDG_CONFIG_HOME)) {
       $line = $line -replace '^export\s+', ''
       if ($line -match '^([^=]+)=(.*)$') {
         $varName = $matches[1].Trim()
+        # Older versions also wrote the aqua token as GITHUB_TOKEN, which gh
+        # prefers over its own login; aqua reads AQUA_GITHUB_TOKEN.
+        if ($varName -eq 'GITHUB_TOKEN') { return }
         $varVal = $matches[2].Trim().Trim('"').Trim("'")
         [System.Environment]::SetEnvironmentVariable($varName, $varVal, [System.EnvironmentVariableTarget]::Process)
       }
