@@ -22,6 +22,14 @@ source "{{ .chezmoi.homeDir }}/.local/share/nredf/shell/nushell/aliases.nu"
 # since nu's first commit, ...) on every interactive startup unless told
 # not to — bash/zsh/fish/PowerShell have no equivalent noise to suppress.
 $env.config.show_banner = false
+{{- if eq .chezmoi.os "windows" }}
+
+# Switch the console from the OEM code page (e.g. CP850) to UTF-8, same as the
+# pwsh profile does via [Console]::OutputEncoding. Nu has no built-in for the
+# console code page, so use chcp; everything started from this shell (zellij,
+# Claude Code, ...) inherits it and renders UTF-8 output without mojibake.
+^chcp 65001 | ignore
+{{- end }}
 
 nredf-profile-init
 nredf-step "config.nu start"
