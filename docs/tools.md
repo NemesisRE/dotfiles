@@ -491,6 +491,7 @@ What Claude Code gets by default: background auto-update off (aqua owns the vers
 
 - **Multiplexer Integration**: Uses Zellij's native CLI (`dump-screen`, `write-chars`, `send-keys`) instead of `tmux`, working identically on Linux, macOS, and Windows.
 - **Dedicated AI Layout (`zclaude`)**: Features a 72% primary Claude pane flanked by a command terminal and suspended `lazygit`, secondary tabs for code editing and `bottom` monitoring, and dynamic swap layouts.
+- **Status Bar**: The layout's `zjstatus` bar shows the supervisor state and `/usage` quota. The supervisor pushes both with `zellij pipe` only when they change (plus a re-broadcast every 30s for newly opened tabs), so the bar never spawns a shell itself. The same values are also written to `~/.local/state/zclaude/status` and `usage`.
 - **System Keep-Alive**: Prevents system and idle sleep while Claude is active and while waiting out limits (`caffeinate` on macOS, Win32 `SetThreadExecutionState` on Windows, and `systemd-inhibit` on Linux).
 - **Auto-Resumption**: Accurately parses limit reset times (e.g. `resets 3:15 PM` or relative duration) from viewport dumps and transcripts, safely dismisses any interactive `/rate-limit-options` dialog with `Esc`, and injects `continue` once the reset time (+ safety margin) arrives. Handles transient 529/503 overloads with progressive backoff.
 - **Claude CLI Option Parity**: Forwards common Claude Code flags:
