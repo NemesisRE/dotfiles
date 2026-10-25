@@ -41,7 +41,7 @@ if ! command -v aqua >/dev/null 2>&1; then
   echo "==> Installing aqua via upstream installer"
   # Official installer: https://github.com/aquaproj/aqua-installer
   AQUA_INSTALLER_VERSION="v4.1.1" # renovate: datasource=github-tags depName=aquaproj/aqua-installer
-  AQUA_INSTALLER_SHA256="4d3e513d42f425609c1ead6ecd40b9c62492011979dfe23d7012428a59efbe82"
+  AQUA_INSTALLER_SHA256="c0acde4802a1edd8b8201fd4cc1f0e52700cd4feb875f9c9793381b5b0ca2065"
   install_aqua() (
     tmp="$(mktemp -d)" || exit 1
     trap 'rm -rf "${tmp}"' EXIT
