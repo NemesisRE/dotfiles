@@ -147,10 +147,10 @@ if ($env:PATH -notlike "*$aquaBin*") {
 # Pinned release + SHA-256, for winget and the zip fallback alike. This file is fetched
 # raw before chezmoi exists, so it cannot read home/.chezmoidata/aqua-bootstrap.yaml;
 # these literals must match it (`.github/scripts/pins.py verify` enforces that).
-$aquaVersion = "v2.64.0"
+$aquaVersion = "v2.65.2"
 $aquaSha256 = @{
-    amd64 = "7f8694f6181a01360633c27f8c9c4140d97f4b9d6fb244bad6b5bdfe8b2b7916"
-    arm64 = "7fe40a7a6b93cb4494700d39dcc01db9c59c22abd689890e71a6cf88290df3b7"
+    amd64 = "d22e7710ccfd45ba7dccf582240e0a0089ed0a47092b7d3037acb3829ba2027f"
+    arm64 = "8b28f711d4080cd806077e63a6bcfc00b549de2cc8c5f33fbf0670e90107bca0"
 }
 if (-not (Get-Command aqua -ErrorAction SilentlyContinue)) {
     Write-Step "Installing aqua $aquaVersion"
