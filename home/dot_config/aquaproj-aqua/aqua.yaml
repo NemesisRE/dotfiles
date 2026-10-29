@@ -173,7 +173,7 @@ packages:
   - name: sharkdp/hyperfine@v2.0.0 # renovate: depName=sharkdp/hyperfine
     tags:
       - default
-  - name: jdx/mise@v2026.10.21 # renovate: depName=jdx/mise
+  - name: jdx/mise@v2026.10.22 # renovate: depName=jdx/mise
     tags:
       - default
       - required
@@ -258,7 +258,7 @@ packages:
   - name: bitwarden/clients@cli-v2026.8.0 # renovate: depName=bitwarden/clients
     tags:
       - optional
-  - name: hashicorp/terraform@v1.17.0 # renovate: depName=hashicorp/terraform
+  - name: hashicorp/terraform@v1.17.1 # renovate: depName=hashicorp/terraform
     tags:
       - optional
   - name: hashicorp/packer@v1.16.2 # renovate: depName=hashicorp/packer
