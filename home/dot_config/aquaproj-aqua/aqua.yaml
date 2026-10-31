@@ -30,7 +30,7 @@ packages:
       # no package-name filter, only `-t`/tag-based filtering) to nu-check
       # the rendered nu templates without pulling in the rest of aqua.yaml.
       - ci-lint
-  - name: atuinsh/atuin@v18.24.3 # renovate: depName=atuinsh/atuin
+  - name: atuinsh/atuin@v18.24.4 # renovate: depName=atuinsh/atuin
     tags:
       - default
       - required
@@ -119,10 +119,10 @@ packages:
   - name: github/copilot-cli@v1.0.105 # renovate: depName=github/copilot-cli
     tags:
       - default
-  - name: anthropics/claude-code@v2.1.312 # renovate: depName=anthropics/claude-code
+  - name: anthropics/claude-code@v2.1.314 # renovate: depName=anthropics/claude-code
     tags:
       - default
-  - name: google-antigravity/antigravity-cli@1.4.10 # renovate: depName=google-antigravity/antigravity-cli
+  - name: google-antigravity/antigravity-cli@1.4.11 # renovate: depName=google-antigravity/antigravity-cli
     tags:
       - default
   - name: jqlang/jq@jq-1.8.1 # renovate: depName=jqlang/jq
@@ -163,7 +163,7 @@ packages:
     registry: local
     tags:
       - default
-  - name: heymaikol/network-doctor@v2.1.0 # renovate: depName=heymaikol/network-doctor
+  - name: heymaikol/network-doctor@v2.1.1 # renovate: depName=heymaikol/network-doctor
     registry: local
     command_aliases:
       - command: network-doctor
@@ -173,7 +173,7 @@ packages:
   - name: sharkdp/hyperfine@v2.0.0 # renovate: depName=sharkdp/hyperfine
     tags:
       - default
-  - name: jdx/mise@v2026.10.23 # renovate: depName=jdx/mise
+  - name: jdx/mise@v2026.10.24 # renovate: depName=jdx/mise
     tags:
       - default
       - required
