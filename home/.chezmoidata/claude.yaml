@@ -45,7 +45,11 @@ claude:
       # before allow rules, so nothing granted later overrides these.
       deny:
         - Read(./.env)
-        - Read(./.env.*)
+        - Read(./.env.local)
+        - Read(./.env.*.local)
+        - Read(./.env.production)
+        - Read(./.env.development)
+        - Read(./.env.test)
         - Read(~/.ssh/**)
         - Read(~/.gnupg/**)
         - Read(~/.aws/**)

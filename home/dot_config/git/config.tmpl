@@ -35,12 +35,18 @@
 [gpg "ssh"]
 	# Lets `git log --show-signature` and `git verify-commit` trust our own key.
 	allowedSignersFile = ~/.config/git/allowed_signers
+{{- if eq .chezmoi.os "windows" }}
+	program = "C:/Windows/System32/OpenSSH/ssh-keygen.exe"
+{{- end }}
 {{- end }}
 {{- end }}
 
 [core]
 	editor = nvim
 	pager = delta
+{{- if eq .chezmoi.os "windows" }}
+	sshCommand = "C:/Windows/System32/OpenSSH/ssh.exe"
+{{- end }}
 
 [interactive]
 	diffFilter = delta --color-only
