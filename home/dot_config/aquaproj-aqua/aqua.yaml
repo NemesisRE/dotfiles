@@ -50,7 +50,7 @@ packages:
     tags:
       - default
       - required
-  - name: carapace-sh/carapace-bin@v1.8.1 # renovate: depName=carapace-sh/carapace-bin
+  - name: carapace-sh/carapace-bin@v1.8.2 # renovate: depName=carapace-sh/carapace-bin
     tags:
       - default
       - required
@@ -89,7 +89,7 @@ packages:
   - name: muesli/duf@v0.9.1 # renovate: depName=muesli/duf
     tags:
       - default
-  - name: bootandy/dust@v1.2.6 # renovate: depName=bootandy/dust
+  - name: bootandy/dust@v1.2.7 # renovate: depName=bootandy/dust
     tags:
       - default
   - name: ouch-org/ouch@0.8.3 # renovate: depName=ouch-org/ouch
@@ -140,7 +140,7 @@ packages:
   - name: tree-sitter/tree-sitter@v0.27.1 # renovate: depName=tree-sitter/tree-sitter
     tags:
       - default
-  - name: ClementTsang/bottom@0.14.9 # renovate: depName=ClementTsang/bottom
+  - name: ClementTsang/bottom@0.15.0 # renovate: depName=ClementTsang/bottom
     tags:
       - default
   - name: jesseduffield/lazydocker@v0.25.2 # renovate: depName=jesseduffield/lazydocker
@@ -201,7 +201,7 @@ packages:
   - name: derailed/k9s@v0.51.0 # renovate: depName=derailed/k9s
     tags:
       - k8s
-  - name: nklmilojevic/sofka@v0.33.0 # renovate: depName=nklmilojevic/sofka
+  - name: nklmilojevic/sofka@v0.34.0 # renovate: depName=nklmilojevic/sofka
     tags:
       - k8s
   - name: kubernetes-sigs/kustomize@kustomize/v5.8.1 # renovate: depName=kubernetes-sigs/kustomize
