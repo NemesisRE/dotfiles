@@ -125,6 +125,8 @@ Bitwarden Desktop on macOS provides a built-in SSH Agent socket. NREDF automatic
 ~/Library/Containers/com.bitwarden.desktop/Data/.bitwarden-ssh-agent.sock
 ```
 
+(or `~/.bitwarden-ssh-agent.sock` for the non-App-Store build). macOS' launchd always starts its own, usually empty, agent; with `shell.ssh.agent: "default"` NREDF prefers a running 1Password/Bitwarden agent over that launchd agent. Enable it in Bitwarden Desktop under **Settings → SSH agent**, keep the vault unlocked, and open a new shell. Set `shell.ssh.agent: "bitwarden"` to force it.
+
 ### 2. 1Password SSH Agent
 
 If configured for 1Password, NREDF automatically detects:
