@@ -192,7 +192,16 @@ def --env nredf-set-ssh-agent [] {
             return
         }
     } else {
-        if (nredf-ssh-agent-socket-works ($env.SSH_AUTH_SOCK? | default "")) {
+        # Keep the current agent if it is working. On macOS, launchd always
+        # provides its own (usually empty) agent, which would shadow a running
+        # Bitwarden/1Password agent, so prefer those when they are available.
+        let current = ($env.SSH_AUTH_SOCK? | default "")
+        if (nredf-ssh-agent-socket-works $current) {
+            if ($current =~ '/com\.apple\.launchd\..*/Listeners$') {
+                nredf-set-ssh-agent-1password
+                if ($env.SSH_AUTH_SOCK? | default "") != $current { return }
+                nredf-set-ssh-agent-bitwarden
+            }
             return
         }
     }

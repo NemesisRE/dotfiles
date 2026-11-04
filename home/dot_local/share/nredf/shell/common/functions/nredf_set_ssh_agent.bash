@@ -213,8 +213,17 @@ function _nredf_set_ssh_agent() {
       return 0
     fi
   else
-    # Keep current agent if it is working
+    # Keep current agent if it is working. On macOS, launchd always provides its
+    # own (usually empty) agent, which "works" and would otherwise shadow a
+    # running Bitwarden/1Password agent, so prefer those when they are available.
     if _nredf_ssh_agent_socket_works "${SSH_AUTH_SOCK:-}"; then
+      if [[ "${SSH_AUTH_SOCK}" == */com.apple.launchd.*/Listeners ]]; then
+        local launchd_sock="${SSH_AUTH_SOCK}"
+        if _nredf_set_ssh_agent_1password || _nredf_set_ssh_agent_bitwarden; then
+          return 0
+        fi
+        export SSH_AUTH_SOCK="${launchd_sock}"
+      fi
       return 0
     fi
   fi
