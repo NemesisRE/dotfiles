@@ -122,7 +122,7 @@ packages:
   - name: anthropics/claude-code@v2.1.318 # renovate: depName=anthropics/claude-code
     tags:
       - default
-  - name: google-antigravity/antigravity-cli@1.5.0 # renovate: depName=google-antigravity/antigravity-cli
+  - name: google-antigravity/antigravity-cli@1.5.1 # renovate: depName=google-antigravity/antigravity-cli
     tags:
       - default
   - name: jqlang/jq@jq-1.8.1 # renovate: depName=jqlang/jq
@@ -146,7 +146,7 @@ packages:
   - name: jesseduffield/lazydocker@v0.25.2 # renovate: depName=jesseduffield/lazydocker
     tags:
       - default
-  - name: Lifailon/lazyjournal@0.8.6 # renovate: depName=Lifailon/lazyjournal
+  - name: Lifailon/lazyjournal@0.8.7 # renovate: depName=Lifailon/lazyjournal
     tags:
       - default
   - name: tstack/lnav@v0.14.1 # renovate: depName=tstack/lnav
@@ -173,7 +173,7 @@ packages:
   - name: sharkdp/hyperfine@v2.0.0 # renovate: depName=sharkdp/hyperfine
     tags:
       - default
-  - name: jdx/mise@v2026.11.1 # renovate: depName=jdx/mise
+  - name: jdx/mise@v2026.11.2 # renovate: depName=jdx/mise
     tags:
       - default
       - required
@@ -181,7 +181,7 @@ packages:
     tags:
       - default
       - required
-  - name: astral-sh/ruff@0.17.3 # renovate: depName=astral-sh/ruff
+  - name: astral-sh/ruff@0.17.4 # renovate: depName=astral-sh/ruff
     tags:
       - default
       - required
