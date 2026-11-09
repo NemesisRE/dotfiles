@@ -125,6 +125,8 @@ NREDF features an intelligent SSH Agent detection engine in [`nredf_set_ssh_agen
 - **1Password**: `~/.1password/agent.sock` or `~/.config/1Password/agent.sock`
 - **GnuPG Agent**: Uses `gpgconf --list-dirs agent-ssh-socket` when GPG agent mode is configured.
 
+Agent sockets are probed with a 2 second timeout (`timeout`/`gtimeout`, when installed), so a locked desktop agent cannot stall shell startup. If no agent is found, NREDF starts its own `ssh-agent` on `~/.ssh/auth_sock`; a lock directory makes shells that start at the same time share one agent instead of racing.
+
 ### 2. WSL (Windows Subsystem for Linux) Integration
 
 In WSL 1/2, NREDF can bridge your Windows SSH Agent (e.g. Bitwarden Desktop or Windows OpenSSH Service) into WSL automatically:
