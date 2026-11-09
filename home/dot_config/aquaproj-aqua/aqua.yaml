@@ -131,7 +131,7 @@ packages:
   - name: mikefarah/yq@v4.54.2 # renovate: depName=mikefarah/yq
     tags:
       - default
-  - name: jesseduffield/lazygit@v0.66.2 # renovate: depName=jesseduffield/lazygit
+  - name: jesseduffield/lazygit@v0.66.3 # renovate: depName=jesseduffield/lazygit
     tags:
       - default
   - name: neovim/neovim@v0.12.6 # renovate: depName=neovim/neovim
@@ -173,7 +173,7 @@ packages:
   - name: sharkdp/hyperfine@v2.0.0 # renovate: depName=sharkdp/hyperfine
     tags:
       - default
-  - name: jdx/mise@v2026.11.3 # renovate: depName=jdx/mise
+  - name: jdx/mise@v2026.11.4 # renovate: depName=jdx/mise
     tags:
       - default
       - required
