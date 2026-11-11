@@ -23,18 +23,18 @@ packages:
   - name: fish-shell/fish-shell@4.9.3 # renovate: depName=fish-shell/fish-shell
     tags:
       - default
-  - name: nushell/nushell@0.116.1 # renovate: depName=nushell/nushell
+  - name: nushell/nushell@0.117.0 # renovate: depName=nushell/nushell
     tags:
       - default
       # Lets the render-lint CI job install just this one package (aqua has
       # no package-name filter, only `-t`/tag-based filtering) to nu-check
       # the rendered nu templates without pulling in the rest of aqua.yaml.
       - ci-lint
-  - name: atuinsh/atuin@v18.24.5 # renovate: depName=atuinsh/atuin
+  - name: atuinsh/atuin@v18.24.6 # renovate: depName=atuinsh/atuin
     tags:
       - default
       - required
-  - name: junegunn/fzf@v0.74.5 # renovate: depName=junegunn/fzf
+  - name: junegunn/fzf@v0.75.0 # renovate: depName=junegunn/fzf
     tags:
       - default
       - required
@@ -116,19 +116,19 @@ packages:
   - name: cli/cli@v2.103.3 # renovate: depName=cli/cli
     tags:
       - default
-  - name: github/copilot-cli@v1.0.107 # renovate: depName=github/copilot-cli
+  - name: github/copilot-cli@v1.0.108 # renovate: depName=github/copilot-cli
     tags:
       - default
-  - name: anthropics/claude-code@v2.1.319 # renovate: depName=anthropics/claude-code
+  - name: anthropics/claude-code@v2.1.322 # renovate: depName=anthropics/claude-code
     tags:
       - default
-  - name: google-antigravity/antigravity-cli@1.5.3 # renovate: depName=google-antigravity/antigravity-cli
+  - name: google-antigravity/antigravity-cli@1.5.4 # renovate: depName=google-antigravity/antigravity-cli
     tags:
       - default
   - name: jqlang/jq@jq-1.8.1 # renovate: depName=jqlang/jq
     tags:
       - default
-  - name: mikefarah/yq@v4.54.2 # renovate: depName=mikefarah/yq
+  - name: mikefarah/yq@v4.54.3 # renovate: depName=mikefarah/yq
     tags:
       - default
   - name: jesseduffield/lazygit@v0.66.3 # renovate: depName=jesseduffield/lazygit
@@ -159,7 +159,7 @@ packages:
   - name: smallstep/cli@v0.31.0 # renovate: depName=smallstep/cli
     tags:
       - default
-  - name: yetidevworks/drydock@v1.3.1 # renovate: depName=yetidevworks/drydock
+  - name: yetidevworks/drydock@v1.4.0 # renovate: depName=yetidevworks/drydock
     registry: local
     tags:
       - default
@@ -173,7 +173,7 @@ packages:
   - name: sharkdp/hyperfine@v2.0.0 # renovate: depName=sharkdp/hyperfine
     tags:
       - default
-  - name: jdx/mise@v2026.11.4 # renovate: depName=jdx/mise
+  - name: jdx/mise@v2026.11.5 # renovate: depName=jdx/mise
     tags:
       - default
       - required
