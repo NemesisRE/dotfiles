@@ -119,7 +119,7 @@ packages:
   - name: github/copilot-cli@v1.0.112 # renovate: depName=github/copilot-cli
     tags:
       - default
-  - name: anthropics/claude-code@v2.1.325 # renovate: depName=anthropics/claude-code
+  - name: anthropics/claude-code@v2.1.326 # renovate: depName=anthropics/claude-code
     tags:
       - default
   - name: google-antigravity/antigravity-cli@1.5.9 # renovate: depName=google-antigravity/antigravity-cli
@@ -152,18 +152,18 @@ packages:
   - name: tstack/lnav@v0.14.1 # renovate: depName=tstack/lnav
     tags:
       - default
-  - name: JanDeDobbeleer/oh-my-posh@v32.0.0 # renovate: depName=JanDeDobbeleer/oh-my-posh
+  - name: JanDeDobbeleer/oh-my-posh@v32.1.0 # renovate: depName=JanDeDobbeleer/oh-my-posh
     tags:
       - default
       - required
   - name: smallstep/cli@v0.31.0 # renovate: depName=smallstep/cli
     tags:
       - default
-  - name: yetidevworks/drydock@v1.4.0 # renovate: depName=yetidevworks/drydock
+  - name: yetidevworks/drydock@v1.4.1 # renovate: depName=yetidevworks/drydock
     registry: local
     tags:
       - default
-  - name: heymaikol/network-doctor@v2.2.0 # renovate: depName=heymaikol/network-doctor
+  - name: heymaikol/network-doctor@v2.2.1 # renovate: depName=heymaikol/network-doctor
     registry: local
     command_aliases:
       - command: network-doctor
@@ -173,7 +173,7 @@ packages:
   - name: sharkdp/hyperfine@v2.0.0 # renovate: depName=sharkdp/hyperfine
     tags:
       - default
-  - name: jdx/mise@v2026.11.8 # renovate: depName=jdx/mise
+  - name: jdx/mise@v2026.11.9 # renovate: depName=jdx/mise
     tags:
       - default
       - required
@@ -201,7 +201,7 @@ packages:
   - name: derailed/k9s@v0.51.0 # renovate: depName=derailed/k9s
     tags:
       - k8s
-  - name: nklmilojevic/sofka@v0.35.1 # renovate: depName=nklmilojevic/sofka
+  - name: nklmilojevic/sofka@v0.37.0 # renovate: depName=nklmilojevic/sofka
     tags:
       - k8s
   - name: kubernetes-sigs/kustomize@kustomize/v5.8.1 # renovate: depName=kubernetes-sigs/kustomize
@@ -213,7 +213,7 @@ packages:
   - name: velero-io/velero@v1.18.4 # renovate: depName=velero-io/velero
     tags:
       - k8s
-  - name: projectcalico/calico/calicoctl@v3.33.0 # renovate: depName=projectcalico/calico
+  - name: projectcalico/calico/calicoctl@v3.33.1 # renovate: depName=projectcalico/calico
     tags:
       - k8s
   - name: bitnami-labs/sealed-secrets@v0.41.2 # renovate: depName=bitnami/sealed-secrets
