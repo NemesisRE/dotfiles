@@ -30,7 +30,7 @@ packages:
       # no package-name filter, only `-t`/tag-based filtering) to nu-check
       # the rendered nu templates without pulling in the rest of aqua.yaml.
       - ci-lint
-  - name: atuinsh/atuin@v18.24.8 # renovate: depName=atuinsh/atuin
+  - name: atuinsh/atuin@v18.25.0 # renovate: depName=atuinsh/atuin
     tags:
       - default
       - required
@@ -68,7 +68,7 @@ packages:
     tags:
       - default
       - required
-  - name: dandavison/delta@0.21.1 # renovate: depName=dandavison/delta
+  - name: dandavison/delta@0.21.2 # renovate: depName=dandavison/delta
     tags:
       - default
       - required
@@ -119,10 +119,10 @@ packages:
   - name: github/copilot-cli@v1.0.114 # renovate: depName=github/copilot-cli
     tags:
       - default
-  - name: anthropics/claude-code@v2.1.328 # renovate: depName=anthropics/claude-code
+  - name: anthropics/claude-code@v2.1.329 # renovate: depName=anthropics/claude-code
     tags:
       - default
-  - name: google-antigravity/antigravity-cli@1.5.12 # renovate: depName=google-antigravity/antigravity-cli
+  - name: google-antigravity/antigravity-cli@1.5.13 # renovate: depName=google-antigravity/antigravity-cli
     tags:
       - default
   - name: jqlang/jq@jq-1.8.1 # renovate: depName=jqlang/jq
@@ -181,7 +181,7 @@ packages:
     tags:
       - default
       - required
-  - name: astral-sh/ruff@0.17.5 # renovate: depName=astral-sh/ruff
+  - name: astral-sh/ruff@0.17.6 # renovate: depName=astral-sh/ruff
     tags:
       - default
       - required
