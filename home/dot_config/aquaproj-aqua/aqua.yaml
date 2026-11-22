@@ -122,7 +122,7 @@ packages:
   - name: anthropics/claude-code@v2.1.330 # renovate: depName=anthropics/claude-code
     tags:
       - default
-  - name: google-antigravity/antigravity-cli@1.5.13 # renovate: depName=google-antigravity/antigravity-cli
+  - name: google-antigravity/antigravity-cli@1.5.14 # renovate: depName=google-antigravity/antigravity-cli
     tags:
       - default
   - name: jqlang/jq@jq-1.8.1 # renovate: depName=jqlang/jq
@@ -173,7 +173,7 @@ packages:
   - name: sharkdp/hyperfine@v2.0.0 # renovate: depName=sharkdp/hyperfine
     tags:
       - default
-  - name: jdx/mise@v2026.11.11 # renovate: depName=jdx/mise
+  - name: jdx/mise@v2026.11.12 # renovate: depName=jdx/mise
     tags:
       - default
       - required
