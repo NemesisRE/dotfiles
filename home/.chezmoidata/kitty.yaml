@@ -6,8 +6,8 @@
 # recomputes the hashes on the PR branch and re-runs CI. By hand: change `version`
 # and run `.github/scripts/pins.py update` (the `pins` CI job fails until they match).
 kitty:
-  version: "v0.50.0" # renovate: depName=kovidgoyal/kitty
+  version: "v0.51.0" # renovate: depName=kovidgoyal/kitty
   quake_key: "F12"
   sha256:
-    x86_64: "f04b11775574d6aabfb529b7e734cc0a7d7d12c7df9fb8ec1843e45420e514ee"
-    arm64: "3eb3257081ece4650dd112b2cf1bdbc0d1952d1a3f3934f22949e666e18451ee"
+    x86_64: "c285daaf1b699997614939c8d1cd92dd8b99302ff12f18efcc3f69382aa72b1d"
+    arm64: "2a3eab469c37b548c5ceecff4b500a5b6b5c50f99cc17e0213e06a4c9662d31a"
