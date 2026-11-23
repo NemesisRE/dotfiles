@@ -50,7 +50,7 @@ packages:
     tags:
       - default
       - required
-  - name: carapace-sh/carapace-bin@v1.8.2 # renovate: depName=carapace-sh/carapace-bin
+  - name: carapace-sh/carapace-bin@v1.8.3 # renovate: depName=carapace-sh/carapace-bin
     tags:
       - default
       - required
@@ -163,7 +163,7 @@ packages:
     registry: local
     tags:
       - default
-  - name: heymaikol/network-doctor@v2.2.1 # renovate: depName=heymaikol/network-doctor
+  - name: heymaikol/network-doctor@v2.2.2 # renovate: depName=heymaikol/network-doctor
     registry: local
     command_aliases:
       - command: network-doctor
