@@ -1,0 +1,65 @@
+name: Refresh ble.sh nightly pin
+
+# ble.sh no longer publishes tagged releases; its rolling `nightly` release is rebuilt
+# under the same tag, which Renovate cannot see. home/.chezmoidata/ble.yaml therefore
+# pins the nightly archive by SHA-256 only. This re-hashes the asset weekly and, if
+# upstream rebuilt it, opens (or updates) a PR with the new hash and runs CI on it.
+# Not auto-merged: a nightly is an unreleased build, so a person decides.
+#
+# Needs "Allow GitHub Actions to create and approve pull requests" in the repository's
+# Actions settings. As with refresh-pins.yml, CI is started with workflow_dispatch
+# because pushes made with the default token do not trigger `pull_request` runs.
+on:
+  schedule:
+    - cron: "0 20 * * 0" # Sunday 20:00 UTC, before the Monday CI pins check
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: refresh-ble-nightly
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Refresh ble.sh nightly hash
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # push the pin branch
+      pull-requests: write # open the PR
+      actions: write # run CI on the branch
+    env:
+      BRANCH: chore/ble-nightly
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Re-hash the nightly archive
+        run: python3 .github/scripts/pins.py update
+
+      - name: Push branch, open PR, run CI
+        run: |
+          set -euo pipefail
+          if git diff --quiet; then
+            echo "ble.sh nightly unchanged; nothing to do."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "${BRANCH}"
+          git add home/.chezmoidata/ble.yaml
+          git commit -m "chore(pins): bump ble.sh nightly hash"
+          git push --force origin "HEAD:refs/heads/${BRANCH}"
+          if [ -z "$(gh pr list --head "${BRANCH}" --state open --json number --jq '.[0].number')" ]; then
+            gh pr create --head "${BRANCH}" --base "${GITHUB_REF_NAME}" \
+              --title "chore(pins): bump ble.sh nightly" \
+              --label dependencies \
+              --body-file - <<'BODY'
+          ble.sh rebuilt its rolling `nightly` release. This only refreshes the
+          SHA-256 in `home/.chezmoidata/ble.yaml`. Nightlies are unreleased builds:
+          skim the upstream commits (https://github.com/akinomyoga/ble.sh/commits/master)
+          before merging.
+          BODY
+          fi
+          gh workflow run ci.yml --ref "${BRANCH}"

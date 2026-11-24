@@ -15,7 +15,8 @@ Pins covered:
   home/.chezmoidata/kitty.yaml            Linux kitty archives (x86_64, arm64)
   home/.chezmoidata/aqua-bootstrap.yaml   Windows aqua zips (amd64, arm64)
   bootstrap.ps1                           same aqua literals (cannot read chezmoi data)
-  home/.chezmoidata/ble.yaml              ble.sh release archive (chezmoi external)
+  home/.chezmoidata/ble.yaml              ble.sh nightly archive (chezmoi external); the
+                                          asset is rebuilt in place, so drift only warns
   home/.chezmoidata/fzf.yaml              fzf source archive for its shell scripts
                                           (chezmoi external); its version follows
                                           junegunn/fzf in aqua.yaml
@@ -43,6 +44,9 @@ AQUA_YAML = "home/dot_config/aquaproj-aqua/aqua.yaml"
 INSTALLER = "home/.chezmoiscripts/run_once_before_install-tools.sh.tmpl"
 
 HEX = r"[0-9a-f]{64}"
+
+# URLs whose content is replaced under a fixed name (ble.sh's rolling `nightly`).
+MOVING = {"https://github.com/akinomyoga/ble.sh/releases/download/nightly/ble-nightly.tar.xz"}
 
 
 def read(root, rel):
@@ -151,9 +155,9 @@ def pins(root):
                     (BOOTSTRAP, r'(^\s*%s\s*=\s*")%s(")' % (arch, HEX))))
 
     ble = read(root, BLE)
-    bt = find(r'^\s*tag:\s*"?(v[^"\s#]+)', ble, "ble.sh tag")
+    bt = find(r'^\s*tag:\s*"?([^"\s#]+)', ble, "ble.sh tag")
     pinned = find(r'^\s*sha256:\s*"(%s)"' % HEX, ble, "ble.sh sha256")
-    url = "https://github.com/akinomyoga/ble.sh/releases/download/%s/ble-%s.tar.xz" % (bt, bt[1:])
+    url = "https://github.com/akinomyoga/ble.sh/releases/download/%s/ble-%s.tar.xz" % (bt, bt)
     out.append(("ble.sh %s" % bt, url, pinned, (BLE, r'(^\s*sha256:\s*")%s(")' % HEX)))
 
     av = aqua_fzf_version(root)
@@ -197,6 +201,12 @@ def main():
         if args.mode == "update":
             print("  updated  %s\n           %s -> %s" % (label, pinned, actual))
             edits.append((rewrite, actual))
+        elif url in MOVING:
+            # A rolling asset changes without any commit here. That is drift for the
+            # refresh workflow to pick up, not a broken pin, so it must not turn the
+            # weekly CI run (or an unrelated PR's) red.
+            print("  DRIFT    %s: upstream was rebuilt\n           pinned %s\n           actual %s" % (label, pinned, actual))
+            print("::warning title=Pin drift::%s was rebuilt upstream; run pins.py update" % label)
         else:
             bad += 1
             print("  MISMATCH %s\n           pinned %s\n           actual %s\n           %s" % (label, pinned, actual, url))

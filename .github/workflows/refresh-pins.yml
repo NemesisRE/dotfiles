@@ -1,7 +1,7 @@
 name: Refresh pinned checksums
 
 # Renovate bumps only the version of the hash-pinned downloads: kitty, the Windows
-# aqua bootstrap, ble.sh, the aqua-installer script and fzf (whose version lives in
+# aqua bootstrap, the aqua-installer script and fzf (whose version lives in
 # aqua.yaml; pins.py copies it into fzf.yaml). Each is also pinned by SHA-256, so a
 # bare bump fails the "Verify pinned checksums" CI job. This finishes the job on the
 # Renovate PR branch: recompute the hashes, commit them, and re-run CI on the new
@@ -13,7 +13,6 @@ on:
     paths:
       - home/.chezmoidata/kitty.yaml
       - home/.chezmoidata/aqua-bootstrap.yaml
-      - home/.chezmoidata/ble.yaml
       - home/.chezmoidata/fzf.yaml
       - home/dot_config/aquaproj-aqua/aqua.yaml
       - home/.chezmoiscripts/run_once_before_install-tools.sh.tmpl

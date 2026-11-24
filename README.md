@@ -199,8 +199,10 @@ Every `.chezmoiscripts/` hook and `get-*.tmpl` vault lookup checks `$CI` (in add
 - **GitHub Actions**: grouped, with a 3-day release wait (they run third-party code in CI).
 - **mise tool versions**: parsed out of [`home/dot_config/mise/config.toml.tmpl`](home/dot_config/mise/config.toml.tmpl).
 - **aqua packages**: both the registry `ref:` and each package's `version:` in [`home/dot_config/aquaproj-aqua/aqua.yaml`](home/dot_config/aquaproj-aqua/aqua.yaml), via custom regex managers. Grouped as "aqua packages", and a version is proposed only once its GitHub release (not just the tag) is a day old.
-- **`ble.sh`** (`home/.chezmoidata/ble.yaml`) and **Kitty** (`home/.chezmoidata/kitty.yaml`): release-tag/version bumps.
+- **Kitty** (`home/.chezmoidata/kitty.yaml`): release-tag/version bumps.
 - **The Windows aqua bootstrap** (`home/.chezmoidata/aqua-bootstrap.yaml`).
+
+**`ble.sh`** is not tracked by Renovate: it no longer cuts tagged releases and its rolling `nightly` release is rebuilt under the same tag. [`home/.chezmoidata/ble.yaml`](home/.chezmoidata/ble.yaml) pins the nightly archive by SHA-256, and [`.github/workflows/refresh-ble-nightly.yml`](.github/workflows/refresh-ble-nightly.yml) re-hashes it weekly and opens a PR when it changed. Merge that PR to take the new build. Until then `chezmoi apply` can fail the checksum on a machine that has not got the old build cached; the weekly CI run only warns.
 
 Kitty and the aqua bootstrap are also pinned by SHA-256. A Renovate PR that bumps either version alone would fail the checksum-verification CI job, so [`.github/workflows/refresh-pins.yml`](.github/workflows/refresh-pins.yml) recomputes and commits the matching hashes on the PR branch and re-runs CI, letting Renovate automerge once it's green. Minor/patch/digest bumps elsewhere automerge the same way, on green CI only.
 
