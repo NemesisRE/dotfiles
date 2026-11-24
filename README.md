@@ -221,6 +221,7 @@ Kitty and the aqua bootstrap are also pinned by SHA-256. A Renovate PR that bump
 | `NREDF_DOT_PATH` | `~/.local/share/nredf` | Shell library root |
 | `NREDF_COMMON_RC_PROFILE` | `full` | RC profile level (`full` / `login-minimal` / `interactive-minimal`) |
 | `NREDF_NO_BOOTSTRAP` | unset | Set to `1` to skip every install/link/bootstrap hook *and* every vault secret lookup (GitHub token, git signing key, MCP servers) during `chezmoi apply` — the same switch CI flips on for its dry-runs |
+| `NREDF_VAULT_OFFLINE` | unset | Set to `1` to make `chezmoi apply` leave every vault-backed file (GitHub token, git config/signing, MCP configs) as last deployed and apply the rest without touching the password safe. `nredf-daily-sync` (and so `reload -f`) sets it automatically when the vault is locked or the full apply fails; set it by hand with `NREDF_VAULT_OFFLINE=1 chezmoi apply` |
 
 ---
 
