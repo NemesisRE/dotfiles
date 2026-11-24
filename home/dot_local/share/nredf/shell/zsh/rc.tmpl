@@ -38,6 +38,11 @@ unset _bundle
 
 export HISTFILE="${XDG_STATE_HOME}"/zsh/history
 
+# Force emacs keybindings. Without this, zsh silently switches to vi mode when
+# $EDITOR or $VISUAL contains "vi" (nvim, vim, vi, ...), so a stray Esc drops
+# you into vi normal mode. Edit-in-editor is unaffected.
+bindkey -e
+
 autoload -Uz compinit
 NREDF_ZCOMPDUMP="${XDG_CACHE_HOME}/zsh/.zcompdump"
 NREDF_DOCKER_COMPLETION="/usr/share/zsh/vendor-completions/_docker"

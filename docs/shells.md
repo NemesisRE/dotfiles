@@ -94,6 +94,8 @@ All five shells share a unified experience designed around modern developer ergo
 
 ### 1. Zsh Keyboard Shortcuts
 
+Zsh runs with emacs keybindings (`bindkey -e`). Left alone, zsh switches to vi mode whenever `$EDITOR`/`$VISUAL` contains "vi" (which `nvim` does), so Esc would drop you into vi normal mode.
+
 | Shortcut | Function | Description |
 | :--- | :--- | :--- |
 | <kbd>Tab</kbd> | Completion Menu | Interactive tab completion with descriptions via fzf-tab |
