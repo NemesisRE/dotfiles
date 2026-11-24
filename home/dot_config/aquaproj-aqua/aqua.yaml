@@ -50,7 +50,7 @@ packages:
     tags:
       - default
       - required
-  - name: carapace-sh/carapace-bin@v1.8.4 # renovate: depName=carapace-sh/carapace-bin
+  - name: carapace-sh/carapace-bin@v1.8.5 # renovate: depName=carapace-sh/carapace-bin
     tags:
       - default
       - required
