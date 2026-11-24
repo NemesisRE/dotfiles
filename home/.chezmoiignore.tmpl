@@ -85,3 +85,25 @@ AppData/Local/Packages/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe
 .wslconfig
 {{-   end }}
 {{- end }}
+
+{{- /*
+NREDF_VAULT_OFFLINE (set by nredf-daily-sync when the password safe is locked,
+signed out or broken): leave every file whose content comes from a vault lookup
+alone. The previously deployed copy stays in place instead of being re-rendered
+without its secret, and chezmoi never calls bw/op/keepassxc-cli for them, so
+the rest of the tree still applies.
+*/ -}}
+{{- if env "NREDF_VAULT_OFFLINE" }}
+.config/nredf/aqua-vault.env
+.config/nredf/mcp.json
+.config/git/config
+.config/git/allowed_signers
+.config/Code/User/mcp.json
+.config/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
+Library/Application Support/Code/User/mcp.json
+Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
+AppData/Roaming/Code/User/mcp.json
+AppData/Roaming/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json
+.gemini/config/mcp_config.json
+.chezmoiscripts/*claude_mcp*
+{{- end }}

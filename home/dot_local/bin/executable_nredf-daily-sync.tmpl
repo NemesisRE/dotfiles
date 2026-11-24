@@ -128,6 +128,8 @@ if command -v chezmoi >/dev/null 2>&1; then
   chezmoi upgrade >/dev/null 2>&1 || echo "Chezmoi binary upgrade exited with: $?"
 fi
 
+APPLY_PROBLEM=""
+
 # 3. Dotfiles Remote Sync & Apply
 if command -v chezmoi >/dev/null 2>&1; then
   CHEZMOI_SOURCE="$(chezmoi source-path 2>/dev/null || echo "")"
@@ -148,11 +150,31 @@ if command -v chezmoi >/dev/null 2>&1; then
 
   # A scheduled run has no terminal, so a locked vault cannot be unlocked here:
   # chezmoi's secret template call would error and abort the apply half-way.
-  # Check first and skip the apply instead; the remaining steps still run.
+  # Check first. If the vault is not usable (or the full apply fails anyway, e.g.
+  # an expired login that still reports "unlocked"), apply everything that does not
+  # need a secret: NREDF_VAULT_OFFLINE makes .chezmoiignore skip the vault-rendered
+  # files, which keep their last deployed copy.
+  _nredf_sync_apply() {
+    # Non-interactive with null stdin so password safe prompts never hang
+    chezmoi apply --refresh-externals --force --no-tty </dev/null
+  }
   if _nredf_sync_vaults_ready; then
     echo "==> Applying dotfiles & externals"
-    # Run non-interactively with null stdin so password safe prompts never hang
-    chezmoi apply --refresh-externals --force --no-tty </dev/null || echo "Chezmoi apply exited with warnings: $?"
+    if ! _nredf_sync_apply; then
+      echo "Chezmoi apply failed; retrying without the vault-backed files"
+      if NREDF_VAULT_OFFLINE=1 _nredf_sync_apply; then
+        APPLY_PROBLEM="the full chezmoi apply FAILED (see the error above). Everything that needs no secret was applied; the GitHub token, git signing and MCP files were NOT updated."
+      else
+        APPLY_PROBLEM="chezmoi apply FAILED (see the error above), so the latest dotfiles were NOT deployed."
+      fi
+    fi
+  else
+    echo "==> Vault not usable: applying dotfiles without the vault-backed files"
+    if NREDF_VAULT_OFFLINE=1 _nredf_sync_apply; then
+      APPLY_PROBLEM="the vault is locked or signed out. Everything that needs no secret was applied; the GitHub token, git signing and MCP files were NOT updated."
+    else
+      APPLY_PROBLEM="chezmoi apply FAILED (see the error above), so the latest dotfiles were NOT deployed."
+    fi
   fi
 fi
 
@@ -195,3 +217,9 @@ fi
 echo "========================================================"
 echo " NREDF Daily Sync Finished: $(date)"
 echo "========================================================"
+# Repeated last on purpose: `reload -f` restarts the shell right after this, and a
+# skipped or failed apply is easy to miss in the middle of the output above.
+if [[ -n "${APPLY_PROBLEM}" ]]; then
+  echo "!! ${APPLY_PROBLEM}"
+  echo "!! Fix the cause (e.g. bwu, or bw logout && bw login), then run: chezmoi apply"
+fi

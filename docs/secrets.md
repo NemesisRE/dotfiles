@@ -232,3 +232,7 @@ Get-Content "$HOME\.config\nredf\aqua.env"
 ### CI / Headless Mode
 
 When running in automated CI environments (`CI=true`) or when `NREDF_NO_BOOTSTRAP` is set to any non-empty value, all secret lookups safely return empty strings, preventing interactive CLI prompts or failed builds.
+
+### Locked or broken vault
+
+If the password safe is locked, signed out or its login has expired, `chezmoi apply` aborts on the first secret template. Run `NREDF_VAULT_OFFLINE=1 chezmoi apply` to apply everything else: the files that embed a secret (`~/.config/nredf/aqua-vault.env`, `~/.config/git/config` and `allowed_signers`, the MCP configs) are skipped and keep their last deployed content. `nredf-daily-sync` and `reload -f` do this automatically and print a warning at the end when they had to.
