@@ -55,6 +55,11 @@ jobs:
             gh pr create --head "${BRANCH}" --base "${GITHUB_REF_NAME}" \
               --title "chore(pins): bump ble.sh nightly" \
               --label dependencies \
-              --body "ble.sh rebuilt its rolling \`nightly\` release. This only refreshes the SHA-256 in \`home/.chezmoidata/ble.yaml\`. Nightlies are unreleased builds: skim the [upstream commits](https://github.com/akinomyoga/ble.sh/commits/master) before merging."
+              --body-file - <<'BODY'
+          ble.sh rebuilt its rolling `nightly` release. This only refreshes the
+          SHA-256 in `home/.chezmoidata/ble.yaml`. Nightlies are unreleased builds:
+          skim the upstream commits (https://github.com/akinomyoga/ble.sh/commits/master)
+          before merging.
+          BODY
           fi
           gh workflow run ci.yml --ref "${BRANCH}"
