@@ -58,14 +58,13 @@
       "allowedVersions": "!/[-.](?:alpha|beta|dev|rc)[0-9A-Za-z.-]*/i"
     },
     {
-      "description": "Downloads pinned by SHA-256 as well as by version: kitty, the aqua bootstrap (and aqua_version in workflows), ble.sh, fzf (shell scripts external) and the aqua-installer script. The refresh-pins workflow recomputes the hashes on the PR branch and re-runs CI, so these automerge on green. The 3-day wait is what keeps a just-published, possibly tampered release from being hashed, pinned and merged unreviewed. Limited to custom.regex so the aqua-installer GitHub Action (github-actions manager) is not matched.",
+      "description": "Downloads pinned by SHA-256 as well as by version: kitty, the aqua bootstrap (and aqua_version in workflows), fzf (shell scripts external) and the aqua-installer script. The refresh-pins workflow recomputes the hashes on the PR branch and re-runs CI, so these automerge on green. The 3-day wait is what keeps a just-published, possibly tampered release from being hashed, pinned and merged unreviewed. Limited to custom.regex so the aqua-installer GitHub Action (github-actions manager) is not matched.",
       "matchManagers": [
         "custom.regex"
       ],
       "matchDepNames": [
         "kovidgoyal/kitty",
         "aquaproj/aqua",
-        "akinomyoga/ble.sh",
         "junegunn/fzf",
         "aquaproj/aqua-installer"
       ],
@@ -73,13 +72,6 @@
         "The pinned SHA-256 values are refreshed automatically by the `Refresh pinned checksums` workflow (a `chore(pins)` commit on this branch); CI re-runs after that. If it did not, run `.github/scripts/pins.py update` and push."
       ],
       "minimumReleaseAge": "3 days"
-    },
-    {
-      "description": "ble.sh only ships -develN tags for 0.4 (v0.4.0-devel3; stable v0.3.4 is older), and the default ignoreUnstable would only ever offer another v0.4.0 prerelease or v0.4.0 itself. Allow unstable tags so a v0.5.0-devel1 is proposed too; the non-semver `nightly` tag is still ignored.",
-      "matchDepNames": [
-        "akinomyoga/ble.sh"
-      ],
-      "ignoreUnstable": false
     },
     {
       "description": "Keep the markdownlint-cli2 CLI used in CI and the markdownlint config-schema URL moving together.",
@@ -115,17 +107,6 @@
       "depTypeTemplate": "aqua-package",
       "datasourceTemplate": "github-releases",
       "versioningTemplate": "loose"
-    },
-    {
-      "customType": "regex",
-      "description": "Update ble.sh release tag in ble.yaml",
-      "managerFilePatterns": [
-        "/^(home\\/)?\\.chezmoidata\\/ble\\.yaml$/"
-      ],
-      "matchStrings": [
-        "tag:\\s*(?<currentValue>v[0-9][^\\s#]*)\\s*#\\s*renovate:\\s*depName=(?<depName>[^\\s]+)"
-      ],
-      "datasourceTemplate": "github-tags"
     },
     {
       "customType": "regex",
