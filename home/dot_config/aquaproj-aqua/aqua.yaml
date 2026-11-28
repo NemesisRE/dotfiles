@@ -163,7 +163,7 @@ packages:
     registry: local
     tags:
       - default
-  - name: heymaikol/network-doctor@v2.2.2 # renovate: depName=heymaikol/network-doctor
+  - name: heymaikol/network-doctor@v2.3.0 # renovate: depName=heymaikol/network-doctor
     registry: local
     command_aliases:
       - command: network-doctor
